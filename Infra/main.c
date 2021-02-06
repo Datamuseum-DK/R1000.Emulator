@@ -84,7 +84,6 @@ int
 main(int argc, char **argv)
 {
 	int ch, i;
-	int bare = 0;
 	struct sim *cs = NULL;
 	long l;
 	FILE *fi;
@@ -98,11 +97,8 @@ main(int argc, char **argv)
 	ioc_console_init(cs);
 	ioc_duart_init(cs);
 
-	while ((ch = getopt(argc, argv, "b:f:ht:T:")) != -1) {
+	while ((ch = getopt(argc, argv, "f:ht:T:")) != -1) {
 		switch (ch) {
-		case 'b':
-			bare = 1;
-			break;
 		case 'f':
 			// handled in second pass
 			break;
@@ -132,7 +128,7 @@ main(int argc, char **argv)
 
 	optind = 1;
 	optreset = 1;
-	while ((ch = getopt(argc, argv, "b:f:ht:T:")) != -1) {
+	while ((ch = getopt(argc, argv, "f:ht:T:")) != -1) {
 		switch(ch) {
 		case 'f':
 			fi = fopen(optarg, "r");
@@ -143,7 +139,7 @@ main(int argc, char **argv)
 			}
 			if (cli_from_file(cs, fi, 1))
 				exit(2);
-			fclose(fi);
+			AZ(fclose(fi));
 			break;
 		default:
 			break;

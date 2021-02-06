@@ -117,23 +117,33 @@ io_registers(const char *op, unsigned int address, memfunc_f *func, unsigned int
 
 /**********************************************************************/
 
-static unsigned int
-io_resha_eeprom(const char *op, unsigned int address, memfunc_f *func, unsigned int value)
+static unsigned int v_matchproto_(iofunc_f)
+io_resha_eeprom(
+    const char *op,
+    unsigned int address,
+    memfunc_f *func,
+    unsigned int value
+)
 {
-	unsigned int retval = 0, u;
+	unsigned int u;
 	static uint8_t eeprom_page[4];
 
-	(void)func;
-	if (address == 0x9303e00a)
-		retval = func(op, eeprom_page, address&3, value);
+	// IO_TRACE_WRITE(2, "RESHA_EEPROM");
+	if (address == 0x9303e00a) {
+		value = func(op, eeprom_page, address&3, value);
+		if (op[0] == 'W') {
+			// See 0x80000fa8 and 0x80000fae
+			eeprom_page[3] = eeprom_page[2];
+		}
+	}
 	if (0x9303e300 == (address & ~0xff)) {
 		u = (eeprom_page[2]<<8) | (address & 0xff);
 		u &= 0x7fff;
 		if (op[0] == 'R')
-			retval = resha_eeprom[u];
+			value = resha_eeprom[u];
 	}
-
-	return (retval);
+	// IO_TRACE_READ(2, "RESHA_EEPROM");
+	return (value);
 }
 
 /**********************************************************************/
@@ -147,7 +157,9 @@ mem(const char *op, unsigned int address, memfunc_f *func, unsigned int value)
 		return func(op, ram, address & 0x7fffffff, value);
 	if (0x80000000 <= address && address <= 0x80007fff)
 		return func(op, ioc_eeprom, address & 0x7fffffff, value);
-	if (0x9303e000 == (address & ~0xfff))	// Something EEPROM related on RESHAS
+	if (0x9303e00a == address) // resha eeprom page register
+		return io_resha_eeprom(op, address, func, value);
+	if (0x9303e300 == (address & ~0xff)) // resha eeprom page
 		return io_resha_eeprom(op, address, func, value);
 	if (0xa1000000 == (address & ~0xffff))
 		return (0);
@@ -334,11 +346,11 @@ main_ioc(void *priv)
 	insert_jump(0x800007f4, 0x800009b2); // I/O Bus control
 	insert_jump(0x800009da, 0x80000a4a); // I/O Bus map parity
 	insert_jump(0x80000a74, 0x80000b8a); // I/O bus transactions
-	insert_jump(0x80000ba2, 0x80000bf2); // PIT
+	insert_jump(0x80000ba2, 0x80000bf2); // PIT  (=> DUART)
 	//insert_jump(0x80000c1a, 0x80000d20); // Modem DUART channel
 	//insert_jump(0x80000d4e, 0x80000dd6); // Diagnostic DUART channel
 	//insert_jump(0x80000dfc, 0x80000ec4); // Clock / Calendar
-	insert_jump(0x80000fa0, 0x80000fda); // RESHA EEProm Interface ...
+	//insert_jump(0x80000fa0, 0x80000fda); // RESHA EEProm Interface ...
 	insert_return(0x80001122); // RESHA based selftests
 	insert_jump(0x800011c0, 0x800014d0); // Local interrupts
 	insert_jump(0x80001502, 0x800015ce); // Illegal reference protection
