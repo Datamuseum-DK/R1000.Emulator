@@ -8,12 +8,8 @@ Run "make setup" first.
 
 The 68k20 IOC is emulated using https://github.com/kstenerud/Musashi
 
-Disassembly of the IOC EEPROM:
+Disassembly of the IOC EEPROM: http://datamuseum.dk/aa/r1k_dfs/cf/cf75df1a7.html
 
-	http://datamuseum.dk/aa/r1k_dfs/cf/cf75df1a7.html
-
-Disassembly of the RESHA EEPROM:
-
-	http://datamuseum.dk/aa/r1k_dfs/f3/f3d8d4065.html
+Disassembly of the RESHA EEPROM: http://datamuseum.dk/aa/r1k_dfs/f3/f3d8d4065.html
 
 *end*
