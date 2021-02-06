@@ -155,6 +155,8 @@ mem(const char *op, unsigned int address, memfunc_f *func, unsigned int value)
 		return io_rtc(op, address, func, value);
 	if (0xffff9000 == (address & ~0xfff))
 		return io_console_uart(op, address, func, value);
+	if (0xffffa000 == (address & ~0xfff))
+		return io_duart(op, address, func, value);
 	if (0xffffff03 == address)	// ?
 		return (0);
 	if (0xfffff200 == address)	// IO_FRONT_PANEL_LED_p27
@@ -184,50 +186,50 @@ mem(const char *op, unsigned int address, memfunc_f *func, unsigned int value)
 unsigned int
 m68k_read_memory_8(unsigned int address)
 {
-	return mem("RB", address, rdbyte, 0);
+	return mem("Rb", address, rdbyte, 0);
 }
 
 unsigned int
 m68k_read_memory_16(unsigned int address)
 {
-	return mem("RW", address, rdword, 0);
+	return mem("Rw", address, rdword, 0);
 }
 
 unsigned int
 m68k_read_disassembler_16(unsigned int address)
 {
-	return mem("RW", address, rdword, 0);
+	return mem("Rw", address, rdword, 0);
 }
 
 unsigned int
 m68k_read_memory_32(unsigned int address)
 {
-	return mem("RL", address, rdlong, 0);
+	return mem("Rl", address, rdlong, 0);
 }
 
 unsigned int
 m68k_read_disassembler_32(unsigned int address)
 {
-	return mem("RL", address, rdlong, 0);
+	return mem("Rl", address, rdlong, 0);
 }
 
 /* Write data to RAM or a device */
 void
 m68k_write_memory_8(unsigned int address, unsigned int value)
 {
-	(void)mem("WB", address, wrbyte, value);
+	(void)mem("Wb", address, wrbyte, value);
 }
 
 void
 m68k_write_memory_16(unsigned int address, unsigned int value)
 {
-	(void)mem("WW", address, wrword, value);
+	(void)mem("Ww", address, wrword, value);
 }
 
 void
 m68k_write_memory_32(unsigned int address, unsigned int value)
 {
-	(void)mem("WL", address, wrlong, value);
+	(void)mem("Wl", address, wrlong, value);
 }
 
 
@@ -333,8 +335,8 @@ main_ioc(void *priv)
 	insert_jump(0x800009da, 0x80000a4a); // I/O Bus map parity
 	insert_jump(0x80000a74, 0x80000b8a); // I/O bus transactions
 	insert_jump(0x80000ba2, 0x80000bf2); // PIT
-	insert_jump(0x80000c1a, 0x80000d20); // Modem DUART channel
-	insert_jump(0x80000d4e, 0x80000dd6); // Diagnostic DUART channel
+	//insert_jump(0x80000c1a, 0x80000d20); // Modem DUART channel
+	//insert_jump(0x80000d4e, 0x80000dd6); // Diagnostic DUART channel
 	//insert_jump(0x80000dfc, 0x80000ec4); // Clock / Calendar
 	insert_jump(0x80000fa0, 0x80000fda); // RESHA EEProm Interface ...
 	insert_return(0x80001122); // RESHA based selftests

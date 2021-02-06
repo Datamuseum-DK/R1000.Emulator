@@ -7,6 +7,7 @@ OBJS	+= m68kcpu.o m68kdasm.o m68kops.o softfloat.o
 
 OBJS	+= ioc_console.o
 OBJS	+= ioc_cli.o
+OBJS	+= ioc_duart.o
 OBJS	+= ioc_main.o
 OBJS	+= ioc_rtc.o
 
@@ -33,7 +34,9 @@ test:	r1000 ${BINFILES}
 		-T /critter/_r1000 \
 		-t 3 \
 		"console serial /dev/nmdm0A" \
-		"console > _.console"
+		"console > _.console" \
+		"duart > _.duart" \
+		"reset"
 
 r1000:	${OBJS}
 	${CC} -o r1000 ${CFLAGS} ${LDFLAGS} ${OBJS}
@@ -55,9 +58,10 @@ m68kdasm.o:		${M68K_INCL} Musashi/m68kdasm.c
 softfloat.o:		${M68K_INCL} Musashi/softfloat/softfloat.c
 
 ioc_cli.o:		${CLI_INCL} Ioc/ioc.h Ioc/ioc_cli.c
+ioc_duart.o:		${CLI_INCL} Ioc/ioc.h Ioc/ioc_duart.c
 ioc_console.o:		${CLI_INCL} Ioc/ioc.h Ioc/ioc_console.c
 ioc_main.o:		${M68K_INCL} Ioc/ioc.h Ioc/ioc_main.c
-ioc_rtc.o:		${M68K_INCL} Ioc/ioc.h Ioc/ioc_rtc.c
+ioc_rtc.o:		${CLI_INCL} Ioc/ioc.h Ioc/ioc_rtc.c
 
 m68kops.o:		Musashi/m68kcpu.h m68kops.h m68kops.c
 m68kops.h m68kops.c:	m68kmake Ioc/musashi_conf.h

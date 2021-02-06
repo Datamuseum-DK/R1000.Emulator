@@ -151,6 +151,7 @@ static const struct cli_cmds {
 	{ "exit",		cli_exit },
 	{ "?",			cli_help },
 	{ "console",		cli_ioc_console },
+	{ "duart",		cli_ioc_duart },
 	{ "reset",		cli_ioc_reset },
 	{ NULL,			NULL },
 };

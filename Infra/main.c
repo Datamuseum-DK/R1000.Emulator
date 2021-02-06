@@ -96,6 +96,7 @@ main(int argc, char **argv)
 	cs = r1000sim;
 
 	ioc_console_init(cs);
+	ioc_duart_init(cs);
 
 	while ((ch = getopt(argc, argv, "b:f:ht:T:")) != -1) {
 		switch (ch) {
