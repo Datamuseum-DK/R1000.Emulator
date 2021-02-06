@@ -1,0 +1,13 @@
+diff --git a/m68kfpu.c b/m68kfpu.c
+index 473e078..e60cca4 100644
+--- a/m68kfpu.c
++++ b/m68kfpu.c
+@@ -4,7 +4,7 @@
+ 
+ extern void exit(int);
+ 
+-static void fatalerror(char *format, ...) {
++static void __attribute__((__noreturn__)) fatalerror(char *format, ...) {
+       va_list ap;
+       va_start(ap,format);
+       vfprintf(stderr,format,ap);  // JFF: fixed. Was using fprintf and arguments were wrong

@@ -1,0 +1,31 @@
+
++fan
+
+// 534 Ignoring return value of library functions
+-esym(534, printf)
+-esym(534, sprintf)
+-esym(534, fprintf)
+-esym(534, vsnprintf)
+-esym(534, vfprintf)
+-esym(534, memset)
+-esym(534, memcpy)
+-esym(534, usleep)
+
+// 534 Ignoring return value of our own functions
+-esym(534, cli_error)
+-esym(534, m68k_disassemble)
+
+// Stylistic Disagreements
+-e663		// Suspicious array to pointer conversion
+-e716		// while(1) ...
+
+// Threads/Locking
+-e457		// Function '___' of thread '___' has an unprotected write access to variable '___' which is used by function '___' of thread '___'
+-e458		// Function '___' of thread '___' has an unprotected read access to variable '___' which is used by function '___' of thread '___'
+-e459		// Function '___' whose address was taken has an unprotected access to variable '___'
+
+// To Be Reviewed
+-e713		// Loss of precision (___) (___ to ___)
+-e732		// Loss of sign (___) (___ to ___)
+-e734		// Loss of precision (___) (___ bits to ___ bits)
+-e747		// Significant prototype coercion (___) ___ to ___
