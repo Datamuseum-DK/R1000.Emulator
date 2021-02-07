@@ -21,6 +21,13 @@ https://datamuseum.dk/wiki/Rational/R1000s400
 8. Wait for 16195351 million instructions and get:
 
 ```
+	Boot from (Tn or Dn)  [D0] : ^@
+	Kernel program (0,1,2) [0] : 
+	File system    (0,1,2) [0] : 
+	User program   (0,1,2) [0] : 
+	Initializing M400S I/O Processor Kernel 4_2_18
+	IOP Kernel is initialized
+	
 	I/O Processor Kernel Crash: error 0806 (hex) at PC=000049F8
 	Trapped into debugger.
 	RD0 00000000  RD1 00000002  RD2 00000002  RD3 0000000A 
@@ -32,7 +39,9 @@ https://datamuseum.dk/wiki/Rational/R1000s400
 	@
 ```
 
-(I suspect this is the kernel getting to either the VME or LANCE ethernet chip initialization.)
+At this point the kernel is initialized, as jumped to FS which has cleared it's
+data segment and moved on to `PROGRAM.0` which calls something in the FS/KERNEL
+which does not yet work.
 
 Disassembly of the IOC EEPROM: http://datamuseum.dk/aa/r1k_dfs/be/bed92cf60.html
 
