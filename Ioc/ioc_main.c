@@ -77,6 +77,10 @@ dma_write(unsigned segment, unsigned address, void *src, unsigned len)
 		ram[0x66d3] = 0;
 	if (ram[0x5d1a] == 0x05)
 		ram[0x5d1a] = 1;
+	if (ram[0x9af9] == 0x07)
+		ram[0x9af9] = 0;
+	if (ram[0x9afa] == 0xff)
+		ram[0x9afa] = 0;
 }
 
 static unsigned int v_matchproto_(iofunc_f)
@@ -309,7 +313,7 @@ mem(const char *op, unsigned int address, memfunc_f *func, unsigned int value)
 		return io_scsi_d(op, address, func, value);
 
 	if (0x9303ec00 == (address & ~0x1f)) // SCSI T
-		return io_scsi_t(op, address, func, value);
+		return io_scsi_t_reg(op, address, func, value);
 	if (0x9303e008 == address) // SCSI T DMA
 		return io_scsi_t(op, address, func, value);
 	if (0x9303e002 == address) // SCSI T CTL
@@ -599,4 +603,5 @@ ioc_init(struct sim *cs)
 	ioc_console_init(cs);
 	ioc_duart_init(cs);
 	ioc_scsi_d_init(cs);
+	ioc_scsi_t_init(cs);
 }

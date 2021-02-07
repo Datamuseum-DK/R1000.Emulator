@@ -11,8 +11,7 @@ OBJS	+= ioc_duart.o
 OBJS	+= ioc_interrupt.o
 OBJS	+= ioc_main.o
 OBJS	+= ioc_rtc.o
-OBJS	+= ioc_scsi_d.o
-OBJS	+= ioc_scsi_t.o
+OBJS	+= ioc_scsi.o
 
 CFLAGS	+= -Wall -Werror -pthread -g -O0
 CFLAGS	+= -I. -IInfra -IMusashi -IIoc -DMUSASHI_CNF='"musashi_conf.h"'
@@ -32,8 +31,6 @@ CLI_INCL = \
 	Infra/r1000.h \
 	Infra/elastic.h
 
-#		"console serial /dev/nmdm0A" \
-#
 test:	r1000 ${BINFILES}
 	./r1000 \
 		-T /critter/_r1000 \
@@ -49,6 +46,15 @@ test:	r1000 ${BINFILES}
 		'console << ""' \
 		'console match expect "User program   (0,1,2) [0] : "' \
 		'console << ""' 
+
+tape:	r1000 ${BINFILES}
+	./r1000 \
+		-T /critter/_r1000 \
+		-t 3 \
+		"console serial /dev/nmdm0A" \
+		"console > _.console" \
+		"duart > _.duart" \
+		"reset" 
 
 r1000:	${OBJS}
 	${CC} -o r1000 ${CFLAGS} ${LDFLAGS} ${OBJS}
@@ -75,8 +81,7 @@ ioc_console.o:		${CLI_INCL} Ioc/ioc.h Ioc/ioc_console.c
 ioc_interrupt.o:	${CLI_INCL} Ioc/ioc.h Ioc/ioc_interrupt.c
 ioc_main.o:		${M68K_INCL} Ioc/ioc.h Ioc/ioc_main.c
 ioc_rtc.o:		${CLI_INCL} Ioc/ioc.h Ioc/ioc_rtc.c
-ioc_scsi_d.o:		${CLI_INCL} Ioc/ioc.h Ioc/ioc_scsi_d.c
-ioc_scsi_t.o:		${CLI_INCL} Ioc/ioc.h Ioc/ioc_scsi_t.c
+ioc_scsi.o:		${CLI_INCL} Ioc/ioc.h Ioc/ioc_scsi.c
 
 m68kops.o:		Musashi/m68kcpu.h m68kops.h m68kops.c
 m68kops.h m68kops.c:	m68kmake Ioc/musashi_conf.h

@@ -24,11 +24,13 @@ iofunc_f io_console_uart;
 iofunc_f io_duart;
 iofunc_f io_rtc;
 iofunc_f io_scsi_d_reg;
+iofunc_f io_scsi_t_reg;
 iofunc_f io_scsi_d;
 iofunc_f io_scsi_t;
 void ioc_console_init(struct sim *);
 void ioc_duart_init(struct sim *);
 void ioc_scsi_d_init(struct sim *);
+void ioc_scsi_t_init(struct sim *);
 void ioc_init(struct sim *);
 
 extern uintmax_t ioc_nins;
@@ -53,7 +55,8 @@ void dma_write(unsigned segment, unsigned address, void *src, unsigned len);
 
 #define INTERRUPT_TABLE \
 	IRQ_VECTOR(CONSOLE_BREAK, L67, 0x42) \
-	IRQ_VECTOR(SCSI_D, L67, 0x91)
+	IRQ_VECTOR(SCSI_D, L67, 0x91) \
+	IRQ_VECTOR(SCSI_T, L67, 0x92)
 
 struct irq_vector;
 
