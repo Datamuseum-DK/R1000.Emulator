@@ -24,6 +24,7 @@ iofunc_f io_console_uart;
 iofunc_f io_duart;
 iofunc_f io_rtc;
 iofunc_f io_scsi_d;
+iofunc_f io_scsi_t;
 void ioc_console_init(struct sim *);
 void ioc_duart_init(struct sim *);
 

@@ -253,12 +253,21 @@ mem(const char *op, unsigned int address, memfunc_f *func, unsigned int value)
 		return io_resha_eeprom(op, address, func, value);
 	if (0x9303e300 == (address & ~0xff)) // resha eeprom page
 		return io_resha_eeprom(op, address, func, value);
-	if (0x9303e800 == (address & ~0x1f)) // SCSI A
+
+	if (0x9303e800 == (address & ~0x1f)) // SCSI D
 		return io_scsi_d(op, address, func, value);
-	if (0x9303e100 == (address & ~0x8)) // SCSI A DMA
+	if (0x9303e100 == (address & ~0x8)) // SCSI D DMA
 		return io_scsi_d(op, address, func, value);
-	if (0x9303e000 == address) // SCSI A CTL
+	if (0x9303e000 == address) // SCSI D CTL
 		return io_scsi_d(op, address, func, value);
+
+	if (0x9303ec00 == (address & ~0x1f)) // SCSI T
+		return io_scsi_t(op, address, func, value);
+	if (0x9303e008 == address) // SCSI T DMA
+		return io_scsi_t(op, address, func, value);
+	if (0x9303e002 == address) // SCSI T CTL
+		return io_scsi_t(op, address, func, value);
+
 	if (0x93030000 == (address & ~0xffff)) // SCSI A DMA
 		return io_resha_wcard(op, address, func, value);
 	if (0xa1000000 == (address & ~0xfffff))
