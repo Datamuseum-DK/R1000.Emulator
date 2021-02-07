@@ -10,6 +10,7 @@ OBJS	+= ioc_cli.o
 OBJS	+= ioc_duart.o
 OBJS	+= ioc_main.o
 OBJS	+= ioc_rtc.o
+OBJS	+= ioc_scsi_d.o
 
 CFLAGS	+= -Wall -Werror -pthread -g -O0
 CFLAGS	+= -I. -IInfra -IMusashi -IIoc -DMUSASHI_CNF='"musashi_conf.h"'
@@ -62,6 +63,7 @@ ioc_duart.o:		${CLI_INCL} Ioc/ioc.h Ioc/ioc_duart.c
 ioc_console.o:		${CLI_INCL} Ioc/ioc.h Ioc/ioc_console.c
 ioc_main.o:		${M68K_INCL} Ioc/ioc.h Ioc/ioc_main.c
 ioc_rtc.o:		${CLI_INCL} Ioc/ioc.h Ioc/ioc_rtc.c
+ioc_scsi_d.o:		${CLI_INCL} Ioc/ioc.h Ioc/ioc_scsi_d.c
 
 m68kops.o:		Musashi/m68kcpu.h m68kops.h m68kops.c
 m68kops.h m68kops.c:	m68kmake Ioc/musashi_conf.h

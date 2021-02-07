@@ -1,9 +1,12 @@
+#include <fcntl.h>
 #include <stdio.h>
 #include <stdint.h>
 #include <stdlib.h>
 #include <stdarg.h>
+#include <string.h>
 #include <sys/endian.h>
 #include <time.h>
+#include <unistd.h>
 #include "r1000.h"
 #include "ioc.h"
 #include "m68k.h"
@@ -19,6 +22,35 @@ static uint8_t ram[1<<19];
 
 uintmax_t ioc_nins;
 unsigned int ioc_pc;
+
+void v_matchproto_(cli_func_f)
+cli_ioc_main(struct cli *cli)
+{
+	int fd;
+
+	if (cli->help) {
+		cli_io_help(cli, "IOC main", 0, 1);
+		return;
+	}
+
+	cli->ac--;
+	cli->av++;
+
+	fd = open("/tmp/_.ram", O_WRONLY|O_CREAT|O_TRUNC, 0644);
+	assert (fd>0);
+	write(fd, ram, sizeof(ram));
+
+	while (cli->ac && !cli->status) {
+		cli_unknown(cli);
+		break;
+	}
+}
+
+void
+dma_write(unsigned address, void *src, unsigned len)
+{
+	memcpy(ram+address, src, len);
+}
 
 /* Exit with an error message.  Use printf syntax. */
 void exit_error(char* fmt, ...)
@@ -148,6 +180,24 @@ io_resha_eeprom(
 
 /**********************************************************************/
 
+static unsigned int v_matchproto_(iofunc_f)
+io_resha_wcard(
+    const char *op,
+    unsigned int address,
+    memfunc_f *func,
+    unsigned int value
+)
+{
+	static uint8_t bla[1<<16];
+
+	IO_TRACE_WRITE(2, "RESHA_WCARD");
+	value = func(op, bla, address & 0xffff, value);
+	IO_TRACE_READ(2, "RESHA_WCARD");
+	return (value);
+}
+
+/**********************************************************************/
+
 static unsigned int
 mem(const char *op, unsigned int address, memfunc_f *func, unsigned int value)
 {
@@ -161,6 +211,14 @@ mem(const char *op, unsigned int address, memfunc_f *func, unsigned int value)
 		return io_resha_eeprom(op, address, func, value);
 	if (0x9303e300 == (address & ~0xff)) // resha eeprom page
 		return io_resha_eeprom(op, address, func, value);
+	if (0x9303e800 == (address & ~0x1f)) // SCSI A
+		return io_scsi_d(op, address, func, value);
+	if (0x9303e100 == (address & ~0x8)) // SCSI A DMA
+		return io_scsi_d(op, address, func, value);
+	if (0x9303e000 == address) // SCSI A CTL
+		return io_scsi_d(op, address, func, value);
+	if (0x93030000 == (address & ~0xffff)) // SCSI A DMA
+		return io_resha_wcard(op, address, func, value);
 	if (0xa1000000 == (address & ~0xffff))
 		return (0);
 	if (0xffff8000 == (address & ~0xfff))
@@ -273,7 +331,7 @@ cpu_instr_callback(unsigned int pc)
 	if (r1000sim->do_trace) {
 		instr_size = m68k_disassemble(buff, pc, IOC_CPU_TYPE);
 		make_hex(buff2, pc, instr_size);
-		trace(1, "E %03x: %-20s: %s\n", pc, buff2, buff);
+		trace(1, "E %08x: %-20s: %s\n", pc, buff2, buff);
 	}
 	if (pc == 0x800000b4) {
 		a6 =  m68k_get_reg(NULL, M68K_REG_A6);

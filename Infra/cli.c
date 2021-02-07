@@ -153,6 +153,7 @@ static const struct cli_cmds {
 	{ "console",		cli_ioc_console },
 	{ "duart",		cli_ioc_duart },
 	{ "reset",		cli_ioc_reset },
+	{ "ioc",		cli_ioc_main },
 	{ NULL,			NULL },
 };
 
