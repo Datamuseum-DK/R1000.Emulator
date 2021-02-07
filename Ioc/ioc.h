@@ -23,10 +23,13 @@ typedef unsigned int iofunc_f(
 iofunc_f io_console_uart;
 iofunc_f io_duart;
 iofunc_f io_rtc;
+iofunc_f io_scsi_d_reg;
 iofunc_f io_scsi_d;
 iofunc_f io_scsi_t;
 void ioc_console_init(struct sim *);
 void ioc_duart_init(struct sim *);
+void ioc_scsi_d_init(struct sim *);
+void ioc_init(struct sim *);
 
 extern uintmax_t ioc_nins;
 extern unsigned ioc_pc;
@@ -49,7 +52,8 @@ void dma_write(unsigned segment, unsigned address, void *src, unsigned len);
 /**********************************************************************/
 
 #define INTERRUPT_TABLE \
-	IRQ_VECTOR(CONSOLE_BREAK, L67, 0x42)
+	IRQ_VECTOR(CONSOLE_BREAK, L67, 0x42) \
+	IRQ_VECTOR(SCSI_D, L67, 0x91)
 
 struct irq_vector;
 
@@ -63,7 +67,3 @@ extern unsigned irq_level;
 int irq_raise(struct irq_vector *vp);
 int irq_lower(struct irq_vector *vp);
 unsigned irq_getvector(void);
-
-
-
-

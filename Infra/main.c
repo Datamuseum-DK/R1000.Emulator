@@ -93,9 +93,7 @@ main(int argc, char **argv)
 
 	r1000sim = sim_new();
 	cs = r1000sim;
-
-	ioc_console_init(cs);
-	ioc_duart_init(cs);
+	ioc_init(cs);
 
 	while ((ch = getopt(argc, argv, "f:ht:T:")) != -1) {
 		switch (ch) {

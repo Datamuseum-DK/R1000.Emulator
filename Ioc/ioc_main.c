@@ -302,7 +302,7 @@ mem(const char *op, unsigned int address, memfunc_f *func, unsigned int value)
 		return io_resha_eeprom(op, address, func, value);
 
 	if (0x9303e800 == (address & ~0x1f)) // SCSI D
-		return io_scsi_d(op, address, func, value);
+		return io_scsi_d_reg(op, address, func, value);
 	if (0x9303e100 == (address & ~0x8)) // SCSI D DMA
 		return io_scsi_d(op, address, func, value);
 	if (0x9303e000 == address) // SCSI D CTL
@@ -585,10 +585,18 @@ main_ioc(void *priv)
 		if (irq_level != last_irq_level) {
 			last_irq_level = irq_level;
 			m68k_set_irq(last_irq_level);
-			trace(1, "IRQ level %x", last_irq_level);
+			trace(1, "IRQ level %x\n", last_irq_level);
 		}
 		m68k_execute(1);
 	}
 
 	return NULL;
+}
+
+void
+ioc_init(struct sim *cs)
+{
+	ioc_console_init(cs);
+	ioc_duart_init(cs);
+	ioc_scsi_d_init(cs);
 }

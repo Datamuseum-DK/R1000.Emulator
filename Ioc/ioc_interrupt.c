@@ -33,7 +33,7 @@ unsigned irq_level = 0x0;
 int
 irq_raise(struct irq_vector *vp)
 {
-	trace(4, "IRQ +%s", vp->name);
+	trace(4, "IRQ +%s\n", vp->name);
 	AZ(pthread_mutex_lock(&irq_mtx));
 	AZ(vp->pending);
 	vp->pending = 1;
@@ -48,7 +48,7 @@ irq_raise(struct irq_vector *vp)
 int
 irq_lower(struct irq_vector *vp)
 {
-	trace(4, "IRQ -%s", vp->name);
+	trace(4, "IRQ -%s\n", vp->name);
 	AZ(pthread_mutex_lock(&irq_mtx));
 	AN(vp->pending);
 	vp->pending = 0;
