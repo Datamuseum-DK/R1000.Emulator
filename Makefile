@@ -8,6 +8,7 @@ OBJS	+= m68kcpu.o m68kdasm.o m68kops.o softfloat.o
 OBJS	+= ioc_console.o
 OBJS	+= ioc_cli.o
 OBJS	+= ioc_duart.o
+OBJS	+= ioc_interrupt.o
 OBJS	+= ioc_main.o
 OBJS	+= ioc_rtc.o
 OBJS	+= ioc_scsi_d.o
@@ -71,6 +72,7 @@ softfloat.o:		${M68K_INCL} Musashi/softfloat/softfloat.c
 ioc_cli.o:		${CLI_INCL} Ioc/ioc.h Ioc/ioc_cli.c
 ioc_duart.o:		${CLI_INCL} Ioc/ioc.h Ioc/ioc_duart.c
 ioc_console.o:		${CLI_INCL} Ioc/ioc.h Ioc/ioc_console.c
+ioc_interrupt.o:	${CLI_INCL} Ioc/ioc.h Ioc/ioc_interrupt.c
 ioc_main.o:		${M68K_INCL} Ioc/ioc.h Ioc/ioc_main.c
 ioc_rtc.o:		${CLI_INCL} Ioc/ioc.h Ioc/ioc_rtc.c
 ioc_scsi_d.o:		${CLI_INCL} Ioc/ioc.h Ioc/ioc_scsi_d.c

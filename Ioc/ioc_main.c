@@ -71,6 +71,12 @@ dma_write(unsigned segment, unsigned address, void *src, unsigned len)
 	v = be32dec(map_dma_in + u * 4);
 	trace(2, "DMAMAP %08x: %08x -> %08x\n", address, u, v);
 	memcpy(ram+v, src, len);
+
+	// Patch delay routines faster
+	if (ram[0x66d3] == 0x23)
+		ram[0x66d3] = 0;
+	if (ram[0x5d1a] == 0x05)
+		ram[0x5d1a] = 1;
 }
 
 static unsigned int v_matchproto_(iofunc_f)
@@ -273,9 +279,14 @@ io_irq_vector(
 static unsigned int
 mem(const char *op, unsigned int address, memfunc_f *func, unsigned int value)
 {
+	unsigned retval;
+
 	if (ioc_fc == 7 && op[0] != 'D') {
-		trace(1, "CPU_SPACE %08x %s %08x %x\n", ioc_pc, op, address, value);
+		retval = irq_getvector();
+		trace(1, "IRQ_VECTOR %x (%08x %s %08x %x)\n",
+		    retval, ioc_pc, op, address, value);
 		assert (address == 0xfffffffe);
+		return (retval);
 	}
 	if (address < 0x8000 && ioc_nins < 2)
 		return func(op, ioc_eeprom, address & 0x7fffffff, value);
@@ -486,6 +497,7 @@ void *
 main_ioc(void *priv)
 {
 	FILE* fhandle;
+	unsigned last_irq_level = 0;
 
 	(void)priv;
 	setbuf(stdout, NULL);
@@ -520,6 +532,12 @@ main_ioc(void *priv)
 
 	// Patch UART delay-loop much shorter
 	ioc_eeprom[0x34c] = 0;
+
+	// Patch RESHA delay routine
+	resha_eeprom[0x458c] = 0;
+	resha_eeprom[0x458d] = 1;
+
+	// See also patches in dma_write()
 
 	insert_jump(0x800001e4, 0x8000021a); // EEPROM CHECKSUM
 	insert_jump(0x800003a4, 0x80000546); // 512k RAM Test
@@ -562,6 +580,11 @@ main_ioc(void *priv)
 		// 100000 is usually a good value to start at, then work from there.
 
 		// Note that I am not emulating the correct clock speed!
+		if (irq_level != last_irq_level) {
+			last_irq_level = irq_level;
+			m68k_set_irq(last_irq_level);
+			trace(1, "IRQ level %x", last_irq_level);
+		}
 		m68k_execute(1);
 	}
 

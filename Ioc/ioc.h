@@ -45,3 +45,25 @@ void dma_write(unsigned segment, unsigned address, void *src, unsigned len);
 			trace(level, prefix " %08x %s %08x %x\n",	\
 			    ioc_pc, op, address, value);		\
 	} while(0)
+
+/**********************************************************************/
+
+#define INTERRUPT_TABLE \
+	IRQ_VECTOR(CONSOLE_BREAK, L67, 0x42)
+
+struct irq_vector;
+
+#define IRQ_VECTOR(upper, level, vector) \
+	extern struct irq_vector IRQ_##upper;
+INTERRUPT_TABLE
+#undef IRQ_VECTOR
+
+extern unsigned irq_level;
+
+void irq_raise(struct irq_vector *vp);
+void irq_lower(struct irq_vector *vp);
+unsigned irq_getvector(void);
+
+
+
+
