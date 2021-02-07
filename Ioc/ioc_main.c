@@ -21,13 +21,27 @@ static uint8_t resha_eeprom[32768];
 static uint8_t ram[1<<19];
 static uint8_t map_dma_in[1<<13];
 
+static uint8_t irq_vector[2] = { 0x50, 0x00 };
+
+unsigned ioc_fc;
+
 uintmax_t ioc_nins;
 unsigned int ioc_pc;
+
+static void
+dump_ram(void)
+{
+	int fd;
+
+	fd = open("/tmp/_.ram", O_WRONLY|O_CREAT|O_TRUNC, 0644);
+	assert (fd>0);
+	(void)write(fd, ram, sizeof(ram));
+	close(fd);
+}
 
 void v_matchproto_(cli_func_f)
 cli_ioc_main(struct cli *cli)
 {
-	int fd;
 
 	if (cli->help) {
 		cli_io_help(cli, "IOC main", 0, 1);
@@ -37,9 +51,7 @@ cli_ioc_main(struct cli *cli)
 	cli->ac--;
 	cli->av++;
 
-	fd = open("/tmp/_.ram", O_WRONLY|O_CREAT|O_TRUNC, 0644);
-	assert (fd>0);
-	write(fd, ram, sizeof(ram));
+	dump_ram();
 
 	while (cli->ac && !cli->status) {
 		cli_unknown(cli);
@@ -240,9 +252,31 @@ io_resha_wcard(
 
 /**********************************************************************/
 
+static unsigned int v_matchproto_(iofunc_f)
+io_irq_vector(
+    const char *op,
+    unsigned int address,
+    memfunc_f *func,
+    unsigned int value
+)
+{
+
+	IO_TRACE_WRITE(2, "IRQ_VECTOR");
+	value = func(op, irq_vector, address & 0x1, value);
+	IO_TRACE_READ(2, "IRQ_VECTOR");
+	return (value);
+}
+
+
+/**********************************************************************/
+
 static unsigned int
 mem(const char *op, unsigned int address, memfunc_f *func, unsigned int value)
 {
+	if (ioc_fc == 7 && op[0] != 'D') {
+		trace(1, "CPU_SPACE %08x %s %08x %x\n", ioc_pc, op, address, value);
+		assert (address == 0xfffffffe);
+	}
 	if (address < 0x8000 && ioc_nins < 2)
 		return func(op, ioc_eeprom, address & 0x7fffffff, value);
 	if (address <= sizeof ram)
@@ -304,6 +338,8 @@ mem(const char *op, unsigned int address, memfunc_f *func, unsigned int value)
 		return (0);
 	if (0xffffff00 == address)	// IO_READ_SENSE_p25
 		return (0);
+	if (0xfffffffe == address)	// IRQ_VECTOR?
+		return io_irq_vector(op, address, func, value);
 
 	exit_error("Attempted memory at address %08x", address);
 	return (0);
@@ -325,7 +361,7 @@ m68k_read_memory_16(unsigned int address)
 unsigned int
 m68k_read_disassembler_16(unsigned int address)
 {
-	return mem("Rw", address, rdword, 0);
+	return mem("Dw", address, rdword, 0);
 }
 
 unsigned int
@@ -337,7 +373,7 @@ m68k_read_memory_32(unsigned int address)
 unsigned int
 m68k_read_disassembler_32(unsigned int address)
 {
-	return mem("Rl", address, rdlong, 0);
+	return mem("Dl", address, rdlong, 0);
 }
 
 /* Write data to RAM or a device */
@@ -367,7 +403,7 @@ void make_hex(char* buff, unsigned int pc, unsigned int length)
 
 	for(;length>0;length -= 2)
 	{
-		sprintf(ptr, "%04x", m68k_read_memory_16(pc));
+		sprintf(ptr, "%04x", m68k_read_disassembler_16(pc));
 		pc += 2;
 		ptr += 4;
 		if(length > 2)
@@ -390,9 +426,14 @@ cpu_instr_callback(unsigned int pc)
 		make_hex(buff2, pc, instr_size);
 		trace(1, "E %08x: %-20s: %s\n", pc, buff2, buff);
 	}
+	if (pc == 0x80000088) {
+		// hit self-test fail, stop tracing
+		r1000sim->do_trace = 0;
+	}
 	if (pc == 0x800000b4) {
 		a6 =  m68k_get_reg(NULL, M68K_REG_A6);
 		printf("Self test at 0x%x failed\n", a6);
+		dump_ram();
 		exit(2);
 	}
 	if (pc == 0x0000a090) {
@@ -401,6 +442,7 @@ cpu_instr_callback(unsigned int pc)
 	}
 	if (pc == 0x80004d08) {
 		printf("Hit debugger\n");
+		dump_ram();
 		exit(2);
 	}
 }

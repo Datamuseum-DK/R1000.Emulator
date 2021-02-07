@@ -10,15 +10,13 @@ https://datamuseum.dk/wiki/Rational/R1000s400
 
 3. Set the path in `Ioc/scsi_d.c` to that file.
 
-4. `kldload nmdm` if not already loaded
+4. In a separate window: `tail -F _.console`
 
-5. In a separate window: `cu -l /dev/nmdm0B`
+5. Fix `/critter/_r1000` in Makefile to where you want a gigabyte of logfile
 
-6. Fix `/critter/_r1000` in Makefile to where you want a gigabyte of logfile
+6. `make`
 
-7. `make`
-
-8. Wait for 16195351 million instructions and get:
+7. Wait for 16195351 million instructions and get:
 
 ```
 	Boot from (Tn or Dn)  [D0] : ^@

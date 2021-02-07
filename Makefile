@@ -31,11 +31,12 @@ CLI_INCL = \
 	Infra/r1000.h \
 	Infra/elastic.h
 
+#		"console serial /dev/nmdm0A" \
+#
 test:	r1000 ${BINFILES}
 	./r1000 \
 		-T /critter/_r1000 \
 		-t 3 \
-		"console serial /dev/nmdm0A" \
 		"console > _.console" \
 		"duart > _.duart" \
 		"reset" \
