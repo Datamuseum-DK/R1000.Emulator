@@ -285,8 +285,10 @@ mem(const char *op, unsigned int address, memfunc_f *func, unsigned int value)
 		retval = irq_getvector();
 		trace(1, "IRQ_VECTOR %x (%08x %s %08x %x)\n",
 		    retval, ioc_pc, op, address, value);
-		assert (address == 0xfffffffe);
-		return (retval);
+		if (address == 0xfffffffe)
+			return (retval);
+		assert (address == 0xfffffffc);
+		return (0x51);
 	}
 	if (address < 0x8000 && ioc_nins < 2)
 		return func(op, ioc_eeprom, address & 0x7fffffff, value);

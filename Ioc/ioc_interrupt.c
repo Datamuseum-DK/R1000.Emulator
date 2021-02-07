@@ -30,7 +30,7 @@ static pthread_mutex_t irq_mtx = PTHREAD_MUTEX_INITIALIZER;
 static unsigned cur_vector = DEFAULT_VECTOR;
 unsigned irq_level = 0x0;
 
-void
+int
 irq_raise(struct irq_vector *vp)
 {
 	trace(4, "IRQ +%s", vp->name);
@@ -42,9 +42,10 @@ irq_raise(struct irq_vector *vp)
 	cur_vector = vp->vector;
 	irq_level = vp->level;
 	AZ(pthread_mutex_unlock(&irq_mtx));
+	return (1);
 }
 
-void
+int
 irq_lower(struct irq_vector *vp)
 {
 	trace(4, "IRQ -%s", vp->name);
@@ -61,6 +62,7 @@ irq_lower(struct irq_vector *vp)
 		irq_level = 0;
 	}
 	AZ(pthread_mutex_unlock(&irq_mtx));
+	return (0);
 }
 
 unsigned

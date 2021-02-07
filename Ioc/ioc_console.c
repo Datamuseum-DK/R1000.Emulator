@@ -27,6 +27,8 @@ static struct cons {
 	uint8_t		status;
 	uint8_t		rxhold;
 	uint8_t		txhold;
+	int		txbreak;
+	int		loopback;
 	unsigned	updated;
 } cons[1];
 
@@ -82,6 +84,7 @@ static void*
 thr_console_tx(void *priv)
 {
 	(void)priv;
+	int irq_state = 0;
 
 	AZ(pthread_mutex_lock(&cons_mtx));
 	while (1) {
@@ -90,7 +93,19 @@ thr_console_tx(void *priv)
 			    &cons_cond, &cons_mtx));
 		}
 		cons->updated = 0;
-		if (!(cons->status & 1)) {		// tx-hold was filled
+		cons->txbreak = cons->cmd & 0x08;
+		cons->loopback = (cons->cmd & 0xc0) == 0x80;
+		if (cons->txbreak && cons->loopback && !irq_state) {
+			cons->status |= 0x22;	// break condition
+			irq_state = irq_raise(&IRQ_CONSOLE_BREAK);
+		}
+		if ((!cons->txbreak || !cons->loopback) && irq_state) {
+			cons->status &= ~0x20;	// break condition
+			irq_state = irq_lower(&IRQ_CONSOLE_BREAK);
+		}
+		if (cons->txbreak)
+			continue;
+		if (!(cons->status & 0x1)) {		// tx-hold was filled
 			switch (cons->cmd & 0xc0) {
 			case 0x00: // Normal mode
 				elastic_put(
@@ -107,6 +122,9 @@ thr_console_tx(void *priv)
 				break;
 			}
 			cons->status |= 1;		// tx-hold empty
+			AZ(pthread_mutex_unlock(&cons_mtx));
+			usleep(1000);
+			AZ(pthread_mutex_lock(&cons_mtx));
 			cons->status |= 4;		// tx-shift empty
 		}
 	}
@@ -156,10 +174,11 @@ io_console_uart(
 			cons->cmd = value;
 			if (value & 0x1)
 				cons->status |= 1;	// tx-hold empty
+			if (!(value & 0x4))
+				cons->status &= ~2;	// rx-hold empty
 		} else {
 			value = cons->cmd;
-		}
-		break;
+		} break;
 	default:
 		break;
 	}

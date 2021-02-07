@@ -60,8 +60,8 @@ INTERRUPT_TABLE
 
 extern unsigned irq_level;
 
-void irq_raise(struct irq_vector *vp);
-void irq_lower(struct irq_vector *vp);
+int irq_raise(struct irq_vector *vp);
+int irq_lower(struct irq_vector *vp);
 unsigned irq_getvector(void);
 
 
