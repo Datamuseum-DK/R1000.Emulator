@@ -47,7 +47,11 @@ Disassembly of the IOC EEPROM: http://datamuseum.dk/aa/r1k_dfs/be/bed92cf60.html
 
 Disassembly of the RESHA EEPROM: http://datamuseum.dk/aa/r1k_dfs/f3/f3d8d4065.html
 
-Disassembly of the loaded kernel: http://datamuseum.dk/aa/r1k_dfs/77/77d6c3277.html
+Disassembly of the loaded KERNEL.0: http://datamuseum.dk/aa/r1k_dfs/77/77d6c3277.html
+
+Disassembly of the loaded FS.0: http://datamuseum.dk/aa/r1k_dfs/44/442c504ed.html
+
+Disassembly of the loaded PROGRAM.0: http://datamuseum.dk/aa/r1k_dfs/f1/f15447000.html
 
 Hat-Tip to @kstenerud: The 68k20 IOC is emulated with his https://github.com/kstenerud/Musashi
 
