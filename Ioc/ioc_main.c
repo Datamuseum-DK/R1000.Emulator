@@ -302,6 +302,8 @@ mem(const char *op, unsigned int address, memfunc_f *func, unsigned int value)
 		return (0);
 	if (0xfffffe00 == address)	// IO_CPU_CONTROL_PSU_MARGIN_BREG4_p23
 		return (0);
+	if (0xffffff00 == address)	// IO_READ_SENSE_p25
+		return (0);
 
 	exit_error("Attempted memory at address %08x", address);
 	return (0);
