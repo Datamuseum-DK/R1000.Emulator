@@ -38,7 +38,15 @@ test:	r1000 ${BINFILES}
 		"console serial /dev/nmdm0A" \
 		"console > _.console" \
 		"duart > _.duart" \
-		"reset"
+		"reset" \
+		'console match expect "Boot from (Tn or Dn)  [D0] : "' \
+		'console << ""' \
+		'console match expect "Kernel program (0,1,2) [0] : "' \
+		'console << ""' \
+		'console match expect "File system    (0,1,2) [0] : "' \
+		'console << ""' \
+		'console match expect "User program   (0,1,2) [0] : "' \
+		'console << ""' 
 
 r1000:	${OBJS}
 	${CC} -o r1000 ${CFLAGS} ${LDFLAGS} ${OBJS}

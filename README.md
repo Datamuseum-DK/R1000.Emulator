@@ -18,9 +18,7 @@ https://datamuseum.dk/wiki/Rational/R1000s400
 
 7. `make`
 
-8. Type return in the `cu` window four times
-
-9. Wait for approx 17 million instructions and get:
+8. Wait for 16195351 million instructions and get:
 
 ```
 	I/O Processor Kernel Crash: error 0806 (hex) at PC=000049F8
@@ -33,6 +31,8 @@ https://datamuseum.dk/wiki/Rational/R1000s400
 	VBR 00000000 ICCR 00000009 ICAR 00000000 XSFC 0 XDFC 0 
 	@
 ```
+
+(I suspect this is the kernel getting to either the VME or LANCE ethernet chip initialization.)
 
 Disassembly of the IOC EEPROM: http://datamuseum.dk/aa/r1k_dfs/be/bed92cf60.html
 

@@ -395,6 +395,10 @@ cpu_instr_callback(unsigned int pc)
 		printf("Self test at 0x%x failed\n", a6);
 		exit(2);
 	}
+	if (pc == 0x0000a090) {
+		// hit trap, stop tracing
+		r1000sim->do_trace = 0;
+	}
 	if (pc == 0x80004d08) {
 		printf("Hit debugger\n");
 		exit(2);
