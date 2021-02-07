@@ -418,13 +418,29 @@ cpu_instr_callback(unsigned int pc)
 	char buff[100];
 	char buff2[100];
 	unsigned int instr_size, a6;
+	static unsigned int last_pc;
+	static unsigned repeats;
 
 	ioc_pc = pc;
 	ioc_nins++;
 	if (r1000sim->do_trace) {
 		instr_size = m68k_disassemble(buff, pc, IOC_CPU_TYPE);
 		make_hex(buff2, pc, instr_size);
-		trace(1, "E %08x: %-20s: %s\n", pc, buff2, buff);
+		if (pc != last_pc) {
+			if (repeats)
+				trace(1, "E … × %x\n", repeats);
+			repeats = 0;
+			trace(
+			    1,
+			    "E %08x: %-20s: %s\n",
+			    pc,
+			    buff2,
+			    buff
+			);
+			last_pc = pc;
+		} else {
+			repeats++;
+		}
 	}
 	if (pc == 0x80000088) {
 		// hit self-test fail, stop tracing
