@@ -19,6 +19,7 @@ void exit_error(char* fmt, ...);
 static uint8_t ioc_eeprom[32768];
 static uint8_t resha_eeprom[32768];
 static uint8_t ram[1<<19];
+static uint8_t map_dma_in[1<<13];
 
 uintmax_t ioc_nins;
 unsigned int ioc_pc;
@@ -46,11 +47,51 @@ cli_ioc_main(struct cli *cli)
 	}
 }
 
+/**********************************************************************/
+
 void
-dma_write(unsigned address, void *src, unsigned len)
+dma_write(unsigned segment, unsigned address, void *src, unsigned len)
 {
-	memcpy(ram+address, src, len);
+	unsigned int u, v;
+
+	u = segment << 9;
+	u |= (address >> 10) & 0x1ff;
+	v = be32dec(map_dma_in + u * 4);
+	trace(2, "DMAMAP %08x: %08x -> %08x\n", address, u, v);
+	memcpy(ram+v, src, len);
 }
+
+static unsigned int v_matchproto_(iofunc_f)
+io_map_dma_in(
+    const char *op,
+    unsigned int address,
+    memfunc_f *func,
+    unsigned int value
+)
+{
+
+	IO_TRACE_WRITE(2, "MAP_DMA_IN");
+	value = func(op, map_dma_in, address & 0x1fff, value);
+	IO_TRACE_READ(2, "MAP_DMA_IN");
+	return (value);
+}
+
+static unsigned int v_matchproto_(iofunc_f)
+io_map_dma_out(
+    const char *op,
+    unsigned int address,
+    memfunc_f *func,
+    unsigned int value
+)
+{
+
+	IO_TRACE_WRITE(2, "MAP_DMA_OUT");
+	// value = func(op, map_dma_out, (address>>8) & 0x1fff, value);
+	IO_TRACE_READ(2, "MAP_DMA_OUT");
+	return (value);
+}
+
+/**********************************************************************/
 
 /* Exit with an error message.  Use printf syntax. */
 void exit_error(char* fmt, ...)
@@ -196,6 +237,7 @@ io_resha_wcard(
 	return (value);
 }
 
+
 /**********************************************************************/
 
 static unsigned int
@@ -219,14 +261,18 @@ mem(const char *op, unsigned int address, memfunc_f *func, unsigned int value)
 		return io_scsi_d(op, address, func, value);
 	if (0x93030000 == (address & ~0xffff)) // SCSI A DMA
 		return io_resha_wcard(op, address, func, value);
-	if (0xa1000000 == (address & ~0xffff))
-		return (0);
+	if (0xa1000000 == (address & ~0xfffff))
+		return io_map_dma_in(op, address, func, value);
+	if (0xa2000000 == (address & 0xff000000))
+		return io_map_dma_out(op, address, func, value);
 	if (0xffff8000 == (address & ~0xfff))
 		return io_rtc(op, address, func, value);
 	if (0xffff9000 == (address & ~0xfff))
 		return io_console_uart(op, address, func, value);
 	if (0xffffa000 == (address & ~0xfff))
 		return io_duart(op, address, func, value);
+	if (0xffffb000 == (address & ~0xfff))
+		return (0);		// EXT MODEM
 	if (0xffffff03 == address)	// ?
 		return (0);
 	if (0xfffff200 == address)	// IO_FRONT_PANEL_LED_p27
@@ -336,6 +382,10 @@ cpu_instr_callback(unsigned int pc)
 	if (pc == 0x800000b4) {
 		a6 =  m68k_get_reg(NULL, M68K_REG_A6);
 		printf("Self test at 0x%x failed\n", a6);
+		exit(2);
+	}
+	if (pc == 0x80004d08) {
+		printf("Hit debugger\n");
 		exit(2);
 	}
 }

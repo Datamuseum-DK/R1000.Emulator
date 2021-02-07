@@ -1,6 +1,12 @@
 _*
 *.o
+
 m68kmake
 m68kops.c
 m68kops.h
+Musashi
 
+IOC_EEPROM.bin
+RESHA_EEPROM.bin
+
+r1000

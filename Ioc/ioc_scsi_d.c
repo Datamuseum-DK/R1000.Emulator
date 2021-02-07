@@ -1,31 +1,35 @@
 #include <fcntl.h>
 #include <stdio.h>
-#include <stdint.h>
-#include <stdlib.h>
-#include <stdarg.h>
-#include <sys/endian.h>
-#include <time.h>
 #include <unistd.h>
 #include "r1000.h"
 #include "ioc.h"
-#include "m68k.h"
 
 static uint8_t sector[1<<10];
+
+static int disk_fd = -1;
+// #define DISK_IMAGE "/critter/DDHF/R1000/R1K_Seagate/R1K_Seagate0.BIN"
+
+// This file is a copy of https://datamuseum.dk/bits/30000551
+#define DISK_IMAGE "/critter/DDHF/20191107_R1K_TAPES/R1K/PE_R1K_Disk0.dd"
 
 static void
 get_sector(unsigned secno)
 {
-	static int fd;
+	off_t off;
+	ssize_t sz;
 
-	if (!fd) {
-		fd = open("/critter/DDHF/R1000/R1K_Seagate/R1K_Seagate0.BIN", O_RDONLY);
-		assert(fd > 0);
+	if (disk_fd < 0) {
+		disk_fd = open(DISK_IMAGE, O_RDONLY);
+		assert(disk_fd > 0);
 	}
-	lseek(fd, secno << 10, 0);
-	read(fd, sector, sizeof sector);
+	off = (off_t)secno << 10;
+	assert(lseek(disk_fd, off, 0) == off);
+	sz = read(disk_fd, sector, sizeof sector);
+	assert(sz >= 0);
+	assert((size_t)sz == sizeof sector);
 }
 
-static const char *scsi_reg[] = {
+static const char * const scsi_reg[] = {
 	"00_OWN_ID_CDB_SIZE",
 	"01_CONTROL",
 	"02_TIMEOUT_PERIOD",
@@ -124,15 +128,17 @@ scsi_cmd(void)
 		dst = scsi_d[0xe101];
 		dst |= scsi_d[0xe100] << 8;
 		dst |= scsi_d[0xe109] << 16;
-		dst |= scsi_d[0xe108] << 24;
+		dst |= (unsigned)scsi_d[0xe108] << 24;
 		dst &= (1<<19)-1;
-		dma_write(dst, sector, sizeof sector);
+		dma_write(3, dst, sector, sizeof sector);
 		scsi_d[0xe817] = 0x16;
 		trace(2, "SCSI_D READ6 %x -> %x\n", lba, dst);
-		printf("SCSI_D READ6 %x -> %x\n", lba, dst);
+		return;
+	case 0x0d:	// Vendor Specific
+		scsi_d[0xe817] = 0x42;
 		return;
 	case 0x28:	// READ_10
-		lba = scsi_d[0xe805] << 24;
+		lba = (unsigned)scsi_d[0xe805] << 24;
 		lba |= scsi_d[0xe806] << 16;
 		lba |= scsi_d[0xe807] << 8;
 		lba |= scsi_d[0xe808];
@@ -145,13 +151,11 @@ scsi_cmd(void)
 		dst = scsi_d[0xe101];
 		dst |= scsi_d[0xe100] << 8;
 		dst |= scsi_d[0xe109] << 16;
-		dst |= scsi_d[0xe108] << 24;
-// printf("DMA %02x %02x %02x %02x %x\n", scsi_d[0xe108], scsi_d[0xe109], scsi_d[0xe100], scsi_d[0xe101], dst);
-		dst &= (1<<19)-1;
-		dma_write(dst, sector, sizeof sector);
+		dst |= (unsigned)scsi_d[0xe108] << 24;
+		dst &= (1<<19)-1;	// Probably wrong mask.
+		dma_write(3, dst, sector, sizeof sector);
 		scsi_d[0xe817] = 0x16;
 		trace(2, "SCSI_D READ10 %x -> %x\n", lba, dst);
-		printf("SCSI_D READ10 %x -> %x\n", lba, dst);
 		return;
 	default:
 		printf("UNKNOWN SCSI 0x%02x 0x%02x\n", scsi_d[0xe818], scsi_d[0xe803]);

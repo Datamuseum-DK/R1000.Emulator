@@ -29,7 +29,7 @@ void ioc_duart_init(struct sim *);
 
 extern uintmax_t ioc_nins;
 extern unsigned ioc_pc;
-void dma_write(unsigned address, void *src, unsigned len);
+void dma_write(unsigned segment, unsigned address, void *src, unsigned len);
 
 #define IO_TRACE_WRITE(level, prefix)					\
 	do {								\
