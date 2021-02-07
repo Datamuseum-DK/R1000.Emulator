@@ -8,25 +8,27 @@
 
 #include <fcntl.h>
 #include <string.h>
+#include <unistd.h>
 
 #include "r1000.h"
 #include "ioc.h"
 #include "elastic.h"
 
-static pthread_mutex_t	ioc_console_mtx;
-static pthread_t	ioc_console_rx;
+static pthread_mutex_t	cons_mtx = PTHREAD_MUTEX_INITIALIZER;
+static pthread_cond_t	cons_cond = PTHREAD_COND_INITIALIZER;
+static pthread_t	cons_rx;
+static pthread_t	cons_tx;
 
-
-struct ioc_console {
+static struct cons {
 	struct elastic	*ep;
 	uint8_t		mode[2];
 	int		mptr;
 	uint8_t		cmd;
-	uint8_t		data;
 	uint8_t		status;
 	uint8_t		rxhold;
-	uintmax_t	next;
-} ioc_console[1];
+	uint8_t		txhold;
+	unsigned	updated;
+} cons[1];
 
 void v_matchproto_(cli_func_f)
 cli_ioc_console(struct cli *cli)
@@ -41,10 +43,10 @@ cli_ioc_console(struct cli *cli)
 	cli->av++;
 
 	while (cli->ac && !cli->status) {
-		if (cli_elastic(ioc_console->ep, cli))
+		if (cli_elastic(cons->ep, cli))
 			continue;
 		if (cli->ac >= 1 && !strcmp(cli->av[0], "test")) {
-			elastic_put(ioc_console->ep, "Hello World\r\n", -1);
+			elastic_put(cons->ep, "Hello World\r\n", -1);
 			cli->ac -= 1;
 			cli->av += 1;
 			continue;
@@ -57,20 +59,56 @@ cli_ioc_console(struct cli *cli)
 /**********************************************************************/
 
 static void*
-dev_ptr_thread(void *priv)
+thr_console_rx(void *priv)
 {
 	uint8_t buf[1];
 	ssize_t sz;
 
 	(void)priv;
 	while (1) {
-		sz = elastic_get(ioc_console->ep, buf, 1);
+		sz = elastic_get(cons->ep, buf, 1);
 		assert(sz == 1);
 
-		AZ(pthread_mutex_lock(&ioc_console_mtx));
-		ioc_console->rxhold = buf[0];
-		ioc_console->status |= 2;
-		AZ(pthread_mutex_unlock(&ioc_console_mtx));
+		AZ(pthread_mutex_lock(&cons_mtx));
+		cons->rxhold = buf[0];
+		cons->status |= 2;
+		AZ(pthread_mutex_unlock(&cons_mtx));
+	}
+}
+
+/**********************************************************************/
+
+static void*
+thr_console_tx(void *priv)
+{
+	(void)priv;
+
+	AZ(pthread_mutex_lock(&cons_mtx));
+	while (1) {
+		if (!cons->updated) {
+			AZ(pthread_cond_wait(
+			    &cons_cond, &cons_mtx));
+		}
+		cons->updated = 0;
+		if (!(cons->status & 1)) {		// tx-hold was filled
+			switch (cons->cmd & 0xc0) {
+			case 0x00: // Normal mode
+				elastic_put(
+				    cons->ep,
+				    &cons->txhold,
+				    1
+				);
+				break;
+			case 0x80: // Local Loopback mode
+				cons->rxhold = cons->txhold;
+				cons->status |= 2;
+				break;
+			default:
+				break;
+			}
+			cons->status |= 1;		// tx-hold empty
+			cons->status |= 4;		// tx-shift empty
+		}
 	}
 }
 
@@ -84,64 +122,53 @@ io_console_uart(
     unsigned int value
 )
 {
-	uint8_t chr;
 
 	(void)func;
 	IO_TRACE_WRITE(2, "CONSOLE_UART");
 
-	AZ(pthread_mutex_lock(&ioc_console_mtx));
+	AZ(pthread_mutex_lock(&cons_mtx));
 	switch (address & 3) {
 	case 0x00:	// Data
 		if (op[0] == 'W') {
-			chr = value;
-			if (!(ioc_console->cmd & 0xc0)) {
-				elastic_put(ioc_console->ep, &chr, 1);
-			} else {
-				ioc_console->rxhold = chr;
-				ioc_console->status |= 2;
-			}
-			ioc_console->status &= ~1;
-			ioc_console->next = ioc_nins + 20;
-			ioc_console->data = value;
+			cons->txhold = value;
+			cons->status &= ~1;		// tx-hold busy
+			cons->status &= ~4;		// tx-shift full
 		} else {
-			value = ioc_console->rxhold;
-			ioc_console->rxhold = 0;
-			ioc_console->status &= ~2;
+			value = cons->rxhold;
+			cons->rxhold = 0;
+			cons->status &= ~2;		// rx-hold empty
 		}
 		break;
 	case 0x01:	// Status
 		value = 0;
-		if (op[0] == 'W') {
-			;
-		} else {
-			if ((ioc_console->status & 0x5) == 1)
-				ioc_console->status |= 4;
-			if (ioc_nins >= ioc_console->next) {
-				ioc_console->next = (1ULL<<63);
-				ioc_console->status |= 1;
-			}
-			value = ioc_console->status;
-			ioc_console->status &= ~4;
-		}
+		if (op[0] == 'R')
+			value = cons->status;
 		break;
 	case 0x02:	// Mode
 		if (op[0] == 'W')
-			ioc_console->mode[ioc_console->mptr] = value;
+			cons->mode[cons->mptr] = value;
 		else
-			value = ioc_console->mode[ioc_console->mptr];
-		ioc_console->mptr ^= 1;
+			value = cons->mode[cons->mptr];
+		cons->mptr ^= 1;
 		break;
 	case 0x03:	// Command
-		if (op[0] == 'W')
-			ioc_console->cmd = value;
-		else
-			value = ioc_console->cmd;
+		if (op[0] == 'W') {
+			cons->cmd = value;
+			if (value & 0x1)
+				cons->status |= 1;	// tx-hold empty
+		} else {
+			value = cons->cmd;
+		}
 		break;
 	default:
-		WRONG();
+		break;
+	}
+	if (op[0] == 'W') {
+		cons->updated = 1;
+		AZ(pthread_cond_signal(&cons_cond));
 	}
 
-	AZ(pthread_mutex_unlock(&ioc_console_mtx));
+	AZ(pthread_mutex_unlock(&cons_mtx));
 	IO_TRACE_READ(2, "CONSOLE_UART");
 
 	return (value);
@@ -151,7 +178,7 @@ void
 ioc_console_init(struct sim *sim)
 {
 
-	ioc_console->ep = elastic_new(sim, O_RDWR);
-	AZ(pthread_mutex_init(&ioc_console_mtx, NULL));
-	AZ(pthread_create(&ioc_console_rx, NULL, dev_ptr_thread, NULL));
+	cons->ep = elastic_new(sim, O_RDWR);
+	AZ(pthread_create(&cons_rx, NULL, thr_console_rx, NULL));
+	AZ(pthread_create(&cons_tx, NULL, thr_console_tx, NULL));
 }
