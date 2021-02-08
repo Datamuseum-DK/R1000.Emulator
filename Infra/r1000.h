@@ -41,6 +41,11 @@
 #define AN(x) assert((x) != 0);
 #define WRONG() assert(__LINE__ == 0);
 
+#ifndef __printflike
+#    define __printflike(fmtarg, firstvararg) \
+     __attribute__((__format__ (__printf__, fmtarg, firstvararg)))
+#endif
+
 /*
  * In OO-light situations, functions have to match their prototype
  * even if that means not const'ing a const'able argument.
