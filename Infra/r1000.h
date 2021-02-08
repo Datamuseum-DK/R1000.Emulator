@@ -50,6 +50,7 @@
 
 struct sim;
 struct cli;
+struct callout;
 
 typedef int64_t			nanosec;
 
@@ -68,6 +69,9 @@ struct sim {
 
 	unsigned		do_trace;
 	int			fd_trace;
+
+	pthread_mutex_t		callout_mtx;
+	VTAILQ_HEAD(,callout)	callouts;
 };
 
 extern struct sim *r1000sim;
@@ -98,6 +102,12 @@ void cli_unknown(struct cli *cli);
 /* Tracing & Debugging ************************************************/
 
 void trace(int level, const char *fmt, ...) __printflike(2, 3);
+
+/* CALLOUTS ***********************************************************/
+
+void callout_signal_cond(struct sim *cs, pthread_cond_t *cond,
+    pthread_mutex_t *mtx, nanosec when, nanosec repeat);
+nanosec callout_poll(struct sim *cs);
 
 /* UTILITIES  *********************************************************/
 

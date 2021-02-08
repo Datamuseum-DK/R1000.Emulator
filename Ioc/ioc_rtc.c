@@ -6,11 +6,16 @@
  *
  */
 
+#include <pthread.h>
 #include <time.h>
 #include <sys/time.h>
 
 #include "r1000.h"
 #include "ioc.h"
+
+static pthread_mutex_t rtc_mtx = PTHREAD_MUTEX_INITIALIZER;
+static pthread_cond_t rtc_cond = PTHREAD_COND_INITIALIZER;
+static pthread_t rtc_thr;
 
 static uint8_t rtcregs[32] = {
 	0x00,	// Counter - Milliseconds
@@ -54,6 +59,87 @@ static uint8_t rtcregs[32] = {
 	0x00,	// Test Mode
 };
 
+static void
+ioc_rtc_setclock(void)
+{
+	struct timeval tv;
+	struct tm *tm;
+
+	AZ(gettimeofday(&tv, NULL));
+	rtcregs[0] = ((tv.tv_usec / 1000) % 10) * 16;
+	rtcregs[1] = (tv.tv_usec / 10000) % 10;
+	rtcregs[1] |= ((tv.tv_usec / 100000) % 10) * 16;
+	tm = gmtime(&tv.tv_sec);
+	rtcregs[2] = (tm->tm_sec % 10);
+	rtcregs[2] |= (tm->tm_sec / 10) * 16;
+	rtcregs[3] = (tm->tm_min % 10);
+	rtcregs[3] |= (tm->tm_min / 10) * 16;
+	rtcregs[4] = (tm->tm_hour % 10);
+	rtcregs[4] |= (tm->tm_hour / 10) * 16;
+	rtcregs[5] = tm->tm_wday;
+	rtcregs[6] = ((tm->tm_mday+1) % 10);
+	rtcregs[6] |= ((tm->tm_mday+1) / 10) * 16;
+	rtcregs[7] = ((tm->tm_mon+1) % 10);
+	rtcregs[7] |= ((tm->tm_mon+1) / 10) * 16;
+}
+
+static void *
+ioc_rtc_thread(void *priv)
+{
+	struct sim *cs = priv;
+
+	AZ(pthread_mutex_lock(&rtc_mtx));
+	callout_signal_cond(cs, &rtc_cond, &rtc_mtx, 1000000, 1000000);
+	while (1) {
+		AZ(pthread_cond_wait(&rtc_cond, &rtc_mtx));
+		trace(2, "RTC tick\n");
+
+		rtcregs[0x0e] |= 0x01;
+
+		rtcregs[0] += 0x10;
+		if (rtcregs[0] <= 0x90)
+			continue;
+		rtcregs[0] = 0x00;
+
+		rtcregs[1] += 0x01;
+		if ((rtcregs[1] & 0x0f) <= 0x09)
+			continue;
+		rtcregs[1] += 0x16;
+		if ((rtcregs[1] & 0xf0 ) <= 0x9)
+			continue;
+		rtcregs[1] = 0x00;
+
+		rtcregs[2] += 0x01;
+		if ((rtcregs[2] & 0x0f) <= 0x09)
+			continue;
+		rtcregs[2] += 0x16;
+		if ((rtcregs[2] & 0xf0 ) <= 0x50)
+			continue;
+		rtcregs[2] = 0x00;
+
+		rtcregs[3] += 0x01;
+		if ((rtcregs[3] & 0x0f) <= 0x09)
+			continue;
+		rtcregs[3] += 0x16;
+		if ((rtcregs[3] & 0xf0 ) <= 0x50)
+			continue;
+		rtcregs[3] = 0x00;
+
+		rtcregs[4] += 0x01;
+		if (rtcregs[4] <= 0x24) {
+			if ((rtcregs[4] & 0x0f) <= 0x09)
+				continue;
+			rtcregs[4] += 0x16;
+			continue;
+		}
+		rtcregs[4] = 0x00;
+
+		// XXX [5] wday
+		// XXX [6] mday
+		// XXX [7] mon
+	}
+}
+
 unsigned int v_matchproto_(iofunc_f)
 io_rtc(
     const char *op,
@@ -63,35 +149,25 @@ io_rtc(
 )
 {
 	int reg;
-	struct timeval tv;
-	struct tm *tm;
 
 	IO_TRACE_WRITE(2, "RTC");
 
 	reg = address & 0x1f;
-	if (op[0] == 'R' && reg < 0x8) {
-		AZ(gettimeofday(&tv, NULL));
-		rtcregs[0] = ((tv.tv_usec / 1000) % 10) * 16;
-		rtcregs[1] = (tv.tv_usec / 10000) % 10;
-		rtcregs[1] |= ((tv.tv_usec / 100000) % 10) * 16;
-		if (reg > 1) {
-			tm = gmtime(&tv.tv_sec);
-			rtcregs[2] = (tm->tm_sec % 10);
-			rtcregs[2] |= (tm->tm_sec / 10) * 16;
-			rtcregs[3] = (tm->tm_min % 10);
-			rtcregs[3] |= (tm->tm_min / 10) * 16;
-			rtcregs[4] = (tm->tm_hour % 10);
-			rtcregs[4] |= (tm->tm_hour / 10) * 16;
-			rtcregs[5] = tm->tm_wday;
-			rtcregs[6] = ((tm->tm_mday+1) % 10);
-			rtcregs[6] |= ((tm->tm_mday+1) / 10) * 16;
-			rtcregs[7] = ((tm->tm_mon+1) % 10);
-			rtcregs[7] |= ((tm->tm_mon+1) / 10) * 16;
-		}
-	}
-	value = func(op, rtcregs, address & 0x1f, value);
+	AZ(pthread_mutex_lock(&rtc_mtx));
+	value = func(op, rtcregs, reg, value);
+	AZ(pthread_mutex_unlock(&rtc_mtx));
+	if (reg == 0x0e && op[0] == 'R')
+		rtcregs[0x0e] = 0;
 
 	IO_TRACE_READ(2, "RTC");
 
 	return (value);
+}
+
+void
+ioc_rtc_init(struct sim *cs)
+{
+
+	ioc_rtc_setclock();
+	AZ(pthread_create(&rtc_thr, NULL, ioc_rtc_thread, cs));
 }

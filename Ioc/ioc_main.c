@@ -285,7 +285,7 @@ static unsigned int
 mem(const char *op, unsigned int address, memfunc_f *func, unsigned int value)
 {
 	unsigned retval;
-
+// trace(1, "MEM %s %x\n", op, address);
 	if (ioc_fc == 7 && op[0] != 'D') {
 		retval = irq_getvector();
 		trace(1, "IRQ_VECTOR %x (%08x %s %08x %x)\n",
@@ -556,9 +556,9 @@ main_ioc(void *priv)
 	//insert_jump(0x80000c1a, 0x80000d20); // Modem DUART channel
 	//insert_jump(0x80000d4e, 0x80000dd6); // Diagnostic DUART channel
 	//insert_jump(0x80000dfc, 0x80000ec4); // Clock / Calendar
-	//insert_jump(0x80000fa0, 0x80000fda); // RESHA EEProm Interface ...
+	insert_jump(0x80000fa0, 0x80000fda); // RESHA EEProm Interface ...
 	insert_return(0x80001122); // RESHA based selftests
-	insert_jump(0x800011c0, 0x800014d0); // Local interrupts
+	//insert_jump(0x800011c0, 0x800014d0); // Local interrupts
 	insert_jump(0x80001502, 0x800015ce); // Illegal reference protection
 	insert_jump(0x800015f2, 0x8000166c); // I/O bus parity
 	insert_jump(0x8000169c, 0x800016d8); // I/O bus spurious interrupts
@@ -592,7 +592,8 @@ main_ioc(void *priv)
 			m68k_set_irq(last_irq_level);
 			trace(1, "IRQ level %x\n", last_irq_level);
 		}
-		r1000sim->simclock += 50 * m68k_execute(1);
+		r1000sim->simclock += 100 * m68k_execute(1);
+		callout_poll(r1000sim);
 	}
 
 	return NULL;
@@ -605,4 +606,5 @@ ioc_init(struct sim *cs)
 	ioc_duart_init(cs);
 	ioc_scsi_d_init(cs);
 	ioc_scsi_t_init(cs);
+	ioc_rtc_init(cs);
 }

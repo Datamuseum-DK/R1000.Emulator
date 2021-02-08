@@ -54,8 +54,11 @@ sim_new(void)
 
 	AZ(pthread_mutex_init(&cs->run_mtx, NULL));
 	AZ(pthread_mutex_init(&cs->running_mtx, NULL));
+	AZ(pthread_mutex_init(&cs->callout_mtx, NULL));
 	AZ(pthread_cond_init(&cs->run_cond, NULL));
 	AZ(pthread_cond_init(&cs->wait_cond, NULL));
+	AZ(pthread_cond_init(&cs->wait_cond, NULL));
+	VTAILQ_INIT(&cs->callouts);
 
 	cs->fd_trace = -1;
 

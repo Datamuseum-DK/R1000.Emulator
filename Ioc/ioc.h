@@ -31,6 +31,7 @@ void ioc_console_init(struct sim *);
 void ioc_duart_init(struct sim *);
 void ioc_scsi_d_init(struct sim *);
 void ioc_scsi_t_init(struct sim *);
+void ioc_rtc_init(struct sim *);
 void ioc_init(struct sim *);
 
 extern uintmax_t ioc_nins;

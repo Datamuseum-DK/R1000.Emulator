@@ -1,5 +1,5 @@
 
-OBJS	= main.o cli.o
+OBJS	= main.o callout.o cli.o
 OBJS	+= elastic.o elastic_fd.o elastic_tcp.o elastic_match.o
 OBJS	+= vav.o
 
@@ -63,6 +63,7 @@ r1000:	${OBJS}
 clean:
 	rm -f *.o *.tmp r1000 m68kops.h m68kops.c m68kmake
 
+callout.o:		Infra/r1000.h Infra/callout.c
 cli.o:			Infra/r1000.h Infra/vav.h Infra/cli.c Ioc/ioc.h
 elastic.o:		Infra/r1000.h Infra/elastic.h Infra/elastic.c
 elastic_fd.o:		Infra/r1000.h Infra/elastic.h Infra/elastic_fd.c
