@@ -14,7 +14,7 @@
 #define IOC_CPU_TYPE	M68K_CPU_TYPE_68020
 
 /* Prototypes */
-void exit_error(char* fmt, ...);
+static void exit_error(char* fmt, ...);
 
 static uint8_t ioc_eeprom[32768];
 static uint8_t resha_eeprom[32768];
@@ -25,7 +25,6 @@ static uint8_t irq_vector[2] = { 0x50, 0x00 };
 
 unsigned ioc_fc;
 
-uintmax_t ioc_nins;
 unsigned int ioc_pc;
 
 static void
@@ -36,7 +35,7 @@ dump_ram(void)
 	fd = open("/tmp/_.ram", O_WRONLY|O_CREAT|O_TRUNC, 0644);
 	assert (fd>0);
 	(void)write(fd, ram, sizeof(ram));
-	close(fd);
+	(void)close(fd);
 }
 
 void v_matchproto_(cli_func_f)
@@ -68,7 +67,7 @@ dma_write(unsigned segment, unsigned address, void *src, unsigned len)
 
 	u = segment << 9;
 	u |= (address >> 10) & 0x1ff;
-	v = be32dec(map_dma_in + u * 4);
+	v = be32dec(map_dma_in + u * 4L);
 	trace(2, "DMAMAP %08x: %08x -> %08x\n", address, u, v);
 	memcpy(ram+v, src, len);
 
@@ -107,6 +106,7 @@ io_map_dma_out(
 )
 {
 
+	(void)func;
 	IO_TRACE_WRITE(2, "MAP_DMA_OUT");
 	// value = func(op, map_dma_out, (address>>8) & 0x1fff, value);
 	IO_TRACE_READ(2, "MAP_DMA_OUT");
@@ -116,7 +116,8 @@ io_map_dma_out(
 /**********************************************************************/
 
 /* Exit with an error message.  Use printf syntax. */
-void exit_error(char* fmt, ...)
+static void
+exit_error(char* fmt, ...)
 {
 	static int guard_val = 0;
 	char buff[100];
@@ -294,7 +295,7 @@ mem(const char *op, unsigned int address, memfunc_f *func, unsigned int value)
 		assert (address == 0xfffffffc);
 		return (0x51);
 	}
-	if (address < 0x8000 && ioc_nins < 2)
+	if (address < 0x8000 && r1000sim->clocks < 20)
 		return func(op, ioc_eeprom, address & 0x7fffffff, value);
 	if (address <= sizeof ram)
 		return func(op, ram, address & 0x7fffffff, value);
@@ -414,7 +415,8 @@ m68k_write_memory_32(unsigned int address, unsigned int value)
 
 
 /* Disassembler */
-void make_hex(char* buff, unsigned int pc, unsigned int length)
+static void
+make_hex(char* buff, unsigned int pc, unsigned int length)
 {
 	char* ptr = buff;
 
@@ -435,11 +437,10 @@ cpu_instr_callback(unsigned int pc)
 	char buff[100];
 	char buff2[100];
 	unsigned int instr_size, a6;
-	static unsigned int last_pc;
-	static unsigned repeats;
+	static unsigned int last_pc = 0;
+	static unsigned repeats = 0;
 
 	ioc_pc = pc;
-	ioc_nins++;
 	if (r1000sim->do_trace) {
 		instr_size = m68k_disassemble(buff, pc, IOC_CPU_TYPE);
 		make_hex(buff2, pc, instr_size);
@@ -591,7 +592,7 @@ main_ioc(void *priv)
 			m68k_set_irq(last_irq_level);
 			trace(1, "IRQ level %x\n", last_irq_level);
 		}
-		m68k_execute(1);
+		r1000sim->clocks += m68k_execute(1);
 	}
 
 	return NULL;

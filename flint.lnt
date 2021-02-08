@@ -19,6 +19,14 @@
 -esym(534, cli_error)
 -esym(534, m68k_disassemble)
 
+// 714 Symbol '___' (___) not referenced
+// 759 header declaration for symbol '___' defined at (___) could be moved from header to module
+// 765 external '___' (___) could be made static
+
+-esym(714, elastic_*)
+-esym(759, elastic_*)
+-esym(765, elastic_*)
+
 // Stylistic Disagreements
 -e663		// Suspicious array to pointer conversion
 -e716		// while(1) ...

@@ -56,9 +56,7 @@ sim_new(void)
 	AZ(pthread_mutex_init(&cs->running_mtx, NULL));
 	AZ(pthread_cond_init(&cs->run_cond, NULL));
 	AZ(pthread_cond_init(&cs->wait_cond, NULL));
-	AZ(pthread_mutex_init(&cs->callout_mtx, NULL));
 
-	TAILQ_INIT(&cs->callouts);
 	cs->fd_trace = -1;
 
 	return (cs);
@@ -74,8 +72,9 @@ trace(int level, const char *fmt, ...)
 	AN(cs);
 	if (cs->fd_trace < 0 || !(cs->do_trace & level))
 		return;
+	bprintf(buf, "%12jd ", cs->clocks);
 	va_start(ap, fmt);
-	vsnprintf(buf, sizeof buf, fmt, ap);
+	vsnprintf(buf + 13, sizeof(buf) - 13, fmt, ap);
 	va_end(ap);
 	(void)write(cs->fd_trace, buf, strlen(buf));
 }

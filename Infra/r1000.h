@@ -49,15 +49,8 @@
 
 struct sim;
 struct cli;
-struct iodev;
-struct core;
-struct core_handler;
-struct callout;
-TAILQ_HEAD(core_handlers, core_handler);
 
 typedef int64_t			nanosec;
-typedef void ins_exec_f(struct sim *);
-typedef void *iodev_thr(void *);
 
 struct sim {
 
@@ -65,27 +58,15 @@ struct sim {
 	pthread_mutex_t		running_mtx;
 	pthread_cond_t		run_cond;
 	pthread_cond_t		wait_cond;
-	pthread_t		cthread;
 
-	int			running;
-
-	nanosec			duration;	/* Duration of instruction */
+	uintmax_t		clocks;
 
 	uint64_t		pace_nsec;
 	uint64_t		pace_n;
 	uint64_t		ins_count;
-	ins_exec_f		*ins_exec[1 << 16];
-
-	uint16_t		ident;
-
-	nanosec			real_time;
-	nanosec			sim_time;
 
 	unsigned		do_trace;
 	int			fd_trace;
-
-	pthread_mutex_t		callout_mtx;
-	TAILQ_HEAD(, callout)	callouts;
 };
 
 extern struct sim *r1000sim;
@@ -103,7 +84,6 @@ struct cli {
 int cli_exec(struct sim *, const char *);
 int cli_from_file(struct sim *cs, FILE *fi, int fatal);
 
-
 typedef void cli_func_f(struct cli *);
 
 void cli_printf(struct cli *cli, const char *fmt, ...) __printflike(2, 3);
@@ -117,15 +97,6 @@ void cli_unknown(struct cli *cli);
 /* Tracing & Debugging ************************************************/
 
 void trace(int level, const char *fmt, ...) __printflike(2, 3);
-
-/* Callout ************************************************************/
-
-nanosec now(void);
-void callout_dev_sleep(struct iodev *, nanosec);
-void callout_dev_is_done(struct iodev *iop, nanosec when);
-void callout_dev_is_done_abs(struct iodev *iop, nanosec when);
-
-nanosec callout_poll(struct sim *cs);
 
 /* UTILITIES  *********************************************************/
 

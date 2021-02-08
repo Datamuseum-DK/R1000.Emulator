@@ -154,7 +154,7 @@ elastic_inject(struct elastic *ep, const void *ptr, ssize_t len)
 /* Driver Interface ***************************************************/
 
 nanosec
-nsec_per_char(const struct elastic *ep)
+elastic_nsec_per_char(const struct elastic *ep)
 {
 
 	AN(ep);

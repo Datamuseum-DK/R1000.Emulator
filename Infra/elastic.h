@@ -69,7 +69,7 @@ struct elastic {
 };
 
 struct elastic *elastic_new(struct sim *, int mode);
-nanosec nsec_per_char(const struct elastic *ep);
+nanosec elastic_nsec_per_char(const struct elastic *ep);
 
 struct elastic_subscriber *elastic_subscribe(struct elastic *ep, elastic_deliver_f *, void *);
 void elastic_unsubscribe(struct elastic *ep, struct elastic_subscriber *);
