@@ -43,9 +43,9 @@ elastic_new(struct sim *cs, int mode)
 	AN(cs);
 	ep = calloc(1, sizeof *ep);
 	AN(ep);
-	TAILQ_INIT(&ep->chunks_in);
-	TAILQ_INIT(&ep->chunks_out);
-	TAILQ_INIT(&ep->subscribers);
+	VTAILQ_INIT(&ep->chunks_in);
+	VTAILQ_INIT(&ep->chunks_out);
+	VTAILQ_INIT(&ep->subscribers);
 	AZ(pthread_mutex_init(&ep->mtx, NULL));
 	AZ(pthread_cond_init(&ep->cond_in, NULL));
 	AZ(pthread_cond_init(&ep->cond_out, NULL));
@@ -68,11 +68,11 @@ elastic_subscriber_thread(void *priv)
 
 	AZ(pthread_mutex_lock(&ep->mtx));
 	while (1) {
-		while (!esp->die && TAILQ_EMPTY(&esp->chunks))
+		while (!esp->die && VTAILQ_EMPTY(&esp->chunks))
 			AZ(pthread_cond_wait(&esp->cond, &ep->mtx));
-		cp = TAILQ_FIRST(&esp->chunks);
+		cp = VTAILQ_FIRST(&esp->chunks);
 		if (cp != NULL)
-			TAILQ_REMOVE(&esp->chunks, cp, next);
+			VTAILQ_REMOVE(&esp->chunks, cp, next);
 		AZ(pthread_mutex_unlock(&ep->mtx));
 		if (esp->die && cp == NULL)
 			break;
@@ -104,11 +104,11 @@ elastic_subscribe(struct elastic *ep, elastic_deliver_f *func, void *priv)
 	esp->func = func;
 	esp->priv = priv;
 	AZ(pthread_cond_init(&esp->cond, NULL));
-	TAILQ_INIT(&esp->chunks);
+	VTAILQ_INIT(&esp->chunks);
 	AZ(pthread_mutex_lock(&ep->mtx));
-	TAILQ_INSERT_TAIL(&ep->subscribers, esp, next);
-	if (!TAILQ_EMPTY(&ep->chunks_out))
-		TAILQ_CONCAT(&esp->chunks, &ep->chunks_out, next);
+	VTAILQ_INSERT_TAIL(&ep->subscribers, esp, next);
+	if (!VTAILQ_EMPTY(&ep->chunks_out))
+		VTAILQ_CONCAT(&esp->chunks, &ep->chunks_out, next);
 	AZ(pthread_mutex_unlock(&ep->mtx));
 	AZ(pthread_create(&esp->thread, NULL, elastic_subscriber_thread, esp));
 	AZ(pthread_detach(esp->thread));
@@ -123,7 +123,7 @@ elastic_unsubscribe(struct elastic *ep, struct elastic_subscriber *esp)
 	AN(esp);
 	AZ(pthread_mutex_lock(&ep->mtx));
 	esp->die = 1;
-	TAILQ_REMOVE(&ep->subscribers, esp, next);
+	VTAILQ_REMOVE(&ep->subscribers, esp, next);
 	AZ(pthread_mutex_unlock(&ep->mtx));
 	AZ(pthread_cond_signal(&esp->cond));
 }
@@ -146,7 +146,7 @@ elastic_inject(struct elastic *ep, const void *ptr, ssize_t len)
 	memcpy(cp->ptr, ptr, len);
 	cp->len = len;
 	AZ(pthread_mutex_lock(&ep->mtx));
-	TAILQ_INSERT_TAIL(&ep->chunks_in, cp, next);
+	VTAILQ_INSERT_TAIL(&ep->chunks_in, cp, next);
 	AZ(pthread_cond_signal(&ep->cond_in));
 	AZ(pthread_mutex_unlock(&ep->mtx));
 }
@@ -187,13 +187,13 @@ elastic_put(struct elastic *ep, const void *ptr, ssize_t len)
 	if (len == 0)
 		return;
 	AZ(pthread_mutex_lock(&ep->mtx));
-	if (TAILQ_EMPTY(&ep->subscribers)) {
+	if (VTAILQ_EMPTY(&ep->subscribers)) {
 		cp = mk_chunk(ptr, len);
-		TAILQ_INSERT_TAIL(&ep->chunks_out, cp, next);
+		VTAILQ_INSERT_TAIL(&ep->chunks_out, cp, next);
 	} else {
-		TAILQ_FOREACH(esp, &ep->subscribers, next) {
+		VTAILQ_FOREACH(esp, &ep->subscribers, next) {
 			cp = mk_chunk(ptr, len);
-			TAILQ_INSERT_TAIL(&esp->chunks, cp, next);
+			VTAILQ_INSERT_TAIL(&esp->chunks, cp, next);
 			AZ(pthread_cond_signal(&esp->cond));
 		}
 	}
@@ -207,15 +207,15 @@ elastic_get(struct elastic *ep, void *ptr, ssize_t len)
 
 	assert(ep->mode != O_WRONLY);
 	AZ(pthread_mutex_lock(&ep->mtx));
-	while (TAILQ_EMPTY(&ep->chunks_in))
+	while (VTAILQ_EMPTY(&ep->chunks_in))
 		AZ(pthread_cond_wait(&ep->cond_in, &ep->mtx));
-	cp = TAILQ_FIRST(&ep->chunks_in);
+	cp = VTAILQ_FIRST(&ep->chunks_in);
 	if (cp->len - cp->read < len)
 		len = cp->len - cp->read;
 	memcpy(ptr, cp->ptr + cp->read, len);
 	cp->read += len;
 	if (cp->read == cp->len) {
-		TAILQ_REMOVE(&ep->chunks_in, cp, next);
+		VTAILQ_REMOVE(&ep->chunks_in, cp, next);
 		free(cp->ptr);
 		free(cp);
 	}
@@ -226,7 +226,7 @@ elastic_get(struct elastic *ep, void *ptr, ssize_t len)
 int
 elastic_empty(const struct elastic *ep)
 {
-	return(TAILQ_EMPTY(&ep->chunks_in));
+	return(VTAILQ_EMPTY(&ep->chunks_in));
 }
 
 int v_matchproto_(cli_elastic_f)

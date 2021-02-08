@@ -72,7 +72,7 @@ trace(int level, const char *fmt, ...)
 	AN(cs);
 	if (cs->fd_trace < 0 || !(cs->do_trace & level))
 		return;
-	bprintf(buf, "%12jd ", cs->clocks);
+	bprintf(buf, "%12jd ", cs->simclock);
 	va_start(ap, fmt);
 	vsnprintf(buf + 13, sizeof(buf) - 13, fmt, ap);
 	va_end(ap);

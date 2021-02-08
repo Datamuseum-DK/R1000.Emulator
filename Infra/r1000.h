@@ -33,8 +33,9 @@
 #include <stdint.h>
 #include <stdio.h>
 #include <pthread.h>
-#include <sys/queue.h>
 #include <sys/types.h>
+
+#include "vqueue.h"
 
 #define AZ(x) assert((x) == 0);
 #define AN(x) assert((x) != 0);
@@ -59,7 +60,7 @@ struct sim {
 	pthread_cond_t		run_cond;
 	pthread_cond_t		wait_cond;
 
-	uintmax_t		clocks;
+	nanosec			simclock;
 
 	uint64_t		pace_nsec;
 	uint64_t		pace_n;

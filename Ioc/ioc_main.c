@@ -295,7 +295,7 @@ mem(const char *op, unsigned int address, memfunc_f *func, unsigned int value)
 		assert (address == 0xfffffffc);
 		return (0x51);
 	}
-	if (address < 0x8000 && r1000sim->clocks < 20)
+	if (address < 0x8000 && r1000sim->simclock < 1000)
 		return func(op, ioc_eeprom, address & 0x7fffffff, value);
 	if (address <= sizeof ram)
 		return func(op, ram, address & 0x7fffffff, value);
@@ -592,7 +592,7 @@ main_ioc(void *priv)
 			m68k_set_irq(last_irq_level);
 			trace(1, "IRQ level %x\n", last_irq_level);
 		}
-		r1000sim->clocks += m68k_execute(1);
+		r1000sim->simclock += 50 * m68k_execute(1);
 	}
 
 	return NULL;

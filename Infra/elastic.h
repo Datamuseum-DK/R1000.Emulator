@@ -34,28 +34,28 @@ struct elastic_match;
 typedef void elastic_deliver_f(void *priv, const void *, size_t);
 
 struct chunk {
-	TAILQ_ENTRY(chunk)		next;
+	VTAILQ_ENTRY(chunk)		next;
 	uint8_t				*ptr;
 	ssize_t				len;
 	ssize_t				read;
 };
 
 struct elastic_subscriber {
-	TAILQ_ENTRY(elastic_subscriber)	next;
+	VTAILQ_ENTRY(elastic_subscriber)	next;
 	struct elastic			*ep;
 	elastic_deliver_f		*func;
 	void				*priv;
 	pthread_t			thread;
 	int				die;
 	pthread_cond_t			cond;
-	TAILQ_HEAD(,chunk)		chunks;
+	VTAILQ_HEAD(,chunk)		chunks;
 };
 
 struct elastic {
 	struct sim			*cs;
-	TAILQ_HEAD(,elastic_subscriber)	subscribers;
-	TAILQ_HEAD(,chunk)		chunks_out;
-	TAILQ_HEAD(,chunk)		chunks_in;
+	VTAILQ_HEAD(,elastic_subscriber)	subscribers;
+	VTAILQ_HEAD(,chunk)		chunks_out;
+	VTAILQ_HEAD(,chunk)		chunks_in;
 	int				text;
 	int				mode;
 	nanosec				bits_per_char;
