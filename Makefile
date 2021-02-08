@@ -1,4 +1,6 @@
 
+VPATH	= Musashi:Musashi/softfloat:Infra:Ioc
+
 OBJS	= main.o callout.o cli.o
 OBJS	+= elastic.o elastic_fd.o elastic_tcp.o elastic_match.o
 OBJS	+= vav.o
