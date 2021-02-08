@@ -4,12 +4,12 @@
 #include <stdlib.h>
 #include <stdarg.h>
 #include <string.h>
-#include <sys/endian.h>
 #include <time.h>
 #include <unistd.h>
 #include "r1000.h"
 #include "ioc.h"
 #include "m68k.h"
+#include "vend.h"
 
 #define IOC_CPU_TYPE	M68K_CPU_TYPE_68020
 
@@ -67,7 +67,7 @@ dma_write(unsigned segment, unsigned address, void *src, unsigned len)
 
 	u = segment << 9;
 	u |= (address >> 10) & 0x1ff;
-	v = be32dec(map_dma_in + u * 4L);
+	v = vbe32dec(map_dma_in + u * 4L);
 	trace(2, "DMAMAP %08x: %08x -> %08x\n", address, u, v);
 	memcpy(ram+v, src, len);
 
@@ -153,7 +153,7 @@ rdword(const char *op, uint8_t *space, unsigned int address, unsigned int data)
 {
 	(void)op;
 	(void)data;
-	return be16dec(space + address);
+	return (vbe16dec(space + address));
 }
 
 static unsigned int  v_matchproto_(memfunc_f)
@@ -161,7 +161,7 @@ rdlong(const char *op, uint8_t *space, unsigned int address, unsigned int data)
 {
 	(void)op;
 	(void)data;
-	return be32dec(space + address);
+	return (vbe32dec(space + address));
 }
 
 static unsigned int  v_matchproto_(memfunc_f)
@@ -176,7 +176,7 @@ static unsigned int  v_matchproto_(memfunc_f)
 wrword(const char *op, uint8_t *space, unsigned int address, unsigned int data)
 {
 	(void)op;
-	be16enc(space + address, data);
+	vbe16enc(space + address, data);
 	return (0);
 }
 
@@ -184,7 +184,7 @@ static unsigned int  v_matchproto_(memfunc_f)
 wrlong(const char *op, uint8_t *space, unsigned int address, unsigned int data)
 {
 	(void)op;
-	be32enc(space + address, data);
+	vbe32enc(space + address, data);
 	return (0);
 }
 
@@ -488,7 +488,7 @@ insert_jump(unsigned int from, unsigned int to)
 	from &= 0x7fffffff;
 	ioc_eeprom[from] = 0x4e;
 	ioc_eeprom[from+1L] = 0xf9;
-	be32enc(ioc_eeprom + from + 2, to);
+	vbe32enc(ioc_eeprom + from + 2, to);
 }
 
 static void
@@ -558,7 +558,7 @@ main_ioc(void *priv)
 	//insert_jump(0x80000dfc, 0x80000ec4); // Clock / Calendar
 	insert_jump(0x80000fa0, 0x80000fda); // RESHA EEProm Interface ...
 	insert_return(0x80001122); // RESHA based selftests
-	//insert_jump(0x800011c0, 0x800014d0); // Local interrupts
+	insert_jump(0x800011c0, 0x800014d0); // Local interrupts
 	insert_jump(0x80001502, 0x800015ce); // Illegal reference protection
 	insert_jump(0x800015f2, 0x8000166c); // I/O bus parity
 	insert_jump(0x8000169c, 0x800016d8); // I/O bus spurious interrupts
@@ -578,15 +578,6 @@ main_ioc(void *priv)
 
 	while(1)
 	{
-		// Our loop requires some interleaving to allow us to update the
-		// input, output, and nmi devices.
-
-		// Values to execute determine the interleave rate.
-		// Smaller values allow for more accurate interleaving with multiple
-		// devices/CPUs but is more processor intensive.
-		// 100000 is usually a good value to start at, then work from there.
-
-		// Note that I am not emulating the correct clock speed!
 		if (irq_level != last_irq_level) {
 			last_irq_level = irq_level;
 			m68k_set_irq(last_irq_level);
