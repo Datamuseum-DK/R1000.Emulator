@@ -1,4 +1,10 @@
 
+# Set this to where you want the ~1GB trace output file
+TRACE_FILE = "/critter/_r1000"
+
+# Set this to copy of https://datamuseum.dk/bits/30000551 (also ~1GB)
+DISK0_IMAGE = "/critter/DDHF/20191107_R1K_TAPES/R1K/PE_R1K_Disk0.dd"
+
 VPATH	= Musashi:Musashi/softfloat:Infra:Ioc
 
 OBJS	= main.o callout.o cli.o
@@ -35,10 +41,11 @@ CLI_INCL = \
 
 test:	r1000 ${BINFILES}
 	./r1000 \
-		-T /critter/_r1000 \
+		-T ${TRACE_FILE} \
 		-t 3 \
 		"console > _.console" \
 		"duart > _.duart" \
+		"scsi_disk disk0 ${DISK0_IMAGE}" \
 		"reset" \
 		'console match expect "Boot from (Tn or Dn)  [D0] : "' \
 		'console << ""' \

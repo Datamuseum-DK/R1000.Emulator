@@ -8,15 +8,13 @@ https://datamuseum.dk/wiki/Rational/R1000s400
 
 2. Manually download https://datamuseum.dk/bits/30000551 somewhere, it needs a gigabyte.
 
-3. Set the path in `Ioc/scsi_d.c` to that file.
+3. Edit `TRACE_FILE` and `DISK0_IMAGE` at the top of `Makefile`
 
 4. In a separate window: `tail -F _.console`
 
-5. Fix `/critter/_r1000` in Makefile to where you want a gigabyte of logfile
+5. `make`
 
-6. `make`
-
-7. Wait for 16195351 million instructions and get:
+6. Wait for 16195351 million instructions and get:
 
 ```
 	Boot from (Tn or Dn)  [D0] : ^@
@@ -52,5 +50,19 @@ Disassembly of the loaded FS.0: http://datamuseum.dk/aa/r1k_dfs/44/442c504ed.htm
 Disassembly of the loaded PROGRAM.0: http://datamuseum.dk/aa/r1k_dfs/f1/f15447000.html
 
 Hat-Tip to @kstenerud: The 68k20 IOC is emulated with his https://github.com/kstenerud/Musashi
+
+# TODO
+
+Add a cli commands:
+
+* `breakpoint address` -- Stop emulation and dump 68K registers.  Leave CPU stopped.
+
+* `continue` -- Continue after breakpoint
+
+* `step` -- Execute single instruction while stopped
+
+* `examine address` -- Dump 256 bytes of memory.
+
+* `deposit {address|register} data` -- Change state	
 
 *end*

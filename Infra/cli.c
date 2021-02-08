@@ -154,6 +154,7 @@ static const struct cli_cmds {
 	{ "duart",		cli_ioc_duart },
 	{ "reset",		cli_ioc_reset },
 	{ "ioc",		cli_ioc_main },
+	{ "scsi_disk",		cli_scsi_disk },
 	{ NULL,			NULL },
 };
 

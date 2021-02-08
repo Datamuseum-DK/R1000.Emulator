@@ -1,6 +1,8 @@
 #include <fcntl.h>
 #include <pthread.h>
 #include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 #include <unistd.h>
 #include "r1000.h"
 #include "ioc.h"
@@ -20,15 +22,39 @@ struct scsi {
 
 typedef void scsi_func_f(struct scsi *sp);
 
+static char *disk0_image_filename;
+static uint8_t sector[1<<10];
+static int disk_fd = -1;
+
 /**********************************************************************/
 
-static uint8_t sector[1<<10];
+void v_matchproto_(cli_func_f)
+cli_scsi_disk(struct cli *cli)
+{
 
-static int disk_fd = -1;
-// #define DISK_IMAGE "/critter/DDHF/R1000/R1K_Seagate/R1K_Seagate0.BIN"
+	if (cli->help) {
+		cli_io_help(cli, "scsi_disk disk0 filename", 0, 1);
+		return;
+	}
 
-// This file is a copy of https://datamuseum.dk/bits/30000551
-#define DISK_IMAGE "/critter/DDHF/20191107_R1K_TAPES/R1K/PE_R1K_Disk0.dd"
+	cli->ac--;
+	cli->av++;
+
+	while (cli->ac && !cli->status) {
+		if (cli->ac == 2 && !strcmp(cli->av[0], "disk0")) {
+			free(disk0_image_filename);
+			disk0_image_filename = strdup(cli->av[1]);
+			AN(disk0_image_filename);
+			cli->ac -= 2;
+			cli->av += 2;
+			continue;
+		}
+		cli_unknown(cli);
+		break;
+	}
+}
+
+/**********************************************************************/
 
 static void
 get_sector(unsigned secno)
@@ -37,7 +63,7 @@ get_sector(unsigned secno)
 	ssize_t sz;
 
 	if (disk_fd < 0) {
-		disk_fd = open(DISK_IMAGE, O_RDONLY);
+		disk_fd = open(disk0_image_filename, O_RDONLY);
 		assert(disk_fd > 0);
 	}
 	off = (off_t)secno << 10;
