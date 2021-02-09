@@ -1,6 +1,11 @@
 Various notes about hardware/software interface gleaned from schematics
 =======================================================================
 
+For mapping of I/O devices into M68k memory space, see:
+
+	PyReveng3/examples/R1000_400/ioc_hardware.py
+
+
 Control registers on RESHA p1:
 ------------------------------
 
