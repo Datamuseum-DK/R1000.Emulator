@@ -115,7 +115,7 @@ trace_cdb(struct scsi *sp, const char *cmt)
 {
 
 	trace(
-	    2,
+	    TRACE_SCSI,
 	    "%s CMD=%02x ID=%x"
 	    " CDB=[%02x %02x %02x %02x %02x %02x|%02x %02x %02x %02x]"
 	    " %s\n",
@@ -166,7 +166,7 @@ scsi_08_read_6(struct scsi *sp)
 	dst &= (1<<19)-1;
 	dma_write(3, dst, sector, sizeof sector);
 	sp->regs[0x17] = 0x16;
-	trace(2, "SCSI_D READ6 %x -> %x\n", lba, dst);
+	trace(TRACE_SCSI, "SCSI_D READ6 %x -> %x\n", lba, dst);
 }
 
 static void v_matchproto_(scsi_func_f)
@@ -190,7 +190,7 @@ scsi_28_read_10(struct scsi *sp)
 	dst &= (1<<19)-1;	// Probably wrong mask.
 	dma_write(3, dst, sector, sizeof sector);
 	sp->regs[0x17] = 0x16;
-	trace(2, "SCSI_D READ10 %x -> %x\n", lba, dst);
+	trace(TRACE_SCSI, "SCSI_D READ10 %x -> %x\n", lba, dst);
 }
 
 static scsi_func_f * const scsi_funcs[256] = {
@@ -252,7 +252,7 @@ scsi_ctrl(struct scsi *sp, const char *op, unsigned int address, memfunc_f *func
 
 	reg = address & 0x1f;
 	if (*op == 'W')
-		trace(2, "%s %08x %s %s %x\n", sp->name,
+		trace(TRACE_IO, "%s %08x %s %s %x\n", sp->name,
 		    ioc_pc, op, scsi_reg[reg], value);
 	AZ(pthread_mutex_lock(&sp->mtx));
 	value = func(op, sp->regs, reg, value);
@@ -266,7 +266,7 @@ scsi_ctrl(struct scsi *sp, const char *op, unsigned int address, memfunc_f *func
 	}
 	AZ(pthread_mutex_unlock(&sp->mtx));
 	if (*op == 'R')
-		trace(2, "%s %08x %s %s %x\n", sp->name,
+		trace(TRACE_IO, "%s %08x %s %s %x\n", sp->name,
 		    ioc_pc, op, scsi_reg[reg], value);
 	return (value);
 }

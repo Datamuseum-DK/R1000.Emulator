@@ -7,6 +7,7 @@
  */
 
 #include <fcntl.h>
+#include <pthread.h>
 #include <string.h>
 #include <unistd.h>
 
@@ -26,19 +27,36 @@ static const char * const wr_reg[] = {
 	"Set Output Port Bits Command", "Reset Output Port Bits Command",
 };
 
-#define DUART_TRACE_WRITE(level, prefix)				\
-	do {								\
-		if (*op == 'W')						\
-			trace(level, prefix " %08x %s %08x %x %s\n",	\
-			    ioc_pc, op, address, value, wr_reg[address&0xf]);		\
-	} while(0)
+#define REG_W_MRA	0
+#define REG_W_CSRA	1
+#define REG_W_CRA	2
+#define REG_W_THRA	3
+#define REG_W_ACR	4
+#define REG_W_IMR	5
+#define REG_W_CTUR	6
+#define REG_W_CTLR	7
+#define REG_W_MRB	8
+#define REG_W_CSRB	9
+#define REG_W_CRB	10
+#define REG_W_THRB	11
+#define REG_W_OPCR	12
+#define REG_W_SET_BITS	14
+#define REG_W_CLR_BITS	15
 
-#define DUART_TRACE_READ(level, prefix)					\
-	do {								\
-		if (*op == 'R')						\
-			trace(level, prefix " %08x %s %08x %x %s\n",	\
-			    ioc_pc, op, address, value, rd_reg[address&0xf]);		\
-	} while(0)
+#define REG_R_MRA	0
+#define REG_R_SRA	1
+#define REG_R_BRG_TEST	2
+#define REG_R_RHRA	3
+#define REG_R_IPCR	4
+#define REG_R_ISR	5
+#define REG_R_CTU	6
+#define REG_R_CTL	7
+#define REG_R_MRB	8
+#define REG_R_SRB	9
+#define REG_R_1_16_TEST	10
+#define REG_R_RHRB	11
+#define REG_R_START_PIT	14
+#define REG_R_STOP_PIT	15
 
 struct chan {
 	struct elastic	*ep;
@@ -56,7 +74,29 @@ static struct ioc_duart {
 	uint8_t		rdregs[16];
 	struct chan	chan[2];
 	uint8_t		opr;
+	int		pit_running;
 } ioc_duart[1];
+
+static pthread_mutex_t duart_mtx = PTHREAD_MUTEX_INITIALIZER;
+
+/**********************************************************************/
+
+static void
+ioc_duart_pit_callback(void *priv)
+{
+	(void)priv;
+	trace(TRACE_PIT, "PIT\n");
+	AZ(pthread_mutex_lock(&duart_mtx));
+	if (ioc_duart->pit_running) {
+		if ((--ioc_duart->rdregs[REG_R_CTL]) == 0xff)
+			ioc_duart->rdregs[REG_R_CTU]--;
+		if (!ioc_duart->rdregs[REG_R_CTU] &&
+		    !ioc_duart->rdregs[REG_R_CTL]) {
+			ioc_duart->rdregs[REG_R_ISR] |= 0x8;
+		}
+	}
+	AZ(pthread_mutex_unlock(&duart_mtx));
+}
 
 /**********************************************************************/
 
@@ -69,36 +109,26 @@ io_duart(
 )
 {
 	struct chan *chp;
+	unsigned reg;
 	int8_t chr;
 	// uint8_t chr;
 
-	(void)func;
-	DUART_TRACE_WRITE(2, "DUART");
+	reg = address & 0xf;
+	chp = &ioc_duart->chan[reg>>3];
 
-	if (op[0] == 'W')
-		(void)func(op, ioc_duart->wrregs, address & 0x0f, value);
-	else
-		value = func(op, ioc_duart->rdregs, address & 0x0f, value);
-
-	chp = &ioc_duart->chan[(address>>3)&1];
-
-	switch (address & 0xf) {
-	case 0x0:	// MR1A/MR2A
-	case 0x8:	// MR1B/MR2B
-		if (op[0] == 'W') {
+	AZ(pthread_mutex_lock(&duart_mtx));
+	if (op[0] == 'W') {
+		trace(TRACE_IO, "DUART %08x %s %08x %x %s\n",
+		    ioc_pc, op, address, value, wr_reg[reg]);
+		(void)func(op, ioc_duart->wrregs, reg, value);
+		switch(reg) {
+		case REG_W_MRA:
+		case REG_W_MRB:
 			chp->mode[chp->mrptr] = value;
 			chp->mrptr ^= 1;
-		}
-		break;
-	case 0x1:	// R:SRA, W:CSRA
-	case 0x9:	// R:SRB, W:CSRB
-		if (op[0] == 'R') {
-			value = chp->sr;
-		}
-		break;
-	case 0x2:	// CRA
-	case 0xa:	// CRB
-		if (op[0] == 'W') {
+			break;
+		case REG_W_CRA:
+		case REG_W_CRB:
 			switch ((value >> 4) & 0x7) {
 			case 0x4:
 				chp->mrptr = 0;
@@ -120,11 +150,9 @@ io_duart(
 				chp->txon = 0;
 				chp->sr &= ~4;
 			}
-		}
-		break;
-	case 0x3:	// THRA
-	case 0xb:	// THRB
-		if (op[0] == 'W') {
+			break;
+		case REG_W_THRA:
+		case REG_W_THRB:
 			chr = value;
 			elastic_put(chp->ep, &chr, 1);
 			if (chp->isdiag && ioc_duart->opr & 4) {
@@ -136,22 +164,47 @@ io_duart(
 				chp->rxhold = chr;
 				chp->sr |= 1;
 			}
-		} else {
+			break;
+		case REG_W_SET_BITS:
+			ioc_duart->opr |= value;
+			break;
+		case REG_W_CLR_BITS:
+			ioc_duart->opr &= ~value;
+			break;
+		default:
+			break;
+		}
+	} else {
+		value = func(op, ioc_duart->rdregs, reg, value);
+		switch(reg) {
+		case REG_R_SRA:
+		case REG_R_SRB:
+			value = chp->sr;
+			break;
+		case REG_R_RHRA:
+		case REG_R_RHRB:
 			value = chp->rxhold;
 			chp->sr &= ~1;
+			break;
+		case REG_R_START_PIT:
+			ioc_duart->rdregs[REG_R_CTU] =
+			    ioc_duart->wrregs[REG_W_CTUR];
+			ioc_duart->rdregs[REG_R_CTL] =
+			    ioc_duart->wrregs[REG_W_CTLR];
+			ioc_duart->pit_running = 1;
+			break;
+		case REG_R_STOP_PIT:
+			ioc_duart->pit_running = 0;
+			ioc_duart->rdregs[REG_R_ISR] &= ~0x8;
+			break;
+		default:
+			break;
 		}
-		break;
-	case 0xe:	// Set Output Port Bits Command
-		ioc_duart->opr |= value;
-		break;
-	case 0xf:	// Set Output Port Bits Command
-		ioc_duart->opr &= ~value;
-		break;
-	default:
-		break;
+		trace(TRACE_IO, "DUART %08x %s %08x %x %s\n",
+		    ioc_pc, op, address, value, rd_reg[reg]);
 	}
-	DUART_TRACE_READ(2, "DUART");
 
+	AZ(pthread_mutex_unlock(&duart_mtx));
 	return (value);
 }
 
@@ -185,8 +238,22 @@ cli_ioc_duart(struct cli *cli)
 void
 ioc_duart_init(struct sim *sim)
 {
+	/*
+	 * The IOC_EEPROM1 selftest seems to assume that CTLR is
+	 * non-zero after reset (or that the START_COUNTER command
+	 * takes some time to kick in ?)
+	 *
+	 * 80000bae  MOVE.B  IO_DUART_CLR_OPC_STOP_COUNTER,D0
+	 * 80000bb2  MOVE.W  #0x0010,IO_DUART_CTUR_CTU
+	 * 80000bb8  MOVE.B  IO_DUART_SET_OPC_START_COUNTER,D0
+	 * 80000bbc  MOVE.W  IO_DUART_CTUR_CTU,D0
+	 * 80000bc0  CMPI.W  #0x0010,D0
+	 * 80000bc4  BNE     _TEST_FAILED
+	 */
+	ioc_duart->wrregs[REG_W_CTLR] = 1;
 
 	ioc_duart->chan[0].ep = elastic_new(sim, O_RDWR);
 	ioc_duart->chan[1].ep = elastic_new(sim, O_RDWR);
 	ioc_duart->chan[1].isdiag = 1;
+	callout_callback(r1000sim, ioc_duart_pit_callback, NULL, 0, 25600);
 }

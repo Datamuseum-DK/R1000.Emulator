@@ -42,7 +42,7 @@ CLI_INCL = \
 test:	r1000 ${BINFILES}
 	./r1000 \
 		-T ${TRACE_FILE} \
-		-t 3 \
+		-t 255 \
 		"console > _.console" \
 		"duart > _.duart" \
 		"scsi_disk disk0 ${DISK0_IMAGE}" \

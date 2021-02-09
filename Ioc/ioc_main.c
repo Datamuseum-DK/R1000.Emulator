@@ -68,7 +68,7 @@ dma_write(unsigned segment, unsigned address, void *src, unsigned len)
 	u = segment << 9;
 	u |= (address >> 10) & 0x1ff;
 	v = vbe32dec(map_dma_in + u * 4L);
-	trace(2, "DMAMAP %08x: %08x -> %08x\n", address, u, v);
+	trace(TRACE_IO, "DMAMAP %08x: %08x -> %08x\n", address, u, v);
 	memcpy(ram+v, src, len);
 
 	// Patch delay routines faster
@@ -285,10 +285,10 @@ static unsigned int
 mem(const char *op, unsigned int address, memfunc_f *func, unsigned int value)
 {
 	unsigned retval;
-// trace(1, "MEM %s %x\n", op, address);
+// trace(TRACE_68K, "MEM %s %x\n", op, address);
 	if (ioc_fc == 7 && op[0] != 'D') {
 		retval = irq_getvector();
-		trace(1, "IRQ_VECTOR %x (%08x %s %08x %x)\n",
+		trace(TRACE_68K, "IRQ_VECTOR %x (%08x %s %08x %x)\n",
 		    retval, ioc_pc, op, address, value);
 		if (address == 0xfffffffe)
 			return (retval);
@@ -446,10 +446,10 @@ cpu_instr_callback(unsigned int pc)
 		make_hex(buff2, pc, instr_size);
 		if (pc != last_pc) {
 			if (repeats)
-				trace(1, "E … × %x\n", repeats);
+				trace(TRACE_68K, "E … × %x\n", repeats);
 			repeats = 0;
 			trace(
-			    1,
+			    TRACE_68K,
 			    "E %08x: %-20s: %s\n",
 			    pc,
 			    buff2,
@@ -552,7 +552,7 @@ main_ioc(void *priv)
 	insert_jump(0x800007f4, 0x800009b2); // I/O Bus control
 	insert_jump(0x800009da, 0x80000a4a); // I/O Bus map parity
 	insert_jump(0x80000a74, 0x80000b8a); // I/O bus transactions
-	insert_jump(0x80000ba2, 0x80000bf2); // PIT  (=> DUART)
+	//insert_jump(0x80000ba2, 0x80000bf2); // PIT  (=> DUART)
 	//insert_jump(0x80000c1a, 0x80000d20); // Modem DUART channel
 	//insert_jump(0x80000d4e, 0x80000dd6); // Diagnostic DUART channel
 	//insert_jump(0x80000dfc, 0x80000ec4); // Clock / Calendar
@@ -581,7 +581,7 @@ main_ioc(void *priv)
 		if (irq_level != last_irq_level) {
 			last_irq_level = irq_level;
 			m68k_set_irq(last_irq_level);
-			trace(1, "IRQ level %x\n", last_irq_level);
+			trace(TRACE_68K, "IRQ level %x\n", last_irq_level);
 		}
 		r1000sim->simclock += 100 * m68k_execute(1);
 		callout_poll(r1000sim);

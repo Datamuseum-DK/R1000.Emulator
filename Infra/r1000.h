@@ -46,6 +46,13 @@
      __attribute__((__format__ (__printf__, fmtarg, firstvararg)))
 #endif
 
+// Trace bits
+
+#define TRACE_68K	1	// Trace instructions
+#define TRACE_IO	2	// General I/O tracing
+#define TRACE_SCSI	4	// Trace SCSI-CDBs
+#define TRACE_PIT	8	// PIT timer tracing
+
 /*
  * In OO-light situations, functions have to match their prototype
  * even if that means not const'ing a const'able argument.
@@ -112,6 +119,11 @@ void trace(int level, const char *fmt, ...) __printflike(2, 3);
 
 void callout_signal_cond(struct sim *cs, pthread_cond_t *cond,
     pthread_mutex_t *mtx, nanosec when, nanosec repeat);
+
+typedef void callout_callback_f(void *);
+void callout_callback(struct sim *cs, callout_callback_f *func,
+    void *priv, nanosec when, nanosec repeat);
+
 nanosec callout_poll(struct sim *cs);
 
 /* UTILITIES  *********************************************************/

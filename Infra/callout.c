@@ -116,6 +116,49 @@ callout_signal_cond(struct sim *cs, pthread_cond_t *cond,
 
 /**********************************************************************/
 
+struct priv_sig_callback {
+	callout_callback_f	*func;
+	void			*priv;
+};
+
+static void
+callout_func_callback(const struct callout *co)
+{
+	struct priv_sig_callback *psc;
+
+	psc = co->priv;
+	psc->func(psc->priv);
+}
+
+static const struct callout_how callout_callback_how = {
+	.name = "Callback",
+	.func = callout_func_callback,
+};
+
+void
+callout_callback(struct sim *cs, callout_callback_f *func,
+    void *priv, nanosec when, nanosec repeat)
+{
+	struct callout *co;
+	struct priv_sig_callback *psc;
+	char *p;
+
+	p = calloc(sizeof *co + sizeof *psc, 1);
+	AN(p);
+	co = (void*)p;
+	psc = (void*)(p + sizeof *co);
+	psc->func = func;
+	psc->priv = priv;
+	co->cs = cs;
+	co->when = cs->simclock + when;
+	co->repeat = repeat;
+	co->priv = psc;
+	co->how = &callout_callback_how;
+	callout_insert(co);
+}
+
+/**********************************************************************/
+
 nanosec
 callout_poll(struct sim *cs)
 {
