@@ -287,7 +287,7 @@ mem(const char *op, unsigned int address, memfunc_f *func, unsigned int value)
 	unsigned retval;
 // trace(TRACE_68K, "MEM %s %x\n", op, address);
 	if (ioc_fc == 7 && op[0] != 'D') {
-		retval = irq_getvector();
+		retval = irq_getvector(0);
 		trace(TRACE_68K, "IRQ_VECTOR %x (%08x %s %08x %x)\n",
 		    retval, ioc_pc, op, address, value);
 		if (address == 0xfffffffe)

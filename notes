@@ -99,18 +99,18 @@ Interrupts/vectors in hardware:
 		PS.AC_PF                p24
 		EXT_LEVEL_7~            p26
 		CONSOLE.RXRDY~          UART pin 14
-		MODEM.RXRDY~            DUART pin 27
-		DIAG_BUS.RXRDY~         DUART pin 14
+		MODEM.RXRDY~            DUART pin 27 (OP4) IOCp21
+		DIAG_BUS.RXRDY~         DUART pin 14 (OP5) IOCp21
 		EXT_LEVEL_6~            p26
 
 	level1:
 		CONSOLE.TXRDY~          UART pin15
-		MODEM.TXRDY~            DUART pin 26
-		MODEM.DSCHG~            DUART pin 21
-		DIAG_BUS.TXRDY~         DUART pin 15
+		MODEM.TXRDY~            DUART pin 26 (OP2) IOCp21
+		MODEM.DSCHG~            DUART pin 21 (INTRN) IOCp21
+		DIAG_BUS.TXRDY~         DUART pin 15 (OP7) IOCp21
 		REQUEST_INTR~           p25
 		RESPONSE_INTR~          p25
-		PITINT~                 DUART pin 13
+		PITINT~                 DUART pin 13 (OP3) IOCp21
 		EXT_LEVEL_1~            p26
 
 	level2 -> IOINT3~

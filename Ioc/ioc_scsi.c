@@ -15,7 +15,6 @@ struct scsi {
 	pthread_t		thr;
 	uint8_t			regs[32];
 	uint8_t			r[1<<16];
-	int			raised;
 	unsigned int		dma;
 	unsigned		valid_ids;
 };
@@ -213,8 +212,7 @@ scsi_thread(void *priv)
 		if (sp->regs[0x18] == 0) {		// RESET
 			sp->regs[0x17] = 0x01;
 			sp->regs[0x1f] |= 0x80;
-			if (!sp->raised)
-				sp->raised = irq_raise(sp->irq_vector);
+			irq_raise(sp->irq_vector);
 			continue;
 		}
 
@@ -227,8 +225,7 @@ scsi_thread(void *priv)
 			trace_cdb(sp, "No Device at ID");
 			sp->regs[0x17] = 0x42;
 			sp->regs[0x1f] |= 0x80;
-			if (!sp->raised)
-				sp->raised = irq_raise(sp->irq_vector);
+			irq_raise(sp->irq_vector);
 			continue;
 		}
 
@@ -240,8 +237,7 @@ scsi_thread(void *priv)
 			sp->regs[0x17] = 0x42;
 		}
 		sp->regs[0x1f] |= 0x80;
-		if (!sp->raised)
-			sp->raised = irq_raise(sp->irq_vector);
+		irq_raise(sp->irq_vector);
 	}
 }
 
@@ -261,8 +257,7 @@ scsi_ctrl(struct scsi *sp, const char *op, unsigned int address, memfunc_f *func
 	}
 	if (op[0] == 'R' && reg == 0x1f && (value & 0x80)) {
 		sp->regs[0x1f] &= ~0x80;
-		if (sp->raised)
-			sp->raised = irq_lower(sp->irq_vector);
+		irq_lower(sp->irq_vector);
 	}
 	AZ(pthread_mutex_unlock(&sp->mtx));
 	if (*op == 'R')

@@ -58,7 +58,8 @@ void dma_write(unsigned segment, unsigned address, void *src, unsigned len);
 #define INTERRUPT_TABLE \
 	IRQ_VECTOR(CONSOLE_BREAK, L67, 0x42) \
 	IRQ_VECTOR(SCSI_D, L67, 0x91) \
-	IRQ_VECTOR(SCSI_T, L67, 0x92)
+	IRQ_VECTOR(SCSI_T, L67, 0x92) \
+	IRQ_VECTOR(PIT, 1, 0x4f)
 
 struct irq_vector;
 
@@ -69,6 +70,5 @@ INTERRUPT_TABLE
 
 extern unsigned irq_level;
 
-int irq_raise(struct irq_vector *vp);
-int irq_lower(struct irq_vector *vp);
-unsigned irq_getvector(void);
+void irq_raise(struct irq_vector *vp);
+void irq_lower(struct irq_vector *vp);

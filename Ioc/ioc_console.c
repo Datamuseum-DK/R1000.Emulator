@@ -84,7 +84,6 @@ static void*
 thr_console_tx(void *priv)
 {
 	(void)priv;
-	int irq_state = 0;
 
 	AZ(pthread_mutex_lock(&cons_mtx));
 	while (1) {
@@ -95,13 +94,13 @@ thr_console_tx(void *priv)
 		cons->updated = 0;
 		cons->txbreak = cons->cmd & 0x08;
 		cons->loopback = (cons->cmd & 0xc0) == 0x80;
-		if (cons->txbreak && cons->loopback && !irq_state) {
+		if (cons->txbreak && cons->loopback) {
 			cons->status |= 0x22;	// break condition
-			irq_state = irq_raise(&IRQ_CONSOLE_BREAK);
+			irq_raise(&IRQ_CONSOLE_BREAK);
 		}
-		if ((!cons->txbreak || !cons->loopback) && irq_state) {
+		if ((!cons->txbreak || !cons->loopback)) {
 			cons->status &= ~0x20;	// break condition
-			irq_state = irq_lower(&IRQ_CONSOLE_BREAK);
+			irq_lower(&IRQ_CONSOLE_BREAK);
 		}
 		if (cons->txbreak)
 			continue;

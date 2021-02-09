@@ -39,7 +39,7 @@ static const char * const wr_reg[] = {
 #define REG_W_CSRB	9
 #define REG_W_CRB	10
 #define REG_W_THRB	11
-#define REG_W_OPCR	12
+#define REG_W_OPCR	13
 #define REG_W_SET_BITS	14
 #define REG_W_CLR_BITS	15
 
@@ -55,6 +55,7 @@ static const char * const wr_reg[] = {
 #define REG_R_SRB	9
 #define REG_R_1_16_TEST	10
 #define REG_R_RHRB	11
+#define REG_R_INPUT	13
 #define REG_R_START_PIT	14
 #define REG_R_STOP_PIT	15
 
@@ -75,6 +76,7 @@ static struct ioc_duart {
 	struct chan	chan[2];
 	uint8_t		opr;
 	int		pit_running;
+	int		pit_intr;
 } ioc_duart[1];
 
 static pthread_mutex_t duart_mtx = PTHREAD_MUTEX_INITIALIZER;
@@ -85,14 +87,18 @@ static void
 ioc_duart_pit_callback(void *priv)
 {
 	(void)priv;
-	trace(TRACE_PIT, "PIT\n");
 	AZ(pthread_mutex_lock(&duart_mtx));
 	if (ioc_duart->pit_running) {
 		if ((--ioc_duart->rdregs[REG_R_CTL]) == 0xff)
 			ioc_duart->rdregs[REG_R_CTU]--;
 		if (!ioc_duart->rdregs[REG_R_CTU] &&
 		    !ioc_duart->rdregs[REG_R_CTL]) {
+			trace(TRACE_PIT, "PIT ZERO\n");
 			ioc_duart->rdregs[REG_R_ISR] |= 0x8;
+			if (ioc_duart->pit_intr) {
+				irq_raise(&IRQ_PIT);
+				ioc_duart->opr |= 0x08;
+			}
 		}
 	}
 	AZ(pthread_mutex_unlock(&duart_mtx));
@@ -165,6 +171,9 @@ io_duart(
 				chp->sr |= 1;
 			}
 			break;
+		case REG_W_OPCR:
+			ioc_duart->pit_intr = (value & 0x0c) == 0x04;
+			break;
 		case REG_W_SET_BITS:
 			ioc_duart->opr |= value;
 			break;
@@ -192,10 +201,17 @@ io_duart(
 			ioc_duart->rdregs[REG_R_CTL] =
 			    ioc_duart->wrregs[REG_W_CTLR];
 			ioc_duart->pit_running = 1;
+			trace(TRACE_PIT, "PIT START 0x%02x%02x\n",
+			    ioc_duart->rdregs[REG_R_CTU],
+			    ioc_duart->rdregs[REG_R_CTL]);
 			break;
 		case REG_R_STOP_PIT:
+			trace(TRACE_PIT, "PIT STOP\n");
 			ioc_duart->pit_running = 0;
 			ioc_duart->rdregs[REG_R_ISR] &= ~0x8;
+			irq_lower(&IRQ_PIT);
+			if (ioc_duart->pit_intr)
+				ioc_duart->opr &= ~0x08;
 			break;
 		default:
 			break;
