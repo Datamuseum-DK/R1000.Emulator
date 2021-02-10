@@ -50,28 +50,28 @@ Interrupts/vectors in software:
 
 	KERNEL          vector          SelfTest @      What
 	---------------------------------------------------------------
-	00009fe4        VECTOR_0x40:                    (POWER LOW)
+	00009fe4        VECTOR_0x40:                    	(POWER LOW)
 	0000836a        VECTOR_0x41:                    PANIC
-	00002b82        VECTOR_0x42:    0x8000126e      UART RX BREAK
+	00002b82        VECTOR_0x42:    0x8000126e      CONSOLE.BREAK
 
-	0000370c        VECTOR_0x44:    0x80001346      (DUART_DIAG_STATUS/DATA)
-	00002ada        VECTOR_0x45:    0x80001318      (UART STATUS)
-	0000263e        VECTOR_0x46:    0x800012ba      (DUART MODEM STATUS)
-	00004120        VECTOR_0x47:                    (EXT MODEM)
-	000036b0        VECTOR_0x48:    0x800014c4      (DUART_DIAG_COMMAND)
-	00002ab0        VECTOR_0x49:    0x80001496      (UART DATA)
-	00002694        VECTOR_0x4a:    0x8000145e      (DUART_ACR_IPCR)
-	0000314c        VECTOR_0x4b:    0x80001424      (DUART_MODEM_DATA)
-	00003b3e        VECTOR_0x4c:    0x800013c4      (via 1438 MODEM)
+	0000370c        VECTOR_0x44:    0x80001346      	(DUART_DIAG_STATUS/DATA)
+	00002ada        VECTOR_0x45:    0x80001318      CONSOLE.RXRDY
+	0000263e        VECTOR_0x46:    0x800012ba      	(DUART MODEM STATUS)
+	00004120        VECTOR_0x47:                    	(EXT MODEM)
+	000036b0        VECTOR_0x48:    0x800014c4      	(DUART_DIAG_COMMAND)
+	00002ab0        VECTOR_0x49:    0x80001496      CONSOLE.TXRDY
+	00002694        VECTOR_0x4a:    0x8000145e      	(DUART_ACR_IPCR)
+	0000314c        VECTOR_0x4b:    0x80001424      	(DUART_MODEM_DATA)
+	00003b3e        VECTOR_0x4c:    0x800013c4      	(via 1438 MODEM)
 
-	00008c3c        VECTOR_0x4e:    0x800013f6      (IO_CPU_REQUEST)
-	00009e30        VECTOR_0x4f:    0x80001396      (SCSI_T?)
-	00002be2        VECTOR_0x50:    0x800011f0      (NOP or PANIC)
+	00008c3c        VECTOR_0x4e:    0x800013f6      	(IO_CPU_REQUEST)
+	00009e30        VECTOR_0x4f:    0x80001396      	(SCSI_T?)
+	00002be2        VECTOR_0x50:    0x800011f0      	(NOP or PANIC)
 			VECTOR_0x51:    0x8000128c
 			VECTOR_0x52:    0x80001368
 
-	00005a02        VECTOR_0x91                     (SCSI_D)
-	000098aa        VECTOR_0x92                     (SCSI_T)
+	00005a02        VECTOR_0x91                     	(SCSI_D)
+	000098aa        VECTOR_0x92                     	(SCSI_T)
 	000098aa        VECTOR_0x93
 	00007ede        VECTOR_0x94                     (?)
 	00007ede        VECTOR_0x95

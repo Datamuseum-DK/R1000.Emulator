@@ -176,9 +176,17 @@ io_duart(
 			break;
 		case REG_W_SET_BITS:
 			ioc_duart->opr |= value;
+			if (ioc_duart->opr & 0x10)
+				irq_raise(&IRQ_MODEM_RXRDY);
+			if (ioc_duart->opr & 0x20)
+				irq_raise(&IRQ_DIAG_BUS_RXRDY);
 			break;
 		case REG_W_CLR_BITS:
 			ioc_duart->opr &= ~value;
+			if (!(ioc_duart->opr & 0x10))
+				irq_lower(&IRQ_MODEM_RXRDY);
+			if (!(ioc_duart->opr & 0x10))
+				irq_lower(&IRQ_DIAG_BUS_RXRDY);
 			break;
 		default:
 			break;

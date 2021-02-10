@@ -21,8 +21,6 @@ static uint8_t resha_eeprom[32768];
 static uint8_t ram[1<<19];
 static uint8_t map_dma_in[1<<13];
 
-static uint8_t irq_vector[2] = { 0x50, 0x00 };
-
 unsigned ioc_fc;
 
 unsigned int ioc_pc;
@@ -36,6 +34,31 @@ dump_ram(void)
 	assert (fd>0);
 	(void)write(fd, ram, sizeof(ram));
 	(void)close(fd);
+}
+
+static void
+dump_registers(void)
+{
+	trace(TRACE_68K, "D0 = %08x  D4 = %08x   A0 = %08x  A4 = %08x\n",
+	    m68k_get_reg(NULL, M68K_REG_D0), m68k_get_reg(NULL, M68K_REG_D4),
+	    m68k_get_reg(NULL, M68K_REG_A0), m68k_get_reg(NULL, M68K_REG_A4)
+	);
+
+	trace(TRACE_68K, "D1 = %08x  D5 = %08x   A1 = %08x  A5 = %08x\n",
+	    m68k_get_reg(NULL, M68K_REG_D1), m68k_get_reg(NULL, M68K_REG_D5),
+	    m68k_get_reg(NULL, M68K_REG_A1), m68k_get_reg(NULL, M68K_REG_A5)
+	);
+
+	trace(TRACE_68K, "D2 = %08x  D6 = %08x   A2 = %08x  A6 = %08x\n",
+	    m68k_get_reg(NULL, M68K_REG_D2), m68k_get_reg(NULL, M68K_REG_D6),
+	    m68k_get_reg(NULL, M68K_REG_A2), m68k_get_reg(NULL, M68K_REG_A6)
+	);
+
+	trace(TRACE_68K, "D3 = %08x  D7 = %08x   A3 = %08x  A7 = %08x\n",
+	    m68k_get_reg(NULL, M68K_REG_D3), m68k_get_reg(NULL, M68K_REG_D7),
+	    m68k_get_reg(NULL, M68K_REG_A3), m68k_get_reg(NULL, M68K_REG_A7)
+	);
+
 }
 
 void v_matchproto_(cli_func_f)
@@ -260,25 +283,6 @@ io_resha_wcard(
 	return (value);
 }
 
-
-/**********************************************************************/
-
-static unsigned int v_matchproto_(iofunc_f)
-io_irq_vector(
-    const char *op,
-    unsigned int address,
-    memfunc_f *func,
-    unsigned int value
-)
-{
-
-	IO_TRACE_WRITE(2, "IRQ_VECTOR");
-	value = func(op, irq_vector, address & 0x1, value);
-	IO_TRACE_READ(2, "IRQ_VECTOR");
-	return (value);
-}
-
-
 /**********************************************************************/
 
 static unsigned int
@@ -290,10 +294,8 @@ mem(const char *op, unsigned int address, memfunc_f *func, unsigned int value)
 		retval = irq_getvector(0);
 		trace(TRACE_68K, "IRQ_VECTOR %x (%08x %s %08x %x)\n",
 		    retval, ioc_pc, op, address, value);
-		if (address == 0xfffffffe)
-			return (retval);
-		assert (address == 0xfffffffc);
-		return (0x51);
+		assert ((address & ~0xf) == 0xfffffff0);
+		return (retval);
 	}
 	if (address < 0x8000 && r1000sim->simclock < 1000)
 		return func(op, ioc_eeprom, address & 0x7fffffff, value);
@@ -356,8 +358,6 @@ mem(const char *op, unsigned int address, memfunc_f *func, unsigned int value)
 		return (0);
 	if (0xffffff00 == address)	// IO_READ_SENSE_p25
 		return (0);
-	if (0xfffffffe == address)	// IRQ_VECTOR?
-		return io_irq_vector(op, address, func, value);
 
 	exit_error("Attempted memory at address %08x", address);
 	return (0);
@@ -462,6 +462,7 @@ cpu_instr_callback(unsigned int pc)
 	}
 	if (pc == 0x80000088) {
 		// hit self-test fail, stop tracing
+		dump_registers();
 		r1000sim->do_trace = 0;
 	}
 	if (pc == 0x800000b4) {
@@ -571,6 +572,11 @@ main_ioc(void *priv)
 	// Y2K
 	ioc_eeprom[0x3825] = '2';
 	ioc_eeprom[0x3826] = '0';
+
+	// Local interrupts test
+	insert_jump(0x800011dc, 0x800011fc); // XXX: Where does vector 0x50 come from ?!
+	insert_jump(0x8000127a, 0x80001298); // XXX: Where does vector 0x51 come from ?!
+	insert_jump(0x80001358, 0x80001474); // XXX: Where does vector 0x52 come from ?!
 
 	m68k_init();
 	m68k_set_cpu_type(IOC_CPU_TYPE);
