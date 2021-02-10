@@ -68,6 +68,7 @@ void dma_write(unsigned segment, unsigned address, void *src, unsigned len);
 	IRQ_VECTOR(DIAG_BUS_RXRDY,	L67,	0x44,	0x644) \
 	IRQ_VECTOR(CONSOLE_RXRDY,	L67,	0x45,	0x645) \
 	IRQ_VECTOR(MODEM_RXRDY,		L67,	0x46,	0x646) \
+	IRQ_VECTOR(DIAG_BUS_TXRDY,	1,	0x48,	0x148) \
 	IRQ_VECTOR(CONSOLE_TXRDY,	1,	0x49,	0x1149) \
 	IRQ_VECTOR(PIT,			1,	0x4f,	0x14f) \
 	IRQ_VECTOR(SCSI_D,		L67,	0x91,	0x691) \

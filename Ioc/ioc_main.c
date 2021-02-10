@@ -492,14 +492,6 @@ insert_jump(unsigned int from, unsigned int to)
 	vbe32enc(ioc_eeprom + from + 2, to);
 }
 
-static void
-insert_return(unsigned int from)
-{
-	from &= 0x7fffffff;
-	ioc_eeprom[from] = 0x4e;
-	ioc_eeprom[from+1L] = 0x75;
-}
-
 /* The main loop */
 void *
 main_ioc(void *priv)
@@ -524,28 +516,30 @@ main_ioc(void *priv)
 	assert(fread(resha_eeprom + 0x0000, 1, 32768, fhandle) == 32768);
 	AZ(fclose(fhandle));
 
-	// Patch UART delay-loop much shorter
-	ioc_eeprom[0x64] = 0;
+	if (1) {
+		// Patch UART delay-loop much shorter
+		ioc_eeprom[0x64] = 0;
 
-	// Patch UART delay-loop much shorter
-	ioc_eeprom[0x101] = 0;
-	ioc_eeprom[0x102] = 0;
-	ioc_eeprom[0x103] = 4;
+		// Patch UART delay-loop much shorter
+		ioc_eeprom[0x101] = 0;
+		ioc_eeprom[0x102] = 0;
+		ioc_eeprom[0x103] = 4;
 
-	// Patch UART delay-loop much shorter
-	ioc_eeprom[0x136] = 0;
+		// Patch UART delay-loop much shorter
+		ioc_eeprom[0x136] = 0;
 
-	// Patch UART delay-loop much shorter
-	ioc_eeprom[0x33c] = 0;
+		// Patch UART delay-loop much shorter
+		ioc_eeprom[0x33c] = 0;
 
-	// Patch UART delay-loop much shorter
-	ioc_eeprom[0x34c] = 0;
+		// Patch UART delay-loop much shorter
+		ioc_eeprom[0x34c] = 0;
 
-	// Patch RESHA delay routine
-	resha_eeprom[0x458c] = 0;
-	resha_eeprom[0x458d] = 1;
+		// Patch RESHA delay routine
+		resha_eeprom[0x458c] = 0;
+		resha_eeprom[0x458d] = 1;
 
-	// See also patches in dma_write()
+		// See also patches in dma_write()
+	}
 
 	insert_jump(0x800001e4, 0x8000021a); // EEPROM CHECKSUM
 	insert_jump(0x800003a4, 0x80000546); // 512k RAM Test
@@ -553,13 +547,21 @@ main_ioc(void *priv)
 	insert_jump(0x800007f4, 0x800009b2); // I/O Bus control
 	insert_jump(0x800009da, 0x80000a4a); // I/O Bus map parity
 	insert_jump(0x80000a74, 0x80000b8a); // I/O bus transactions
+
 	//insert_jump(0x80000ba2, 0x80000bf2); // PIT  (=> DUART)
 	//insert_jump(0x80000c1a, 0x80000d20); // Modem DUART channel
 	//insert_jump(0x80000d4e, 0x80000dd6); // Diagnostic DUART channel
 	//insert_jump(0x80000dfc, 0x80000ec4); // Clock / Calendar
+
 	insert_jump(0x80000fa0, 0x80000fda); // RESHA EEProm Interface ...
-	insert_return(0x80001122); // RESHA based selftests
-	insert_jump(0x800011c0, 0x800014d0); // Local interrupts
+
+	insert_jump(0x80001170, 0x8000117c); // RESHA VEM sub-tests
+	insert_jump(0x8000117c, 0x80001188); // RESHA LANCE sub-tests
+	insert_jump(0x80001188, 0x80001194); // RESHA DISk SUB-TESts
+	insert_jump(0x80001194, 0x800011a0); // RESHA DISk SUB-TESts
+
+	//insert_jump(0x800011c0, 0x800014d0); // Local interrupts
+
 	insert_jump(0x80001502, 0x800015ce); // Illegal reference protection
 	insert_jump(0x800015f2, 0x8000166c); // I/O bus parity
 	insert_jump(0x8000169c, 0x800016d8); // I/O bus spurious interrupts
@@ -576,7 +578,7 @@ main_ioc(void *priv)
 	// Local interrupts test
 	insert_jump(0x800011dc, 0x800011fc); // XXX: Where does vector 0x50 come from ?!
 	insert_jump(0x8000127a, 0x80001298); // XXX: Where does vector 0x51 come from ?!
-	insert_jump(0x80001358, 0x80001474); // XXX: Where does vector 0x52 come from ?!
+	insert_jump(0x80001358, 0x80001470); // XXX: Where does vector 0x52 come from ?!
 
 	m68k_init();
 	m68k_set_cpu_type(IOC_CPU_TYPE);

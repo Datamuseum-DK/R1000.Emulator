@@ -58,7 +58,7 @@ Interrupts/vectors in software:
 	00002ada        VECTOR_0x45:    0x80001318      CONSOLE.RXRDY
 	0000263e        VECTOR_0x46:    0x800012ba      	(DUART MODEM STATUS)
 	00004120        VECTOR_0x47:                    	(EXT MODEM)
-	000036b0        VECTOR_0x48:    0x800014c4      	(DUART_DIAG_COMMAND)
+	000036b0        VECTOR_0x48:    0x800014c4      DIAG_BUS.TXRDY
 	00002ab0        VECTOR_0x49:    0x80001496      CONSOLE.TXRDY
 	00002694        VECTOR_0x4a:    0x8000145e      	(DUART_ACR_IPCR)
 	0000314c        VECTOR_0x4b:    0x80001424      	(DUART_MODEM_DATA)

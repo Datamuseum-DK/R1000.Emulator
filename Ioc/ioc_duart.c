@@ -88,7 +88,9 @@ ioc_duart_pit_callback(void *priv)
 {
 	(void)priv;
 	AZ(pthread_mutex_lock(&duart_mtx));
-	if (ioc_duart->pit_running) {
+	if (ioc_duart->pit_running == 1) {
+		ioc_duart->pit_running = 2;
+	} else if (ioc_duart->pit_running == 2) {
 		if ((--ioc_duart->rdregs[REG_R_CTL]) == 0xff)
 			ioc_duart->rdregs[REG_R_CTU]--;
 		if (!ioc_duart->rdregs[REG_R_CTU] &&
@@ -180,6 +182,8 @@ io_duart(
 				irq_raise(&IRQ_MODEM_RXRDY);
 			if (ioc_duart->opr & 0x20)
 				irq_raise(&IRQ_DIAG_BUS_RXRDY);
+			if (ioc_duart->opr & 0x80)
+				irq_raise(&IRQ_DIAG_BUS_TXRDY);
 			break;
 		case REG_W_CLR_BITS:
 			ioc_duart->opr &= ~value;
@@ -187,6 +191,8 @@ io_duart(
 				irq_lower(&IRQ_MODEM_RXRDY);
 			if (!(ioc_duart->opr & 0x10))
 				irq_lower(&IRQ_DIAG_BUS_RXRDY);
+			if (!(ioc_duart->opr & 0x80))
+				irq_lower(&IRQ_DIAG_BUS_TXRDY);
 			break;
 		default:
 			break;
@@ -262,19 +268,6 @@ cli_ioc_duart(struct cli *cli)
 void
 ioc_duart_init(struct sim *sim)
 {
-	/*
-	 * The IOC_EEPROM1 selftest seems to assume that CTLR is
-	 * non-zero after reset (or that the START_COUNTER command
-	 * takes some time to kick in ?)
-	 *
-	 * 80000bae  MOVE.B  IO_DUART_CLR_OPC_STOP_COUNTER,D0
-	 * 80000bb2  MOVE.W  #0x0010,IO_DUART_CTUR_CTU
-	 * 80000bb8  MOVE.B  IO_DUART_SET_OPC_START_COUNTER,D0
-	 * 80000bbc  MOVE.W  IO_DUART_CTUR_CTU,D0
-	 * 80000bc0  CMPI.W  #0x0010,D0
-	 * 80000bc4  BNE     _TEST_FAILED
-	 */
-	ioc_duart->wrregs[REG_W_CTLR] = 1;
 
 	ioc_duart->chan[0].ep = elastic_new(sim, O_RDWR);
 	ioc_duart->chan[1].ep = elastic_new(sim, O_RDWR);

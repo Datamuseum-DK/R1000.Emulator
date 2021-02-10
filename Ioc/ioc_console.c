@@ -14,6 +14,13 @@
 #include "ioc.h"
 #include "elastic.h"
 
+#if 0
+#   define CONSOLE_RATE	(1000000000 / 9600)
+#else
+#   define CONSOLE_RATE	(1000000000 / 96000)
+#endif
+
+
 static const char * const rd_reg[] = {"DATA", "STATUS", "MODE", "CMD"};
 static const char * const wr_reg[] = {"DATA", "SYN/DLE", "MODE", "CMD"};
 
@@ -103,10 +110,12 @@ cons_txshift_done(void * priv)
 {
 	(void)priv;
 
+trace(8, "CONSOLE_SHIFT\n");
 	AZ(pthread_mutex_lock(&cons_mtx));
 	if (!(cons->cmd & 0x01)) {			// Tx disabled
-		cons->status &= ~0x04;
+		cons->status &= ~0x05;
 		irq_lower(&IRQ_CONSOLE_TXRDY);
+		cons->txshiftfull = 0;
 	} else if (cons->loopback && cons->txbreak) {
 		cons->status |= 0x22;		// Break detected
 		irq_raise(&IRQ_CONSOLE_BREAK);
@@ -115,16 +124,16 @@ cons_txshift_done(void * priv)
 			cons->rxhold = cons->txshift;
 			cons->status |= 0x02;
 			irq_raise(&IRQ_CONSOLE_RXRDY);
-		} else if (cons->txshiftfull) {
-			elastic_put(cons->ep, &cons->txhold, 1);
 		}
 		cons->txshiftfull = 0;
 		if (cons->status & 0x01) {			// txhold is empty
 			cons->status |= 0x04;			// TxEmt
 		} else {
+			if (!cons->loopback)
+				elastic_put(cons->ep, &cons->txhold, 1);
 			cons->txshift = cons->txhold;
 			cons->txshiftfull = 1;
-			callout_callback(r1000sim, cons_txshift_done, NULL, 1000, 0);
+			callout_callback(r1000sim, cons_txshift_done, NULL, CONSOLE_RATE, 0);
 			cons->status |= 0x01;			// txhold is empty
 			irq_raise(&IRQ_CONSOLE_TXRDY);
 		}
@@ -235,7 +244,7 @@ io_console_uart(
 	AZ(pthread_mutex_unlock(&cons_mtx));
 	if (op[0] == 'W') {
 		if (cons->txbreak && cons->loopback)
-			cons_txshift_done(NULL);
+			callout_callback(r1000sim, cons_txshift_done, NULL, CONSOLE_RATE, 0);
 		else if (!(cons->status & 1) && !cons->txshiftfull)
 			cons_txshift_done(NULL);
 	}
