@@ -168,6 +168,50 @@ scsi_08_read_6(struct scsi *sp)
 }
 
 static void v_matchproto_(scsi_func_f)
+scsi_0d_vendor(struct scsi *sp)
+{
+
+	trace_cdb(sp, "VENDOR");
+
+	sp->regs[0x17] = 0x16;
+}
+
+static uint8_t mode_sense_page_3[] = {
+        0x83, 0x16,
+        0x00, 0x0f, 0x00, 0x00, 0x00, 0x00, 0x00, 0x2d,
+        0x00, 0x26, 0x04, 0x00, 0x00, 0x01, 0x00, 0x03,
+        0x00, 0x0c, 0x40, 0x00, 0x00, 0x00
+
+};
+
+static uint8_t mode_sense_page_4[] = {
+        0x84, 0x12,
+        0x00, 0x07, 0x8b, 0x0f, 0x00, 0x00, 0x00, 0x00,
+        0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+        0x00, 0x00
+};
+
+static void v_matchproto_(scsi_func_f)
+scsi_1a_mode_sense(struct scsi *sp)
+{
+	unsigned dst;
+
+	trace_cdb(sp, "MODE SENSE");
+
+	dst = sp->dma;
+	dst &= (1<<19)-1;
+	switch(sp->regs[0x05]) {
+	case 0x03:
+		dma_write(3, dst, mode_sense_page_3, sizeof mode_sense_page_3);
+		break;
+	case 0x04:
+		dma_write(3, dst, mode_sense_page_4, sizeof mode_sense_page_4);
+		break;
+	}
+	sp->regs[0x17] = 0x16;
+}
+
+static void v_matchproto_(scsi_func_f)
 scsi_28_read_10(struct scsi *sp)
 {
 	unsigned lba, dst, nsect;
@@ -194,6 +238,8 @@ scsi_28_read_10(struct scsi *sp)
 static scsi_func_f * const scsi_funcs[256] = {
 	[0x00] = scsi_00_test_unit_ready,
 	[0x08] = scsi_08_read_6,
+	[0x0d] = scsi_0d_vendor,
+	[0x1a] = scsi_1a_mode_sense,
 	[0x28] = scsi_28_read_10,
 };
 
@@ -388,6 +434,7 @@ io_scsi_ctl(
 			callout_callback(r1000sim, scsi_ctrl_reset, sp, 5000, 0);
 		}
 	} else {
+		ctl_regs[1] |= 0x80;	// WRITE ENABLE SWITCH
 		value = func(op, ctl_regs, address & 0x1ff, value);
 		IO_TRACE_READ(2, "SCSI_CTL");
 	}

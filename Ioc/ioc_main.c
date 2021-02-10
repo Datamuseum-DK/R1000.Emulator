@@ -470,10 +470,12 @@ cpu_instr_callback(unsigned int pc)
 	if (pc == 0x800000b4) {
 		a6 =  m68k_get_reg(NULL, M68K_REG_A6);
 		printf("Self test at 0x%x failed\n", a6);
+		dump_registers();
 		dump_ram();
 		exit(2);
 	}
 	if (pc == 0x0000a090) {
+		dump_registers();
 		// hit trap, stop tracing
 		r1000sim->do_trace = 0;
 	}
