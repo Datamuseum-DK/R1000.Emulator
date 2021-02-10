@@ -30,7 +30,6 @@ static const char * const wr_reg[] = {"DATA", "SYN/DLE", "MODE", "CMD"};
 static pthread_mutex_t	cons_mtx = PTHREAD_MUTEX_INITIALIZER;
 static pthread_cond_t	cons_cond = PTHREAD_COND_INITIALIZER;
 static pthread_t	cons_rx;
-static pthread_t	cons_tx;
 
 static struct cons {
 	struct elastic	*ep;
@@ -42,6 +41,8 @@ static struct cons {
 	uint8_t		status;
 	uint8_t		rxhold;
 	uint8_t		txhold;
+	uint8_t		txshift;
+	uint8_t		txshiftfull;
 	int		txbreak;
 	int		loopback;
 	unsigned	updated;
@@ -97,51 +98,38 @@ thr_console_rx(void *priv)
 
 /**********************************************************************/
 
-static void*
-thr_console_tx(void *priv)
+static void
+cons_txshift_done(void * priv)
 {
 	(void)priv;
 
 	AZ(pthread_mutex_lock(&cons_mtx));
-	while (1) {
-		while (!cons->updated)
-			AZ(pthread_cond_wait(&cons_cond, &cons_mtx));
-		cons->updated = 0;
-		if (cons->txbreak && cons->loopback) {
-			cons->status |= 0x22;	// break condition
-			cons->status &= ~0x01;	// txhold busy
-			cons->rxhold = 0;
-			irq_lower(&IRQ_CONSOLE_TXRDY);
-			irq_raise(&IRQ_CONSOLE_BREAK);
+	if (!(cons->cmd & 0x01)) {			// Tx disabled
+		cons->status &= ~0x04;
+		irq_lower(&IRQ_CONSOLE_TXRDY);
+	} else if (cons->loopback && cons->txbreak) {
+		cons->status |= 0x22;		// Break detected
+		irq_raise(&IRQ_CONSOLE_BREAK);
+	} else {
+		if (cons->loopback && !cons->txbreak && cons->txshiftfull) {
+			cons->rxhold = cons->txshift;
+			cons->status |= 0x02;
+			irq_raise(&IRQ_CONSOLE_RXRDY);
+		} else if (cons->txshiftfull) {
+			elastic_put(cons->ep, &cons->txhold, 1);
 		}
-		if ((!cons->txbreak || !cons->loopback)) {
-			cons->status &= ~0x20;	// break condition
-			irq_lower(&IRQ_CONSOLE_RXRDY);
-			irq_lower(&IRQ_CONSOLE_BREAK);
-		}
-		if (cons->txbreak)
-			continue;
-		if (!(cons->status & 0x1)) {		// tx-hold was filled
-			if (cons->loopback) {
-				cons->rxhold = cons->txhold;
-				cons->status |= 0x02;
-				irq_raise(&IRQ_CONSOLE_RXRDY);
-			} else {
-				elastic_put(
-				    cons->ep,
-				    &cons->txhold,
-				    1
-				);
-			}
-			cons->status |= 1;		// tx-hold empty
-			if (cons->cmd & 0x01)
-				irq_raise(&IRQ_CONSOLE_TXRDY);
-			AZ(pthread_mutex_unlock(&cons_mtx));
-			usleep(1000);
-			AZ(pthread_mutex_lock(&cons_mtx));
-			cons->status |= 4;		// tx-shift empty
+		cons->txshiftfull = 0;
+		if (cons->status & 0x01) {			// txhold is empty
+			cons->status |= 0x04;			// TxEmt
+		} else {
+			cons->txshift = cons->txhold;
+			cons->txshiftfull = 1;
+			callout_callback(r1000sim, cons_txshift_done, NULL, 1000, 0);
+			cons->status |= 0x01;			// txhold is empty
+			irq_raise(&IRQ_CONSOLE_TXRDY);
 		}
 	}
+	AZ(pthread_mutex_unlock(&cons_mtx));
 }
 
 /**********************************************************************/
@@ -154,7 +142,7 @@ io_console_uart(
     unsigned int value
 )
 {
-	unsigned reg;
+	unsigned reg, chg;
 
 	reg = address & 3;
 	AZ(pthread_mutex_lock(&cons_mtx));
@@ -166,29 +154,53 @@ io_console_uart(
 		case REG_W_DATA:
 			cons->txhold = cons->wrregs[reg];
 			cons->status &= ~1;		// tx-hold busy
-			if (cons->cmd & 0x01)
-				irq_lower(&IRQ_CONSOLE_TXRDY);
 			cons->status &= ~4;		// tx-shift full
+			irq_lower(&IRQ_CONSOLE_TXRDY);
 			break;
 		case REG_W_MODE:
 			cons->mode[cons->mptr] = cons->wrregs[reg];
 			cons->mptr ^= 1;
 			break;
 		case REG_W_CMD:
-			cons->cmd = cons->wrregs[reg];
-			if (cons->cmd & 0x01) {
+			chg = cons->wrregs[reg] ^ cons->cmd;
+
+			if ((chg & 0x01) && !(cons->cmd & 0x01)) {
+				cons->cmd |= 0x01;	// tx-enabled
 				cons->status |= 0x01;	// tx-hold empty
 				irq_raise(&IRQ_CONSOLE_TXRDY);
-			} else {
+			} else if ((chg & 0x01) && (cons->cmd & 0x01)) {
+				cons->cmd &= ~0x01;	// tx-disabled
+				cons->status &= ~0x05;	// tx-hold empty
 				irq_lower(&IRQ_CONSOLE_TXRDY);
 			}
-			if (!(cons->cmd & 0x04))
+
+			if ((chg & 0x04) && !(cons->cmd & 0x04)) {
+				cons->cmd |= 0x04;	// rx-enabled
 				cons->status &= ~0x02;	// rx-hold empty
-			if (cons->cmd & 0x10) {
-				cons->status &= ~0x38;
-				cons->cmd &= ~0x10;
+			} else if ((chg & 0x04) && (cons->cmd & 0x04)) {
+				cons->cmd &= ~0x04;	// rx-disabled
+				cons->status &= ~0x02;	// rx-hold empty
+				irq_lower(&IRQ_CONSOLE_RXRDY);
 			}
-			cons->txbreak = cons->cmd & 0x08;
+
+			if (cons->wrregs[reg] & 0x10) {
+				cons->status &= ~0x38;
+				irq_lower(&IRQ_CONSOLE_BREAK);
+			}
+
+			cons->cmd &= ~0xea;
+			cons->cmd |= cons->wrregs[reg] & 0xea;
+
+			if ((chg & 0x08) && !cons->txbreak) {
+				cons->txbreak = 1;
+				cons->status &= ~0x05;	// tx-hold empty
+				irq_lower(&IRQ_CONSOLE_TXRDY);
+			} else if ((chg & 0x08) && cons->txbreak) {
+				cons->txbreak = 0;
+				cons->status |= 0x01;	// tx-hold empty
+				irq_raise(&IRQ_CONSOLE_TXRDY);
+				irq_lower(&IRQ_CONSOLE_BREAK);
+			}
 			cons->loopback = (cons->cmd & 0xc0) == 0x80;
 			break;
 		default:
@@ -200,7 +212,6 @@ io_console_uart(
 		switch(reg) {
 		case REG_R_DATA:
 			cons->rdregs[reg] = cons->rxhold;
-			cons->rxhold = 0;
 			cons->status &= ~2;		// rx-hold empty
 			irq_lower(&IRQ_CONSOLE_RXRDY);
 			break;
@@ -222,6 +233,12 @@ io_console_uart(
 		    ioc_pc, op, address, value, rd_reg[reg]);
 	}
 	AZ(pthread_mutex_unlock(&cons_mtx));
+	if (op[0] == 'W') {
+		if (cons->txbreak && cons->loopback)
+			cons_txshift_done(NULL);
+		else if (!(cons->status & 1) && !cons->txshiftfull)
+			cons_txshift_done(NULL);
+	}
 	return (value);
 }
 
@@ -231,5 +248,4 @@ ioc_console_init(struct sim *sim)
 
 	cons->ep = elastic_new(sim, O_RDWR);
 	AZ(pthread_create(&cons_rx, NULL, thr_console_rx, NULL));
-	AZ(pthread_create(&cons_tx, NULL, thr_console_tx, NULL));
 }
