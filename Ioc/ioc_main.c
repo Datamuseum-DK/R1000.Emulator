@@ -213,24 +213,26 @@ wrlong(const char *op, uint8_t *space, unsigned int address, unsigned int data)
 
 /**********************************************************************/
 
+static uint8_t reg_400[4];
+static uint8_t reg_800[4];
+
 static unsigned int
 io_registers(const char *op, unsigned int address, memfunc_f *func, unsigned int value)
 {
-	unsigned int retval = 0;
-	static uint8_t reg_400[4];
-	static uint8_t reg_800[4];
 
+	IO_TRACE_WRITE(TRACE_IO, "STATUS_REGISTER");
 	if (address == 0xfffff400) {
-		retval = func(op, reg_400, address & 3, value);
+		value = func(op, reg_400, address & 3, value);
 	} else if (0xfffff800 == (address & ~3)) {
 		reg_800[3] |= 0x20;
-		retval = func(op, reg_800, address & 3, value);
+		value = func(op, reg_800, address & 3, value);
 		reg_800[3] |= 0x20;
 	} else {
 		exit_error("Attempted io_reg memory at address %08x", address & ~3);
 	}
 
-	return (retval);
+	IO_TRACE_READ(TRACE_IO, "STATUS_REGISTER");
+	return (value);
 }
 
 
@@ -465,6 +467,13 @@ cpu_instr_callback(unsigned int pc)
 		dump_registers();
 		r1000sim->do_trace = 0;
 	}
+	if (pc == 0x00071286) {
+		dump_registers();
+		r1000sim->do_trace = 0;
+		printf("RESHA test failed\n");
+		dump_ram();
+		exit(2);
+	}
 	if (pc == 0x800000b4) {
 		a6 =  m68k_get_reg(NULL, M68K_REG_A6);
 		printf("Self test at 0x%x failed\n", a6);
@@ -557,8 +566,8 @@ main_ioc(void *priv)
 
 	insert_jump(0x80001170, 0x8000117c); // RESHA VEM sub-tests
 	insert_jump(0x8000117c, 0x80001188); // RESHA LANCE sub-tests
-	insert_jump(0x80001188, 0x80001194); // RESHA DISk SUB-TESts
-	insert_jump(0x80001194, 0x800011a0); // RESHA DISk SUB-TESts
+	//insert_jump(0x80001188, 0x80001194); // RESHA DISK SUB-TESTs
+	insert_jump(0x80001194, 0x800011a0); // RESHA TAPE SUB-TEStS
 
 	//insert_jump(0x800011c0, 0x800014d0); // Local interrupts
 
@@ -584,12 +593,15 @@ main_ioc(void *priv)
 	m68k_set_cpu_type(IOC_CPU_TYPE);
 	m68k_pulse_reset();
 
+	reg_800[3] = 0x7;
 	while(1)
 	{
 		if (irq_level != last_irq_level) {
 			last_irq_level = irq_level;
 			m68k_set_irq(last_irq_level);
 			trace(TRACE_68K, "IRQ level %x\n", last_irq_level);
+			reg_800[3] &= ~7;
+			reg_800[3] |= (~irq_level) & 7;
 		}
 		r1000sim->simclock += 100 * m68k_execute(1);
 		callout_poll(r1000sim);

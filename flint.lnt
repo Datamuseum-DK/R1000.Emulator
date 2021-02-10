@@ -5,7 +5,9 @@
 
 -efile(451, "Ioc/interrupts.h")	// Header file 'Ioc/interrupts.h' repeatedly included but does not have a standard include guard
 
--esym(785, struct irq_vector) // Too few initializers for aggregate
+// Too few initializers for aggregate
+-esym(785, struct irq_vector)
+-esym(785, scsi_funcs)
 
 // 534 Ignoring return value of library functions
 -esym(534, printf)

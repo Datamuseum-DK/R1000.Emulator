@@ -14,7 +14,7 @@ struct scsi {
 	pthread_cond_t		cond;
 	pthread_t		thr;
 	uint8_t			regs[32];
-	uint8_t			r[1<<16];
+	uint8_t			r[1<<12];
 	unsigned int		dma;
 	unsigned		valid_ids;
 };
@@ -255,7 +255,7 @@ scsi_ctrl(struct scsi *sp, const char *op, unsigned int address, memfunc_f *func
 	if (op[0] == 'W' && reg == 0x18) {
 		AZ(pthread_cond_signal(&sp->cond));
 	}
-	if (op[0] == 'R' && reg == 0x1f && (value & 0x80)) {
+	if (op[0] == 'R' && reg == 0x17) {
 		sp->regs[0x1f] &= ~0x80;
 		irq_lower(sp->irq_vector);
 	}
@@ -264,6 +264,18 @@ scsi_ctrl(struct scsi *sp, const char *op, unsigned int address, memfunc_f *func
 		trace(TRACE_IO, "%s %08x %s %s %x\n", sp->name,
 		    ioc_pc, op, scsi_reg[reg], value);
 	return (value);
+}
+
+static void
+scsi_ctrl_reset(void *priv)
+{
+	struct scsi *sp = priv;
+
+	AZ(pthread_mutex_lock(&sp->mtx));
+	sp->regs[0x1f] |= 0x80;
+	sp->regs[0x17] = 0x00;
+	irq_raise(sp->irq_vector);
+	AZ(pthread_mutex_unlock(&sp->mtx));
 }
 
 /**********************************************************************/
@@ -290,24 +302,30 @@ io_scsi_d(
 )
 {
 	struct scsi *sp = scsi_d;
+	unsigned prev = sp->r[1] & 1;
 
-	IO_TRACE_WRITE(2, "SCSI_D");
 	if (op[0] == 'W') {
+		IO_TRACE_WRITE(2, "SCSI_D_C");
+		(void)func(op, sp->r, address & 0xfff, value);
 		if (address == 0x9303e100) {
 			sp->dma &= 0xffff0000;
 			sp->dma |= value;
+			trace(2, "SCSI_D_C DMA_ADR %08x\n", sp->dma);
 		}
 		if (address == 0x9303e108) {
 			sp->dma &= 0xffff;
 			sp->dma |= value << 16;
+			trace(2, "SCSI_D_C DMA_SEG %08x\n", sp->dma);
 		}
-		if (sp->r[0] == 0 && address == 0x9303e000 && value == 1) {
-			sp->regs[0x1f] |= 0x80;
-			sp->regs[0x17] = 0x01;
+		if (prev && !(sp->r[1] & 1)) {
+			trace(2, "SCSI_D_C RESET\n");
+			irq_lower(sp->irq_vector);
+			callout_callback(r1000sim, scsi_ctrl_reset, sp, 5000, 0);
 		}
+	} else {
+		value = func(op, sp->r, address & 0xfff, value);
+		IO_TRACE_READ(2, "SCSI_D_C");
 	}
-	value = func(op, sp->r, address & 0xffff, value);
-	IO_TRACE_READ(2, "SCSI_D");
 	return (value);
 }
 
@@ -367,7 +385,7 @@ io_scsi_t(
 			sp->regs[0x17] = 0x01;
 		}
 	}
-	value = func(op, scsi_t->r, address & 0xffff, value);
+	value = func(op, scsi_t->r, address & 0xfff, value);
 	IO_TRACE_READ(2, "SCSI_T");
 	return (value);
 }
