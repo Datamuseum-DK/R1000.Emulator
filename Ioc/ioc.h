@@ -26,8 +26,7 @@ iofunc_f io_duart;
 iofunc_f io_rtc;
 iofunc_f io_scsi_d_reg;
 iofunc_f io_scsi_t_reg;
-iofunc_f io_scsi_d;
-iofunc_f io_scsi_t;
+iofunc_f io_scsi_ctl;
 void ioc_console_init(struct sim *);
 void ioc_duart_init(struct sim *);
 void ioc_scsi_d_init(struct sim *);
@@ -72,7 +71,7 @@ void dma_write(unsigned segment, unsigned address, void *src, unsigned len);
 	IRQ_VECTOR(CONSOLE_TXRDY,	1,	0x49,	0x1149) \
 	IRQ_VECTOR(PIT,			1,	0x4f,	0x14f) \
 	IRQ_VECTOR(SCSI_D,		2,	0x91,	0x691) \
-	IRQ_VECTOR(SCSI_T,		L67,	0x92,	0x692)
+	IRQ_VECTOR(SCSI_T,		3,	0x92,	0x692)
 
 struct irq_vector;
 

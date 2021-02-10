@@ -310,19 +310,12 @@ mem(const char *op, unsigned int address, memfunc_f *func, unsigned int value)
 	if (0x9303e300 == (address & ~0xff)) // resha eeprom page
 		return io_resha_eeprom(op, address, func, value);
 
+	if (0x9303e000 == (address & ~0x1ff)) // SCSI D CTL
+		return io_scsi_ctl(op, address, func, value);
 	if (0x9303e800 == (address & ~0x1f)) // SCSI D
 		return io_scsi_d_reg(op, address, func, value);
-	if (0x9303e100 == (address & ~0x8)) // SCSI D DMA
-		return io_scsi_d(op, address, func, value);
-	if (0x9303e000 == address) // SCSI D CTL
-		return io_scsi_d(op, address, func, value);
-
 	if (0x9303ec00 == (address & ~0x1f)) // SCSI T
 		return io_scsi_t_reg(op, address, func, value);
-	if (0x9303e008 == address) // SCSI T DMA
-		return io_scsi_t(op, address, func, value);
-	if (0x9303e002 == address) // SCSI T CTL
-		return io_scsi_t(op, address, func, value);
 
 	if (0x93030000 == (address & ~0xffff)) // SCSI A DMA
 		return io_resha_wcard(op, address, func, value);
@@ -467,7 +460,7 @@ cpu_instr_callback(unsigned int pc)
 		dump_registers();
 		r1000sim->do_trace = 0;
 	}
-	if (pc == 0x00071286) {
+	if (pc == 0x00071286 || pc == 0x7056e) {
 		dump_registers();
 		r1000sim->do_trace = 0;
 		printf("RESHA test failed\n");
@@ -567,7 +560,7 @@ main_ioc(void *priv)
 	insert_jump(0x80001170, 0x8000117c); // RESHA VEM sub-tests
 	insert_jump(0x8000117c, 0x80001188); // RESHA LANCE sub-tests
 	//insert_jump(0x80001188, 0x80001194); // RESHA DISK SUB-TESTs
-	insert_jump(0x80001194, 0x800011a0); // RESHA TAPE SUB-TEStS
+	//insert_jump(0x80001194, 0x800011a0); // RESHA TAPE SUB-TESTs
 
 	//insert_jump(0x800011c0, 0x800014d0); // Local interrupts
 
@@ -588,6 +581,11 @@ main_ioc(void *priv)
 	insert_jump(0x800011dc, 0x800011fc); // XXX: Where does vector 0x50 come from ?!
 	insert_jump(0x8000127a, 0x80001298); // XXX: Where does vector 0x51 come from ?!
 	insert_jump(0x80001358, 0x80001470); // XXX: Where does vector 0x52 come from ?!
+
+	// RESHA TAPE SCSI sub-tests
+	resha_eeprom[0x139b] = 2;
+	resha_eeprom[0x13a1] = 2;
+	resha_eeprom[0x14cd] = 2;
 
 	m68k_init();
 	m68k_set_cpu_type(IOC_CPU_TYPE);

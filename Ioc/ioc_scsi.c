@@ -14,7 +14,6 @@ struct scsi {
 	pthread_cond_t		cond;
 	pthread_t		thr;
 	uint8_t			regs[32];
-	uint8_t			r[1<<12];
 	unsigned int		dma;
 	unsigned		valid_ids;
 };
@@ -278,6 +277,7 @@ scsi_ctrl_reset(void *priv)
 	AZ(pthread_mutex_unlock(&sp->mtx));
 }
 
+
 /**********************************************************************/
 
 static struct scsi scsi_d[1];
@@ -291,42 +291,6 @@ io_scsi_d_reg(
 )
 {
 	return scsi_ctrl(scsi_d, op, address, func, value);
-}
-
-unsigned int v_matchproto_(iofunc_f)
-io_scsi_d(
-    const char *op,
-    unsigned int address,
-    memfunc_f *func,
-    unsigned int value
-)
-{
-	struct scsi *sp = scsi_d;
-	unsigned prev = sp->r[1] & 1;
-
-	if (op[0] == 'W') {
-		IO_TRACE_WRITE(2, "SCSI_D_C");
-		(void)func(op, sp->r, address & 0xfff, value);
-		if (address == 0x9303e100) {
-			sp->dma &= 0xffff0000;
-			sp->dma |= value;
-			trace(2, "SCSI_D_C DMA_ADR %08x\n", sp->dma);
-		}
-		if (address == 0x9303e108) {
-			sp->dma &= 0xffff;
-			sp->dma |= value << 16;
-			trace(2, "SCSI_D_C DMA_SEG %08x\n", sp->dma);
-		}
-		if (prev && !(sp->r[1] & 1)) {
-			trace(2, "SCSI_D_C RESET\n");
-			irq_lower(sp->irq_vector);
-			callout_callback(r1000sim, scsi_ctrl_reset, sp, 5000, 0);
-		}
-	} else {
-		value = func(op, sp->r, address & 0xfff, value);
-		IO_TRACE_READ(2, "SCSI_D_C");
-	}
-	return (value);
 }
 
 void
@@ -356,40 +320,6 @@ io_scsi_t_reg(
 	return scsi_ctrl(scsi_t, op, address, func, value);
 }
 
-unsigned int v_matchproto_(iofunc_f)
-io_scsi_t(
-    const char *op,
-    unsigned int address,
-    memfunc_f *func,
-    unsigned int value
-)
-{
-	struct scsi *sp = scsi_t;
-
-	IO_TRACE_WRITE(2, "SCSI_T");
-	if (op[0] == 'W') {
-		if (address == 0x9303e100) {
-			sp->dma &= 0xffff0000;
-			sp->dma |= value;
-		}
-		if (address == 0x9303e108) {
-			sp->dma &= 0xffff;
-			sp->dma |= value << 16;
-		}
-		if (address == 0x9303e002 && value) {
-			sp->regs[0x1f] |= 0x80;
-			sp->regs[0x17] = 0x01;
-		}
-		if (address == 0x9303e008 && value) {
-			sp->regs[0x1f] |= 0x80;
-			sp->regs[0x17] = 0x01;
-		}
-	}
-	value = func(op, scsi_t->r, address & 0xfff, value);
-	IO_TRACE_READ(2, "SCSI_T");
-	return (value);
-}
-
 void
 ioc_scsi_t_init(struct sim *cs)
 {
@@ -400,4 +330,66 @@ ioc_scsi_t_init(struct sim *cs)
 	AZ(pthread_mutex_init(&scsi_t->mtx, NULL));
 	AZ(pthread_cond_init(&scsi_t->cond, NULL));
 	AZ(pthread_create(&scsi_t->thr, NULL, scsi_thread, scsi_t));
+}
+
+/**********************************************************************/
+
+static uint8_t ctl_regs[512];
+
+unsigned int v_matchproto_(iofunc_f)
+io_scsi_ctl(
+    const char *op,
+    unsigned int address,
+    memfunc_f *func,
+    unsigned int value
+)
+{
+	struct scsi *sp = NULL;
+	unsigned prev_d = ctl_regs[1] & 0x01;
+	unsigned prev_t = ctl_regs[3] & 0x10;
+
+	if (op[0] == 'W') {
+		IO_TRACE_WRITE(2, "SCSI_CTL");
+		(void)func(op, ctl_regs, address & 0x1ff, value);
+		if (address == 0x9303e100) {
+			sp = scsi_d;
+			sp->dma &= 0xffff0000;
+			sp->dma |= value;
+			trace(2, "SCSI_CTL SCSI_D DMA_ADR %08x\n", sp->dma);
+		}
+		if (address == 0x9303e104) {
+			sp = scsi_t;
+			sp->dma &= 0xffff0000;
+			sp->dma |= value;
+			trace(2, "SCSI_CTL SCSI_T DMA_ADR %08x\n", sp->dma);
+		}
+		if (address == 0x9303e108) {
+			sp = scsi_d;
+			sp->dma &= 0xffff;
+			sp->dma |= value << 16;
+			trace(2, "SCSI_CTL SCSI_D DMA_SEG %08x\n", sp->dma);
+		}
+		if (address == 0x9303e10c) {
+			sp = scsi_t;
+			sp->dma &= 0xffff;
+			sp->dma |= value << 16;
+			trace(2, "SCSI_CTL SCSI_T DMA_SEG %08x\n", sp->dma);
+		}
+		if (prev_d && !(ctl_regs[1] & 0x01)) {
+			sp = scsi_d;
+			trace(2, "SCSI_CTL SCSI_D RESET\n");
+			irq_lower(sp->irq_vector);
+			callout_callback(r1000sim, scsi_ctrl_reset, sp, 5000, 0);
+		}
+		if (prev_t && !(ctl_regs[3] & 0x10)) {
+			sp = scsi_t;
+			trace(2, "SCSI_CTL SCSI_T RESET\n");
+			irq_lower(sp->irq_vector);
+			callout_callback(r1000sim, scsi_ctrl_reset, sp, 5000, 0);
+		}
+	} else {
+		value = func(op, ctl_regs, address & 0x1ff, value);
+		IO_TRACE_READ(2, "SCSI_CTL");
+	}
+	return (value);
 }
