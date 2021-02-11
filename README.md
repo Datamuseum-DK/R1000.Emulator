@@ -14,30 +14,63 @@ https://datamuseum.dk/wiki/Rational/R1000s400
 
 5. `make`
 
-6. Wait for 16195351 million instructions and get:
+6. Wait for who knows how many million simulated instructions and get:
 
 ```
-	Boot from (Tn or Dn)  [D0] : ^@
-	Kernel program (0,1,2) [0] : 
-	File system    (0,1,2) [0] : 
-	User program   (0,1,2) [0] : 
-	Initializing M400S I/O Processor Kernel 4_2_18
-	IOP Kernel is initialized
-	
-	I/O Processor Kernel Crash: error 0806 (hex) at PC=000049F8
-	Trapped into debugger.
-	RD0 00000000  RD1 00000002  RD2 00000002  RD3 0000000A 
-	RD4 00000013  RD5 00000006  RD6 0000001E  RD7 00000005 
-	RA0 0000E800  RA1 0003FADA  RA2 00000954  RA3 0003FAD8 
-	RA4 0003FFF4  RA5 0003FA96  RA6 0003FB70  ISP 0000FAB8 
-	 PC 0000A158  USP 0003FA96  ISP 0000FAB8  MSP 00000000  SR 2704 
-	VBR 00000000 ICCR 00000009 ICAR 00000000 XSFC 0 XDFC 0 
-	@
+     R1000-400 IOC SELFTEST 1.3.2
+        512 KB memory ... [OK]
+        Memory parity ... [OK]
+        I/O bus control ... [OK]
+        I/O bus map parity ... [OK]
+        I/O bus transactions ... [OK]
+        PIT ... [OK]
+        Modem DUART channel ... Warning: DUART crystal out of spec! ... [OK]
+        Diagnostic DUART channel ... [OK]
+        Clock / Calendar ... Warning: Calendar crystal out of spec! ... [OK]
+    Checking for RESHA board
+        RESHA EEProm Interface ... [OK]
+    Downloading RESHA EEProm 0 - TEST  - Warning: Detected Checksum Error
+    Downloading RESHA EEProm 1 - LANCE
+    Downloading RESHA EEProm 2 - DISK    - Warning: Detected Checksum Error
+    Downloading RESHA EEProm 3 - TAPE
+        DIAGNOSTIC MODEM ... DISABLED
+        RESHA DISK SCSI sub-tests ... [OK]
+        RESHA TAPE SCSI sub-tests ... [OK]
+        Local interrupts ... [OK]
+        Illegal reference protection ... [OK]
+        I/O bus parity ... [OK]
+        I/O bus spurious interrupts ... [OK]
+        Temperature sensors ... [OK]
+        IOC diagnostic processor ... [OK]
+        Power margining ... [OK]
+        Clock margining ... [OK]
+    Selftest passed
+ 
+    Restarting R1000-400S February 12th, 2021 at 20:00:00
+ 
+    Logical tape drive 0 is an 8mm cartridge tape drive.
+    Logical tape drive 1 is declared non-existent.
+    Logical tape drive 2 is declared non-existent.
+    Logical tape drive 3 is declared non-existent.
+    Booting I/O Processor with Bootstrap version 0.4
+ 
+    Boot from (Tn or Dn)  [D0] :
+    Kernel program (0,1,2) [0] :
+    File system    (0,1,2) [0] :
+    User program   (0,1,2) [0] :
+    Initializing M400S I/O Processor Kernel 4_2_18
+    Disk  0 is ONLINE and WRITE ENABLED
+    Disk  1 is ONLINE and WRITE ENABLED
+    IOP Kernel is initialized
+    Initializing diagnostic file system ... [OK]
+    ====================================================
+    Restarting system after loss of AC power
+ 
+    CrashSave has created tombstone file R1000_DUMP1.
+
 ```
 
-At this point the kernel is initialized, as jumped to FS which has cleared it's
-data segment and moved on to `PROGRAM.0` which calls something in the FS/KERNEL
-which does not yet work.
+At which point the system waits for something yet to be emulated.
 
 Disassembly of the IOC EEPROM: http://datamuseum.dk/aa/r1k_dfs/be/bed92cf60.html
 

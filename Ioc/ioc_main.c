@@ -91,7 +91,7 @@ dma_write(unsigned segment, unsigned address, void *src, unsigned len)
 	u = segment << 9;
 	u |= (address >> 10) & 0x1ff;
 	v = vbe32dec(map_dma_in + u * 4L);
-	trace(TRACE_IO, "DMAMAP %08x: %08x -> %08x\n", address, u, v);
+	trace(TRACE_IO, "DMAMAP %08x:%08x: %08x -> %08x [%08x]\n", segment, address, u, v, len);
 	memcpy(ram+v, src, len);
 
 	// Patch delay routines faster
@@ -103,6 +103,18 @@ dma_write(unsigned segment, unsigned address, void *src, unsigned len)
 		ram[0x9af9] = 0;
 	if (ram[0x9afa] == 0xff)
 		ram[0x9afa] = 0;
+}
+
+void
+dma_read(unsigned segment, unsigned address, void *src, unsigned len)
+{
+	unsigned int u, v;
+
+	u = segment << 9;
+	u |= (address >> 10) & 0x1ff;
+	v = vbe32dec(map_dma_in + u * 4L);
+	trace(TRACE_IO, "DMAMAP %08x:%08x: %08x -> %08x [%08x]\n", segment, address, u, v, len);
+	memcpy(src, ram+v, len);
 }
 
 static unsigned int v_matchproto_(iofunc_f)
@@ -333,6 +345,8 @@ mem(const char *op, unsigned int address, memfunc_f *func, unsigned int value)
 		return (0);		// EXT MODEM
 	if (0xffffff03 == address)	// ?
 		return (0);
+	if (0xfffff000 == address)	// IO_CLR_RUN
+		return (0);
 	if (0xfffff200 == address)	// IO_FRONT_PANEL_LED_p27
 		return (0);
 	if (0xfffff300 == address)	// IO_SENREG_p25
@@ -481,6 +495,12 @@ cpu_instr_callback(unsigned int pc)
 	}
 	if (pc == 0x80004d08) {
 		printf("Hit debugger\n");
+		dump_ram();
+		exit(2);
+	}
+	if (0 && pc == 0x00005d4c) {
+		printf("Hit debugger\n");
+		dump_registers();
 		dump_ram();
 		exit(2);
 	}

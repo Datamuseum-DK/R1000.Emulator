@@ -6,6 +6,7 @@
 #include <unistd.h>
 #include "r1000.h"
 #include "ioc.h"
+#include "vqueue.h"
 
 struct scsi {
 	const char		*name;
@@ -23,6 +24,14 @@ typedef void scsi_func_f(struct scsi *sp);
 static char *disk0_image_filename;
 static uint8_t sector[1<<10];
 static int disk_fd = -1;
+
+struct written {
+	VTAILQ_ENTRY(written)	list;
+	char			sector[1<<10];
+	unsigned int		lba;
+};
+
+static VTAILQ_HEAD(,written)	wrote = VTAILQ_HEAD_INITIALIZER(wrote);
 
 /**********************************************************************/
 
@@ -59,16 +68,40 @@ get_sector(unsigned secno)
 {
 	off_t off;
 	ssize_t sz;
+	struct written *wp;
 
 	if (disk_fd < 0) {
 		disk_fd = open(disk0_image_filename, O_RDONLY);
 		assert(disk_fd > 0);
+	}
+	VTAILQ_FOREACH(wp, &wrote, list) {
+		if (wp->lba == secno) {
+			memcpy(sector, wp->sector, sizeof sector);
+			return;
+		}
 	}
 	off = (off_t)secno << 10;
 	assert(lseek(disk_fd, off, 0) == off);
 	sz = read(disk_fd, sector, sizeof sector);
 	assert(sz >= 0);
 	assert((size_t)sz == sizeof sector);
+}
+
+static void
+put_sector(unsigned secno)
+{
+	struct written *wp;
+
+	VTAILQ_FOREACH(wp, &wrote, list)
+		if (wp->lba == secno)
+			break;
+	if (wp == NULL) {
+		wp = malloc(sizeof *wp);
+		AN(wp);
+		wp->lba = secno;
+		VTAILQ_INSERT_HEAD(&wrote, wp, list);
+	}
+	memcpy(wp->sector, sector, sizeof wp->sector);
 }
 
 /**********************************************************************/
@@ -148,7 +181,7 @@ scsi_00_test_unit_ready(struct scsi *sp)
 static void v_matchproto_(scsi_func_f)
 scsi_08_read_6(struct scsi *sp)
 {
-	unsigned lba, dst, nsect;
+	unsigned lba, dst, nsect, n;
 
 	trace_cdb(sp, "READ_6");
 
@@ -157,14 +190,51 @@ scsi_08_read_6(struct scsi *sp)
 	lba |= sp->regs[0x06];
 	lba &= 0x1fffff;
 	nsect = sp->regs[0x07];
-	assert(nsect == 1);
 
-	get_sector(lba);
 	dst = sp->dma;
 	dst &= (1<<19)-1;
-	dma_write(3, dst, sector, sizeof sector);
+	for (n = 0; n < nsect; n++) {
+		get_sector(lba);
+		dma_write(3, dst, sector, sizeof sector);
+		lba += 1;
+		dst += 1<<10;
+	}
 	sp->regs[0x17] = 0x16;
 	trace(TRACE_SCSI, "SCSI_D READ6 %x -> %x\n", lba, dst);
+}
+
+static void v_matchproto_(scsi_func_f)
+scsi_0a_write_6(struct scsi *sp)
+{
+	unsigned lba, dst, nsect, n;
+
+	trace_cdb(sp, "WRITE_6");
+
+	lba = sp->regs[0x04] << 16;
+	lba |= sp->regs[0x05] << 8;
+	lba |= sp->regs[0x06];
+	lba &= 0x1fffff;
+	nsect = sp->regs[0x07];
+
+	dst = sp->dma;
+	dst &= (1<<19)-1;
+        for (n = 0; n < nsect; n++) {
+		dma_read(3, dst, sector, sizeof sector);
+		put_sector(lba);
+		dst += 1<<10;
+		lba += 1;
+	}
+	sp->regs[0x17] = 0x16;
+	trace(TRACE_SCSI, "SCSI_D WRITE6 %x -> %x\n", lba, dst);
+}
+
+static void v_matchproto_(scsi_func_f)
+scsi_0b_seek(struct scsi *sp)
+{
+
+	trace_cdb(sp, "SEEK");
+
+	sp->regs[0x17] = 0x16;
 }
 
 static void v_matchproto_(scsi_func_f)
@@ -176,20 +246,82 @@ scsi_0d_vendor(struct scsi *sp)
 	sp->regs[0x17] = 0x16;
 }
 
+#if defined(SEAGATE_WREN)
+
 static uint8_t mode_sense_page_3[] = {
-        0x83, 0x16,
-        0x00, 0x0f, 0x00, 0x00, 0x00, 0x00, 0x00, 0x2d,
-        0x00, 0x26, 0x04, 0x00, 0x00, 0x01, 0x00, 0x03,
-        0x00, 0x0c, 0x40, 0x00, 0x00, 0x00
+	0, 0, 0, 0, 0, 0,
+	0, 0, 0, 0, 0, 0,
+        0x83,			// cc0c Page Code
+	0x16,			// cc0d Page Length
+        0x00, 0x0f,		// cc0e Tracks per Zone:  15
+	0x00, 0x00,		// cc10 Alternate Sectors per Zone:  0
+	0x00, 0x00,		// cc12 Alternate Tracks per Zone:  0
+	0x00, 0x2d,		// cc14 Alternate Tracks per Logical Unit:  45
+        0x00, 0x26,		// cc16 Sectors per Track:  38
+	0x04, 0x00,		// cc18 Data Bytes per Physical Sector:  1024
+	0x00, 0x01,		// Interleave:  1
+	0x00, 0x03,		// Track Skew Factor:  3
+        0x00, 0x0c,		// Cylinder Skew Factor:  12
+	0x40, 			// SSEC:  0, HSEC:  1, RMB:  0, SURF:  0
+	0x00, 0x00, 0x00	// Reserved
 
 };
 
 static uint8_t mode_sense_page_4[] = {
-        0x84, 0x12,
-        0x00, 0x07, 0x8b, 0x0f, 0x00, 0x00, 0x00, 0x00,
-        0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-        0x00, 0x00
+	0, 0, 0, 0, 0, 0,
+	0, 0, 0, 0, 0, 0,
+        0x84,			// cc0c Page Code
+	0x12,			// cc0d Page Length
+        0x00, 0x07, 0x8b,	// cc0e Number of Cylinders:  1931
+	0x0f,			// cc11 Number of Heads:  15
+	0x00, 0x00, 0x00,	// Starting Cylinder-Write Precompensation:  0
+	0x00, 0x00, 0x00,	// Starting Cylinder-Reduced Write Current:  0
+	0x00, 0x00,		// Drive Step Rate:  0
+	0x00, 0x00, 0x00,	// Landing Zone Cylinder:  0
+	0x00,			// RPL:  0
+        0x00,			// Rotational Offset:  0
+	0x00			// Reserved
 };
+
+#else
+
+static uint8_t mode_sense_page_3[] = {
+	0, 0, 0, 0, 0, 0,
+	0, 0, 0, 0, 0, 0,
+        0x83,			// cc0c Page Code
+	0x16,			// cc0d Page Length
+        0x00, 0x0f,		// cc0e Tracks per Zone:  15
+	0x00, 0x00,		// cc10 Alternate Sectors per Zone:  0
+	0x00, 0x00,		// cc12 Alternate Tracks per Zone:  0
+	0x00, 0x2d,		// cc14 Alternate Tracks per Logical Unit:  45
+        0x00, 0x2d,		// cc16 Sectors per Track:  38
+	0x04, 0x00,		// cc18 Data Bytes per Physical Sector:  1024
+	0x00, 0x01,		// Interleave:  1
+	0x00, 0x05,		// Track Skew Factor:  3
+        0x00, 0x0b,		// Cylinder Skew Factor:  12
+	0x40, 			// SSEC:  0, HSEC:  1, RMB:  0, SURF:  0
+	0x00, 0x00, 0x00	// Reserved
+
+};
+
+static uint8_t mode_sense_page_4[] = {
+	0, 0, 0, 0, 0, 0,
+	0, 0, 0, 0, 0, 0,
+        0x84,			// cc0c Page Code
+	0x12,			// cc0d Page Length
+        0x00, 0x06, 0x7a,	// cc0e Number of Cylinders:  1931
+	0x0f,			// cc11 Number of Heads:  15
+	0x00, 0x00, 0x00,	// Starting Cylinder-Write Precompensation:  0
+	0x00, 0x00, 0x00,	// Starting Cylinder-Reduced Write Current:  0
+	0x00, 0x00,		// Drive Step Rate:  0
+	0x00, 0x00, 0x00,	// Landing Zone Cylinder:  0
+	0x00,			// RPL:  0
+        0x00,			// Rotational Offset:  0
+	0x00			// Reserved
+};
+
+
+#endif
 
 static void v_matchproto_(scsi_func_f)
 scsi_1a_mode_sense(struct scsi *sp)
@@ -238,6 +370,8 @@ scsi_28_read_10(struct scsi *sp)
 static scsi_func_f * const scsi_funcs[256] = {
 	[0x00] = scsi_00_test_unit_ready,
 	[0x08] = scsi_08_read_6,
+	[0x0a] = scsi_0a_write_6,
+	[0x0b] = scsi_0b_seek,
 	[0x0d] = scsi_0d_vendor,
 	[0x1a] = scsi_1a_mode_sense,
 	[0x28] = scsi_28_read_10,
