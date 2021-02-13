@@ -93,18 +93,6 @@ dma_write(unsigned segment, unsigned address, void *src, unsigned len)
 	v = vbe32dec(map_dma_in + u * 4L);
 	trace(TRACE_IO, "DMAMAP %08x:%08x: %08x -> %08x [%08x]\n", segment, address, u, v, len);
 	memcpy(ram+v, src, len);
-
-	if (0) {
-		// Patch delay routines faster
-		if (ram[0x66d3] == 0x23)
-			ram[0x66d3] = 0;
-		if (ram[0x5d1a] == 0x05)
-			ram[0x5d1a] = 1;
-		if (ram[0x9af9] == 0x07)
-			ram[0x9af9] = 0;
-		if (ram[0x9afa] == 0xff)
-			ram[0x9afa] = 0;
-	}
 }
 
 void
@@ -500,11 +488,17 @@ cpu_instr_callback(unsigned int pc)
 		dump_ram();
 		exit(2);
 	}
-	if (0 && pc == 0x0007678a) {
-		printf("Tape loader jumps to kernel\n");
-		dump_registers();
-		dump_ram();
-		exit(2);
+	if (pc == 0x000741e6) {
+		printf("Resha jumps to bootloader\n");
+		Ioc_HotFix_Bootloader(ram);
+	}
+	if (pc == 0x000540f6) {
+		printf("Bootloader jumps to kernel\n");
+		Ioc_HotFix_Kernel(ram);
+	}
+	if (pc == 0x0007678a) {
+		printf("Resha tape loader jumps to kernel\n");
+		Ioc_HotFix_Kernel(ram);
 	}
 	if (0 && pc == 0x00005d4c) {
 		printf("Hit debugger\n");
@@ -543,35 +537,14 @@ main_ioc(void *priv)
 	assert(fread(ioc_eeprom + 0x6000, 1, 8192, fhandle) == 8192);
 	AZ(fclose(fhandle));
 
+	Ioc_HotFix_Ioc(ioc_eeprom);
+
 	fhandle = fopen("RESHA_EEPROM.bin", "rb");
 	AN(fhandle);
 	assert(fread(resha_eeprom + 0x0000, 1, 32768, fhandle) == 32768);
 	AZ(fclose(fhandle));
 
-	if (1) {
-		// Patch UART delay-loop much shorter
-		ioc_eeprom[0x64] = 0;
-
-		// Patch UART delay-loop much shorter
-		ioc_eeprom[0x101] = 0;
-		ioc_eeprom[0x102] = 0;
-		ioc_eeprom[0x103] = 4;
-
-		// Patch UART delay-loop much shorter
-		ioc_eeprom[0x136] = 0;
-
-		// Patch UART delay-loop much shorter
-		ioc_eeprom[0x33c] = 0;
-
-		// Patch UART delay-loop much shorter
-		ioc_eeprom[0x34c] = 0;
-
-		// Patch RESHA delay routine
-		resha_eeprom[0x458c] = 0;
-		resha_eeprom[0x458d] = 1;
-
-		// See also patches in dma_write()
-	}
+	Ioc_HotFix_Resha(resha_eeprom);
 
 	insert_jump(0x800001e4, 0x8000021a); // EEPROM CHECKSUM
 	insert_jump(0x800003a4, 0x80000546); // 512k RAM Test
@@ -603,28 +576,10 @@ main_ioc(void *priv)
 	insert_jump(0x80001880, 0x8000197c); // Clock margining
 	insert_jump(0x80001982, 0x80001992); // final check
 
-	// Y2K
-	ioc_eeprom[0x3825] = '2';
-	ioc_eeprom[0x3826] = '0';
-
 	// Local interrupts test
 	insert_jump(0x800011dc, 0x800011fc); // XXX: Where does vector 0x50 come from ?!
 	insert_jump(0x8000127a, 0x80001298); // XXX: Where does vector 0x51 come from ?!
 	insert_jump(0x80001358, 0x80001470); // XXX: Where does vector 0x52 come from ?!
-
-	// RESHA TAPE SCSI sub-tests
-	//resha_eeprom[0x139b] = 2;
-	//resha_eeprom[0x13a1] = 2;
-	//resha_eeprom[0x14cd] = 2;
-
-	// RESHA delay "Waiting for tape unit ready."
-	resha_eeprom[0x7178] = 0;
-	resha_eeprom[0x7179] = 0;
-	resha_eeprom[0x717a] = 2;
-	resha_eeprom[0x717b] = 2;
-	// RESHA delay for tape reading
-	resha_eeprom[0x738c] = 0;
-	resha_eeprom[0x738d] = 2;
 
 	m68k_init();
 	m68k_set_cpu_type(IOC_CPU_TYPE);

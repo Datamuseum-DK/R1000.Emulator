@@ -49,6 +49,7 @@
 -e732		// Loss of sign (___) (___ to ___)
 -e734		// Loss of precision (___) (___ bits to ___ bits)
 -e747		// Significant prototype coercion (___) ___ to ___
+-e679		// Suspicious Truncation in arithmetic expression combining with pointer
 
 // Vqueue extras
 -esym(755, VLIST_*)     // Global macro not ref.

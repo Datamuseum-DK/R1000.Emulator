@@ -27,6 +27,7 @@ OBJS	+= ioc_console.o
 OBJS	+= ioc_cli.o
 OBJS	+= ioc_duart.o
 OBJS	+= ioc_interrupt.o
+OBJS	+= ioc_hotfix.o
 OBJS	+= ioc_main.o
 OBJS	+= ioc_rtc.o
 OBJS	+= ioc_scsi_ctl.o
@@ -53,7 +54,7 @@ CLI_INCL = \
 test:	r1000 ${BINFILES}
 	./r1000 \
 		-T ${TRACE_FILE} \
-		-t 254 \
+		-t 255 \
 		"console > _.console" \
 		"duart > _.duart" \
 		"scsi_tape" \
@@ -128,6 +129,7 @@ ioc_duart.o:		${CLI_INCL} Ioc/ioc.h Ioc/ioc_duart.c
 ioc_console.o:		${CLI_INCL} Ioc/ioc.h Ioc/ioc_console.c
 ioc_interrupt.o:	${CLI_INCL} Ioc/ioc.h Ioc/ioc_interrupt.c
 ioc_main.o:		${M68K_INCL} Ioc/ioc.h Ioc/ioc_main.c
+ioc_hotfix.o:		${M68K_INCL} Ioc/ioc.h Ioc/ioc_hotfix.c
 ioc_rtc.o:		${CLI_INCL} Ioc/ioc.h Ioc/ioc_rtc.c
 ioc_scsi_ctl.o:		${CLI_INCL} Ioc/ioc.h Ioc/ioc_scsi.h Ioc/ioc_scsi_ctl.c
 ioc_scsi_dev.o:		${CLI_INCL} Ioc/ioc.h Ioc/ioc_scsi.h Ioc/ioc_scsi_dev.c

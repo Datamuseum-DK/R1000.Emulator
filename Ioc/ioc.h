@@ -56,6 +56,13 @@ void dma_read(unsigned segment, unsigned address, void *src, unsigned len);
 
 /**********************************************************************/
 
+void Ioc_HotFix_Bootloader(uint8_t *ram);
+void Ioc_HotFix_Ioc(uint8_t *eeprom);
+void Ioc_HotFix_Resha(uint8_t *eeprom);
+void Ioc_HotFix_Kernel(uint8_t *ram);
+
+/**********************************************************************/
+
 /*
  * CONSOLE.RXRDY & CONSOLE.TXRDY are unfinished.
  * TXRDY has higher priority than RXRDY, yet the test at 0x800012cc
