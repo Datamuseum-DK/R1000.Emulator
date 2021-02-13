@@ -27,6 +27,9 @@
 // 759 header declaration for symbol '___' defined at (___) could be moved from header to module
 // 765 external '___' (___) could be made static
 
+// 785 Too few initializers for aggregate '___' of type '___'
+-esym(785, scsi_disk_funcs)
+
 -esym(714, elastic_*)
 -esym(759, elastic_*)
 -esym(765, elastic_*)

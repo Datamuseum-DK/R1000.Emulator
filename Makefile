@@ -5,6 +5,14 @@ TRACE_FILE = "/critter/_r1000"
 # Set this to copy of https://datamuseum.dk/bits/30000551 (also ~1GB)
 DISK0_IMAGE = "/critter/DDHF/20191107_R1K_TAPES/R1K/PE_R1K_Disk0.dd"
 
+# Set this to copy of https://datamuseum.dk/bits/30000552 (also ~1GB)
+DISK1_IMAGE = "/critter/DDHF/20191107_R1K_TAPES/R1K/PE_R1K_Disk1.dd"
+
+
+# These are alternate images, phk@ has them
+DISK0B_IMAGE = "/critter/DDHF/R1000/R1K_Seagate/R1K_Seagate0.BIN"
+DISK1B_IMAGE = "/critter/DDHF/R1000/R1K_Seagate/R1K_Seagate1.BIN"
+
 VPATH	= Musashi:Musashi/softfloat:Infra:Ioc
 
 OBJS	= main.o callout.o cli.o
@@ -19,7 +27,8 @@ OBJS	+= ioc_duart.o
 OBJS	+= ioc_interrupt.o
 OBJS	+= ioc_main.o
 OBJS	+= ioc_rtc.o
-OBJS	+= ioc_scsi.o
+OBJS	+= ioc_scsi_ctl.o
+OBJS	+= ioc_scsi_dev.o
 
 CFLAGS	+= -Wall -Werror -pthread -g -O0
 CFLAGS	+= -I. -IInfra -IMusashi -IIoc -DMUSASHI_CNF='"musashi_conf.h"'
@@ -42,10 +51,29 @@ CLI_INCL = \
 test:	r1000 ${BINFILES}
 	./r1000 \
 		-T ${TRACE_FILE} \
-		-t 255 \
+		-t 254 \
 		"console > _.console" \
 		"duart > _.duart" \
-		"scsi_disk disk0 ${DISK0_IMAGE}" \
+		"scsi_disk 0 ${DISK0_IMAGE}" \
+		"scsi_disk 1 ${DISK1_IMAGE}" \
+		"reset" \
+		'console match expect "Boot from (Tn or Dn)  [D0] : "' \
+		'console << ""' \
+		'console match expect "Kernel program (0,1,2) [0] : "' \
+		'console << ""' \
+		'console match expect "File system    (0,1,2) [0] : "' \
+		'console << ""' \
+		'console match expect "User program   (0,1,2) [0] : "' \
+		'console << ""' 
+
+seagate:	r1000 ${BINFILES}
+	./r1000 \
+		-T ${TRACE_FILE} \
+		-t 254 \
+		"console > _.console" \
+		"duart > _.duart" \
+		"scsi_disk 0 ${DISK0B_IMAGE}" \
+		"scsi_disk 1 ${DISK1B_IMAGE}" \
 		"reset" \
 		'console match expect "Boot from (Tn or Dn)  [D0] : "' \
 		'console << ""' \
@@ -91,7 +119,8 @@ ioc_console.o:		${CLI_INCL} Ioc/ioc.h Ioc/ioc_console.c
 ioc_interrupt.o:	${CLI_INCL} Ioc/ioc.h Ioc/ioc_interrupt.c
 ioc_main.o:		${M68K_INCL} Ioc/ioc.h Ioc/ioc_main.c
 ioc_rtc.o:		${CLI_INCL} Ioc/ioc.h Ioc/ioc_rtc.c
-ioc_scsi.o:		${CLI_INCL} Ioc/ioc.h Ioc/ioc_scsi.c
+ioc_scsi_ctl.o:		${CLI_INCL} Ioc/ioc.h Ioc/ioc_scsi.h Ioc/ioc_scsi_ctl.c
+ioc_scsi_dev.o:		${CLI_INCL} Ioc/ioc.h Ioc/ioc_scsi.h Ioc/ioc_scsi_dev.c
 
 m68kops.o:		Musashi/m68kcpu.h m68kops.h m68kops.c
 m68kops.h m68kops.c:	m68kmake Ioc/musashi_conf.h
