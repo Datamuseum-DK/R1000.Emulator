@@ -76,6 +76,8 @@ Disassembly of the IOC EEPROM: http://datamuseum.dk/aa/r1k_dfs/be/bed92cf60.html
 
 Disassembly of the RESHA EEPROM: http://datamuseum.dk/aa/r1k_dfs/f3/f3d8d4065.html
 
+Disassembly of the sector0 bootstrap: http://datamuseum.dk/aa/r1k_dfs/82/82a46de15.html
+
 Disassembly of the loaded KERNEL.0: http://datamuseum.dk/aa/r1k_dfs/77/77d6c3277.html
 
 Disassembly of the loaded FS.0: http://datamuseum.dk/aa/r1k_dfs/61/6176fa9c7.html
@@ -97,5 +99,7 @@ Add a cli commands:
 * `examine address` -- Dump 256 bytes of memory.
 
 * `deposit {address|register} data` -- Change state	
+
+* `coredump` -- Drop copy of IOC-RAM to file
 
 *end*

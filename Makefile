@@ -8,10 +8,10 @@ DISK0_IMAGE = "/critter/DDHF/20191107_R1K_TAPES/R1K/PE_R1K_Disk0.dd"
 # Set this to copy of https://datamuseum.dk/bits/30000552 (also ~1GB)
 DISK1_IMAGE = "/critter/DDHF/20191107_R1K_TAPES/R1K/PE_R1K_Disk1.dd"
 
-# DFS tape
+# DFS tape copy of https://datamuseum.dk/bits/30000528 (20 MB)
 DFS_TAPE = "/critter/DDHF/20191107_R1K_TAPES/R1K/R1K_DFS_12_6_5.TAP"
 
-# These are alternate images, phk@ has them
+# These are alternate images, phk@ has them (~1GB each)
 DISK0B_IMAGE = "/critter/DDHF/R1000/R1K_Seagate/R1K_Seagate0.BIN"
 DISK1B_IMAGE = "/critter/DDHF/R1000/R1K_Seagate/R1K_Seagate1.BIN"
 
