@@ -102,7 +102,10 @@ tape:	r1000 ${BINFILES}
 		'console match expect "Boot from (Tn or Dn)  [D0] : "' \
 		'console << "T0"' \
 		'console match expect "Select files to boot [D=DEFAULT, O=OPERATOR_SUPPLIED] : [D]"' \
-		'console << "D"' 
+		'console << "D"' \
+		'console match expect "Enable line printer for console output [N] ? "' \
+		'console << "N"' \
+		'console match expect "Enter option : "'
 
 r1000:	${OBJS}
 	${CC} -o r1000 ${CFLAGS} ${LDFLAGS} ${OBJS}

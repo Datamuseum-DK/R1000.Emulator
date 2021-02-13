@@ -100,6 +100,12 @@ static void
 hotfix_kernel_4_2_14(uint8_t *ram)
 {
 	/*
+	 * 0000648e 20 3c 00 23 7c 4d          MOVE.L  #0x00237c4d,D0
+	 * 00006494 53 80                      SUBQ.L  #0x1,D0
+	 */
+	vbe32enc(ram + 0x6490, 3);
+
+	/*
 	 * 00009234 20 3c 00 03 ff ff          MOVE.L  #0x0003ffff,D0
 	 * 0000923a 13 fc 00 0a 93 03 ec 00    MOVE.B  #0x0a,IO_SCSI_T_00_OWN_ID_CDB_SIZE
 	 * 00009242 13 fc 00 00 93 03 ec 18    MOVE.B  #0x00,IO_SCSI_T_18_CMD
@@ -120,6 +126,16 @@ hotfix_kernel_4_2_14(uint8_t *ram)
 	 * 00009520 4e b9 00 00 92 10          JSR     0x9210
 	 */
 	vbe32enc(ram + 0x9514, 3);
+
+	/*
+	 * 00009572 30 3c 7f ff                MOVE.W  #0x7fff,D0
+	 * 00009576 53 40                      SUBQ.W  #0x1,D0
+	 * 00009578 6c fc                      BGE     0x9576
+	 * 0000957a 30 3c 7f ff                MOVE.W  #0x7fff,D0
+	 * 0000957e 4e b9 00 00 91 ec          JSR     0x91ec
+	 */
+	vbe16enc(ram + 0x9574, 3);
+
 
 	/*
 	 * 00005c52 20 3c 00 00 05 00          MOVE.L #0x00000500,D0

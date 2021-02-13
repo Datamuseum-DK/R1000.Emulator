@@ -16,6 +16,7 @@ struct scsi_dev {
 	uint8_t			*map;
 	size_t			map_size;
 
+	unsigned		tape_recno;
 	size_t			tape_head;
 };
 

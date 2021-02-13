@@ -120,12 +120,17 @@ scsi_thread(void *priv)
 			sf = sd->funcs[sp->regs[0x03]];
 			AN(sf);
 			i = sf(sd, sp->regs+0x03, dst);
-			if (i < 0)
+			if (i < 0) {
 				sp->regs[0x17] = 0x42;
-			else if (i == 0)
-				sp->regs[0x17] = 0x16;
-			else
-				sp->regs[0x17] = i;
+			} else {
+				sp->regs[0x14] = i & 0xff;
+				sp->regs[0x13] = (i>>8) & 0xff;
+				sp->regs[0x12] = (i>>16) & 0xff;
+				if (0 && i)
+					sp->regs[0x17] = 0x21;
+				else
+					sp->regs[0x17] = 0x16;
+			}
 		}
 		sp->regs[0x1f] |= 0x80;
 		irq_raise(sp->irq_vector);
@@ -162,8 +167,16 @@ static void
 scsi_ctrl_reset(void *priv)
 {
 	struct scsi *sp = priv;
+	int id;
 
 	AZ(pthread_mutex_lock(&sp->mtx));
+	if (1) {
+		for (id = 0; id < 7; id++)
+			if (sp->dev[id] != NULL) {
+				sp->dev[id]->tape_head = 0;
+				sp->dev[id]->tape_recno = 0;
+			}
+	}
 	sp->regs[0x1f] |= 0x80;
 	sp->regs[0x17] = 0x00;
 	irq_raise(sp->irq_vector);

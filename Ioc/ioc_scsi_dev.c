@@ -77,20 +77,22 @@ scsi_01_rewind(struct scsi_dev *dev, uint8_t *cdb, unsigned dst)
 	(void)cdb;
 	(void)dst;
 	trace_scsi_dev(dev, "REWIND");
+	dev->tape_head = 0;
+	dev->tape_recno = 0;
 	return (IOC_SCSI_OK);
 }
 
 static int v_matchproto_(scsi_func_f)
 scsi_03_request_sense(struct scsi_dev *dev, uint8_t *cdb, unsigned dst)
 {
-	static uint8_t buf[0x1a];
+	static uint8_t buf[0x12];
 
 	(void)cdb;
 	(void)dst;
-	assert(cdb[4] == sizeof buf);
+	assert(cdb[4] >= sizeof buf);
 	dma_write(3, dst, buf, sizeof buf);
 	trace_scsi_dev(dev, "REQUEST_SENSE");
-	return (IOC_SCSI_OK);
+	return (cdb[4] - sizeof buf);
 }
 
 static int v_matchproto_(scsi_func_f)
@@ -105,7 +107,7 @@ scsi_08_read_6_disk(struct scsi_dev *dev, uint8_t *cdb, unsigned dst)
 	nsect = cdb[0x04];
 
 	dma_write(3, dst, dev->map + (lba<<10), nsect<<10);
-	trace(TRACE_SCSI, "SCSI_D READ6 %zx -> %x\n", lba, dst);
+	trace(TRACE_SCSI, "SCSI_D READ6 %zx (%08zx) -> %x\n", lba, lba << 10, dst);
 	return (IOC_SCSI_OK);
 }
 
@@ -120,12 +122,7 @@ scsi_08_read_6_tape(struct scsi_dev *dev, uint8_t *cdb, unsigned dst)
 	tape_length = vle32dec(dev->map + dev->tape_head);
 	assert(0 < tape_length);
 	assert(tape_length < 65535);
-	if (tape_length != xfer_length) {
-		trace(TRACE_SCSI, "SCSI_T READ6 tape=%x xfer=%x -> %x\n",
-		    tape_length, xfer_length, dst);
-		exit(2);
-	}
-	assert(tape_length == xfer_length);
+	assert(tape_length <= xfer_length);
 	dev->tape_head += 4;
 
 	dma_write(3, dst, dev->map + dev->tape_head, tape_length);
@@ -133,8 +130,13 @@ scsi_08_read_6_tape(struct scsi_dev *dev, uint8_t *cdb, unsigned dst)
 	assert(tape_length == vle32dec(dev->map + dev->tape_head));
 	dev->tape_head += 4;
 
-	trace(TRACE_SCSI, "SCSI_T READ6 tape=%x xfer=%x -> %x\n",
-	    tape_length, xfer_length, dst);
+	trace(TRACE_SCSI, "SCSI_T READ6 bno=%x tape=%x xfer=%x -> %x\n",
+	    dev->tape_recno, tape_length, xfer_length, dst);
+
+	dev->tape_recno++;
+	if (tape_length < xfer_length)
+		return (xfer_length - tape_length);
+
 	return (IOC_SCSI_OK);
 }
 
