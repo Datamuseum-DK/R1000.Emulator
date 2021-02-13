@@ -71,21 +71,70 @@ scsi_00_test_unit_ready(struct scsi_dev *dev, uint8_t *cdb, unsigned dst)
 }
 
 static int v_matchproto_(scsi_func_f)
-scsi_08_read_6(struct scsi_dev *dev, uint8_t *cdb, unsigned dst)
+scsi_01_rewind(struct scsi_dev *dev, uint8_t *cdb, unsigned dst)
+{
+
+	(void)cdb;
+	(void)dst;
+	trace_scsi_dev(dev, "REWIND");
+	return (IOC_SCSI_OK);
+}
+
+static int v_matchproto_(scsi_func_f)
+scsi_03_request_sense(struct scsi_dev *dev, uint8_t *cdb, unsigned dst)
+{
+	static uint8_t buf[0x1a];
+
+	(void)cdb;
+	(void)dst;
+	assert(cdb[4] == sizeof buf);
+	dma_write(3, dst, buf, sizeof buf);
+	trace_scsi_dev(dev, "REQUEST_SENSE");
+	return (IOC_SCSI_OK);
+}
+
+static int v_matchproto_(scsi_func_f)
+scsi_08_read_6_disk(struct scsi_dev *dev, uint8_t *cdb, unsigned dst)
 {
 	size_t lba;
 	unsigned nsect;
 
-	trace_scsi_dev(dev, "READ_6");
+	trace_scsi_dev(dev, "READ_6(DISK)");
 
-	lba = cdb[0x01] << 16;
-	lba |= cdb[0x02] << 8;
-	lba |= cdb[0x03];
-	lba &= 0x1fffff;
+	lba = vbe32dec(cdb) & 0x1fffff;
 	nsect = cdb[0x04];
 
 	dma_write(3, dst, dev->map + (lba<<10), nsect<<10);
 	trace(TRACE_SCSI, "SCSI_D READ6 %zx -> %x\n", lba, dst);
+	return (IOC_SCSI_OK);
+}
+
+static int v_matchproto_(scsi_func_f)
+scsi_08_read_6_tape(struct scsi_dev *dev, uint8_t *cdb, unsigned dst)
+{
+	unsigned tape_length, xfer_length;
+
+	trace_scsi_dev(dev, "READ_6(TAPE)");
+
+        xfer_length = vbe32dec(cdb + 1) & 0xffffff;
+        tape_length = vle32dec(dev->map + dev->tape_head);
+	assert(0 < tape_length);
+	assert(tape_length < 65535);
+	if (tape_length != xfer_length) {
+		trace(TRACE_SCSI, "SCSI_T READ6 tape=%x xfer=%x -> %x\n",
+		    tape_length, xfer_length, dst);
+		exit(2);
+	}
+	assert(tape_length == xfer_length);
+	dev->tape_head += 4;
+
+	dma_write(3, dst, dev->map + dev->tape_head, tape_length);
+	dev->tape_head += tape_length;
+        assert(tape_length == vle32dec(dev->map + dev->tape_head));
+	dev->tape_head += 4;
+
+	trace(TRACE_SCSI, "SCSI_T READ6 tape=%x xfer=%x -> %x\n",
+	    tape_length, xfer_length, dst);
 	return (IOC_SCSI_OK);
 }
 
@@ -97,10 +146,7 @@ scsi_0a_write_6(struct scsi_dev *dev, uint8_t *cdb, unsigned dst)
 
 	trace_scsi_dev(dev, "WRITE_6");
 
-	lba = cdb[0x01] << 16;
-	lba |= cdb[0x02] << 8;
-	lba |= cdb[0x03];
-	lba &= 0x1fffff;
+	lba = vbe32dec(cdb) & 0x1fffff;
 	nsect = cdb[0x04];
 
 	dma_read(3, dst, dev->map + (lba<<10), nsect<<10);
@@ -157,10 +203,7 @@ scsi_28_read_10(struct scsi_dev *dev, uint8_t *cdb, unsigned dst)
 
 	trace_scsi_dev(dev, "READ_10");
 
-	lba = (unsigned)cdb[0x02] << 24;
-	lba |= cdb[0x03] << 16;
-	lba |= cdb[0x04] << 8;
-	lba |= cdb[0x05];
+	lba = vbe32dec(cdb + 0x02);
 
 	nsect = cdb[0x07] << 8;
 	nsect |= cdb[0x08];
@@ -174,7 +217,7 @@ scsi_28_read_10(struct scsi_dev *dev, uint8_t *cdb, unsigned dst)
 
 static scsi_func_f * const scsi_disk_funcs[256] = {
 	[0x00] = scsi_00_test_unit_ready,
-	[0x08] = scsi_08_read_6,
+	[0x08] = scsi_08_read_6_disk,
 	[0x0a] = scsi_0a_write_6,
 	[0x0b] = scsi_0b_seek,
 	[0x0d] = scsi_0d_vendor,
@@ -266,6 +309,9 @@ cli_scsi_disk(struct cli *cli)
 
 static scsi_func_f * const scsi_tape_funcs[256] = {
 	[0x00] = scsi_00_test_unit_ready,
+	[0x01] = scsi_01_rewind,
+	[0x03] = scsi_03_request_sense,
+	[0x08] = scsi_08_read_6_tape,
 };
 
 /**********************************************************************/
@@ -286,16 +332,14 @@ cli_scsi_tape(struct cli *cli)
 	if (cli->ac == 0)
 		return;
 
-	if (cli_n_args(cli, 1))
-		return;
-
 	sd = scsi_t->dev[0];
 	if (sd == NULL) {
 		sd = calloc(1, sizeof *sd);
 		AN(sd);
-		sd->ctl = scsi_d;
+		sd->ctl = scsi_t;
 		sd->funcs = scsi_tape_funcs;
-		scsi_d->dev[0] = sd;
+		sd->is_tape = 1;
+		scsi_t->dev[0] = sd;
 	}
 
 	if (cli_scsi_dev_map_file(cli, sd, cli->av[0]) < 0)

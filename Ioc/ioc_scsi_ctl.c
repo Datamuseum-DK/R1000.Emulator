@@ -190,7 +190,6 @@ ioc_scsi_d_init(struct sim *cs)
 	(void)cs;
 	scsi_d->name = "SCSI_D";
 	scsi_d->irq_vector = &IRQ_SCSI_D;
-	scsi_d->valid_ids = 0x3;
 	AZ(pthread_mutex_init(&scsi_d->mtx, NULL));
 	AZ(pthread_cond_init(&scsi_d->cond, NULL));
 	AZ(pthread_create(&scsi_d->thr, NULL, scsi_thread, scsi_d));
@@ -215,7 +214,6 @@ ioc_scsi_t_init(struct sim *cs)
 	(void)cs;
 	scsi_t->name = "SCSI_T";
 	scsi_t->irq_vector = &IRQ_SCSI_T;
-	scsi_t->valid_ids = 0x1;
 	AZ(pthread_mutex_init(&scsi_t->mtx, NULL));
 	AZ(pthread_cond_init(&scsi_t->cond, NULL));
 	AZ(pthread_create(&scsi_t->thr, NULL, scsi_thread, scsi_t));
@@ -233,7 +231,7 @@ io_scsi_ctl(
 {
 	struct scsi *sp = NULL;
 	unsigned prev_d = ctl_regs[1] & 0x01;
-	unsigned prev_t = ctl_regs[3] & 0x10;
+	unsigned prev_t = ctl_regs[9] & 0x10;
 
 	if (op[0] == 'W') {
 		IO_TRACE_WRITE(2, "SCSI_CTL");
@@ -269,7 +267,7 @@ io_scsi_ctl(
 			callout_callback(
 			    r1000sim, scsi_ctrl_reset, sp, 5000, 0);
 		}
-		if (prev_t && !(ctl_regs[3] & 0x10)) {
+		if (prev_t && !(ctl_regs[9] & 0x10)) {
 			sp = scsi_t;
 			trace(2, "SCSI_CTL SCSI_T RESET\n");
 			irq_lower(sp->irq_vector);
@@ -278,6 +276,13 @@ io_scsi_ctl(
 		}
 	} else {
 		ctl_regs[1] |= 0x80;	// WRITE ENABLE SWITCH
+
+		// This is not on RESHA schematics, but
+		//    "RESHA TAPE SCSI sub-tests ..."
+		// fails at 0x000713a8 without it
+		ctl_regs[1] &= 0x8f;
+		ctl_regs[1] |= ctl_regs[9] & 0x70;
+
 		value = func(op, ctl_regs, address & 0x1ff, value);
 		IO_TRACE_READ(2, "SCSI_CTL");
 	}

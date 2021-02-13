@@ -94,15 +94,17 @@ dma_write(unsigned segment, unsigned address, void *src, unsigned len)
 	trace(TRACE_IO, "DMAMAP %08x:%08x: %08x -> %08x [%08x]\n", segment, address, u, v, len);
 	memcpy(ram+v, src, len);
 
-	// Patch delay routines faster
-	if (ram[0x66d3] == 0x23)
-		ram[0x66d3] = 0;
-	if (ram[0x5d1a] == 0x05)
-		ram[0x5d1a] = 1;
-	if (ram[0x9af9] == 0x07)
-		ram[0x9af9] = 0;
-	if (ram[0x9afa] == 0xff)
-		ram[0x9afa] = 0;
+	if (0) {
+		// Patch delay routines faster
+		if (ram[0x66d3] == 0x23)
+			ram[0x66d3] = 0;
+		if (ram[0x5d1a] == 0x05)
+			ram[0x5d1a] = 1;
+		if (ram[0x9af9] == 0x07)
+			ram[0x9af9] = 0;
+		if (ram[0x9afa] == 0xff)
+			ram[0x9afa] = 0;
+	}
 }
 
 void
@@ -474,7 +476,7 @@ cpu_instr_callback(unsigned int pc)
 		dump_registers();
 		r1000sim->do_trace = 0;
 	}
-	if (pc == 0x00071286 || pc == 0x7056e) {
+	if (pc == 0x00071286 || pc == 0x7056e || pc == 0x766a2) {
 		dump_registers();
 		r1000sim->do_trace = 0;
 		printf("RESHA test failed\n");
@@ -495,6 +497,12 @@ cpu_instr_callback(unsigned int pc)
 	}
 	if (pc == 0x80004d08) {
 		printf("Hit debugger\n");
+		dump_ram();
+		exit(2);
+	}
+	if (0 && pc == 0x0007678a) {
+		printf("Tape loader jumps to kernel\n");
+		dump_registers();
 		dump_ram();
 		exit(2);
 	}
@@ -605,9 +613,18 @@ main_ioc(void *priv)
 	insert_jump(0x80001358, 0x80001470); // XXX: Where does vector 0x52 come from ?!
 
 	// RESHA TAPE SCSI sub-tests
-	resha_eeprom[0x139b] = 2;
-	resha_eeprom[0x13a1] = 2;
-	resha_eeprom[0x14cd] = 2;
+	//resha_eeprom[0x139b] = 2;
+	//resha_eeprom[0x13a1] = 2;
+	//resha_eeprom[0x14cd] = 2;
+
+	// RESHA delay "Waiting for tape unit ready."
+	resha_eeprom[0x7178] = 0;
+	resha_eeprom[0x7179] = 0;
+	resha_eeprom[0x717a] = 2;
+	resha_eeprom[0x717b] = 2;
+	// RESHA delay for tape reading
+	resha_eeprom[0x738c] = 0;
+	resha_eeprom[0x738d] = 2;
 
 	m68k_init();
 	m68k_set_cpu_type(IOC_CPU_TYPE);

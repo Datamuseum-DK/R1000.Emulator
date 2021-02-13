@@ -9,11 +9,14 @@ typedef int scsi_func_f(struct scsi_dev *, uint8_t *cdb, unsigned dst);
 struct scsi_dev {
 	scsi_func_f		* const * funcs;
 	struct scsi		*ctl;
+	int			is_tape;
 	uint8_t			sense_3[36];
 	uint8_t			sense_4[32];
 	int			fd;
 	uint8_t			*map;
 	size_t			map_size;
+
+	size_t			tape_head;
 };
 
 struct scsi {
@@ -24,7 +27,6 @@ struct scsi {
 	pthread_t		thr;
 	uint8_t			regs[32];
 	unsigned int		dma;
-	unsigned		valid_ids;
 	struct scsi_dev		*dev[7];
 };
 

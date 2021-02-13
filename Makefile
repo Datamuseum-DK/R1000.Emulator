@@ -90,15 +90,18 @@ seagate:	r1000 ${BINFILES}
 tape:	r1000 ${BINFILES}
 	./r1000 \
 		-T /critter/_r1000 \
-		-t 255 \
+		-t 254 \
 		"scsi_tape ${DFS_TAPE}" \
 		"scsi_disk 0 ${DISK0_IMAGE}" \
 		"scsi_disk 1 ${DISK1_IMAGE}" \
 		"console serial /dev/nmdm0A" \
 		"console > _.console" \
 		"duart > _.duart" \
-		"reset" 
-		'console match expect "Boot from (Tn or Dn)  [D0] : "'
+		"reset" \
+		'console match expect "Boot from (Tn or Dn)  [D0] : "' \
+		'console << "T0"' \
+		'console match expect "Select files to boot [D=DEFAULT, O=OPERATOR_SUPPLIED] : [D]"' \
+		'console << "D"' 
 
 r1000:	${OBJS}
 	${CC} -o r1000 ${CFLAGS} ${LDFLAGS} ${OBJS}
