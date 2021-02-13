@@ -94,7 +94,7 @@ thr_console_rx(void *priv)
 		sz = elastic_get(cons->ep, buf, 1);
 		assert(sz == 1);
 		AZ(pthread_mutex_lock(&cons_mtx));
-		while (!(cons->cmd & 0x04) && (cons->status & 0x02))
+		while (!(cons->cmd & 0x04) || (cons->status & 0x02))
 			AZ(pthread_cond_wait(&cons_cond, &cons_mtx));
 		cons->rxhold = buf[0];
 		cons->status |= 0x02;
