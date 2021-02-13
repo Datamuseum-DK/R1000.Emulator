@@ -191,7 +191,7 @@ cli_scsi_disk(struct cli *cli)
 	unsigned unit;
 
 	if (cli->help) {
-		cli_io_help(cli, "scsi_disk 0 filename", 0, 1);
+		cli_io_help(cli, "scsi_disk 0 filename", 0, 0);
 		return;
 	}
 
@@ -262,3 +262,45 @@ cli_scsi_disk(struct cli *cli)
 	cli->av++;
 }
 
+/**********************************************************************/
+
+static scsi_func_f * const scsi_tape_funcs[256] = {
+	[0x00] = scsi_00_test_unit_ready,
+};
+
+/**********************************************************************/
+
+void v_matchproto_(cli_func_f)
+cli_scsi_tape(struct cli *cli)
+{
+	struct scsi_dev *sd;
+
+	if (cli->help) {
+		cli_io_help(cli, "scsi_tape [filename]", 0, 0);
+		return;
+	}
+
+	cli->ac--;
+	cli->av++;
+
+	if (cli->ac == 0)
+		return;
+
+	if (cli_n_args(cli, 1))
+		return;
+
+	sd = scsi_t->dev[0];
+	if (sd == NULL) {
+		sd = calloc(1, sizeof *sd);
+		AN(sd);
+		sd->ctl = scsi_d;
+		sd->funcs = scsi_tape_funcs;
+		scsi_d->dev[0] = sd;
+	}
+
+	if (cli_scsi_dev_map_file(cli, sd, cli->av[0]) < 0)
+		return;
+
+	cli->ac--;
+	cli->av++;
+}

@@ -8,6 +8,8 @@ DISK0_IMAGE = "/critter/DDHF/20191107_R1K_TAPES/R1K/PE_R1K_Disk0.dd"
 # Set this to copy of https://datamuseum.dk/bits/30000552 (also ~1GB)
 DISK1_IMAGE = "/critter/DDHF/20191107_R1K_TAPES/R1K/PE_R1K_Disk1.dd"
 
+# DFS tape
+DFS_TAPE = "/critter/DDHF/20191107_R1K_TAPES/R1K/R1K_DFS_12_6_5.TAP"
 
 # These are alternate images, phk@ has them
 DISK0B_IMAGE = "/critter/DDHF/R1000/R1K_Seagate/R1K_Seagate0.BIN"
@@ -54,6 +56,7 @@ test:	r1000 ${BINFILES}
 		-t 254 \
 		"console > _.console" \
 		"duart > _.duart" \
+		"scsi_tape" \
 		"scsi_disk 0 ${DISK0_IMAGE}" \
 		"scsi_disk 1 ${DISK1_IMAGE}" \
 		"reset" \
@@ -87,11 +90,15 @@ seagate:	r1000 ${BINFILES}
 tape:	r1000 ${BINFILES}
 	./r1000 \
 		-T /critter/_r1000 \
-		-t 3 \
+		-t 255 \
+		"scsi_tape ${DFS_TAPE}" \
+		"scsi_disk 0 ${DISK0_IMAGE}" \
+		"scsi_disk 1 ${DISK1_IMAGE}" \
 		"console serial /dev/nmdm0A" \
 		"console > _.console" \
 		"duart > _.duart" \
 		"reset" 
+		'console match expect "Boot from (Tn or Dn)  [D0] : "'
 
 r1000:	${OBJS}
 	${CC} -o r1000 ${CFLAGS} ${LDFLAGS} ${OBJS}

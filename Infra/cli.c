@@ -155,6 +155,7 @@ static const struct cli_cmds {
 	{ "reset",		cli_ioc_reset },
 	{ "ioc",		cli_ioc_main },
 	{ "scsi_disk",		cli_scsi_disk },
+	{ "scsi_tape",		cli_scsi_tape },
 	{ NULL,			NULL },
 };
 

@@ -29,6 +29,7 @@
 
 // 785 Too few initializers for aggregate '___' of type '___'
 -esym(785, scsi_disk_funcs)
+-esym(785, scsi_tape_funcs)
 
 -esym(714, elastic_*)
 -esym(759, elastic_*)
