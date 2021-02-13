@@ -91,7 +91,7 @@ seagate:	r1000 ${BINFILES}
 tape:	r1000 ${BINFILES}
 	./r1000 \
 		-T /critter/_r1000 \
-		-t 254 \
+		-t 255 \
 		"scsi_tape ${DFS_TAPE}" \
 		"scsi_disk 0 ${DISK0_IMAGE}" \
 		"scsi_disk 1 ${DISK1_IMAGE}" \

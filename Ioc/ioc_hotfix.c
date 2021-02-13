@@ -67,13 +67,13 @@ Ioc_HotFix_Resha(uint8_t *eeprom)
 	 */
 	vbe32enc(eeprom + 0x458a, 0x3);
 
-        /*
+	/*
 	 * 00077386                    SCSI_T_AWAIT_INTERRUPT():
 	 * 00077386 2f 00                      MOVE.L  D0,-(A7)
 	 * 00077388 20 3c 00 00 05 00          MOVE.L  #0x00000500,D0
 	 * 0007738e 53 80                      SUBQ.L  #0x1,D0
 	 * 00077390 66 fc                      BNE     0x7738e
-         */
+	 */
 	vbe32enc(eeprom + 0x738a, 0x3);
 }
 
@@ -94,6 +94,41 @@ Ioc_HotFix_Bootloader(uint8_t *ram)
 		vbe16enc(ram + 0x541f0, 3);
 	if (vbe32dec(ram + 0x541f4) == 0x500)
 		vbe32enc(ram + 0x541f4, 3);
+}
+
+static void
+hotfix_kernel_4_2_14(uint8_t *ram)
+{
+	/*
+	 * 00009234 20 3c 00 03 ff ff          MOVE.L  #0x0003ffff,D0
+	 * 0000923a 13 fc 00 0a 93 03 ec 00    MOVE.B  #0x0a,IO_SCSI_T_00_OWN_ID_CDB_SIZE
+	 * 00009242 13 fc 00 00 93 03 ec 18    MOVE.B  #0x00,IO_SCSI_T_18_CMD
+	 * 0000924a 4e b9 00 00 92 10          JSR     0x9210
+	 */
+	vbe32enc(ram + 0x9236, 3);
+
+	/*
+	 * 00009442 20 3c 00 03 ff ff          MOVE.L  #0x0003ffff,D0
+	 * 00009448 33 fc 00 30 93 03 e0 08    MOVE.W  #0x0030,IO_RESHA_RES_CTL
+	 * 00009450 4e b9 00 00 92 10          JSR     0x9210
+	 */
+	vbe32enc(ram + 0x9444, 3);
+
+	/*
+	 * 00009512 20 3c 00 07 ff ff          MOVE.L  #0x0007ffff,D0
+	 * 00009518 33 fc 00 30 93 03 e0 08    MOVE.W  #0x0030,IO_RESHA_RES_CTL
+	 * 00009520 4e b9 00 00 92 10          JSR     0x9210
+	 */
+	vbe32enc(ram + 0x9514, 3);
+
+	/*
+	 * 00005c52 20 3c 00 00 05 00          MOVE.L #0x00000500,D0
+	 * 00005c58 53 80                      SUBQ.L #0x1,D0
+	 * 00005c5a 66 fc                      BNE 0x5c58
+	 * 00005c5c 51 c9 ff f4                DBF D1,0x5c52
+	 */
+	vbe32enc(ram + 0x5c54, 3);
+
 }
 
 static void
@@ -144,7 +179,7 @@ Ioc_HotFix_Kernel(uint8_t *ram)
 	for (u = 0; u < 0x800; u++)
 		if (ram[u] == 0x40 && vbe32dec(ram+u) == 0x40282329)
 			break;
-        if (u == 0x800) {
+	if (u == 0x800) {
 		printf("Kernel not recognized, no patches applied.\n");
 		return;
 	}
@@ -165,6 +200,8 @@ Ioc_HotFix_Kernel(uint8_t *ram)
 	}
 	if (!strcmp(buf, "@(#)400S IOP KERNEL,4_2_18,92/08/06,16:15:00")) {
 		hotfix_kernel_4_2_18(ram);
+	} else if (!strcmp(buf, "@(#)400S IOP KERNEL,4_2_14,92/05/07,16:15:00")) {
+		hotfix_kernel_4_2_14(ram);
 	} else {
 		printf("No hotfix for kernel %s\n", buf);
 		return;

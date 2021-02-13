@@ -116,8 +116,8 @@ scsi_08_read_6_tape(struct scsi_dev *dev, uint8_t *cdb, unsigned dst)
 
 	trace_scsi_dev(dev, "READ_6(TAPE)");
 
-        xfer_length = vbe32dec(cdb + 1) & 0xffffff;
-        tape_length = vle32dec(dev->map + dev->tape_head);
+	xfer_length = vbe32dec(cdb + 1) & 0xffffff;
+	tape_length = vle32dec(dev->map + dev->tape_head);
 	assert(0 < tape_length);
 	assert(tape_length < 65535);
 	if (tape_length != xfer_length) {
@@ -130,7 +130,7 @@ scsi_08_read_6_tape(struct scsi_dev *dev, uint8_t *cdb, unsigned dst)
 
 	dma_write(3, dst, dev->map + dev->tape_head, tape_length);
 	dev->tape_head += tape_length;
-        assert(tape_length == vle32dec(dev->map + dev->tape_head));
+	assert(tape_length == vle32dec(dev->map + dev->tape_head));
 	dev->tape_head += 4;
 
 	trace(TRACE_SCSI, "SCSI_T READ6 tape=%x xfer=%x -> %x\n",
