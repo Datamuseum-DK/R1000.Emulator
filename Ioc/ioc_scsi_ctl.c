@@ -8,6 +8,7 @@
 #include "r1000.h"
 #include "ioc.h"
 #include "ioc_scsi.h"
+#include "vend.h"
 
 static uint8_t ctl_regs[512];
 struct scsi scsi_t[1];
@@ -58,6 +59,7 @@ trace_scsi_ctl(struct scsi *sp, const char *cmt)
 	    TRACE_SCSI,
 	    "%s CMD=%02x ID=%x"
 	    " CDB=[%02x %02x %02x %02x %02x %02x|%02x %02x %02x %02x]"
+	    " LEN=[%02x %02x %02x]"
 	    " %s\n",
 	    sp->name,
 	    sp->regs[0x18],
@@ -72,6 +74,9 @@ trace_scsi_ctl(struct scsi *sp, const char *cmt)
 	    sp->regs[0x0a],
 	    sp->regs[0x0b],
 	    sp->regs[0x0c],
+	    sp->regs[0x12],
+	    sp->regs[0x13],
+	    sp->regs[0x14],
 	    cmt
 	);
 }
@@ -82,6 +87,31 @@ trace_scsi_dev(struct scsi_dev *dev, const char *cmt)
 	trace_scsi_ctl(dev->ctl, cmt);
 }
 
+void
+scsi_to_target(struct scsi_dev *sd, void *ptr, unsigned len)
+{
+	unsigned xlen;
+
+	assert(!(sd->ctl->regs[0x15] & 0x40));
+	xlen = vbe32dec(sd->ctl->regs + 0x11) & 0xffffff;
+	assert(len <= xlen);
+	dma_read(sd->ctl->dma_seg, sd->ctl->dma_adr, ptr, len);
+	trace(TRACE_SCSI, "%s T %p <- R [%x]\n", sd->ctl->name, ptr, len);
+}
+
+void
+scsi_fm_target(struct scsi_dev *sd, void *ptr, unsigned len)
+{
+	unsigned xlen;
+
+	assert((sd->ctl->regs[0x15] & 0x40));
+	xlen = vbe32dec(sd->ctl->regs + 0x11) & 0xffffff;
+	assert(len <= xlen);
+	dma_write(sd->ctl->dma_seg, sd->ctl->dma_adr, ptr, len);
+	trace(TRACE_SCSI, "%s T %p -> R [%x]\n", sd->ctl->name, ptr, len);
+}
+
+
 static void *
 scsi_thread(void *priv)
 {
@@ -89,7 +119,6 @@ scsi_thread(void *priv)
 	struct scsi_dev *sd = NULL;
 	scsi_func_f *sf;
 	unsigned id;
-	unsigned dst;
 	int i;
 
 	AZ(pthread_mutex_lock(&sp->mtx));
@@ -97,6 +126,7 @@ scsi_thread(void *priv)
 		AZ(pthread_cond_wait(&sp->cond, &sp->mtx));
 
 		if (sp->regs[0x18] == 0) {		// RESET
+			memset(sp->regs, 0, sizeof sp->regs);
 			sp->regs[0x17] = 0x01;
 			sp->regs[0x1f] |= 0x80;
 			irq_raise(sp->irq_vector);
@@ -115,11 +145,9 @@ scsi_thread(void *priv)
 			trace_scsi_ctl(sp, "UNIMPL");
 			sp->regs[0x17] = 0x42;
 		} else {
-			dst = sp->dma;
-			dst &= (1<<19)-1;
 			sf = sd->funcs[sp->regs[0x03]];
 			AN(sf);
-			i = sf(sd, sp->regs+0x03, dst);
+			i = sf(sd, sp->regs+0x03);
 			if (i < 0) {
 				sp->regs[0x17] = 0x42;
 			} else {
@@ -150,6 +178,43 @@ scsi_ctrl(struct scsi *sp, const char *op, unsigned int address,
 	AZ(pthread_mutex_lock(&sp->mtx));
 	value = func(op, sp->regs, reg, value);
 	if (op[0] == 'W' && reg == 0x18) {
+trace(TRACE_SCSI, "%s REGS"
+    " %02x %02x %02x"
+    " [%02x %02x %02x %02x"
+    " %02x %02x %02x %02x"
+    " %02x %02x %02x %02x]"
+    " %02x %02x %02x"
+    " [%02x %02x %02x]"
+    " %02x %02x %02x %02x %02x %02x\n",
+    sp->name, 
+    sp->regs[0x00],
+    sp->regs[0x01],
+    sp->regs[0x02],
+    sp->regs[0x03],
+    sp->regs[0x04],
+    sp->regs[0x05],
+    sp->regs[0x06],
+    sp->regs[0x07],
+    sp->regs[0x08],
+    sp->regs[0x09],
+    sp->regs[0x0a],
+    sp->regs[0x0b],
+    sp->regs[0x0c],
+    sp->regs[0x0d],
+    sp->regs[0x0e],
+    sp->regs[0x0f],
+    sp->regs[0x10],
+    sp->regs[0x11],
+    sp->regs[0x12],
+    sp->regs[0x13],
+    sp->regs[0x14],
+    sp->regs[0x15],
+    sp->regs[0x16],
+    sp->regs[0x17],
+    sp->regs[0x18],
+    sp->regs[0x19],
+    sp->regs[0x1f]
+);
 		AZ(pthread_cond_signal(&sp->cond));
 	}
 	if (op[0] == 'R' && reg == 0x17) {
@@ -177,6 +242,7 @@ scsi_ctrl_reset(void *priv)
 				sp->dev[id]->tape_recno = 0;
 			}
 	}
+	memset(sp->regs, 0, sizeof sp->regs);
 	sp->regs[0x1f] |= 0x80;
 	sp->regs[0x17] = 0x00;
 	irq_raise(sp->irq_vector);
@@ -251,27 +317,23 @@ io_scsi_ctl(
 		(void)func(op, ctl_regs, address & 0x1ff, value);
 		if (address == 0x9303e100) {
 			sp = scsi_d;
-			sp->dma &= 0xffff0000;
-			sp->dma |= value;
-			trace(2, "SCSI_CTL SCSI_D DMA_ADR %08x\n", sp->dma);
+			sp->dma_adr = vbe16dec(ctl_regs + 0x100);
+			trace(2, "SCSI_CTL SCSI_D DMA_ADR %04x\n", sp->dma_adr);
 		}
 		if (address == 0x9303e104) {
 			sp = scsi_t;
-			sp->dma &= 0xffff0000;
-			sp->dma |= value;
-			trace(2, "SCSI_CTL SCSI_T DMA_ADR %08x\n", sp->dma);
+			sp->dma_adr = vbe16dec(ctl_regs + 0x104);
+			trace(2, "SCSI_CTL SCSI_T DMA_ADR %04x\n", sp->dma_adr);
 		}
 		if (address == 0x9303e108) {
 			sp = scsi_d;
-			sp->dma &= 0xffff;
-			sp->dma |= value << 16;
-			trace(2, "SCSI_CTL SCSI_D DMA_SEG %08x\n", sp->dma);
+			sp->dma_seg = vbe16dec(ctl_regs + 0x108);
+			trace(2, "SCSI_CTL SCSI_D DMA_SEG %04x\n", sp->dma_seg);
 		}
 		if (address == 0x9303e10c) {
 			sp = scsi_t;
-			sp->dma &= 0xffff;
-			sp->dma |= value << 16;
-			trace(2, "SCSI_CTL SCSI_T DMA_SEG %08x\n", sp->dma);
+			sp->dma_seg = vbe16dec(ctl_regs + 0x10c);
+			trace(2, "SCSI_CTL SCSI_T DMA_SEG %04x\n", sp->dma_seg);
 		}
 		if (prev_d && !(ctl_regs[1] & 0x01)) {
 			sp = scsi_d;

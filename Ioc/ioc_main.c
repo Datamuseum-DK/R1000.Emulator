@@ -61,6 +61,14 @@ dump_registers(void)
 
 }
 
+static void
+crash(void)
+{
+	dump_registers();
+	dump_ram();
+	exit(2);
+}
+
 void v_matchproto_(cli_func_f)
 cli_ioc_main(struct cli *cli)
 {
@@ -81,17 +89,22 @@ cli_ioc_main(struct cli *cli)
 	}
 }
 
-/**********************************************************************/
+/**********************************************************************
+ * I/O Address mapping
+ *
+ * The 0x600 comes from pin 6 & 10 pull-ups on L41 IOCp33
+ */
 
 void
 dma_write(unsigned segment, unsigned address, void *src, unsigned len)
 {
 	unsigned int u, v;
 
-	u = segment << 9;
-	u |= (address >> 10) & 0x1ff;
+	u = 0x600;
+	u |= (segment & 0x7) << 6;
+	u |= address >> 10;
 	v = vbe32dec(map_dma_in + u * 4L);
-	trace(TRACE_IO, "DMAMAP %08x:%08x: %08x -> %08x [%08x]\n", segment, address, u, v, len);
+	trace(TRACE_IO, "MAP_DMA_W %08x:%08x: %08x -> %08x [%08x]\n", segment, address, u, v, len);
 	memcpy(ram+v, src, len);
 }
 
@@ -100,10 +113,11 @@ dma_read(unsigned segment, unsigned address, void *src, unsigned len)
 {
 	unsigned int u, v;
 
-	u = segment << 9;
-	u |= (address >> 10) & 0x1ff;
+	u = 0x600;
+	u |= address >> 10;
+	u |= (segment & 0x7) << 6;
 	v = vbe32dec(map_dma_in + u * 4L);
-	trace(TRACE_IO, "DMAMAP %08x:%08x: %08x -> %08x [%08x]\n", segment, address, u, v, len);
+	trace(TRACE_IO, "MAP_DMA_R %08x:%08x: %08x -> %08x [%08x]\n", segment, address, u, v, len);
 	memcpy(src, ram+v, len);
 }
 
@@ -358,7 +372,8 @@ mem(const char *op, unsigned int address, memfunc_f *func, unsigned int value)
 	if (0xffffff00 == address)	// IO_READ_SENSE_p25
 		return (0);
 
-	exit_error("Attempted memory at address %08x", address);
+	printf("Attempted memory at address %08x\n", address);
+	crash();
 	return (0);
 }
 
@@ -465,18 +480,14 @@ cpu_instr_callback(unsigned int pc)
 		r1000sim->do_trace = 0;
 	}
 	if (pc == 0x00071286 || pc == 0x7056e || pc == 0x766a2) {
-		dump_registers();
 		r1000sim->do_trace = 0;
 		printf("RESHA test failed\n");
-		dump_ram();
-		exit(2);
+		crash();
 	}
 	if (pc == 0x800000b4) {
 		a6 =  m68k_get_reg(NULL, M68K_REG_A6);
 		printf("Self test at 0x%x failed\n", a6);
-		dump_registers();
-		dump_ram();
-		exit(2);
+		crash();
 	}
 	if (pc == 0x0000a090) {
 		dump_registers();
@@ -485,8 +496,7 @@ cpu_instr_callback(unsigned int pc)
 	}
 	if (pc == 0x80004d08) {
 		printf("Hit debugger\n");
-		dump_ram();
-		exit(2);
+		crash();
 	}
 	if (pc == 0x000741e6) {
 		printf("Resha jumps to bootloader\n");
@@ -502,9 +512,7 @@ cpu_instr_callback(unsigned int pc)
 	}
 	if (0 && pc == 0x00005d4c) {
 		printf("Hit debugger\n");
-		dump_registers();
-		dump_ram();
-		exit(2);
+		crash();
 	}
 }
 

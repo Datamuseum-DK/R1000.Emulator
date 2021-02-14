@@ -2,7 +2,7 @@
 struct scsi_dev;
 struct scsi;
 
-typedef int scsi_func_f(struct scsi_dev *, uint8_t *cdb, unsigned dst);
+typedef int scsi_func_f(struct scsi_dev *, uint8_t *cdb);
 #define IOC_SCSI_OK		0
 #define IOC_SCSI_ERROR		-1
 
@@ -27,11 +27,14 @@ struct scsi {
 	pthread_cond_t		cond;
 	pthread_t		thr;
 	uint8_t			regs[32];
-	unsigned int		dma;
+	unsigned int		dma_seg;
+	unsigned int		dma_adr;
 	struct scsi_dev		*dev[7];
 };
 
 void trace_scsi_dev(struct scsi_dev *dev, const char *cmt);
+void scsi_to_target(struct scsi_dev *, void *ptr, unsigned len);
+void scsi_fm_target(struct scsi_dev *, void *ptr, unsigned len);
 extern struct scsi scsi_t[1];
 extern struct scsi scsi_d[1];
 

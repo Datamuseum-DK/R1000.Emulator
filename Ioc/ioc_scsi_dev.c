@@ -61,21 +61,19 @@ cli_scsi_dev_map_file(struct cli *cli, struct scsi_dev *dev, const char *fn)
 /**********************************************************************/
 
 static int v_matchproto_(scsi_func_f)
-scsi_00_test_unit_ready(struct scsi_dev *dev, uint8_t *cdb, unsigned dst)
+scsi_00_test_unit_ready(struct scsi_dev *dev, uint8_t *cdb)
 {
 
 	(void)cdb;
-	(void)dst;
 	trace_scsi_dev(dev, "TEST_UNIT_READY");
 	return (IOC_SCSI_OK);
 }
 
 static int v_matchproto_(scsi_func_f)
-scsi_01_rewind(struct scsi_dev *dev, uint8_t *cdb, unsigned dst)
+scsi_01_rewind(struct scsi_dev *dev, uint8_t *cdb)
 {
 
 	(void)cdb;
-	(void)dst;
 	trace_scsi_dev(dev, "REWIND");
 	dev->tape_head = 0;
 	dev->tape_recno = 0;
@@ -83,20 +81,21 @@ scsi_01_rewind(struct scsi_dev *dev, uint8_t *cdb, unsigned dst)
 }
 
 static int v_matchproto_(scsi_func_f)
-scsi_03_request_sense(struct scsi_dev *dev, uint8_t *cdb, unsigned dst)
+scsi_03_request_sense(struct scsi_dev *dev, uint8_t *cdb)
 {
-	static uint8_t buf[0x12];
+	static uint8_t buf[0x1a];
 
-	(void)cdb;
-	(void)dst;
-	assert(cdb[4] >= sizeof buf);
-	dma_write(3, dst, buf, sizeof buf);
 	trace_scsi_dev(dev, "REQUEST_SENSE");
-	return (cdb[4] - sizeof buf);
+	buf[0] = 0x80;
+	buf[7] = 0x12;
+	assert(cdb[4] >= sizeof buf);
+	scsi_fm_target(dev, buf, sizeof buf);
+	// dev->ctl->regs[0xf] = 2;
+	return (IOC_SCSI_OK);
 }
 
 static int v_matchproto_(scsi_func_f)
-scsi_08_read_6_disk(struct scsi_dev *dev, uint8_t *cdb, unsigned dst)
+scsi_08_read_6_disk(struct scsi_dev *dev, uint8_t *cdb)
 {
 	size_t lba;
 	unsigned nsect;
@@ -106,18 +105,20 @@ scsi_08_read_6_disk(struct scsi_dev *dev, uint8_t *cdb, unsigned dst)
 	lba = vbe32dec(cdb) & 0x1fffff;
 	nsect = cdb[0x04];
 
-	dma_write(3, dst, dev->map + (lba<<10), nsect<<10);
-	trace(TRACE_SCSI, "SCSI_D READ6 %zx (%08zx) -> %x\n", lba, lba << 10, dst);
+	scsi_fm_target(dev, dev->map + (lba<<10), nsect<<10);
+	trace(TRACE_SCSI, "SCSI_D READ6 %zx (%08zx)\n", lba, lba << 10);
 	return (IOC_SCSI_OK);
 }
 
 static int v_matchproto_(scsi_func_f)
-scsi_08_read_6_tape(struct scsi_dev *dev, uint8_t *cdb, unsigned dst)
+scsi_08_read_6_tape(struct scsi_dev *dev, uint8_t *cdb)
 {
 	unsigned tape_length, xfer_length;
 
 	trace_scsi_dev(dev, "READ_6(TAPE)");
 
+	if (!(dev->ctl->regs[0x12] + dev->ctl->regs[0x13] + dev->ctl->regs[0x14]))
+		return (IOC_SCSI_OK);
 	xfer_length = vbe32dec(cdb + 1) & 0xffffff;
 	tape_length = vle32dec(dev->map + dev->tape_head);
 	assert(0 < tape_length);
@@ -125,13 +126,13 @@ scsi_08_read_6_tape(struct scsi_dev *dev, uint8_t *cdb, unsigned dst)
 	assert(tape_length <= xfer_length);
 	dev->tape_head += 4;
 
-	dma_write(3, dst, dev->map + dev->tape_head, tape_length);
+	scsi_fm_target(dev, dev->map + dev->tape_head, tape_length);
 	dev->tape_head += tape_length;
 	assert(tape_length == vle32dec(dev->map + dev->tape_head));
 	dev->tape_head += 4;
 
-	trace(TRACE_SCSI, "SCSI_T READ6 bno=%x tape=%x xfer=%x -> %x\n",
-	    dev->tape_recno, tape_length, xfer_length, dst);
+	trace(TRACE_SCSI, "SCSI_T READ6 recno=%x head=%zx tape=%x xfer=%x\n",
+	    dev->tape_recno, dev->tape_head, tape_length, xfer_length);
 
 	dev->tape_recno++;
 	if (tape_length < xfer_length)
@@ -141,7 +142,7 @@ scsi_08_read_6_tape(struct scsi_dev *dev, uint8_t *cdb, unsigned dst)
 }
 
 static int v_matchproto_(scsi_func_f)
-scsi_0a_write_6(struct scsi_dev *dev, uint8_t *cdb, unsigned dst)
+scsi_0a_write_6(struct scsi_dev *dev, uint8_t *cdb)
 {
 	size_t lba;
 	unsigned nsect;
@@ -151,44 +152,42 @@ scsi_0a_write_6(struct scsi_dev *dev, uint8_t *cdb, unsigned dst)
 	lba = vbe32dec(cdb) & 0x1fffff;
 	nsect = cdb[0x04];
 
-	dma_read(3, dst, dev->map + (lba<<10), nsect<<10);
-	trace(TRACE_SCSI, "SCSI_D WRITE6 %zx -> %x\n", lba, dst);
+	scsi_to_target(dev, dev->map + (lba<<10), nsect<<10);
+	trace(TRACE_SCSI, "SCSI_D WRITE6 %zx\n", lba);
 	return (IOC_SCSI_OK);
 }
 
 static int v_matchproto_(scsi_func_f)
-scsi_0b_seek(struct scsi_dev *dev, uint8_t *cdb, unsigned dst)
+scsi_0b_seek(struct scsi_dev *dev, uint8_t *cdb)
 {
 
 	(void)cdb;
-	(void)dst;
 	trace_scsi_dev(dev, "SEEK");
 
 	return (IOC_SCSI_OK);
 }
 
 static int v_matchproto_(scsi_func_f)
-scsi_0d_vendor(struct scsi_dev *dev, uint8_t *cdb, unsigned dst)
+scsi_0d_vendor(struct scsi_dev *dev, uint8_t *cdb)
 {
 
 	(void)cdb;
-	(void)dst;
 	trace_scsi_dev(dev, "VENDOR");
 	return (IOC_SCSI_OK);
 }
 
 static int v_matchproto_(scsi_func_f)
-scsi_1a_sense(struct scsi_dev *dev, uint8_t *cdb, unsigned dst)
+scsi_1a_sense(struct scsi_dev *dev, uint8_t *cdb)
 {
 
 	trace_scsi_dev(dev, "MODE SENSE");
 
 	switch(cdb[0x02]) {
 	case 0x03:
-		dma_write(3, dst, dev->sense_3, sizeof dev->sense_3);
+		scsi_fm_target(dev, dev->sense_3, sizeof dev->sense_3);
 		break;
 	case 0x04:
-		dma_write(3, dst, dev->sense_4, sizeof dev->sense_4);
+		scsi_fm_target(dev, dev->sense_4, sizeof dev->sense_4);
 		break;
 	default:
 		trace(TRACE_SCSI, "MODE_SENSE page 0x%d unknown\n", cdb[0x02]);
@@ -198,7 +197,7 @@ scsi_1a_sense(struct scsi_dev *dev, uint8_t *cdb, unsigned dst)
 }
 
 static int v_matchproto_(scsi_func_f)
-scsi_28_read_10(struct scsi_dev *dev, uint8_t *cdb, unsigned dst)
+scsi_28_read_10(struct scsi_dev *dev, uint8_t *cdb)
 {
 	size_t lba;
 	unsigned nsect;
@@ -210,8 +209,8 @@ scsi_28_read_10(struct scsi_dev *dev, uint8_t *cdb, unsigned dst)
 	nsect = cdb[0x07] << 8;
 	nsect |= cdb[0x08];
 
-	dma_write(3, dst, dev->map + (lba<<10), nsect<<10);
-	trace(TRACE_SCSI, "SCSI_D READ10 %zx -> %x\n", lba, dst);
+	scsi_fm_target(dev, dev->map + (lba<<10), nsect<<10);
+	trace(TRACE_SCSI, "SCSI_D READ10 %zx\n", lba);
 	return (IOC_SCSI_OK);
 }
 

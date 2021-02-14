@@ -9,7 +9,7 @@ DISK0_IMAGE = "/critter/DDHF/20191107_R1K_TAPES/R1K/PE_R1K_Disk0.dd"
 DISK1_IMAGE = "/critter/DDHF/20191107_R1K_TAPES/R1K/PE_R1K_Disk1.dd"
 
 # DFS tape copy of https://datamuseum.dk/bits/30000528 (20 MB)
-DFS_TAPE = "/critter/DDHF/20191107_R1K_TAPES/R1K/R1K_DFS_12_6_5.TAP"
+DFS_TAPE = "/critter/BitStoreCache/30000750.bin"
 
 # These are alternate images, phk@ has them (~1GB each)
 DISK0B_IMAGE = "/critter/DDHF/R1000/R1K_Seagate/R1K_Seagate0.BIN"
@@ -91,7 +91,7 @@ seagate:	r1000 ${BINFILES}
 tape:	r1000 ${BINFILES}
 	./r1000 \
 		-T /critter/_r1000 \
-		-t 255 \
+		-t 254 \
 		"scsi_tape ${DFS_TAPE}" \
 		"scsi_disk 0 ${DISK0_IMAGE}" \
 		"scsi_disk 1 ${DISK1_IMAGE}" \
@@ -105,7 +105,13 @@ tape:	r1000 ${BINFILES}
 		'console << "D"' \
 		'console match expect "Enable line printer for console output [N] ? "' \
 		'console << "N"' \
-		'console match expect "Enter option : "'
+		'console match expect "Enter option : "' \
+		'console << "5"' \
+		'console match expect "Enter unit number of disk to format/build/scan (usually 0) : "' \
+		'console << "0"' \
+		'console match expect "Tape drive unit number : "' \
+		'console << "0"'
+		
 
 r1000:	${OBJS}
 	${CC} -o r1000 ${CFLAGS} ${LDFLAGS} ${OBJS}
