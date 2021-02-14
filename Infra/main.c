@@ -66,7 +66,7 @@ sim_new(void)
 }
 
 void
-trace(int level, const char *fmt, ...)
+trace(unsigned level, const char *fmt, ...)
 {
 	va_list ap;
 	struct sim *cs = r1000sim;

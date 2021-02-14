@@ -10,7 +10,6 @@
 #include "ioc_scsi.h"
 #include "vend.h"
 
-static uint8_t ctl_regs[512];
 struct scsi scsi_t[1];
 struct scsi scsi_d[1];
 
@@ -154,10 +153,7 @@ scsi_thread(void *priv)
 				sp->regs[0x14] = i & 0xff;
 				sp->regs[0x13] = (i>>8) & 0xff;
 				sp->regs[0x12] = (i>>16) & 0xff;
-				if (0 && i)
-					sp->regs[0x17] = 0x21;
-				else
-					sp->regs[0x17] = 0x16;
+				sp->regs[0x17] = 0x16;
 			}
 		}
 		sp->regs[0x1f] |= 0x80;
@@ -165,67 +161,53 @@ scsi_thread(void *priv)
 	}
 }
 
-static unsigned
-scsi_ctrl(struct scsi *sp, const char *op, unsigned int address,
-    memfunc_f *func, unsigned int value)
+static void
+scsi_ctrl_post_write(struct scsi *sp, uint8_t *space, unsigned adr)
 {
-	unsigned reg;
+	assert (adr < 32);
 
-	reg = address & 0x1f;
-	if (*op == 'W')
-		trace(TRACE_IO, "%s %08x %s %s %x\n", sp->name,
-		    ioc_pc, op, scsi_reg[reg], value);
+	trace(TRACE_IO, "%s W %s [%x] <- %x\n",
+	    sp->name, scsi_reg[adr], adr, space[adr]);
 	AZ(pthread_mutex_lock(&sp->mtx));
-	value = func(op, sp->regs, reg, value);
-	if (op[0] == 'W' && reg == 0x18) {
-trace(TRACE_SCSI, "%s REGS"
-    " %02x %02x %02x"
-    " [%02x %02x %02x %02x"
-    " %02x %02x %02x %02x"
-    " %02x %02x %02x %02x]"
-    " %02x %02x %02x"
-    " [%02x %02x %02x]"
-    " %02x %02x %02x %02x %02x %02x\n",
-    sp->name, 
-    sp->regs[0x00],
-    sp->regs[0x01],
-    sp->regs[0x02],
-    sp->regs[0x03],
-    sp->regs[0x04],
-    sp->regs[0x05],
-    sp->regs[0x06],
-    sp->regs[0x07],
-    sp->regs[0x08],
-    sp->regs[0x09],
-    sp->regs[0x0a],
-    sp->regs[0x0b],
-    sp->regs[0x0c],
-    sp->regs[0x0d],
-    sp->regs[0x0e],
-    sp->regs[0x0f],
-    sp->regs[0x10],
-    sp->regs[0x11],
-    sp->regs[0x12],
-    sp->regs[0x13],
-    sp->regs[0x14],
-    sp->regs[0x15],
-    sp->regs[0x16],
-    sp->regs[0x17],
-    sp->regs[0x18],
-    sp->regs[0x19],
-    sp->regs[0x1f]
-);
+	sp->regs[adr] = space[adr];
+	if (adr == 0x18) {
+		trace(TRACE_SCSI, "%s REGS"
+		    " %02x %02x %02x"
+		    " [%02x %02x %02x %02x"
+		    " %02x %02x %02x %02x"
+		    " %02x %02x %02x %02x]"
+		    " %02x %02x %02x"
+		    " [%02x %02x %02x]"
+		    " %02x %02x %02x %02x %02x %02x\n",
+		    sp->name, sp->regs[0x00], sp->regs[0x01], sp->regs[0x02],
+		    sp->regs[0x03], sp->regs[0x04], sp->regs[0x05],
+		    sp->regs[0x06], sp->regs[0x07], sp->regs[0x08],
+		    sp->regs[0x09], sp->regs[0x0a], sp->regs[0x0b],
+		    sp->regs[0x0c], sp->regs[0x0d], sp->regs[0x0e],
+		    sp->regs[0x0f], sp->regs[0x10], sp->regs[0x11],
+		    sp->regs[0x12], sp->regs[0x13], sp->regs[0x14],
+		    sp->regs[0x15], sp->regs[0x16], sp->regs[0x17],
+		    sp->regs[0x18], sp->regs[0x19], sp->regs[0x1f]
+		);
 		AZ(pthread_cond_signal(&sp->cond));
 	}
-	if (op[0] == 'R' && reg == 0x17) {
+	AZ(pthread_mutex_unlock(&sp->mtx));
+}
+
+static void
+scsi_ctrl_pre_read(struct scsi *sp, uint8_t *space, unsigned adr)
+{
+
+	assert (adr < 32);
+	AZ(pthread_mutex_lock(&sp->mtx));
+	if (adr == 0x17) {
 		sp->regs[0x1f] &= ~0x80;
 		irq_lower(sp->irq_vector);
 	}
+	space[adr] = sp->regs[adr];
 	AZ(pthread_mutex_unlock(&sp->mtx));
-	if (*op == 'R')
-		trace(TRACE_IO, "%s %08x %s %s %x\n", sp->name,
-		    ioc_pc, op, scsi_reg[reg], value);
-	return (value);
+	trace(TRACE_IO, "%s R %s [%x] -> %x\n",
+	    sp->name, scsi_reg[adr], adr, space[adr]);
 }
 
 static void
@@ -235,12 +217,12 @@ scsi_ctrl_reset(void *priv)
 	int id;
 
 	AZ(pthread_mutex_lock(&sp->mtx));
-	if (1) {
-		for (id = 0; id < 7; id++)
-			if (sp->dev[id] != NULL) {
-				sp->dev[id]->tape_head = 0;
-				sp->dev[id]->tape_recno = 0;
-			}
+	// Rewind on reset
+	for (id = 0; id < 7; id++) {
+		if (sp->dev[id] != NULL) {
+			sp->dev[id]->tape_head = 0;
+			sp->dev[id]->tape_recno = 0;
+		}
 	}
 	memset(sp->regs, 0, sizeof sp->regs);
 	sp->regs[0x1f] |= 0x80;
@@ -249,18 +231,22 @@ scsi_ctrl_reset(void *priv)
 	AZ(pthread_mutex_unlock(&sp->mtx));
 }
 
-
 /**********************************************************************/
 
-unsigned int v_matchproto_(iofunc_f)
-io_scsi_d_reg(
-    const char *op,
-    unsigned int address,
-    memfunc_f *func,
-    unsigned int value
-)
+void v_matchproto_(mem_pre_read)
+scsi_d_pre_read(int debug, uint8_t *space, unsigned width, unsigned adr)
 {
-	return scsi_ctrl(scsi_d, op, address, func, value);
+	if (debug) return;
+	assert(width == 1);
+	scsi_ctrl_pre_read(scsi_d, space, adr);
+}
+
+void v_matchproto_(mem_post_write)
+scsi_d_post_write(int debug, uint8_t *space, unsigned width, unsigned adr)
+{
+	if (debug) return;
+	assert(width == 1);
+	scsi_ctrl_post_write(scsi_d, space, adr);
 }
 
 void
@@ -276,15 +262,20 @@ ioc_scsi_d_init(struct sim *cs)
 
 /**********************************************************************/
 
-unsigned int v_matchproto_(iofunc_f)
-io_scsi_t_reg(
-    const char *op,
-    unsigned int address,
-    memfunc_f *func,
-    unsigned int value
-)
+void v_matchproto_(mem_pre_read)
+scsi_t_pre_read(int debug, uint8_t *space, unsigned width, unsigned adr)
 {
-	return scsi_ctrl(scsi_t, op, address, func, value);
+	if (debug) return;
+	assert(width == 1);
+	scsi_ctrl_pre_read(scsi_t, space, adr);
+}
+
+void v_matchproto_(mem_post_write)
+scsi_t_post_write(int debug, uint8_t *space, unsigned width, unsigned adr)
+{
+	if (debug) return;
+	assert(width == 1);
+	scsi_ctrl_post_write(scsi_t, space, adr);
 }
 
 void
@@ -300,66 +291,71 @@ ioc_scsi_t_init(struct sim *cs)
 
 /**********************************************************************/
 
-unsigned int v_matchproto_(iofunc_f)
-io_scsi_ctl(
-    const char *op,
-    unsigned int address,
-    memfunc_f *func,
-    unsigned int value
-)
+void v_matchproto_(mem_post_write)
+scsi_dma_post_write(int debug, uint8_t *space, unsigned width, unsigned adr)
+{
+	unsigned u;
+
+	if (debug) return;
+	assert(width == 2);
+
+	u = vbe16dec(space + adr);
+	trace(TRACE_IO, "SCSI_DMA W [%x] <- %x/%d\n", adr, u, width);
+	switch (adr) {
+	case 0x0: scsi_d->dma_adr = u; break;
+	case 0x4: scsi_t->dma_adr = u; break;
+	case 0x8: scsi_d->dma_seg = u; break;
+	case 0xc: scsi_t->dma_seg = u; break;
+	default: break;
+	}
+}
+
+void v_matchproto_(mem_post_write)
+scsi_ctl_post_write(int debug, uint8_t *space, unsigned width, unsigned adr)
 {
 	struct scsi *sp = NULL;
-	unsigned prev_d = ctl_regs[1] & 0x01;
-	unsigned prev_t = ctl_regs[9] & 0x10;
 
-	if (op[0] == 'W') {
-		IO_TRACE_WRITE(2, "SCSI_CTL");
-		(void)func(op, ctl_regs, address & 0x1ff, value);
-		if (address == 0x9303e100) {
-			sp = scsi_d;
-			sp->dma_adr = vbe16dec(ctl_regs + 0x100);
-			trace(2, "SCSI_CTL SCSI_D DMA_ADR %04x\n", sp->dma_adr);
-		}
-		if (address == 0x9303e104) {
-			sp = scsi_t;
-			sp->dma_adr = vbe16dec(ctl_regs + 0x104);
-			trace(2, "SCSI_CTL SCSI_T DMA_ADR %04x\n", sp->dma_adr);
-		}
-		if (address == 0x9303e108) {
-			sp = scsi_d;
-			sp->dma_seg = vbe16dec(ctl_regs + 0x108);
-			trace(2, "SCSI_CTL SCSI_D DMA_SEG %04x\n", sp->dma_seg);
-		}
-		if (address == 0x9303e10c) {
-			sp = scsi_t;
-			sp->dma_seg = vbe16dec(ctl_regs + 0x10c);
-			trace(2, "SCSI_CTL SCSI_T DMA_SEG %04x\n", sp->dma_seg);
-		}
-		if (prev_d && !(ctl_regs[1] & 0x01)) {
-			sp = scsi_d;
-			trace(2, "SCSI_CTL SCSI_D RESET\n");
+	if (debug) return;
+	assert(width == 2);
+
+	trace(TRACE_IO, "SCSI_CTL W [%x] <- %x/%d\n",
+	    adr, vbe16dec(space+adr), width);
+
+	if (adr == 0) {
+		sp = scsi_d;
+		if (sp->reset && !(space[adr + 1] & 0x1)) {
+			trace(2, "SCSI_CTL %s RESET\n", sp->name);
 			irq_lower(sp->irq_vector);
 			callout_callback(
 			    r1000sim, scsi_ctrl_reset, sp, 5000, 0);
 		}
-		if (prev_t && !(ctl_regs[9] & 0x10)) {
-			sp = scsi_t;
-			trace(2, "SCSI_CTL SCSI_T RESET\n");
-			irq_lower(sp->irq_vector);
-			callout_callback(
-			    r1000sim, scsi_ctrl_reset, sp, 5000, 0);
-		}
-	} else {
-		ctl_regs[1] |= 0x80;	// WRITE ENABLE SWITCH
-
-		// This is not on RESHA schematics, but
-		//    "RESHA TAPE SCSI sub-tests ..."
-		// fails at 0x000713a8 without it
-		ctl_regs[1] &= 0x8f;
-		ctl_regs[1] |= ctl_regs[9] & 0x70;
-
-		value = func(op, ctl_regs, address & 0x1ff, value);
-		IO_TRACE_READ(2, "SCSI_CTL");
+		sp->reset = space[adr + 1] & 0x1;
 	}
-	return (value);
+	if (adr == 8) {
+		sp = scsi_t;
+		if (sp->reset && !(space[adr + 1] & 0x10)) {
+			trace(2, "SCSI_CTL %s RESET\n", sp->name);
+			irq_lower(sp->irq_vector);
+			callout_callback(
+			    r1000sim, scsi_ctrl_reset, sp, 5000, 0);
+		}
+		sp->reset = space[adr + 1] & 0x10;
+	}
+}
+
+void v_matchproto_(mem_pre_read)
+scsi_ctl_pre_read(int debug, uint8_t *space, unsigned width, unsigned adr)
+{
+	if (debug) return;
+
+	space[1] |= 0x80;	// WRITE ENABLE SWITCH
+
+	// This is not on RESHA schematics, but
+	//    "RESHA TAPE SCSI sub-tests ..."
+	// fails at 0x000713a8 without it
+	space[1] &= 0x8f;
+	space[1] |= space[9] & 0x70;
+
+	trace(TRACE_IO, "SCSI_CTL R [%x] -> %x/%d\n",
+	    adr, vbe16dec(space+adr), width);
 }

@@ -7,11 +7,14 @@
  */
 
 #include <pthread.h>
+#include <string.h>
 #include <time.h>
 #include <sys/time.h>
 
 #include "r1000.h"
 #include "ioc.h"
+
+#include "memspace.h"
 
 static pthread_mutex_t rtc_mtx = PTHREAD_MUTEX_INITIALIZER;
 static pthread_cond_t rtc_cond = PTHREAD_COND_INITIALIZER;
@@ -140,28 +143,33 @@ ioc_rtc_thread(void *priv)
 	}
 }
 
-unsigned int v_matchproto_(iofunc_f)
-io_rtc(
-    const char *op,
-    unsigned int address,
-    memfunc_f *func,
-    unsigned int value
-)
+void v_matchproto_(mem_pre_read)
+io_rtc_pre_read(int debug, uint8_t *space, unsigned width, unsigned adr)
 {
-	int reg;
 
-	IO_TRACE_WRITE(2, "RTC");
+	if (debug) return;
+	assert (width == 1);
+	assert (adr < 32);
 
-	reg = address & 0x1f;
 	AZ(pthread_mutex_lock(&rtc_mtx));
-	value = func(op, rtcregs, reg, value);
+	space[adr] = rtcregs[adr];
 	AZ(pthread_mutex_unlock(&rtc_mtx));
-	if (reg == 0x0e && op[0] == 'R')
-		rtcregs[0x0e] = 0;
+	trace(TRACE_IO, "RTC R [%x] -> %x\n", adr, space[adr]);
+	if (adr == 0x0e)
+		space[0x0e] = 0;
+}
 
-	IO_TRACE_READ(2, "RTC");
+void v_matchproto_(mem_post_write)
+io_rtc_post_write(int debug, uint8_t *space, unsigned width, unsigned adr)
+{
 
-	return (value);
+	if (debug) return;
+	assert (width == 1);
+	assert (adr < 32);
+	trace(TRACE_IO, "DUART W [%x] <- %x\n", adr, space[adr]);
+	AZ(pthread_mutex_lock(&rtc_mtx));
+	rtcregs[adr] = space[adr];
+	AZ(pthread_mutex_unlock(&rtc_mtx));
 }
 
 void

@@ -185,14 +185,14 @@ hotfix_kernel_4_2_18(uint8_t *ram)
 	 */
 	vbe32enc(ram + 0x9af8, 3);
 
-        /*
+	/*
 	 * 00009b56 30 3c 7f ff                MOVE.W  #0x7fff,D0
 	 * 00009b5a 53 40                      SUBQ.W  #0x1,D0
 	 * 00009b5c 6c fc                      BGE     0x9b5a
 	 * 00009b5e 30 3c 7f ff                MOVE.W  #0x7fff,D0
 	 * 00009b62 4e b9 00 00 97 d0          JSR     0x97d0
 	 * 00009b68 0c 00 00 42                CMPI.B  #0x42,D0
-         */
+	 */
 	vbe16enc(ram + 0x9b58, 3);
 
 	// XXX: 'tape' make target:

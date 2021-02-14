@@ -30,6 +30,7 @@ struct scsi {
 	unsigned int		dma_seg;
 	unsigned int		dma_adr;
 	struct scsi_dev		*dev[7];
+	unsigned		reset;
 };
 
 void trace_scsi_dev(struct scsi_dev *dev, const char *cmt);

@@ -17,13 +17,15 @@ DISK1B_IMAGE = "/critter/DDHF/R1000/R1K_Seagate/R1K_Seagate1.BIN"
 
 VPATH	= Musashi:Musashi/softfloat:Infra:Ioc
 
-OBJS	= main.o callout.o cli.o
+OBJS	= main.o callout.o cli.o memory.o
 OBJS	+= elastic.o elastic_fd.o elastic_tcp.o elastic_match.o
 OBJS	+= vav.o
 
 OBJS	+= m68kcpu.o m68kdasm.o m68kops.o softfloat.o
 
-OBJS	+= ioc_console.o
+OBJS	+= _memcfg.o
+
+OBJS	+= ioc_uart.o
 OBJS	+= ioc_cli.o
 OBJS	+= ioc_duart.o
 OBJS	+= ioc_interrupt.o
@@ -41,13 +43,16 @@ BINFILES += IOC_EEPROM.bin
 BINFILES += RESHA_EEPROM.bin
 
 M68K_INCL = \
+	_memcfg.h \
 	Musashi/m68kcpu.h \
 	Musashi/m68kmmu.h \
 	Musashi/softfloat/softfloat.h \
 	Ioc/musashi_conf.h \
+	Infra/memspace.h \
 	m68kops.h
 
 CLI_INCL = \
+	_memcfg.h \
 	Infra/r1000.h \
 	Infra/elastic.h
 
@@ -118,7 +123,7 @@ r1000:	${OBJS}
 	rm -f *.tmp
 
 clean:
-	rm -f *.o *.tmp r1000 m68kops.h m68kops.c m68kmake
+	rm -f *.o *.tmp r1000 m68kops.h m68kops.c m68kmake _memcfg.[ch]
 
 callout.o:		Infra/r1000.h Infra/callout.c
 cli.o:			Infra/r1000.h Infra/vav.h Infra/cli.c Ioc/ioc.h
@@ -127,15 +132,18 @@ elastic_fd.o:		Infra/r1000.h Infra/elastic.h Infra/elastic_fd.c
 elastic_match.o:	Infra/r1000.h Infra/elastic.h Infra/elastic_match.c
 elastic_tcp.o:		Infra/r1000.h Infra/elastic.h Infra/elastic_tcp.c
 main.o:			Infra/r1000.h Infra/main.c
+memory.o:		Infra/r1000.h Infra/memspace.h Infra/memory.c
 vav.o:			Infra/r1000.h Infra/vav.c
 
 m68kcpu.o:		${M68K_INCL} Musashi/m68kcpu.c
 m68kdasm.o:		${M68K_INCL} Musashi/m68kdasm.c
 softfloat.o:		${M68K_INCL} Musashi/softfloat/softfloat.c
 
+_memcfg.o:		_memcfg.c _memcfg.h
+
 ioc_cli.o:		${CLI_INCL} Ioc/ioc.h Ioc/ioc_cli.c
 ioc_duart.o:		${CLI_INCL} Ioc/ioc.h Ioc/ioc_duart.c
-ioc_console.o:		${CLI_INCL} Ioc/ioc.h Ioc/ioc_console.c
+ioc_uart.o:		${CLI_INCL} Ioc/ioc.h Ioc/ioc_uart.c
 ioc_interrupt.o:	${CLI_INCL} Ioc/ioc.h Ioc/ioc_interrupt.c
 ioc_main.o:		${M68K_INCL} Ioc/ioc.h Ioc/ioc_main.c
 ioc_hotfix.o:		${M68K_INCL} Ioc/ioc.h Ioc/ioc_hotfix.c
@@ -147,12 +155,17 @@ m68kops.o:		Musashi/m68kcpu.h m68kops.h m68kops.c
 m68kops.h m68kops.c:	m68kmake Ioc/musashi_conf.h
 			./m68kmake `pwd` Musashi/m68k_in.c
 
+Infra/memspace.h:	_memcfg.h
+
+_memcfg.h:		makemem.py makemem_class.py
+			python3 makemem.py
+
 m68kmake:		Musashi/m68kmake.c
 
 Musashi/m68kcpu.h:	Musashi/m68k.h
 
 flint:
-	flexelint flint.lnt ${CFLAGS} Infra/*.c Ioc/*.c
+	flexelint flint.lnt ${CFLAGS} Infra/*.c Ioc/*.c _memcfg.c
 
 setup:	${BINFILES}
 	git clone https://github.com/kstenerud/Musashi

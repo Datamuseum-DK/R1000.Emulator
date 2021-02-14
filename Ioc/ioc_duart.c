@@ -14,6 +14,7 @@
 #include "r1000.h"
 #include "ioc.h"
 #include "elastic.h"
+#include "memspace.h"
 
 static const char * const rd_reg[] = {
 	"MR1A_2A", "SRA", "BRG Test", "RHRA", "IPCR", "ISR", "CTU", "CLL",
@@ -71,10 +72,9 @@ struct chan {
 };
 
 static struct ioc_duart {
-	uint8_t		wrregs[16];
-	uint8_t		rdregs[16];
 	struct chan	chan[2];
 	uint8_t		opr;
+	uint16_t	counter;
 	int		pit_running;
 	int		pit_intr;
 } ioc_duart[1];
@@ -91,12 +91,9 @@ ioc_duart_pit_callback(void *priv)
 	if (ioc_duart->pit_running == 1) {
 		ioc_duart->pit_running = 2;
 	} else if (ioc_duart->pit_running == 2) {
-		if ((--ioc_duart->rdregs[REG_R_CTL]) == 0xff)
-			ioc_duart->rdregs[REG_R_CTU]--;
-		if (!ioc_duart->rdregs[REG_R_CTU] &&
-		    !ioc_duart->rdregs[REG_R_CTL]) {
+		if (!--ioc_duart->counter) {
 			trace(TRACE_PIT, "PIT ZERO\n");
-			ioc_duart->rdregs[REG_R_ISR] |= 0x8;
+			io_duart_rd_space[REG_R_ISR] |= 0x8;
 			if (ioc_duart->pit_intr) {
 				irq_raise(&IRQ_PIT);
 				ioc_duart->opr |= 0x08;
@@ -108,135 +105,140 @@ ioc_duart_pit_callback(void *priv)
 
 /**********************************************************************/
 
-unsigned int v_matchproto_(iofunc_f)
-io_duart(
-    const char *op,
-    unsigned int address,
-    memfunc_f *func,
-    unsigned int value
-)
+void v_matchproto_(mem_pre_read)
+io_duart_pre_read(int debug, uint8_t *space, unsigned width, unsigned adr)
 {
 	struct chan *chp;
-	unsigned reg;
-	int8_t chr;
-	// uint8_t chr;
 
-	reg = address & 0xf;
-	chp = &ioc_duart->chan[reg>>3];
+	if (debug) return;
+	assert (width == 1);
+	assert (adr < 16);
 
 	AZ(pthread_mutex_lock(&duart_mtx));
-	if (op[0] == 'W') {
-		trace(TRACE_IO, "DUART %08x %s %08x %x %s\n",
-		    ioc_pc, op, address, value, wr_reg[reg]);
-		(void)func(op, ioc_duart->wrregs, reg, value);
-		switch(reg) {
-		case REG_W_MRA:
-		case REG_W_MRB:
-			chp->mode[chp->mrptr] = value;
-			chp->mrptr ^= 1;
-			break;
-		case REG_W_CRA:
-		case REG_W_CRB:
-			switch ((value >> 4) & 0x7) {
-			case 0x4:
-				chp->mrptr = 0;
-				break;
-			default:
-				break;
-			}
-			if (value & 1) {
-				chp->rxon = 1;
-			}
-			if (value & 2) {
-				chp->rxon = 0;
-			}
-			if (value & 4) {
-				chp->txon = 1;
-				chp->sr |= 4;
-			}
-			if (value & 8) {
-				chp->txon = 0;
-				chp->sr &= ~4;
-			}
-			break;
-		case REG_W_THRA:
-		case REG_W_THRB:
-			chr = value;
-			elastic_put(chp->ep, &chr, 1);
-			if (chp->isdiag && ioc_duart->opr & 4) {
-				// IOP.DLOOP~ on p21
-				chp->rxhold = chr;
-				chp->sr |= 1;
-			} else if (chp->mode[1] & 0x80) {
-				// Internal Local Loop
-				chp->rxhold = chr;
-				chp->sr |= 1;
-			}
-			break;
-		case REG_W_OPCR:
-			ioc_duart->pit_intr = (value & 0x0c) == 0x04;
-			break;
-		case REG_W_SET_BITS:
-			ioc_duart->opr |= value;
-			if (ioc_duart->opr & 0x10)
-				irq_raise(&IRQ_MODEM_RXRDY);
-			if (ioc_duart->opr & 0x20)
-				irq_raise(&IRQ_DIAG_BUS_RXRDY);
-			if (ioc_duart->opr & 0x80)
-				irq_raise(&IRQ_DIAG_BUS_TXRDY);
-			break;
-		case REG_W_CLR_BITS:
-			ioc_duart->opr &= ~value;
-			if (!(ioc_duart->opr & 0x10))
-				irq_lower(&IRQ_MODEM_RXRDY);
-			if (!(ioc_duart->opr & 0x10))
-				irq_lower(&IRQ_DIAG_BUS_RXRDY);
-			if (!(ioc_duart->opr & 0x80))
-				irq_lower(&IRQ_DIAG_BUS_TXRDY);
-			break;
-		default:
-			break;
-		}
-	} else {
-		value = func(op, ioc_duart->rdregs, reg, value);
-		switch(reg) {
-		case REG_R_SRA:
-		case REG_R_SRB:
-			value = chp->sr;
-			break;
-		case REG_R_RHRA:
-		case REG_R_RHRB:
-			value = chp->rxhold;
-			chp->sr &= ~1;
-			break;
-		case REG_R_START_PIT:
-			ioc_duart->rdregs[REG_R_CTU] =
-			    ioc_duart->wrregs[REG_W_CTUR];
-			ioc_duart->rdregs[REG_R_CTL] =
-			    ioc_duart->wrregs[REG_W_CTLR];
-			ioc_duart->pit_running = 1;
-			trace(TRACE_PIT, "PIT START 0x%02x%02x\n",
-			    ioc_duart->rdregs[REG_R_CTU],
-			    ioc_duart->rdregs[REG_R_CTL]);
-			break;
-		case REG_R_STOP_PIT:
-			trace(TRACE_PIT, "PIT STOP\n");
-			ioc_duart->pit_running = 0;
-			ioc_duart->rdregs[REG_R_ISR] &= ~0x8;
-			irq_lower(&IRQ_PIT);
-			if (ioc_duart->pit_intr)
-				ioc_duart->opr &= ~0x08;
-			break;
-		default:
-			break;
-		}
-		trace(TRACE_IO, "DUART %08x %s %08x %x %s\n",
-		    ioc_pc, op, address, value, rd_reg[reg]);
+	chp = &ioc_duart->chan[adr>>3];
+	switch(adr) {
+	case REG_R_SRA:
+	case REG_R_SRB:
+		space[adr] = chp->sr;
+		break;
+	case REG_R_RHRA:
+	case REG_R_RHRB:
+		space[adr] = chp->rxhold;
+		chp->sr &= ~1;
+		break;
+	case REG_R_START_PIT:
+		ioc_duart->counter = io_duart_wr_space[REG_W_CTLR];
+		ioc_duart->counter |= io_duart_wr_space[REG_W_CTUR] << 8;
+		io_duart_rd_space[REG_R_CTU] = ioc_duart->counter >> 8;
+		io_duart_rd_space[REG_R_CTL] = ioc_duart->counter;
+		ioc_duart->pit_running = 1;
+		trace(TRACE_PIT, "PIT START 0x%02x%02x\n",
+		    io_duart_rd_space[REG_R_CTU],
+		    io_duart_rd_space[REG_R_CTL]);
+		break;
+	case REG_R_STOP_PIT:
+		trace(TRACE_PIT, "PIT STOP\n");
+		ioc_duart->pit_running = 0;
+		io_duart_rd_space[REG_R_ISR] &= ~0x8;
+		irq_lower(&IRQ_PIT);
+		if (ioc_duart->pit_intr)
+			ioc_duart->opr &= ~0x08;
+		break;
+	default:
+		break;
 	}
-
 	AZ(pthread_mutex_unlock(&duart_mtx));
-	return (value);
+	trace(TRACE_IO, "DUART R %s [%x] -> %x\n",
+	    rd_reg[adr], adr, space[adr]);
 }
+
+/**********************************************************************/
+
+void v_matchproto_(mem_post_write)
+io_duart_post_write(int debug, uint8_t *space, unsigned width, unsigned adr)
+{
+	struct chan *chp;
+	int8_t chr;
+
+	if (debug) return;
+	assert (width == 1);
+	assert (adr < 16);
+	trace(TRACE_IO, "DUART W %s [%x] <- %x\n",
+	    wr_reg[adr], adr, space[adr]);
+	AZ(pthread_mutex_lock(&duart_mtx));
+	chp = &ioc_duart->chan[adr>>3];
+	switch(adr) {
+	case REG_W_MRA:
+	case REG_W_MRB:
+		chp->mode[chp->mrptr] = space[adr];
+		chp->mrptr ^= 1;
+		break;
+	case REG_W_CRA:
+	case REG_W_CRB:
+		switch ((space[adr] >> 4) & 0x7) {
+		case 0x4:
+			chp->mrptr = 0;
+			break;
+		default:
+			break;
+		}
+		if (space[adr] & 1) {
+			chp->rxon = 1;
+		}
+		if (space[adr] & 2) {
+			chp->rxon = 0;
+		}
+		if (space[adr] & 4) {
+			chp->txon = 1;
+			chp->sr |= 4;
+		}
+		if (space[adr] & 8) {
+			chp->txon = 0;
+			chp->sr &= ~4;
+		}
+		break;
+	case REG_W_THRA:
+	case REG_W_THRB:
+		chr = space[adr];
+		elastic_put(chp->ep, &chr, 1);
+		if (chp->isdiag && ioc_duart->opr & 4) {
+			// IOP.DLOOP~ on p21
+			chp->rxhold = chr;
+			chp->sr |= 1;
+		} else if (chp->mode[1] & 0x80) {
+			// Internal Local Loop
+			chp->rxhold = chr;
+			chp->sr |= 1;
+		}
+		break;
+	case REG_W_OPCR:
+		ioc_duart->pit_intr = (space[adr] & 0x0c) == 0x04;
+		break;
+	case REG_W_SET_BITS:
+		ioc_duart->opr |= space[adr];
+		if (ioc_duart->opr & 0x10)
+			irq_raise(&IRQ_MODEM_RXRDY);
+		if (ioc_duart->opr & 0x20)
+			irq_raise(&IRQ_DIAG_BUS_RXRDY);
+		if (ioc_duart->opr & 0x80)
+			irq_raise(&IRQ_DIAG_BUS_TXRDY);
+		break;
+	case REG_W_CLR_BITS:
+		ioc_duart->opr &= ~space[adr];
+		if (!(ioc_duart->opr & 0x10))
+			irq_lower(&IRQ_MODEM_RXRDY);
+		if (!(ioc_duart->opr & 0x10))
+			irq_lower(&IRQ_DIAG_BUS_RXRDY);
+		if (!(ioc_duart->opr & 0x80))
+			irq_lower(&IRQ_DIAG_BUS_TXRDY);
+		break;
+	default:
+		break;
+	}
+	AZ(pthread_mutex_unlock(&duart_mtx));
+}
+
+/**********************************************************************/
 
 void v_matchproto_(cli_func_f)
 cli_ioc_duart(struct cli *cli)

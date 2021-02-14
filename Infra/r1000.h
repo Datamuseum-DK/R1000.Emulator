@@ -48,10 +48,11 @@
 
 // Trace bits
 
-#define TRACE_68K	1	// Trace instructions
-#define TRACE_IO	2	// General I/O tracing
-#define TRACE_SCSI	4	// Trace SCSI-CDBs
-#define TRACE_PIT	8	// PIT timer tracing
+#define TRACE_68K	1		// Trace instructions
+#define TRACE_IO	2		// General I/O tracing
+#define TRACE_SCSI	4		// Trace SCSI-CDBs
+#define TRACE_PIT	8		// PIT timer tracing
+#define TRACE_ALL	((1LU<<32U)-1)	// Hvergang Perikles, Hvergang...
 
 /*
  * In OO-light situations, functions have to match their prototype
@@ -113,7 +114,7 @@ void cli_unknown(struct cli *cli);
 
 /* Tracing & Debugging ************************************************/
 
-void trace(int level, const char *fmt, ...) __printflike(2, 3);
+void trace(unsigned level, const char *fmt, ...) __printflike(2, 3);
 
 /* CALLOUTS ***********************************************************/
 

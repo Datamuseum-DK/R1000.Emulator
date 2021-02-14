@@ -1,6 +1,8 @@
 
 +fan
 
++libh(memspace.h)
+
 -sem(callout_insert, custodial(1))
 
 -efile(451, "Ioc/interrupts.h")	// Header file 'Ioc/interrupts.h' repeatedly included but does not have a standard include guard
@@ -22,6 +24,19 @@
 // 534 Ignoring return value of our own functions
 -esym(534, cli_error)
 -esym(534, m68k_disassemble)
+
+// global struct member '___' (___) not referenced
+-esym(768, memdesc::*)
+-esym(768, *_space)
+-esym(768, *_mdesc)
+
+// external '___' (___) could be made static
+-esym(765, memdesc::*)
+-esym(765, *_space)
+-esym(765, *_mdesc)
+
+// 750     local macro '___' (___) not referenced
+-esym(750, REG_*)
 
 // 714 Symbol '___' (___) not referenced
 // 759 header declaration for symbol '___' defined at (___) could be moved from header to module
