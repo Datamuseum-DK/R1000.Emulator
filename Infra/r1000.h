@@ -46,12 +46,17 @@
      __attribute__((__format__ (__printf__, fmtarg, firstvararg)))
 #endif
 
+struct vsb;
+
 // Trace bits
 
-#define TRACE_68K	1		// Trace instructions
-#define TRACE_IO	2		// General I/O tracing
-#define TRACE_SCSI	4		// Trace SCSI-CDBs
-#define TRACE_PIT	8		// PIT timer tracing
+#define TRACE_68K	(1<<0)		// Trace instructions
+#define TRACE_IO	(1<<1)		// General I/O tracing
+#define TRACE_SCSI	(1<<2)		// Trace SCSI-CDBs
+#define TRACE_SCSI_DATA	(1<<3)		// Trace SCSI-CDBs
+#define TRACE_PIT	(1<<4)		// PIT timer tracing
+#define TRACE_SYSCALL	(1<<5)		// PIT timer tracing
+
 #define TRACE_ALL	((1LU<<32U)-1)	// Hvergang Perikles, Hvergang...
 
 /*
@@ -114,7 +119,11 @@ void cli_unknown(struct cli *cli);
 
 /* Tracing & Debugging ************************************************/
 
+void hexdump(struct vsb *vsb, const void *ptr, size_t len, unsigned offset);
 void trace(unsigned level, const char *fmt, ...) __printflike(2, 3);
+void trace_dump(unsigned level, const void *ptr, size_t len, const char *fmt, ...)
+    __printflike(4, 5);
+
 
 /* CALLOUTS ***********************************************************/
 

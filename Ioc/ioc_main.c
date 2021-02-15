@@ -35,34 +35,9 @@ dump_ram(void)
 }
 
 static void
-dump_registers(void)
-{
-	trace(TRACE_68K, "D0 = %08x  D4 = %08x   A0 = %08x  A4 = %08x\n",
-	    m68k_get_reg(NULL, M68K_REG_D0), m68k_get_reg(NULL, M68K_REG_D4),
-	    m68k_get_reg(NULL, M68K_REG_A0), m68k_get_reg(NULL, M68K_REG_A4)
-	);
-
-	trace(TRACE_68K, "D1 = %08x  D5 = %08x   A1 = %08x  A5 = %08x\n",
-	    m68k_get_reg(NULL, M68K_REG_D1), m68k_get_reg(NULL, M68K_REG_D5),
-	    m68k_get_reg(NULL, M68K_REG_A1), m68k_get_reg(NULL, M68K_REG_A5)
-	);
-
-	trace(TRACE_68K, "D2 = %08x  D6 = %08x   A2 = %08x  A6 = %08x\n",
-	    m68k_get_reg(NULL, M68K_REG_D2), m68k_get_reg(NULL, M68K_REG_D6),
-	    m68k_get_reg(NULL, M68K_REG_A2), m68k_get_reg(NULL, M68K_REG_A6)
-	);
-
-	trace(TRACE_68K, "D3 = %08x  D7 = %08x   A3 = %08x  A7 = %08x\n",
-	    m68k_get_reg(NULL, M68K_REG_D3), m68k_get_reg(NULL, M68K_REG_D7),
-	    m68k_get_reg(NULL, M68K_REG_A3), m68k_get_reg(NULL, M68K_REG_A7)
-	);
-
-}
-
-static void
 crash(void)
 {
-	dump_registers();
+	ioc_dump_registers(TRACE_68K);
 	dump_ram();
 	exit(2);
 }
@@ -214,7 +189,7 @@ cpu_instr_callback(unsigned int pc)
 	static unsigned repeats = 0;
 
 	ioc_pc = pc;
-	if (r1000sim->do_trace) {
+	if (r1000sim->do_trace && pc >= 0x20000) {
 		instr_size = m68k_disassemble(buff, pc, IOC_CPU_TYPE);
 		make_hex(buff2, pc, instr_size);
 		if (pc != last_pc) {
@@ -233,13 +208,16 @@ cpu_instr_callback(unsigned int pc)
 			repeats++;
 		}
 	}
+	if (0x10000 <= pc && pc <= 0x1061c)
+		ioc_trace_syscall(pc);
+
 	if (pc == 0x80000088) {
 		// hit self-test fail, stop tracing
-		dump_registers();
+		ioc_dump_registers(TRACE_68K);
 		r1000sim->do_trace = 0;
 	}
 	if (pc == 0x00071286 || pc == 0x7056e || pc == 0x766a2) {
-		dump_registers();
+		ioc_dump_registers(TRACE_68K);
 		r1000sim->do_trace = 0;
 		printf("RESHA test failed\n");
 		crash();
@@ -250,7 +228,7 @@ cpu_instr_callback(unsigned int pc)
 		crash();
 	}
 	if (pc == 0x0000a090) {
-		dump_registers();
+		ioc_dump_registers(TRACE_68K);
 		// hit trap, stop tracing
 		r1000sim->do_trace = 0;
 	}

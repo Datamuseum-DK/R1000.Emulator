@@ -17,13 +17,13 @@
 #include "memspace.h"
 
 static const char * const rd_reg[] = {
-	"MR1A_2A", "SRA", "BRG Test", "RHRA", "IPCR", "ISR", "CTU", "CLL",
+	"MR1A_2A", "SRA", "BRG Test", "RHRA", "IPCR", "ISR", "CTU", "CTL",
 	"MR1B_2B", "SRB", "1x/16x Test", "RHRB", "Reserved", "Input Port",
 	"Start Counter Command", "Stop Counter Command",
 };
 
 static const char * const wr_reg[] = {
-	"MR1A_2A", "CSRA", "CRA", "THRA", "ACR", "IMR", "CRUR", "CTLR",
+	"MR1A_2A", "CSRA", "CRA", "THRA", "ACR", "IMR", "CTUR", "CTLR",
 	"MR1B_2B", "CSRB", "CRB", "THRB", "Reserved", "OPCR",
 	"Set Output Port Bits Command", "Reset Output Port Bits Command",
 };

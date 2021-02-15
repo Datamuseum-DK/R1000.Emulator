@@ -2,6 +2,7 @@
 +fan
 
 +libh(memspace.h)
++libh(vsb.h)
 
 -sem(callout_insert, custodial(1))
 
@@ -21,9 +22,19 @@
 -esym(534, memcpy)
 -esym(534, usleep)
 
+// 835     A zero has been given as ___ argument to operator '___'
+-emacro(835,TRACE_68K)
+
 // 534 Ignoring return value of our own functions
 -esym(534, cli_error)
 -esym(534, m68k_disassemble)
+
+// 534 Ignoring return value of VSB
+-esym(534, VSB_printf)
+-esym(534, VSB_vprintf)
+-esym(534, VSB_tofile)
+-esym(534, VSB_cat)
+-esym(534, VSB_putc)
 
 // global struct member '___' (___) not referenced
 -esym(768, memdesc::*)

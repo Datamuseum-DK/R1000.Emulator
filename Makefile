@@ -20,6 +20,7 @@ VPATH	= Musashi:Musashi/softfloat:Infra:Ioc
 OBJS	= main.o callout.o cli.o memory.o
 OBJS	+= elastic.o elastic_fd.o elastic_tcp.o elastic_match.o
 OBJS	+= vav.o
+OBJS	+= vsb.o
 
 OBJS	+= m68kcpu.o m68kdasm.o m68kops.o softfloat.o
 
@@ -34,6 +35,7 @@ OBJS	+= ioc_main.o
 OBJS	+= ioc_rtc.o
 OBJS	+= ioc_scsi_ctl.o
 OBJS	+= ioc_scsi_dev.o
+OBJS	+= ioc_syscall.o
 
 CFLAGS	+= -Wall -Werror -pthread -g -O0
 CFLAGS	+= -I. -IInfra -IMusashi -IIoc -DMUSASHI_CNF='"musashi_conf.h"'
@@ -59,7 +61,7 @@ CLI_INCL = \
 test:	r1000 ${BINFILES}
 	./r1000 \
 		-T ${TRACE_FILE} \
-		-t 255 \
+		-t 33 \
 		"console > _.console" \
 		"duart > _.duart" \
 		"scsi_tape" \
@@ -96,7 +98,7 @@ seagate:	r1000 ${BINFILES}
 tape:	r1000 ${BINFILES}
 	./r1000 \
 		-T /critter/_r1000 \
-		-t 254 \
+		-t 33 \
 		"scsi_tape ${DFS_TAPE}" \
 		"scsi_disk 0 ${DISK0_IMAGE}" \
 		"scsi_disk 1 ${DISK1_IMAGE}" \
@@ -134,6 +136,7 @@ elastic_tcp.o:		Infra/r1000.h Infra/elastic.h Infra/elastic_tcp.c
 main.o:			Infra/r1000.h Infra/main.c
 memory.o:		Infra/r1000.h Infra/memspace.h Infra/memory.c
 vav.o:			Infra/r1000.h Infra/vav.c
+vsb.o:			Infra/r1000.h Infra/vsb.c
 
 m68kcpu.o:		${M68K_INCL} Musashi/m68kcpu.c
 m68kdasm.o:		${M68K_INCL} Musashi/m68kdasm.c
@@ -150,6 +153,7 @@ ioc_hotfix.o:		${M68K_INCL} Ioc/ioc.h Ioc/ioc_hotfix.c
 ioc_rtc.o:		${CLI_INCL} Ioc/ioc.h Ioc/ioc_rtc.c
 ioc_scsi_ctl.o:		${CLI_INCL} Ioc/ioc.h Ioc/ioc_scsi.h Ioc/ioc_scsi_ctl.c
 ioc_scsi_dev.o:		${CLI_INCL} Ioc/ioc.h Ioc/ioc_scsi.h Ioc/ioc_scsi_dev.c
+ioc_syscall.o:		${CLI_INCL} Ioc/ioc.h Ioc/ioc_syscall.c
 
 m68kops.o:		Musashi/m68kcpu.h m68kops.h m68kops.c
 m68kops.h m68kops.c:	m68kmake Ioc/musashi_conf.h

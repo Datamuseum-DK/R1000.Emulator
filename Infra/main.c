@@ -39,6 +39,7 @@
 #include "r1000.h"
 #include "elastic.h"
 #include "ioc.h"
+#include "vsb.h"
 
 int optreset;		// Some have it, some not.
 
@@ -80,6 +81,53 @@ trace(unsigned level, const char *fmt, ...)
 	vsnprintf(buf + 13, sizeof(buf) - 13, fmt, ap);
 	va_end(ap);
 	(void)write(cs->fd_trace, buf, strlen(buf));
+}
+
+void
+hexdump(struct vsb *vsb, const void *ptr, size_t len, unsigned offset)
+{
+	const uint8_t *p = ptr;
+	size_t c, u, v;
+
+	AN(ptr);
+	for (u = 0; u < len; u += 0x20) {
+		VSB_printf(vsb, "%08zx", u + offset);
+		for (v = 0; v < 0x20 && v + u < len; v++)
+			VSB_printf(vsb, " %02x", p[u + v]);
+		for (; v < 0x20 && v + u < len; v++)
+			VSB_cat(vsb, "   ");
+		VSB_cat(vsb, " |");
+		for (v = 0; v < 0x20 && v + u < len; v++) {
+			c = p[u+v];
+			if (c < 0x20 || c > 0x7e)
+				c = '.';
+			VSB_putc(vsb, c);
+		}
+		VSB_putc(vsb, '|');
+		VSB_putc(vsb, '\n');
+	}
+}
+
+void
+trace_dump(unsigned level, const void *ptr, size_t len, const char *fmt, ...)
+{
+	struct vsb *vsb;
+	struct sim *cs = r1000sim;
+	va_list ap;
+
+	AN(ptr);
+	if (cs->fd_trace < 0 || !(cs->do_trace & level))
+		return;
+	vsb = VSB_new_auto();
+	AN(vsb);
+	VSB_printf(vsb, "%12jd ", cs->simclock);
+	va_start(ap, fmt);
+	VSB_vprintf(vsb, fmt, ap);
+	va_end(ap);
+	hexdump(vsb, ptr, len, 0);
+	AZ(VSB_finish(vsb));
+	VSB_tofile(vsb, cs->fd_trace);
+	VSB_destroy(&vsb);
 }
 
 int
