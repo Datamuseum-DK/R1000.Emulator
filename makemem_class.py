@@ -87,7 +87,7 @@ class Range():
         fo.write("uint8_t %s[0x%x];\n" % (self.rd_space, self.length))
         if not self.bidir:
             fo.write("uint8_t %s[0x%x];\n" % (self.wr_space, self.length))
-        fo.write("static uint8_t %s[0x%x];\n" % (self.pegs, (self.length + 3) // 4))
+        fo.write("static uint8_t %s[0x%x];\n" % (self.pegs, (self.length + 1) // 2))
         fo.write("struct memdesc %s = {\n" % self.struct_name)
         fo.write('\t.name = "%s",\n' % self.name)
         fo.write('\t.lo = 0x%x,\n' % self.lo)
@@ -104,13 +104,14 @@ class Range():
         fo.write('\t.pegs_length = sizeof(%s),\n' % self.pegs)
         fo.write('};\n')
 
-    def peg_check(self, fo, what, val):
+    def peg_check(self, fo, what, val, width):
         ''' call the peg_check function '''
-        fo.write("\t\tpeg = " + self.pegs + "[" + self.effective_address + ">>2];\n")
-        fo.write('\t\tif (peg)\n')
+        fo.write("\t\tpeg = " + self.pegs + "[" + self.effective_address + ">>1];\n")
+        fo.write('\t\tif (peg & PEG_CHECK) {\n')
         fo.write('\t\t\tmem_peg_check(')
         fo.write("mem_op_" + what)
-        fo.write(', &%s, address, %s, peg);\n' % (self.struct_name, val))
+        fo.write(', &%s, address, %s, %d, peg);\n' % (self.struct_name, val, width))
+        fo.write('\t\t}\n')
 
     def produce_read_call(self, what, width, fo):
         ''' Produce a read call function '''
@@ -138,7 +139,8 @@ class Range():
             else:
                 fo.write(j + self.rd_space + ", %d, " % width + self.effective_address + ");\n")
 
-        self.peg_check(fo, what, "0")
+        if not 'debug' in what:
+            self.peg_check(fo, what, "0", width)
 
         fo.write("\t\treturn (")
         if width == 1:
@@ -164,7 +166,8 @@ class Range():
             fo.write("\t}")
             return
 
-        self.peg_check(fo, what, "value")
+        if not 'debug' in what:
+            self.peg_check(fo, what, "value", width)
 
         if width == 1:
             fo.write("\t\t" + self.wr_space + "[" + self.effective_address + "] = value;\n")
@@ -199,7 +202,7 @@ class Range():
     def produce_find_peg(self, fo):
         ''' return the proper peg '''
         self.cond(1, fo)
-        fo.write("\t\treturn(&" + self.pegs + "[" + self.effective_address + ">>2]);\n")
+        fo.write("\t\treturn(&" + self.pegs + "[" + self.effective_address + ">>1]);\n")
         fo.write("\t}")
 
 class System():
@@ -261,7 +264,8 @@ class System():
         fo.write("unsigned\n")
         fo.write("m68k_%s_memory_%d(unsigned address)\n" % (what, width * 8))
         fo.write("{\n")
-        fo.write("\tunsigned peg;\n")
+        if not 'debug' in what:
+            fo.write("\tunsigned peg;\n\n")
         sep = "\t"
         for i in self.ranges:
             if i.lo < i.hi + 1 - width:
@@ -285,7 +289,8 @@ class System():
         fo.write("void\n")
         fo.write("m68k_%s_memory_%d(unsigned address, unsigned value)\n" % (what, width * 8))
         fo.write("{\n")
-        fo.write("\tunsigned peg;\n")
+        if not 'debug' in what:
+            fo.write("\tunsigned peg;\n\n")
         sep = "\t"
         for i in self.ranges:
             if i.lo < i.hi + 1 - width:

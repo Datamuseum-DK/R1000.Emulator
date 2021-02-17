@@ -1,4 +1,7 @@
 
+typedef void mem_event_f(void *priv, const char *what,
+    unsigned adr, unsigned val, unsigned width, unsigned peg);
+
 struct memevent;
 
 struct memdesc {
@@ -11,7 +14,7 @@ struct memdesc {
 	uint8_t			*pegs;
 	size_t			space_length;
 	size_t			pegs_length;
-	VTAILQ_HEAD(,memevent)	memevents;
+	VTAILQ_HEAD(,memevent)	events;
 };
 
 extern const char * const mem_op_read;
@@ -19,9 +22,15 @@ extern const char * const mem_op_debug_read;
 extern const char * const mem_op_write;
 extern const char * const mem_op_debug_write;
 
-void mem_peg_check(const char *, struct memdesc *,
-    unsigned, unsigned, unsigned);
+#define PEG_CHECK	(1<<7)
+#define PEG_NOTRACE	(1<<6)
+
+void mem_peg_check(const char *, const struct memdesc *,
+    unsigned, unsigned, unsigned, unsigned);
 uint8_t * mem_find_peg(unsigned address);
+void mem_peg_set(unsigned lo, unsigned hi, unsigned pegval);
+
+void mem_peg_register(unsigned lo, unsigned hi, mem_event_f *func, void *priv);
 
 void mem_fail(const char *, unsigned, unsigned, unsigned);
 extern const char *mem_error_cause;
