@@ -5,6 +5,7 @@ void v_matchproto_(cli_func_f) cli_ioc_reset(struct cli *cli);
 void v_matchproto_(cli_func_f) cli_ioc_main(struct cli *cli);
 void v_matchproto_(cli_func_f) cli_scsi_disk(struct cli *cli);
 void v_matchproto_(cli_func_f) cli_scsi_tape(struct cli *cli);
+void v_matchproto_(cli_func_f) cli_ioc_syscall(struct cli *cli);
 
 void *main_ioc(void *priv);
 

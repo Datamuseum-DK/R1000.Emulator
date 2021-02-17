@@ -50,16 +50,14 @@ ioc_dump_registers(unsigned lvl)
 	VSB_tofile(syscall_vsb, cs->fd_trace);
 }
 
-
 static void
-dump_string(struct vsb *vsb, unsigned adr)
+dump_text(struct vsb *vsb, unsigned adr, unsigned len)
 {
-	unsigned u, v, c;
+	unsigned u, c;
 
-	u = vbe16dec(ram_space + adr);
-	VSB_printf(vsb, "len=0x%x '", u);
-	for (v = 0; v < u; v++) {
-		c = ram_space[adr + 2 + v];
+	VSB_cat(vsb, "'");
+	for (u = adr; u < adr + len; u++) {
+		c = m68k_debug_read_memory_8(u);
 		if (c < 0x20 || 0x7e < c)
 			VSB_cat(vsb, "␥");
 		else
@@ -69,11 +67,22 @@ dump_string(struct vsb *vsb, unsigned adr)
 }
 
 static void
+dump_string(struct vsb *vsb, unsigned adr)
+{
+	unsigned u;
+
+	u = vbe32dec(ram_space + adr - 4);
+	VSB_printf(vsb, "-4={0x%x} ", u);
+	u = vbe16dec(ram_space + adr);
+	VSB_printf(vsb, "len=0x%x ", u);
+	dump_text(vsb, adr + 2, u);
+}
+
+static void
 dump_1020a(struct vsb *vsb, unsigned a7)
 {
 	unsigned u;
 
-	u = vbe32dec(ram_space + a7 + 4);
 	VSB_printf(vsb, " 0x%08x", vbe32dec(ram_space + a7 + 4));
 	VSB_printf(vsb, " 0x%04x ", vbe16dec(ram_space + a7 + 8));
 	u = vbe32dec(ram_space + a7 + 4);
@@ -107,41 +116,6 @@ dump_10204(struct vsb *vsb, unsigned a7)
 }
 
 static void
-dump_102c4(struct vsb *vsb, unsigned a7)
-{
-	unsigned l, u, v, c;
-
-	l = vbe16dec(ram_space + a7 + 4);
-	VSB_printf(vsb, " 0x%04x", l);
-	VSB_printf(vsb, " 0x%04x", vbe16dec(ram_space + a7 + 6));
-	u = vbe32dec(ram_space + a7 + 8);
-	VSB_printf(vsb, " 0x%08x '", u);
-	for (v = 0; v < l; v++) {
-		c = ram_space[u + v];
-		if (c < 0x20 || 0x7e < c)
-			VSB_cat(vsb, "␥");
-		else
-			VSB_putc(vsb, c);
-	}
-	VSB_printf(vsb, "'\n");
-}
-
-static void
-dump_102d0(struct vsb *vsb, unsigned a7)
-{
-	unsigned u, v;
-
-	u = vbe32dec(ram_space + a7 + 4);
-	VSB_printf(vsb, " 0x%08x", u);
-	v = vbe32dec(ram_space + a7 + 8);
-	VSB_printf(vsb, " 0x%08x ", v);
-	dump_string(vsb, v);
-	VSB_printf(vsb, " ");
-	dump_string(vsb, u);
-	VSB_printf(vsb, "\n");
-}
-
-static void
 dump_103d8(struct vsb *vsb, unsigned a7)
 {
 	(void)vsb;
@@ -170,8 +144,6 @@ ioc_trace_syscall(unsigned pc)
 	switch (pc) {
 	case 0x10204: dump_10204(syscall_vsb, a7); break;
 	case 0x1020a: dump_1020a(syscall_vsb, a7); break;
-	case 0x102c4: dump_102c4(syscall_vsb, a7); break;
-	case 0x102d0: dump_102d0(syscall_vsb, a7); break;
 	case 0x103d8: dump_103d8(syscall_vsb, a7); break;
 	default:
 		VSB_cat(syscall_vsb, "\n");
@@ -191,3 +163,151 @@ ioc_trace_syscall(unsigned pc)
 	AZ(VSB_finish(syscall_vsb));
 	VSB_tofile(syscall_vsb, cs->fd_trace);
 }
+
+struct syscall {
+	const char	*name;
+	unsigned	lo;
+	unsigned	hi;
+	unsigned	no_trace;
+	unsigned	dump;
+	const char	*call;
+	const char	*ret;
+};
+
+static void v_matchproto_(mem_event_f)
+sc_peg(void *priv, const char *what, unsigned adr, unsigned val,
+    unsigned width, unsigned peg)
+{
+	struct syscall *sc = priv;
+	struct sim *cs = r1000sim;
+	const char *which;
+	unsigned a7, sp, u, v;
+
+	(void)val;
+	(void)what;
+	(void)width;
+	(void)peg;
+	if (ioc_fc != 2)
+		return;
+
+	if (syscall_vsb == NULL)
+		syscall_vsb = VSB_new_auto();
+	AN(syscall_vsb);
+	VSB_clear(syscall_vsb);
+	VSB_printf(syscall_vsb, "%12jd ", cs->simclock);
+
+	a7 =  m68k_get_reg(NULL, M68K_REG_A7);
+	if (adr == sc->lo) {
+		VSB_printf(syscall_vsb, "CALL %s(%s)\n", sc->name, sc->call);
+		which = sc->call;
+	} else if (adr == sc->hi) {
+		VSB_printf(syscall_vsb, "RETURN %s(%s)\n", sc->name, sc->ret);
+		which = sc->ret;
+	} else {
+		WRONG();
+	}
+	sp = a7 + 4;
+	for(; *which != '\0'; which += 2) {
+		if (which[0] == 'i' && which[1] == 'l') {
+			// Ignore 32 bits on stack
+			sp += 4;
+			continue;
+		}
+		if (which[0] == 'i' && which[1] == 'w') {
+			// Ignore 16 bits on stack
+			sp += 2;
+			continue;
+		}
+		if (which[0] == 's' && which[1] == 'L') {
+			// 32 bit long word on stack
+			u = m68k_debug_read_memory_32(sp);
+			VSB_printf(syscall_vsb, "\t\tLong: 0x%x\n", u);
+			sp += 4;
+			continue;
+		}
+		if (which[0] == 's' && which[1] == 'W') {
+			// 16 bit long word on stack
+			u = m68k_debug_read_memory_16(sp);
+			VSB_printf(syscall_vsb, "\t\tWord: 0x%x\n", u);
+			sp += 2;
+			continue;
+		}
+		if (which[0] == 's' && which[1] == 'P') {
+			// 32 bit pointer on stack
+			u = m68k_debug_read_memory_32(sp);
+			VSB_printf(syscall_vsb, "\t\tPointer: 0x%x\n", u);
+			sp += 4;
+			continue;
+		}
+		if (which[0] == 's' && which[1] == 'Q') {
+			// 32 bit pointer to pointer on stack
+			u = m68k_debug_read_memory_32(sp);
+			VSB_printf(syscall_vsb, "\t\tPointer: 0x%x", u);
+			u = m68k_debug_read_memory_32(u);
+			VSB_printf(syscall_vsb, " *-> 0x%x\n", u);
+			sp += 4;
+			continue;
+		}
+		if (which[0] == 's' && which[1] == 'S') {
+			// 32 bit pointer to string on stack
+			u = m68k_debug_read_memory_32(sp);
+			VSB_printf(syscall_vsb, "\t\tString: 0x%x", u);
+			dump_string(syscall_vsb, u);
+			VSB_cat(syscall_vsb, "\n");
+			sp += 4;
+			continue;
+		}
+		if (which[0] == 'x' && which[1] == '0') {
+			// 32 bit pointer to string on stack
+			// Length is second previous arg on stack
+			v = m68k_debug_read_memory_16(sp - 4);
+			u = m68k_debug_read_memory_32(sp);
+			VSB_printf(syscall_vsb, "\t\tText[0x%x]: 0x%x ", v, u);
+			dump_text(syscall_vsb, u, v);
+			VSB_cat(syscall_vsb, "\n");
+			sp += 4;
+			continue;
+		}
+		WRONG();
+	}
+	if (sc->dump) {
+		VSB_printf(syscall_vsb, "PC = 0x%x\n", adr);
+		ioc_dump_regs(syscall_vsb);
+		hexdump(syscall_vsb, ram_space + a7, 0x80, a7);
+	}
+	AZ(VSB_finish(syscall_vsb));
+	VSB_tofile(syscall_vsb, cs->fd_trace);
+}
+
+static struct syscall syscalls[] = {
+	{ "FREE",	0x000108fa, 0x000109fc, 1, 0, "sLsQ", "" },
+	{ "STRCAT",	0x00010f2c, 0x00010fc8, 1, 0, "sSsS", "ilsS"},
+	{ "MKSTR",	0x00010da4, 0x00010e60, 1, 0, "sWsWx0", "iwiwilsS"},
+	{ NULL, 0, 0, 0, 0, NULL, NULL },
+};
+
+void v_matchproto_(cli_func_f)
+cli_ioc_syscall(struct cli *cli)
+{
+	struct syscall *sc;
+
+	if (cli->help) {
+		cli_io_help(cli, "ioc syscall", 0, 1);
+		return;
+	}
+
+	cli->ac--;
+	cli->av++;
+
+	for (sc = syscalls; sc->name != NULL; sc++) {
+		mem_peg_register(sc->lo, sc->lo+ 2, sc_peg, sc);
+		mem_peg_register(sc->hi, sc->hi + 2, sc_peg, sc);
+		if (sc->no_trace)
+			mem_peg_set(sc->lo, sc->hi + 2, PEG_NOTRACE);
+	}
+	while (cli->ac && !cli->status) {
+		cli_unknown(cli);
+		break;
+	}
+}
+

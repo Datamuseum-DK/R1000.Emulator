@@ -62,6 +62,7 @@ test:	r1000 ${BINFILES}
 	./r1000 \
 		-T ${TRACE_FILE} \
 		-t 33 \
+		"syscall" \
 		"console > _.console" \
 		"duart > _.duart" \
 		"scsi_tape" \

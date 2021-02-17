@@ -156,6 +156,7 @@ static const struct cli_cmds {
 	{ "ioc",		cli_ioc_main },
 	{ "scsi_disk",		cli_scsi_disk },
 	{ "scsi_tape",		cli_scsi_tape },
+	{ "syscall",		cli_ioc_syscall },
 	{ NULL,			NULL },
 };
 

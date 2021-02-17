@@ -169,7 +169,7 @@ void cpu_instr_callback(unsigned int pc);
 #define M68K_INSTRUCTION_CALLBACK(pc) cpu_instr_callback(pc)
 
 /* If ON, the CPU will emulate the 4-byte prefetch queue of a real 68000 */
-#define M68K_EMULATE_PREFETCH       OPT_ON
+#define M68K_EMULATE_PREFETCH       OPT_OFF
 
 
 /* If ON, the CPU will generate address error exceptions if it tries to

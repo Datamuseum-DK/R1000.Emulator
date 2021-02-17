@@ -46,6 +46,12 @@
 -esym(765, *_space)
 -esym(765, *_mdesc)
 
+// 527     Unreachable code at token '___'
+-emacro(527, WRONG)
+
+// 785 Too few initializers for aggregate '___' of type '___'
+-esym(785, mem_desc_*)
+
 // 750     local macro '___' (___) not referenced
 -esym(750, REG_*)
 
@@ -61,6 +67,9 @@
 -esym(759, elastic_*)
 -esym(765, elastic_*)
 
+// 506 constant value boolean
+-emacro(506, assert)
+
 // Stylistic Disagreements
 -e663		// Suspicious array to pointer conversion
 -e716		// while(1) ...
@@ -71,9 +80,11 @@
 -e459		// Function '___' whose address was taken has an unprotected access to variable '___'
 
 // To Be Reviewed
+-e712		// Loss of precision (___) (___ to ___)
 -e713		// Loss of precision (___) (___ to ___)
 -e732		// Loss of sign (___) (___ to ___)
 -e734		// Loss of precision (___) (___ bits to ___ bits)
+-e737		// Loss of sign in promotion from ___ to ___
 -e747		// Significant prototype coercion (___) ___ to ___
 -e679		// Suspicious Truncation in arithmetic expression combining with pointer
 

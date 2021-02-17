@@ -178,36 +178,49 @@ make_hex(char* buff, unsigned int pc, unsigned int length)
 	}
 }
 
-void
-cpu_instr_callback(unsigned int pc)
+static void
+cpu_trace(unsigned int pc)
 {
 
 	char buff[100];
 	char buff2[100];
-	unsigned int instr_size, a6;
+	uint8_t *peg;
+	unsigned int instr_size;
 	static unsigned int last_pc = 0;
 	static unsigned repeats = 0;
 
-	ioc_pc = pc;
-	if (r1000sim->do_trace && pc >= 0x20000) {
-		instr_size = m68k_disassemble(buff, pc, IOC_CPU_TYPE);
-		make_hex(buff2, pc, instr_size);
-		if (pc != last_pc) {
-			if (repeats)
-				trace(TRACE_68K, "E … × %x\n", repeats);
-			repeats = 0;
-			trace(
-			    TRACE_68K,
-			    "E %08x: %-20s: %s\n",
-			    pc,
-			    buff2,
-			    buff
-			);
-			last_pc = pc;
-		} else {
-			repeats++;
-		}
+	peg = mem_find_peg(pc);
+	AN(peg);
+	if (*peg & PEG_NOTRACE)
+		return;
+	instr_size = m68k_disassemble(buff, pc, IOC_CPU_TYPE);
+	make_hex(buff2, pc, instr_size);
+	if (pc != last_pc) {
+		if (repeats)
+			trace(TRACE_68K, "E … × %x\n", repeats);
+		repeats = 0;
+		trace(
+		    TRACE_68K,
+		    "E %08x: %02x %-20s: %s\n",
+		    pc,
+		    *peg,
+		    buff2,
+		    buff
+		);
+		last_pc = pc;
+	} else {
+		repeats++;
 	}
+}
+
+void
+cpu_instr_callback(unsigned int pc)
+{
+	unsigned int a6;
+
+	ioc_pc = pc;
+	if (r1000sim->do_trace)
+		cpu_trace(pc);
 	if (0x10000 <= pc && pc <= 0x1061c)
 		ioc_trace_syscall(pc);
 

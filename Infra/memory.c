@@ -61,7 +61,7 @@ mem_peg_set(unsigned lo, unsigned hi, unsigned pegval)
 	uint8_t *peg;
 
 	lo &= ~1;
-        for(u = lo; u < hi; u += 2) {
+	for(u = lo; u < hi; u += 2) {
 		peg = mem_find_peg(u);
 		AN(peg);
 		*peg |= pegval;
