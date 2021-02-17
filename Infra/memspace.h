@@ -1,4 +1,6 @@
 
+struct memevent;
+
 struct memdesc {
 	const char		*name;
 	uint32_t		lo;
@@ -9,15 +11,26 @@ struct memdesc {
 	uint8_t			*pegs;
 	size_t			space_length;
 	size_t			pegs_length;
+	VTAILQ_HEAD(,memevent)	memevents;
 };
 
-void mem_peg_check(const char *, struct memdesc *, unsigned, unsigned);
+extern const char * const mem_op_read;
+extern const char * const mem_op_debug_read;
+extern const char * const mem_op_write;
+extern const char * const mem_op_debug_write;
+
+void mem_peg_check(const char *, struct memdesc *,
+    unsigned, unsigned, unsigned);
+uint8_t * mem_find_peg(unsigned address);
 
 void mem_fail(const char *, unsigned, unsigned, unsigned);
 extern const char *mem_error_cause;
 
 typedef void mem_pre_read(int, uint8_t *, unsigned, unsigned);
 typedef void mem_post_write(int, uint8_t *, unsigned, unsigned);
+
+extern struct memdesc *memdesc[];
+extern const unsigned n_memdesc;
 
 //void m68k_write_memory_8(unsigned, unsigned);
 //unsigned m68k_read_memory_8(unsigned);

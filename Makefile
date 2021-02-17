@@ -142,7 +142,7 @@ m68kcpu.o:		${M68K_INCL} Musashi/m68kcpu.c
 m68kdasm.o:		${M68K_INCL} Musashi/m68kdasm.c
 softfloat.o:		${M68K_INCL} Musashi/softfloat/softfloat.c
 
-_memcfg.o:		_memcfg.c _memcfg.h
+_memcfg.o:		_memcfg.c _memcfg.h Infra/memspace.h
 
 ioc_cli.o:		${CLI_INCL} Ioc/ioc.h Ioc/ioc_cli.c
 ioc_duart.o:		${CLI_INCL} Ioc/ioc.h Ioc/ioc_duart.c

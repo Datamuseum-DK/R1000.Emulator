@@ -40,7 +40,7 @@ class Range():
             self.wr_space = name + "_wr_space"
 
         self.pegs = name + "_pegs"
-        self.struct_name = name + "_mdesc"
+        self.struct_name = "mem_desc_" + name
 
         if self.mask:
             assert not self.mask & (self.mask + 1) # Must be (power of two - 1)
@@ -104,6 +104,14 @@ class Range():
         fo.write('\t.pegs_length = sizeof(%s),\n' % self.pegs)
         fo.write('};\n')
 
+    def peg_check(self, fo, what, val):
+        ''' call the peg_check function '''
+        fo.write("\t\tpeg = " + self.pegs + "[" + self.effective_address + ">>2];\n")
+        fo.write('\t\tif (peg)\n')
+        fo.write('\t\t\tmem_peg_check(')
+        fo.write("mem_op_" + what)
+        fo.write(', &%s, address, %s, peg);\n' % (self.struct_name, val))
+
     def produce_read_call(self, what, width, fo):
         ''' Produce a read call function '''
 
@@ -130,8 +138,7 @@ class Range():
             else:
                 fo.write(j + self.rd_space + ", %d, " % width + self.effective_address + ");\n")
 
-        fo.write("\t\tif (" + self.pegs + "[" + self.effective_address + ">>2])\n")
-        fo.write('\t\t\tmem_peg_check("%s", &%s, address, 0);\n' % (what, self.struct_name))
+        self.peg_check(fo, what, "0")
 
         fo.write("\t\treturn (")
         if width == 1:
@@ -157,8 +164,7 @@ class Range():
             fo.write("\t}")
             return
 
-        fo.write("\t\tif (" + self.pegs + "[" + self.effective_address + ">>2])\n")
-        fo.write('\t\t\tmem_peg_check("%s", &%s, address, value);\n' % (what, self.struct_name))
+        self.peg_check(fo, what, "value")
 
         if width == 1:
             fo.write("\t\t" + self.wr_space + "[" + self.effective_address + "] = value;\n")
@@ -190,6 +196,12 @@ class Range():
             fo.write(self.wr_space + ", %d," % width + self.effective_address + ");\n")
         fo.write("\t}")
 
+    def produce_find_peg(self, fo):
+        ''' return the proper peg '''
+        self.cond(1, fo)
+        fo.write("\t\treturn(&" + self.pegs + "[" + self.effective_address + ">>2]);\n")
+        fo.write("\t}")
+
 class System():
     ''' A memory subsystem '''
     def __init__(
@@ -214,6 +226,7 @@ class System():
         fo.write('#include <stdint.h>\n')
         fo.write('#include <stdio.h>\n')
         fo.write('#include "vend.h"\n')
+        fo.write('#include "vqueue.h"\n')
         fo.write('#include "Infra/memspace.h"\n')
         self.produce_data(fo)
         for i in (1, 2, 4):
@@ -221,6 +234,7 @@ class System():
             self.produce_read_x_bit("debug_read", i, fo)
             self.produce_write_x_bit("write", i, fo)
             self.produce_write_x_bit("debug_write", i, fo)
+        self.produce_peg_find(fo)
 
     def produce_h(self, filename):
         ''' Produce the *.h file '''
@@ -234,7 +248,7 @@ class System():
             fo.write("\n")
             i.produce_data(fo)
         fo.write("\n")
-        fo.write("const struct memdesc *memdesc[] = {\n")
+        fo.write("struct memdesc *memdesc[] = {\n")
         for i in self.ranges:
             fo.write("\t&%s,\n" % i.struct_name)
         fo.write("\tNULL\n")
@@ -247,6 +261,7 @@ class System():
         fo.write("unsigned\n")
         fo.write("m68k_%s_memory_%d(unsigned address)\n" % (what, width * 8))
         fo.write("{\n")
+        fo.write("\tunsigned peg;\n")
         sep = "\t"
         for i in self.ranges:
             if i.lo < i.hi + 1 - width:
@@ -270,6 +285,7 @@ class System():
         fo.write("void\n")
         fo.write("m68k_%s_memory_%d(unsigned address, unsigned value)\n" % (what, width * 8))
         fo.write("{\n")
+        fo.write("\tunsigned peg;\n")
         sep = "\t"
         for i in self.ranges:
             if i.lo < i.hi + 1 - width:
@@ -285,6 +301,17 @@ class System():
         fo.write("\t}\n")
 
         fo.write("}\n")
+
+    def produce_peg_find(self, fo):
+        ''' Produce peg finder function '''
+        fo.write("\n")
+        fo.write("uint8_t *\n")
+        fo.write("mem_find_peg(unsigned address)\n")
+        fo.write("{")
+        for i in self.ranges:
+            fo.write("\n\t")
+            i.produce_find_peg(fo)
+        fo.write("\n\treturn (NULL);\n}\n")
 
 def main():
     ''' test code '''

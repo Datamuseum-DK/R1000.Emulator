@@ -142,6 +142,7 @@ main(int argc, char **argv)
 	setbuf(stderr, NULL);
 
 	r1000sim = sim_new();
+	mem_init();
 	cs = r1000sim;
 	ioc_init(cs);
 

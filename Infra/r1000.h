@@ -136,7 +136,11 @@ void callout_callback(struct sim *cs, callout_callback_f *func,
 
 nanosec callout_poll(struct sim *cs);
 
-/* UTILITIES  *********************************************************/
+/* MEMORY *************************************************************/
+
+void mem_init(void);
+
+/* UTILITIES **********************************************************/
 
 /* Safe printf into a fixed-size buffer */
 #define bprintf(buf, fmt, ...)						\
