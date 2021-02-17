@@ -142,6 +142,7 @@ ioc_trace_syscall(unsigned pc)
 
 	a7 =  m68k_get_reg(NULL, M68K_REG_A7);
 	switch (pc) {
+	case 0x10238: return;
 	case 0x10204: dump_10204(syscall_vsb, a7); break;
 	case 0x1020a: dump_1020a(syscall_vsb, a7); break;
 	case 0x103d8: dump_103d8(syscall_vsb, a7); break;
@@ -187,7 +188,8 @@ sc_peg(void *priv, const char *what, unsigned adr, unsigned val,
 	(void)what;
 	(void)width;
 	(void)peg;
-	if (ioc_fc != 2)
+
+	if (ioc_fc != 2 && ioc_fc != 6)
 		return;
 
 	if (syscall_vsb == NULL)
@@ -208,6 +210,10 @@ sc_peg(void *priv, const char *what, unsigned adr, unsigned val,
 	}
 	sp = a7 + 4;
 	for(; *which != '\0'; which += 2) {
+		if (which[0] == 'D' && which[1] == '0') {
+			VSB_printf(syscall_vsb, "\t\tD0: 0x%x\n", m68k_get_reg(NULL, M68K_REG_D0));
+			continue;
+		}
 		if (which[0] == 'i' && which[1] == 'l') {
 			// Ignore 32 bits on stack
 			sp += 4;
@@ -226,20 +232,31 @@ sc_peg(void *priv, const char *what, unsigned adr, unsigned val,
 			continue;
 		}
 		if (which[0] == 's' && which[1] == 'W') {
-			// 16 bit long word on stack
+			// 16 bit word on stack
 			u = m68k_debug_read_memory_16(sp);
 			VSB_printf(syscall_vsb, "\t\tWord: 0x%x\n", u);
+			sp += 2;
+			continue;
+		}
+		if (which[0] == 's' && which[1] == 'B') {
+			// 8 bit byte on stack
+			u = m68k_debug_read_memory_8(sp);
+			VSB_printf(syscall_vsb, "\t\tByte: 0x%x\n", u);
 			sp += 2;
 			continue;
 		}
 		if (which[0] == 's' && which[1] == 'P') {
 			// 32 bit pointer on stack
 			u = m68k_debug_read_memory_32(sp);
-			VSB_printf(syscall_vsb, "\t\tPointer: 0x%x\n", u);
+			VSB_printf(syscall_vsb, "\t\tPointer: 0x%x ", u);
+			if (u)
+				hexdump(syscall_vsb, ram_space + u, 0x10, u);
+			else
+				VSB_cat(syscall_vsb, "\n");
 			sp += 4;
 			continue;
 		}
-		if (which[0] == 's' && which[1] == 'Q') {
+		if (which[0] == 's' && which[1] == 'q') {
 			// 32 bit pointer to pointer on stack
 			u = m68k_debug_read_memory_32(sp);
 			VSB_printf(syscall_vsb, "\t\tPointer: 0x%x", u);
@@ -248,11 +265,25 @@ sc_peg(void *priv, const char *what, unsigned adr, unsigned val,
 			sp += 4;
 			continue;
 		}
+		if (which[0] == 's' && which[1] == 'Q') {
+			// 32 bit pointer to pointer on stack
+			u = m68k_debug_read_memory_32(sp);
+			VSB_printf(syscall_vsb, "\t\tPointer: 0x%x", u);
+			u = m68k_debug_read_memory_32(u);
+			VSB_printf(syscall_vsb, " *-> 0x%x ", u);
+			if (u)
+				hexdump(syscall_vsb, ram_space + u, 0x40, u);
+			else
+				VSB_cat(syscall_vsb, "\n");
+			sp += 4;
+			continue;
+		}
 		if (which[0] == 's' && which[1] == 'S') {
 			// 32 bit pointer to string on stack
 			u = m68k_debug_read_memory_32(sp);
-			VSB_printf(syscall_vsb, "\t\tString: 0x%x", u);
-			dump_string(syscall_vsb, u);
+			VSB_printf(syscall_vsb, "\t\tString: 0x%x ", u);
+			if (u)
+				dump_string(syscall_vsb, u);
 			VSB_cat(syscall_vsb, "\n");
 			sp += 4;
 			continue;
@@ -280,9 +311,28 @@ sc_peg(void *priv, const char *what, unsigned adr, unsigned val,
 }
 
 static struct syscall syscalls[] = {
-	{ "FREE",	0x000108fa, 0x000109fc, 1, 0, "sLsQ", "" },
-	{ "STRCAT",	0x00010f2c, 0x00010fc8, 1, 0, "sSsS", "ilsS"},
-	{ "MKSTR",	0x00010da4, 0x00010e60, 1, 0, "sWsWx0", "iwiwilsS"},
+	{ "MALLOC",		0x10856, 0x108b8, 0x108de, 0, "sL", "ilsq" },
+	{ "FREE",		0x108fa, 0x109fc, 0x109fc, 0, "sLsq", "" },
+	{ "STRCAT",		0x10f2c, 0x10fc8, 0x10fc8, 0, "sSsS", "ilsS"},
+	{ "FILL_STR",		0x10da4, 0x10e60, 0x10e60, 0, "sWsWx0", "iwiwilsS"},
+	{ "ALLOC_STR",		0x10cfa, 0x10d34, 0x10d34, 0, "", "sq" },
+	{ "WRCONS",		0x15392, 0x15408, 0x15408, 0, "sS", ""},
+	{ "LINK",		0x103b0, 0,		   0,	    1, "sPsWsSsS", ""},
+	{ "OPEN?",		0x138b4, 0x13a6e, 0,	   0, "sPsPsLsBsBsS", "sQsPsLsBsBsS"},
+	{ "RW1?",		0x13ae6, 0x13bb6, 0,	   0, "sPsPsBsW", "sPsPsBsW"},
+	{ "RW2?",		0x13bb8, 0x13c88, 0,	   0, "sPsPsBsW", "sPsPsBsW"},
+	{ "RW3?",		0x13c8a, 0x13e5a, 0,	   1, "sPsPsBsWsB", "sPsPsBsWsB"},
+	{ "DEFDMAMAP",		0x08e12, 0,	  0x08eb0, 0, "D0", ""},
+	{ "IS_IDLE?",		0x03638, 0,	  0x0364a, 0, "", ""},
+	{ "$IDLE",		0x09e74, 0x09f04, 0x09f06, 0, "", ""},
+	{ ">PIT",		0x09e30, 0x09e68, 0x09e6a, 0, "", ""},
+	{ ">PIT.0",		0x09d6e, 0x09d8c, 0x09d8e, 0, "", ""},
+	{ ">PIT.1",		0x09d8e, 0x09dc2, 0x09dc4, 0, "", ""},
+	{ "_CHS9_LBA10",	0x04b20, 0,	  0x04b82, 0, "", ""},
+	{ "_SCSID.0",		0x05502, 0,	  0x05556, 0, "", ""},
+	{ "_DISPATCH_KERNCALL",	0x08370, 0,	  0x0838c, 0, "", ""},
+	{ "memcpy_protected",	0x10238, 0,	  0,       0, "sWsPsL", ""},
+	{ "KC_1C",		0x89aa, 0,	  0x089ee, 0, "", ""},
 	{ NULL, 0, 0, 0, 0, NULL, NULL },
 };
 
@@ -301,9 +351,10 @@ cli_ioc_syscall(struct cli *cli)
 
 	for (sc = syscalls; sc->name != NULL; sc++) {
 		mem_peg_register(sc->lo, sc->lo+ 2, sc_peg, sc);
-		mem_peg_register(sc->hi, sc->hi + 2, sc_peg, sc);
+		if (sc->hi)
+			mem_peg_register(sc->hi, sc->hi + 2, sc_peg, sc);
 		if (sc->no_trace)
-			mem_peg_set(sc->lo, sc->hi + 2, PEG_NOTRACE);
+			mem_peg_set(sc->lo, sc->no_trace, PEG_NOTRACE);
 	}
 	while (cli->ac && !cli->status) {
 		cli_unknown(cli);

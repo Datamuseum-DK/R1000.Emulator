@@ -184,7 +184,7 @@ cpu_trace(unsigned int pc)
 
 	char buff[100];
 	char buff2[100];
-	uint8_t *peg;
+	uint8_t *peg = NULL;
 	unsigned int instr_size;
 	static unsigned int last_pc = 0;
 	static unsigned repeats = 0;
@@ -201,8 +201,9 @@ cpu_trace(unsigned int pc)
 		repeats = 0;
 		trace(
 		    TRACE_68K,
-		    "E %08x: %02x %-20s: %s\n",
+		    "E %08x %04x: %02x %-20s: %s\n",
 		    pc,
+		    m68k_get_reg(NULL, M68K_REG_SR),
 		    *peg,
 		    buff2,
 		    buff
@@ -219,6 +220,7 @@ cpu_instr_callback(unsigned int pc)
 	unsigned int a6;
 
 	ioc_pc = pc;
+
 	if (r1000sim->do_trace)
 		cpu_trace(pc);
 	if (0x10000 <= pc && pc <= 0x1061c)

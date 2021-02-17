@@ -61,7 +61,7 @@ CLI_INCL = \
 test:	r1000 ${BINFILES}
 	./r1000 \
 		-T ${TRACE_FILE} \
-		-t 33 \
+		-t 0x29 \
 		"syscall" \
 		"console > _.console" \
 		"duart > _.duart" \
@@ -99,7 +99,8 @@ seagate:	r1000 ${BINFILES}
 tape:	r1000 ${BINFILES}
 	./r1000 \
 		-T /critter/_r1000 \
-		-t 33 \
+		-t 0x29 \
+		"syscall" \
 		"scsi_tape ${DFS_TAPE}" \
 		"scsi_disk 0 ${DISK0_IMAGE}" \
 		"scsi_disk 1 ${DISK1_IMAGE}" \
