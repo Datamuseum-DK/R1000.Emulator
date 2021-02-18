@@ -3,6 +3,7 @@
 #include <pthread.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <stdint.h>
 #include <string.h>
 #include <unistd.h>
 #include <sys/stat.h>
@@ -15,6 +16,10 @@
 #include "ioc_scsi.h"
 
 /**********************************************************************/
+
+#ifndef MAP_NOSYNC
+#    define MAP_NOSYNC 0
+#endif
 
 static int
 cli_scsi_dev_map_file(struct cli *cli, struct scsi_dev *dev, const char *fn)
