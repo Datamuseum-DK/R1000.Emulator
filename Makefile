@@ -61,7 +61,7 @@ CLI_INCL = \
 test:	r1000 ${BINFILES}
 	./r1000 \
 		-T ${TRACE_FILE} \
-		-t 0x29 \
+		-t 0x2b \
 		"syscall" \
 		"console > _.console" \
 		"duart > _.duart" \

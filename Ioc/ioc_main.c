@@ -61,6 +61,36 @@ cli_ioc_main(struct cli *cli)
 		break;
 	}
 }
+/**********************************************************************
+ */
+
+#define GENERIC_POST_WRITE(name)							\
+	void v_matchproto_(mem_post_write)						\
+	name##_post_write(int debug, uint8_t *space, unsigned width, unsigned adr)	\
+	{										\
+		unsigned v;								\
+		if (width == 1)								\
+			v = space[adr];							\
+		else if (width == 2)							\
+			v = vbe16dec(space + adr);					\
+		else									\
+			v = vbe32dec(space + adr);					\
+		trace(TRACE_IO, "PW " #name " W(%d) 0x%x <- 0x%x\n", width, adr, v);	\
+	}
+
+GENERIC_POST_WRITE(xx_map)
+GENERIC_POST_WRITE(fb000)
+GENERIC_POST_WRITE(f000)
+GENERIC_POST_WRITE(f200)
+GENERIC_POST_WRITE(f300)
+GENERIC_POST_WRITE(io_sreg4)
+GENERIC_POST_WRITE(f500)
+GENERIC_POST_WRITE(io_sreg8)
+GENERIC_POST_WRITE(f900)
+GENERIC_POST_WRITE(fc00)
+GENERIC_POST_WRITE(fd00)
+GENERIC_POST_WRITE(fe00)
+
 
 /**********************************************************************
  * I/O Address mapping
