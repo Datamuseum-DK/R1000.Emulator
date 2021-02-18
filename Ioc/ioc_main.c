@@ -69,6 +69,7 @@ cli_ioc_main(struct cli *cli)
 	name##_post_write(int debug, uint8_t *space, unsigned width, unsigned adr)	\
 	{										\
 		unsigned v;								\
+		if (debug) return;							\
 		if (width == 1)								\
 			v = space[adr];							\
 		else if (width == 2)							\
