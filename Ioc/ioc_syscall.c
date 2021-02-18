@@ -143,6 +143,7 @@ ioc_trace_syscall(unsigned pc)
 	a7 =  m68k_get_reg(NULL, M68K_REG_A7);
 	switch (pc) {
 	case 0x10238: return;
+	case 0x103d0: return;
 	case 0x10204: dump_10204(syscall_vsb, a7); break;
 	case 0x1020a: dump_1020a(syscall_vsb, a7); break;
 	case 0x103d8: dump_103d8(syscall_vsb, a7); break;
@@ -311,12 +312,17 @@ sc_peg(void *priv, const char *what, unsigned adr, unsigned val,
 }
 
 static struct syscall syscalls[] = {
+	{ "INIT.PROGRAM",	0x10656, 0,	  0x10704, 0, "", "" },
 	{ "MALLOC",		0x10856, 0x108b8, 0x108de, 0, "sL", "ilsq" },
 	{ "FREE",		0x108fa, 0x109fc, 0x109fc, 0, "sLsq", "" },
 	{ "STRCAT",		0x10f2c, 0x10fc8, 0x10fc8, 0, "sSsS", "ilsS"},
 	{ "FILL_STR",		0x10da4, 0x10e60, 0x10e60, 0, "sWsWx0", "iwiwilsS"},
 	{ "ALLOC_STR",		0x10cfa, 0x10d34, 0x10d34, 0, "", "sq" },
-	{ "WRCONS",		0x15392, 0x15408, 0x15408, 0, "sS", ""},
+	{ "WR_CON_S",		0x15392, 0x15408, 0x15408, 0, "sS", ""},
+	{ "WR_CON_C",		0x15210, 0,	  0x15286, 0, "sB", ""},
+	{ "ASK_CONS1",		0x15694, 0x158be, 0,	   1, "sS", "sS"},
+	{ "ASK_CONS2",		0x113b0, 0x11424, 0,	   1, "sS", "sS"},
+	{ "ASK_CONS3",		0x1127c, 0x113ae, 0,	   1, "sQsq", "sqsq"},
 	{ "LINK",		0x103b0, 0,		   0,	    1, "sPsWsSsS", ""},
 	{ "OPEN?",		0x138b4, 0x13a6e, 0,	   0, "sPsPsLsBsBsS", "sQsPsLsBsBsS"},
 	{ "RW1?",		0x13ae6, 0x13bb6, 0,	   0, "sPsPsBsW", "sPsPsBsW"},
@@ -328,6 +334,10 @@ static struct syscall syscalls[] = {
 	{ ">PIT",		0x09e30, 0x09e68, 0x09e6a, 0, "", ""},
 	{ ">PIT.0",		0x09d6e, 0x09d8c, 0x09d8e, 0, "", ""},
 	{ ">PIT.1",		0x09d8e, 0x09dc2, 0x09dc4, 0, "", ""},
+	{ ">CONSOLE",		0x02ab0, 0,	  0x02ad2, 0, "", ""},
+	{ ">CONSOLE.0",		0x02978, 0,	  0x029a6, 0, "", ""},
+	{ ">CONSOLE.1",		0x02992, 0,	  0x02ab0, 0, "", ""},
+	{ ">CONSOLE.2",		0x028dc, 0,	  0x02978, 0, "", ""},
 	{ "_CHS9_LBA10",	0x04b20, 0,	  0x04b82, 0, "", ""},
 	{ "_SCSID.0",		0x05502, 0,	  0x05556, 0, "", ""},
 	{ "_DISPATCH_KERNCALL",	0x08370, 0,	  0x0838c, 0, "", ""},

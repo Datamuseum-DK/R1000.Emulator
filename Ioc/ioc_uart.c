@@ -109,7 +109,6 @@ cons_txshift_done(void * priv)
 {
 	(void)priv;
 
-trace(8, "CONSOLE_SHIFT\n");
 	AZ(pthread_mutex_lock(&uart_mtx));
 	if (!(cons->cmd & 0x01)) {			// Tx disabled
 		cons->status &= ~0x05;
