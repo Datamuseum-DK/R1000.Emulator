@@ -329,6 +329,7 @@ static struct syscall syscalls[] = {
 	{ "RW2?",		0x13bb8, 0x13c88, 0,	   0, "sPsPsBsW", "sPsPsBsW"},
 	{ "RW3?",		0x13c8a, 0x13e5a, 0,	   1, "sPsPsBsWsB", "sPsPsBsWsB"},
 	{ "DEFDMAMAP",		0x08e12, 0,	  0x08eb0, 0, "D0", ""},
+	{ "DEFXXMAP",		0x09cee, 0x9d30,  0x09d32, 0, "", ""},
 	{ "IS_IDLE?",		0x03638, 0,	  0x0364a, 0, "", ""},
 	{ "$IDLE",		0x09e74, 0x09f04, 0x09f06, 0, "", ""},
 	{ ">PIT",		0x09e30, 0x09e68, 0x09e6a, 0, "", ""},

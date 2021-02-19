@@ -79,7 +79,6 @@ cli_ioc_main(struct cli *cli)
 		trace(TRACE_IO, "PW " #name " W(%d) 0x%x <- 0x%x\n", width, adr, v);	\
 	}
 
-GENERIC_POST_WRITE(xx_map)
 GENERIC_POST_WRITE(fb000)
 GENERIC_POST_WRITE(f000)
 GENERIC_POST_WRITE(f200)
