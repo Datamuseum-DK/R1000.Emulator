@@ -108,6 +108,8 @@ static struct ioc_duart {
 } ioc_duart[1];
 
 static pthread_mutex_t duart_mtx = PTHREAD_MUTEX_INITIALIZER;
+static pthread_cond_t duart_cond = PTHREAD_COND_INITIALIZER;
+static pthread_t diag_rx;
 
 /**********************************************************************/
 
@@ -133,6 +135,32 @@ ioc_duart_pit_callback(void *priv)
 
 /**********************************************************************/
 
+static void*
+thr_duart_rx(void *priv)
+{
+	uint8_t buf[1];
+	struct chan *chp = priv;
+	char rbuf[20];
+	ssize_t sz;
+
+	(void)priv;
+	while (1) {
+		sz = elastic_get(chp->ep, buf, 1);
+		assert(sz == 1);
+		AZ(pthread_mutex_lock(&duart_mtx));
+		bprintf(rbuf, "\r\n--> 0x%02x\r\n", buf[0]);
+		elastic_put(chp->ep, rbuf, -1);
+		while (!(chp->rxon))
+			AZ(pthread_cond_wait(&duart_cond, &duart_mtx));
+		chp->rxhold = buf[0];
+		chp->sr |= 0x01;
+		irq_raise(chp->rx_irq);
+		AZ(pthread_mutex_unlock(&duart_mtx));
+	}
+}
+
+/**********************************************************************/
+
 void v_matchproto_(mem_pre_read)
 io_duart_pre_read(int debug, uint8_t *space, unsigned width, unsigned adr)
 {
@@ -153,6 +181,7 @@ io_duart_pre_read(int debug, uint8_t *space, unsigned width, unsigned adr)
 	case REG_R_RHRB:
 		space[adr] = chp->rxhold;
 		chp->sr &= ~1;
+		irq_lower(chp->rx_irq);
 		break;
 	case REG_R_START_PIT:
 		ioc_duart->counter = io_duart_wr_space[REG_W_CTLR];
@@ -185,7 +214,7 @@ void v_matchproto_(mem_post_write)
 io_duart_post_write(int debug, uint8_t *space, unsigned width, unsigned adr)
 {
 	struct chan *chp;
-	int8_t chr;
+	char buf[16];
 
 	if (debug) return;
 	assert (width == 1);
@@ -234,17 +263,17 @@ io_duart_post_write(int debug, uint8_t *space, unsigned width, unsigned adr)
 		break;
 	case REG_W_THRA:
 	case REG_W_THRB:
-		chr = space[adr];
 		if (chp->isdiag && ioc_duart->opr & 4) {
 			// IOP.DLOOP~ on p21
-			chp->rxhold = chr;
+			chp->rxhold = space[adr];
 			chp->sr |= 1;
 		} else if (chp->mode[1] & 0x80) {
 			// Internal Local Loop
-			chp->rxhold = chr;
+			chp->rxhold = space[adr];
 			chp->sr |= 1;
 		} else {
-			elastic_put(chp->ep, &chr, 1);
+			bprintf(buf, "%02x\r\n", space[adr]);
+			elastic_put(chp->ep, buf, strlen(buf));
 		}
 		break;
 	case REG_W_OPCR:
@@ -345,4 +374,5 @@ ioc_duart_init(struct sim *sim)
 
 	ioc_duart->chan[1].isdiag = 1;
 	callout_callback(r1000sim, ioc_duart_pit_callback, NULL, 0, 25600);
+	AZ(pthread_create(&diag_rx, NULL, thr_duart_rx, &ioc_duart->chan[1]));
 }

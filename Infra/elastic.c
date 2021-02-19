@@ -232,6 +232,7 @@ elastic_empty(const struct elastic *ep)
 int v_matchproto_(cli_elastic_f)
 cli_elastic(struct elastic *ep, struct cli *cli)
 {
+	uint8_t u8;
 
 	AN(cli);
 	if (cli->help) {
@@ -301,12 +302,22 @@ cli_elastic(struct elastic *ep, struct cli *cli)
 		return (1);
 	}
 
+	if (!strcmp(*cli->av, "hex")) {
+		if (cli_n_args(cli, 1))
+			return (1);
+		if (ep->mode == O_WRONLY)
+			return (cli_error(cli, "Only inputs can '<<'\n"));
+		u8 = (uint8_t)strtoul(cli->av[1], NULL, 16);
+		elastic_inject(ep, &u8, 1);
+		cli->av += 2;
+		cli->ac -= 2;
+		return (1);
+	}
 	if (!strcmp(*cli->av, "<<")) {
 		if (cli_n_args(cli, 1))
 			return (1);
-		if (ep->mode == O_WRONLY) {
+		if (ep->mode == O_WRONLY)
 			return (cli_error(cli, "Only inputs can '<<'\n"));
-		}
 		elastic_inject(ep, cli->av[1], -1);
 		elastic_inject(ep, "\r", -1);
 		cli->av += 2;

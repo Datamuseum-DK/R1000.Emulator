@@ -45,15 +45,15 @@ https://datamuseum.dk/wiki/Rational/R1000s400
         Power margining ... [OK]
         Clock margining ... [OK]
     Selftest passed
- 
+    
     Restarting R1000-400S February 12th, 2021 at 20:00:00
- 
+    
     Logical tape drive 0 is an 8mm cartridge tape drive.
     Logical tape drive 1 is declared non-existent.
     Logical tape drive 2 is declared non-existent.
     Logical tape drive 3 is declared non-existent.
     Booting I/O Processor with Bootstrap version 0.4
- 
+    
     Boot from (Tn or Dn)  [D0] :
     Kernel program (0,1,2) [0] :
     File system    (0,1,2) [0] :
@@ -65,12 +65,22 @@ https://datamuseum.dk/wiki/Rational/R1000s400
     Initializing diagnostic file system ... [OK]
     ====================================================
     Restarting system after loss of AC power
- 
+    
     CrashSave has created tombstone file R1000_DUMP1.
-
+    Memory 0 is in configuration but does not respond.
+    
+    >>> NOTICE: the EPROM WRT PROT switch is OFF (at front of RESHA board) <<<
+    >>> WARNING: the system clock or power is margined <<<
+    CLI/CRASH MENU - options are:
+      1 => enter CLI
+      2 => make a CRASHDUMP tape
+      3 => display CRASH INFO
+      4 => Boot DDC configuration
+      5 => Boot EEDB configuration
+      6 => Boot STANDARD configuration
+    Enter option [enter CLI] : 1
+    CLI> 
 ```
-
-At which point the system waits for something yet to be emulated.
 
 Disassembly of the IOC EEPROM: http://datamuseum.dk/aa/r1k_dfs/be/bed92cf60.html
 
