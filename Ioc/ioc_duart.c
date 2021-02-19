@@ -17,15 +17,41 @@
 #include "memspace.h"
 
 static const char * const rd_reg[] = {
-	"MR1A_2A", "SRA", "BRG Test", "RHRA", "IPCR", "ISR", "CTU", "CTL",
-	"MR1B_2B", "SRB", "1x/16x Test", "RHRB", "Reserved", "Input Port",
-	"Start Counter Command", "Stop Counter Command",
+	"DUART R MR1A_2A",
+	"DUART R SRA",
+	"DUART R BRG_Test",
+	"DUART R RHRA",
+	"DUART R IPCR",
+	"DUART R ISR",
+	"PIT R CTU",
+	"PIT R CTL",
+	"DUART R MR1B_2B",
+	"DUART R SRB",
+	"DUART R 1x/16x_Test",
+	"DUART R RHRB",
+	"DUART R Reserved",
+	"DUART R Input_Port",
+	"PIT R Start_Counter_Command",
+	"PIT R Stop_Counter_Command",
 };
 
 static const char * const wr_reg[] = {
-	"MR1A_2A", "CSRA", "CRA", "THRA", "ACR", "IMR", "CTUR", "CTLR",
-	"MR1B_2B", "CSRB", "CRB", "THRB", "Reserved", "OPCR",
-	"Set Output Port Bits Command", "Reset Output Port Bits Command",
+	"DUART W MR1A_2A",
+	"DUART W CSRA",
+	"DUART W CRA",
+	"DUART W THRA",
+	"DUART W ACR",
+	"DUART W IMR",
+	"PIT W CTUR",
+	"PIT W CTLR",
+	"DUART W MR1B_2B",
+	"DUART W CSRB",
+	"DUART W CRB",
+	"DUART W THRB",
+	"DUART W Reserved",
+	"DUART W OPCR",
+	"DUART W Set_Output_Port_Bits_Command",
+	"DUART W Reset_Output_Port_Bits_Command",
 };
 
 #define REG_W_MRA	0
@@ -148,8 +174,7 @@ io_duart_pre_read(int debug, uint8_t *space, unsigned width, unsigned adr)
 		break;
 	}
 	AZ(pthread_mutex_unlock(&duart_mtx));
-	trace(TRACE_IO, "DUART R %s [%x] -> %x\n",
-	    rd_reg[adr], adr, space[adr]);
+	trace(TRACE_IO, "%s [%x] -> %x\n", rd_reg[adr], adr, space[adr]);
 }
 
 /**********************************************************************/
@@ -163,8 +188,7 @@ io_duart_post_write(int debug, uint8_t *space, unsigned width, unsigned adr)
 	if (debug) return;
 	assert (width == 1);
 	assert (adr < 16);
-	trace(TRACE_IO, "DUART W %s [%x] <- %x\n",
-	    wr_reg[adr], adr, space[adr]);
+	trace(TRACE_IO, "%s [%x] <- %x\n", wr_reg[adr], adr, space[adr]);
 	AZ(pthread_mutex_lock(&duart_mtx));
 	chp = &ioc_duart->chan[adr>>3];
 	switch(adr) {
