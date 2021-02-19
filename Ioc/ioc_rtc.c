@@ -166,7 +166,7 @@ io_rtc_post_write(int debug, uint8_t *space, unsigned width, unsigned adr)
 	if (debug) return;
 	assert (width == 1);
 	assert (adr < 32);
-	trace(TRACE_IO, "DUART W [%x] <- %x\n", adr, space[adr]);
+	trace(TRACE_IO, "RTC W [%x] <- %x\n", adr, space[adr]);
 	AZ(pthread_mutex_lock(&rtc_mtx));
 	rtcregs[adr] = space[adr];
 	AZ(pthread_mutex_unlock(&rtc_mtx));
