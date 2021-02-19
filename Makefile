@@ -64,7 +64,8 @@ test:	r1000 ${BINFILES}
 		-t 0x2b \
 		"syscall" \
 		"console > _.console" \
-		"duart > _.duart" \
+		"modem > _.modem" \
+		"diag > _.diag" \
 		"scsi_tape" \
 		"scsi_disk 0 ${DISK0_IMAGE}" \
 		"scsi_disk 1 ${DISK1_IMAGE}" \

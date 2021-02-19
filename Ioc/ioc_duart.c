@@ -17,18 +17,18 @@
 #include "memspace.h"
 
 static const char * const rd_reg[] = {
-	"DUART R MR1A_2A",
-	"DUART R SRA",
+	"MODEM R MR1A_2A",
+	"MODEM R SRA",
 	"DUART R BRG_Test",
-	"DUART R RHRA",
+	"MODEM R RHRA",
 	"DUART R IPCR",
 	"DUART R ISR",
 	"PIT R CTU",
 	"PIT R CTL",
-	"DUART R MR1B_2B",
-	"DUART R SRB",
+	"DIAGBUS R MR1B_2B",
+	"DIAGBUS R SRB",
 	"DUART R 1x/16x_Test",
-	"DUART R RHRB",
+	"DIAGBUS R RHRB",
 	"DUART R Reserved",
 	"DUART R Input_Port",
 	"PIT R Start_Counter_Command",
@@ -36,18 +36,18 @@ static const char * const rd_reg[] = {
 };
 
 static const char * const wr_reg[] = {
-	"DUART W MR1A_2A",
-	"DUART W CSRA",
-	"DUART W CRA",
-	"DUART W THRA",
+	"MODEM W MR1A_2A",
+	"MODEM W CSRA",
+	"MODEM W CRA",
+	"MODEM W THRA",
 	"DUART W ACR",
 	"DUART W IMR",
 	"PIT W CTUR",
 	"PIT W CTLR",
-	"DUART W MR1B_2B",
-	"DUART W CSRB",
-	"DUART W CRB",
-	"DUART W THRB",
+	"DIAGBUS W MR1B_2B",
+	"DIAGBUS W CSRB",
+	"DIAGBUS W CRB",
+	"DIAGBUS W THRB",
 	"DUART W Reserved",
 	"DUART W OPCR",
 	"DUART W Set_Output_Port_Bits_Command",
@@ -87,22 +87,24 @@ static const char * const wr_reg[] = {
 #define REG_R_STOP_PIT	15
 
 struct chan {
-	struct elastic	*ep;
-	uint8_t		mode[2];
-	uint8_t		rxhold;
-	int		mrptr;
-	int		sr;
-	int		txon;
-	int		rxon;
-	int		isdiag;
+	struct elastic		*ep;
+	uint8_t			mode[2];
+	uint8_t			rxhold;
+	int			mrptr;
+	int			sr;
+	int			txon;
+	int			rxon;
+	int			isdiag;
+	struct irq_vector	*rx_irq;
+	struct irq_vector	*tx_irq;
 };
 
 static struct ioc_duart {
-	struct chan	chan[2];
-	uint8_t		opr;
-	uint16_t	counter;
-	int		pit_running;
-	int		pit_intr;
+	struct chan		chan[2];
+	uint8_t			opr;
+	uint16_t		counter;
+	int			pit_running;
+	int			pit_intr;
 } ioc_duart[1];
 
 static pthread_mutex_t duart_mtx = PTHREAD_MUTEX_INITIALIZER;
@@ -200,6 +202,13 @@ io_duart_post_write(int debug, uint8_t *space, unsigned width, unsigned adr)
 	case REG_W_CRA:
 	case REG_W_CRB:
 		switch ((space[adr] >> 4) & 0x7) {
+		case 0x2:
+			break;
+		case 0x3:
+			chp->txon = 0;
+			chp->sr &= ~4;
+			irq_lower(chp->tx_irq);
+			break;
 		case 0x4:
 			chp->mrptr = 0;
 			break;
@@ -215,16 +224,17 @@ io_duart_post_write(int debug, uint8_t *space, unsigned width, unsigned adr)
 		if (space[adr] & 4) {
 			chp->txon = 1;
 			chp->sr |= 4;
+			irq_raise(chp->tx_irq);
 		}
 		if (space[adr] & 8) {
 			chp->txon = 0;
 			chp->sr &= ~4;
+			irq_lower(chp->tx_irq);
 		}
 		break;
 	case REG_W_THRA:
 	case REG_W_THRB:
 		chr = space[adr];
-		elastic_put(chp->ep, &chr, 1);
 		if (chp->isdiag && ioc_duart->opr & 4) {
 			// IOP.DLOOP~ on p21
 			chp->rxhold = chr;
@@ -233,6 +243,8 @@ io_duart_post_write(int debug, uint8_t *space, unsigned width, unsigned adr)
 			// Internal Local Loop
 			chp->rxhold = chr;
 			chp->sr |= 1;
+		} else {
+			elastic_put(chp->ep, &chr, 1);
 		}
 		break;
 	case REG_W_OPCR:
@@ -265,7 +277,34 @@ io_duart_post_write(int debug, uint8_t *space, unsigned width, unsigned adr)
 /**********************************************************************/
 
 void v_matchproto_(cli_func_f)
-cli_ioc_duart(struct cli *cli)
+cli_ioc_modem(struct cli *cli)
+{
+	struct chan *chp = &ioc_duart->chan[0];
+
+	if (cli->help) {
+		cli_io_help(cli, "IOC duart", 0, 1);
+		return;
+	}
+
+	cli->ac--;
+	cli->av++;
+
+	while (cli->ac && !cli->status) {
+		if (cli_elastic(chp->ep, cli))
+			continue;
+		if (cli->ac >= 1 && !strcmp(cli->av[0], "test")) {
+			elastic_put(chp->ep, "Hello World\r\n", -1);
+			cli->ac -= 1;
+			cli->av += 1;
+			continue;
+		}
+		cli_unknown(cli);
+		break;
+	}
+}
+
+void v_matchproto_(cli_func_f)
+cli_ioc_diag(struct cli *cli)
 {
 	struct chan *chp = &ioc_duart->chan[1];
 
@@ -296,7 +335,14 @@ ioc_duart_init(struct sim *sim)
 {
 
 	ioc_duart->chan[0].ep = elastic_new(sim, O_RDWR);
+	ioc_duart->chan[0].rx_irq = &IRQ_MODEM_RXRDY;
+	ioc_duart->chan[0].tx_irq = &IRQ_MODEM_TXRDY;
+
 	ioc_duart->chan[1].ep = elastic_new(sim, O_RDWR);
+	ioc_duart->chan[1].ep->text = 0;
+	ioc_duart->chan[1].rx_irq = &IRQ_DIAG_BUS_RXRDY;
+	ioc_duart->chan[1].tx_irq = &IRQ_DIAG_BUS_TXRDY;
+
 	ioc_duart->chan[1].isdiag = 1;
 	callout_callback(r1000sim, ioc_duart_pit_callback, NULL, 0, 25600);
 }

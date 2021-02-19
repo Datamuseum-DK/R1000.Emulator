@@ -1,6 +1,7 @@
 
 void v_matchproto_(cli_func_f) cli_ioc_console(struct cli *cli);
-void v_matchproto_(cli_func_f) cli_ioc_duart(struct cli *cli);
+void v_matchproto_(cli_func_f) cli_ioc_modem(struct cli *cli);
+void v_matchproto_(cli_func_f) cli_ioc_diag(struct cli *cli);
 void v_matchproto_(cli_func_f) cli_ioc_reset(struct cli *cli);
 void v_matchproto_(cli_func_f) cli_ioc_main(struct cli *cli);
 void v_matchproto_(cli_func_f) cli_scsi_disk(struct cli *cli);
@@ -50,6 +51,7 @@ void Ioc_HotFix_Kernel(uint8_t *ram);
 	IRQ_VECTOR(MODEM_RXRDY,		L67,	0x46,	0x646) \
 	IRQ_VECTOR(DIAG_BUS_TXRDY,	1,	0x48,	0x148) \
 	IRQ_VECTOR(CONSOLE_TXRDY,	1,	0x49,	0x1149) \
+	IRQ_VECTOR(MODEM_TXRDY,		L67,	0x4b,	0x646) \
 	IRQ_VECTOR(PIT,			1,	0x4f,	0x14f) \
 	IRQ_VECTOR(SCSI_D,		2,	0x91,	0x691) \
 	IRQ_VECTOR(SCSI_T,		3,	0x92,	0x692)
