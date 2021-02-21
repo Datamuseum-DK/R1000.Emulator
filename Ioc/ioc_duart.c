@@ -319,6 +319,32 @@ io_duart_post_write(int debug, uint8_t *space, unsigned width, unsigned adr)
 	AZ(pthread_mutex_unlock(&duart_mtx));
 }
 
+/**********************************************************************
+ * This functions replies 0x2 (= looping) to all DiagBus resets
+ * this allows us to get to the CLI.
+ */
+
+static void
+get_to_cli_8052(void *priv, const void *vptr, size_t len)
+{
+	const uint8_t *ptr = vptr;
+	struct elastic *ep = priv;
+	uint8_t buf[1];
+
+	while (len) {
+		switch (*ptr >> 5) {
+		case 0:
+			buf[0] = 2;
+			elastic_inject(ep, buf, 1);
+			break;
+		default:
+			break;
+		}
+		ptr++;
+		len--;
+	}
+}
+
 /**********************************************************************/
 
 void v_matchproto_(cli_func_f)
@@ -364,6 +390,12 @@ cli_ioc_diag(struct cli *cli)
 	while (cli->ac && !cli->status) {
 		if (cli_elastic(chp->ep, cli))
 			continue;
+		if (cli->ac >= 1 && !strcmp(cli->av[0], "get_to_cli")) {
+			elastic_subscribe(chp->ep, get_to_cli_8052, chp->ep);
+			cli->ac -= 1;
+			cli->av += 1;
+			continue;
+		}
 		if (cli->ac >= 1 && !strcmp(cli->av[0], "test")) {
 			elastic_put(chp->ep, "Hello World\r\n", -1);
 			cli->ac -= 1;
