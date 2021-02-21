@@ -92,6 +92,7 @@ struct chan {
 	uint8_t			rxhold;
 	int			mrptr;
 	int			sr;
+	int			rxwaitforit;
 	int			txon;
 	int			rxon;
 	int			isdiag;
@@ -140,7 +141,6 @@ thr_duart_rx(void *priv)
 {
 	uint8_t buf[1];
 	struct chan *chp = priv;
-	char rbuf[20];
 	ssize_t sz;
 
 	(void)priv;
@@ -148,15 +148,25 @@ thr_duart_rx(void *priv)
 		sz = elastic_get(chp->ep, buf, 1);
 		assert(sz == 1);
 		AZ(pthread_mutex_lock(&duart_mtx));
-		bprintf(rbuf, "\r\n--> 0x%02x\r\n", buf[0]);
-		elastic_put(chp->ep, rbuf, -1);
-		while (!(chp->rxon))
+		while (!(chp->rxon) || (chp->sr & 1) || chp->rxwaitforit)
 			AZ(pthread_cond_wait(&duart_cond, &duart_mtx));
 		chp->rxhold = buf[0];
 		chp->sr |= 0x01;
+		chp->rxwaitforit |= 0x01;
 		irq_raise(chp->rx_irq);
 		AZ(pthread_mutex_unlock(&duart_mtx));
 	}
+}
+
+static void
+io_duart_rx_readh_cb(void *priv)
+{
+	struct chan *chp = priv;
+
+	AZ(pthread_mutex_lock(&duart_mtx));
+	chp->rxwaitforit = 0;
+	AZ(pthread_cond_signal(&duart_cond));
+	AZ(pthread_mutex_unlock(&duart_mtx));
 }
 
 /**********************************************************************/
@@ -182,6 +192,13 @@ io_duart_pre_read(int debug, uint8_t *space, unsigned width, unsigned adr)
 		space[adr] = chp->rxhold;
 		chp->sr &= ~1;
 		irq_lower(chp->rx_irq);
+		/*
+		 * The KERNEL (0x0000371c) does multiple reads of the
+		 * RX holding register.  To avoid the race we hold back
+		 * the thr_duart_rx() thread back a little bit.
+		 */
+		callout_callback(r1000sim,
+		    io_duart_rx_readh_cb, chp, 100000, 0);
 		break;
 	case REG_R_START_PIT:
 		ioc_duart->counter = io_duart_wr_space[REG_W_CTLR];
@@ -214,7 +231,6 @@ void v_matchproto_(mem_post_write)
 io_duart_post_write(int debug, uint8_t *space, unsigned width, unsigned adr)
 {
 	struct chan *chp;
-	char buf[16];
 
 	if (debug) return;
 	assert (width == 1);
@@ -263,6 +279,7 @@ io_duart_post_write(int debug, uint8_t *space, unsigned width, unsigned adr)
 		break;
 	case REG_W_THRA:
 	case REG_W_THRB:
+		ioc_keep_going();
 		if (chp->isdiag && ioc_duart->opr & 4) {
 			// IOP.DLOOP~ on p21
 			chp->rxhold = space[adr];
@@ -272,8 +289,7 @@ io_duart_post_write(int debug, uint8_t *space, unsigned width, unsigned adr)
 			chp->rxhold = space[adr];
 			chp->sr |= 1;
 		} else {
-			bprintf(buf, "%02x\r\n", space[adr]);
-			elastic_put(chp->ep, buf, strlen(buf));
+			elastic_put(chp->ep, &space[adr], 1);
 		}
 		break;
 	case REG_W_OPCR:
