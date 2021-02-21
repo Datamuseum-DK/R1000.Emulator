@@ -144,6 +144,7 @@ ioc_trace_syscall(unsigned pc)
 	switch (pc) {
 	case 0x10238: return;
 	case 0x103d0: return;
+	case 0x1022a: return;
 	case 0x10204: dump_10204(syscall_vsb, a7); break;
 	case 0x1020a: dump_1020a(syscall_vsb, a7); break;
 	case 0x103d8: dump_103d8(syscall_vsb, a7); break;
@@ -213,6 +214,28 @@ sc_peg(void *priv, const char *what, unsigned adr, unsigned val,
 	for(; *which != '\0'; which += 2) {
 		if (which[0] == 'D' && which[1] == '0') {
 			VSB_printf(syscall_vsb, "\t\tD0: 0x%x\n", m68k_get_reg(NULL, M68K_REG_D0));
+			continue;
+		}
+		if (which[0] == 'D' && which[1] == '2') {
+			VSB_printf(syscall_vsb, "\t\tD2: 0x%x\n", m68k_get_reg(NULL, M68K_REG_D2));
+			continue;
+		}
+		if (which[0] == 'A' && which[1] == '0') {
+			u = m68k_get_reg(NULL, M68K_REG_A0);
+			VSB_printf(syscall_vsb, "\t\tA0: ");
+			if (u < 0x80000)
+				hexdump(syscall_vsb, ram_space + u, 0x10, u);
+			else
+				VSB_printf(syscall_vsb, " 0x%x\n", u);
+			continue;
+		}
+		if (which[0] == 'A' && which[1] == '2') {
+			u = m68k_get_reg(NULL, M68K_REG_A2);
+			VSB_printf(syscall_vsb, "\t\tA2: ");
+			if (u < 0x80000)
+				hexdump(syscall_vsb, ram_space + u, 0x10, u);
+			else
+				VSB_printf(syscall_vsb, " 0x%x\n", u);
 			continue;
 		}
 		if (which[0] == 'i' && which[1] == 'l') {
@@ -312,38 +335,45 @@ sc_peg(void *priv, const char *what, unsigned adr, unsigned val,
 }
 
 static struct syscall syscalls[] = {
+	{ ">CONSOLE.2",		0x028dc, 0,	  0x02978, 0, "", ""},
+	{ ">CONSOLE.0",		0x02978, 0,	  0x029a6, 0, "", ""},
+	{ ">CONSOLE.1",		0x02992, 0,	  0x02ab0, 0, "", ""},
+	{ ">CONSOLE",		0x02ab0, 0,	  0x02ad2, 0, "", ""},
+	{ "DiagBusResponse",	0x0362c, 0x036a8, 0,	   1, "D2", ""},
+	// { "IS_IDLE?",		0x03638, 0,	  0x0364a, 0, "", ""},
+	{ "DO_KC15_DiagBus",	0x0374c, 0x037b0, 0,       0, "D0A0", "D0"},
+	{ "_CHS9_LBA10",	0x04b20, 0,	  0x04b82, 0, "", ""},
+	{ "_SCSID.0",		0x05502, 0,	  0x05556, 0, "", ""},
+	{ "_DISPATCH_KERNCALL",	0x08370, 0,	  0x0838c, 0, "", ""},
+	{ "KC_1C",		0x089aa, 0,	  0x089ee, 0, "", ""},
+	{ "DEFDMAMAP",		0x08e12, 0,	  0x08eb0, 0, "D0", ""},
+	{ "DEFXXMAP",		0x09cee, 0x9d30,  0x09d32, 0, "", ""},
+	{ ">PIT.0",		0x09d6e, 0x09d8c, 0x09d8e, 0, "", ""},
+	{ ">PIT.1",		0x09d8e, 0x09dc2, 0x09dc4, 0, "", ""},
+	{ "ArmTimeout",		0x09dc4, 0x09dfe, 0,       0, "D0A2", ""},
+	{ "CancelTimeout",	0x09e00, 0x09e2e, 0,       0, "A2", ""},
+	{ ">PIT",		0x09e30, 0x09e68, 0x09e6a, 0, "", ""},
+	{ "$IDLE",		0x09e74, 0x09f04, 0x09f06, 0, "", ""},
+	{ "memcpy_protected",	0x10238, 0,	  0,       0, "sWsPsL", ""},
+	{ "LINK",		0x103b0, 0,		   0,	    1, "sPsWsSsS", ""},
 	{ "INIT.PROGRAM",	0x10656, 0,	  0x10704, 0, "", "" },
 	{ "MALLOC",		0x10856, 0x108b8, 0x108de, 0, "sL", "ilsq" },
 	{ "FREE",		0x108fa, 0x109fc, 0x109fc, 0, "sLsq", "" },
-	{ "STRCAT",		0x10f2c, 0x10fc8, 0x10fc8, 0, "sSsS", "ilsS"},
-	{ "FILL_STR",		0x10da4, 0x10e60, 0x10e60, 0, "sWsWx0", "iwiwilsS"},
 	{ "ALLOC_STR",		0x10cfa, 0x10d34, 0x10d34, 0, "", "sq" },
-	{ "WR_CON_S",		0x15392, 0x15408, 0x15408, 0, "sS", ""},
-	{ "WR_CON_C",		0x15210, 0,	  0x15286, 0, "sB", ""},
-	{ "ASK_CONS1",		0x15694, 0x158be, 0,	   1, "sS", "sS"},
-	{ "ASK_CONS2",		0x113b0, 0x11424, 0,	   1, "sS", "sS"},
+	{ "FILL_STR",		0x10da4, 0x10e60, 0x10e60, 0, "sWsWx0", "iwiwilsS"},
+	{ "STRCAT",		0x10f2c, 0x10fc8, 0x10fc8, 0, "sSsS", "ilsS"},
 	{ "ASK_CONS3",		0x1127c, 0x113ae, 0,	   1, "sQsq", "sqsq"},
-	{ "LINK",		0x103b0, 0,		   0,	    1, "sPsWsSsS", ""},
+	{ "ASK_CONS2",		0x113b0, 0x11424, 0,	   1, "sS", "sS"},
 	{ "OPEN?",		0x138b4, 0x13a6e, 0,	   0, "sPsPsLsBsBsS", "sQsPsLsBsBsS"},
 	{ "RW1?",		0x13ae6, 0x13bb6, 0,	   0, "sPsPsBsW", "sPsPsBsW"},
 	{ "RW2?",		0x13bb8, 0x13c88, 0,	   0, "sPsPsBsW", "sPsPsBsW"},
 	{ "RW3?",		0x13c8a, 0x13e5a, 0,	   1, "sPsPsBsWsB", "sPsPsBsWsB"},
-	{ "DEFDMAMAP",		0x08e12, 0,	  0x08eb0, 0, "D0", ""},
-	{ "DEFXXMAP",		0x09cee, 0x9d30,  0x09d32, 0, "", ""},
-	{ "IS_IDLE?",		0x03638, 0,	  0x0364a, 0, "", ""},
-	{ "$IDLE",		0x09e74, 0x09f04, 0x09f06, 0, "", ""},
-	{ ">PIT",		0x09e30, 0x09e68, 0x09e6a, 0, "", ""},
-	{ ">PIT.0",		0x09d6e, 0x09d8c, 0x09d8e, 0, "", ""},
-	{ ">PIT.1",		0x09d8e, 0x09dc2, 0x09dc4, 0, "", ""},
-	{ ">CONSOLE",		0x02ab0, 0,	  0x02ad2, 0, "", ""},
-	{ ">CONSOLE.0",		0x02978, 0,	  0x029a6, 0, "", ""},
-	{ ">CONSOLE.1",		0x02992, 0,	  0x02ab0, 0, "", ""},
-	{ ">CONSOLE.2",		0x028dc, 0,	  0x02978, 0, "", ""},
-	{ "_CHS9_LBA10",	0x04b20, 0,	  0x04b82, 0, "", ""},
-	{ "_SCSID.0",		0x05502, 0,	  0x05556, 0, "", ""},
-	{ "_DISPATCH_KERNCALL",	0x08370, 0,	  0x0838c, 0, "", ""},
-	{ "memcpy_protected",	0x10238, 0,	  0,       0, "sWsPsL", ""},
-	{ "KC_1C",		0x89aa, 0,	  0x089ee, 0, "", ""},
+	{ "WR_CON_C",		0x15210, 0,	  0x15286, 0, "sB", ""},
+	{ "WR_CON_S",		0x15392, 0x15408, 0x15408, 0, "sS", ""},
+	{ "ASK_CONS1",		0x15694, 0x158be, 0,	   1, "sS", "sS"},
+	{ "send_experiment",	0x18d24, 0x18d60, 0,	   1, "sPsB", "sP"},
+	{ "fs_10484",		0x18d62, 0x18df6, 0,	   1, "sPsPsP", "sPsPsP"},
+
 	{ NULL, 0, 0, 0, 0, NULL, NULL },
 };
 

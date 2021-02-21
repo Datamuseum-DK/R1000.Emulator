@@ -61,7 +61,7 @@ CLI_INCL = \
 test:	r1000 ${BINFILES}
 	./r1000 \
 		-T ${TRACE_FILE} \
-		-t 0x2a \
+		-t 0x2b \
 		"syscall" \
 		"console > _.console" \
 		"modem > _.modem" \
@@ -92,12 +92,13 @@ test:	r1000 ${BINFILES}
 cli:	r1000 ${BINFILES}
 	./r1000 \
 		-T ${TRACE_FILE} \
-		-t 0x2a \
+		-t 0x2b \
 		"syscall" \
 		"console > _.console" \
 		"console serial /dev/nmdm0A" \
 		"modem > _.modem" \
 		"diag > _.diag" \
+		"diag get_to_cli" \
 		"scsi_tape" \
 		"scsi_disk 0 ${DISK0_IMAGE}" \
 		"scsi_disk 1 ${DISK1_IMAGE}" \
@@ -110,16 +111,9 @@ cli:	r1000 ${BINFILES}
 		'console << ""' \
 		'console match expect "User program   (0,1,2) [0] : "' \
 		'console << ""' \
-		'diag match expect "0c"' \
-		'diag hex 0x02' \
-		'diag match expect "0d"' \
-		'diag hex 0x02' \
-		'diag match expect "0e"' \
-		'diag hex 0x02' \
-		'diag match expect "0f"' \
-		'diag hex 0x02' \
 		'console match expect "Enter option [enter CLI] : "' \
 		'console << "1"'
+
 
 telnet:	r1000 ${BINFILES}
 	./r1000 \
@@ -130,6 +124,7 @@ telnet:	r1000 ${BINFILES}
 		"console telnet :1400" \
 		"modem > _.modem" \
 		"diag > _.diag" \
+		"diag get_to_cli" \
 		"scsi_tape" \
 		"scsi_disk 0 ${DISK0_IMAGE}" \
 		"scsi_disk 1 ${DISK1_IMAGE}" \
@@ -142,16 +137,33 @@ telnet:	r1000 ${BINFILES}
 		'console << ""' \
 		'console match expect "User program   (0,1,2) [0] : "' \
 		'console << ""' \
-		'diag match expect "0c"' \
-		'diag hex 0x02' \
-		'diag match expect "0d"' \
-		'diag hex 0x02' \
-		'diag match expect "0e"' \
-		'diag hex 0x02' \
-		'diag match expect "0f"' \
-		'diag hex 0x02' \
 		'console match expect "Enter option [enter CLI] : "' \
 		'console << "1"'
+
+fuzz:	r1000 ${BINFILES}
+	./r1000 \
+		-T ${TRACE_FILE} \
+		-t 0x02 \
+		"syscall" \
+		"ioc go_until_increment 10000000000" \
+		"console > _.console" \
+		"modem > _.modem" \
+		"diag tcp localhost:1400" \
+		"console tcp localhost:1401" \
+		"scsi_tape" \
+		"scsi_disk 0 ${DISK0_IMAGE}" \
+		"scsi_disk 1 ${DISK1_IMAGE}" \
+		"reset" \
+		'console match expect "Boot from (Tn or Dn)  [D0] : "' \
+		'console << ""' \
+		'console match expect "Kernel program (0,1,2) [0] : "' \
+		'console << ""' \
+		'console match expect "File system    (0,1,2) [0] : "' \
+		'console << ""' \
+		'console match expect "User program   (0,1,2) [0] : "' \
+		'console << ""' \
+		'console match expect "Enter option [enter CLI] : "' \
+		exit
 
 seagate:	r1000 ${BINFILES}
 	./r1000 \

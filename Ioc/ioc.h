@@ -65,5 +65,7 @@ INTERRUPT_TABLE
 
 extern unsigned irq_level;
 
+void ioc_keep_going(void);
+
 void irq_raise(struct irq_vector *vp);
 void irq_lower(struct irq_vector *vp);

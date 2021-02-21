@@ -1,4 +1,5 @@
 #include <fcntl.h>
+#include <inttypes.h>
 #include <stdio.h>
 #include <stdint.h>
 #include <stdlib.h>
@@ -22,6 +23,9 @@ static uint8_t resha_eeprom[32768];
 unsigned ioc_fc;
 
 unsigned int ioc_pc;
+
+static uintmax_t go_until_increment = 0;
+static uintmax_t go_until = 1000000000;
 
 static void
 dump_ram(void)
@@ -57,6 +61,12 @@ cli_ioc_main(struct cli *cli)
 	dump_ram();
 
 	while (cli->ac && !cli->status) {
+		if (cli->ac >= 2 && !strcmp(cli->av[0], "go_until_increment")) {
+			go_until_increment = strtoumax(cli->av[1], NULL, 0);
+			cli->ac -= 2;
+			cli->av += 2;
+			continue;
+		}
 		cli_unknown(cli);
 		break;
 	}
@@ -251,6 +261,8 @@ cpu_instr_callback(unsigned int pc)
 
 	ioc_pc = pc;
 
+	if (0 && 0x374c <= pc && pc <= 0x37a0)
+		ioc_dump_registers(TRACE_68K);
 	if (r1000sim->do_trace)
 		cpu_trace(pc);
 	if (0x10000 <= pc && pc <= 0x1061c)
@@ -260,6 +272,12 @@ cpu_instr_callback(unsigned int pc)
 		// hit self-test fail, stop tracing
 		ioc_dump_registers(TRACE_68K);
 		r1000sim->do_trace = 0;
+	}
+	if (pc == 0x100087ce) {
+		ioc_dump_registers(TRACE_68K);
+		r1000sim->do_trace = 0;
+		printf("DIAGTX breakpoint\n");
+		crash();
 	}
 	if (pc == 0x00071286 || pc == 0x7056e || pc == 0x766a2) {
 		ioc_dump_registers(TRACE_68K);
@@ -303,6 +321,15 @@ insert_jump(unsigned int from, unsigned int to)
 	ioc_eeprom_space[from] = 0x4e;
 	ioc_eeprom_space[from+1L] = 0xf9;
 	vbe32enc(ioc_eeprom_space + from + 2, to);
+}
+
+void
+ioc_keep_going(void)
+{
+	if (go_until_increment) {
+		go_until = r1000sim->simclock + go_until_increment;
+		trace(TRACE_IO, "GO UNTIL %ju\n", go_until);
+	}
 }
 
 /* The main loop */
@@ -351,7 +378,7 @@ main_ioc(void *priv)
 	insert_jump(0x80001170, 0x8000117c); // RESHA VEM sub-tests
 	insert_jump(0x8000117c, 0x80001188); // RESHA LANCE sub-tests
 	//insert_jump(0x80001188, 0x80001194); // RESHA DISK SUB-TESTs
-	//insert_jump(0x80001194, 0x800011a0); // RESHA TAPE SUB-TESTs
+	insert_jump(0x80001194, 0x800011a0); // RESHA TAPE SUB-TESTs
 
 	//insert_jump(0x800011c0, 0x800014d0); // Local interrupts
 
@@ -385,6 +412,10 @@ main_ioc(void *priv)
 		}
 		r1000sim->simclock += 100 * m68k_execute(1);
 		callout_poll(r1000sim);
+		if (go_until_increment && r1000sim->simclock > go_until) {
+			printf("Ran clock out\n");
+			exit(0);
+		}
 	}
 
 	return NULL;
