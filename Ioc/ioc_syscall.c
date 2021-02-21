@@ -58,10 +58,16 @@ dump_text(struct vsb *vsb, unsigned adr, unsigned len)
 	VSB_cat(vsb, "'");
 	for (u = adr; u < adr + len; u++) {
 		c = m68k_debug_read_memory_8(u);
-		if (c < 0x20 || 0x7e < c)
-			VSB_cat(vsb, "␥");
-		else
+		if (0x20 <= c && c <= 0x7e)
 			VSB_putc(vsb, c);
+		else if (c == 0x0a)
+			VSB_cat(vsb, "␊");
+		else if (c == 0x0d)
+			VSB_cat(vsb, "␍");
+		else if (c == 0x1b)
+			VSB_cat(vsb, "␛");
+		else
+			VSB_cat(vsb, "␥");
 	}
 	VSB_cat(vsb, "'");
 }
@@ -76,21 +82,6 @@ dump_string(struct vsb *vsb, unsigned adr)
 	u = vbe16dec(ram_space + adr);
 	VSB_printf(vsb, "len=0x%x ", u);
 	dump_text(vsb, adr + 2, u);
-}
-
-static void
-dump_1020a(struct vsb *vsb, unsigned a7)
-{
-	unsigned u;
-
-	VSB_printf(vsb, " 0x%08x", vbe32dec(ram_space + a7 + 4));
-	VSB_printf(vsb, " 0x%04x ", vbe16dec(ram_space + a7 + 8));
-	u = vbe32dec(ram_space + a7 + 4);
-	dump_string(vsb, u);
-	VSB_cat(vsb, "\n");
-
-	ioc_dump_regs(syscall_vsb);
-	hexdump(syscall_vsb, ram_space + a7, 0x80, a7);
 }
 
 static void
@@ -142,12 +133,16 @@ ioc_trace_syscall(unsigned pc)
 
 	a7 =  m68k_get_reg(NULL, M68K_REG_A7);
 	switch (pc) {
-	case 0x10238: return;
-	case 0x103d0: return;
-	case 0x1022a: return;
 	case 0x10204: dump_10204(syscall_vsb, a7); break;
-	case 0x1020a: dump_1020a(syscall_vsb, a7); break;
+	case 0x1020a: return;
+	case 0x1022a: return;
+	case 0x10238: return;
+	case 0x102c4: return;
+	case 0x103d0: return;
 	case 0x103d8: dump_103d8(syscall_vsb, a7); break;
+	case 0x10472: return;
+	case 0x10568: return;
+	case 0x10da4: return;
 	default:
 		VSB_cat(syscall_vsb, "\n");
 		ioc_dump_regs(syscall_vsb);
@@ -184,7 +179,7 @@ sc_peg(void *priv, const char *what, unsigned adr, unsigned val,
 	struct syscall *sc = priv;
 	struct sim *cs = r1000sim;
 	const char *which;
-	unsigned a7, sp, u, v;
+	unsigned a7, sp, u, v, w;
 
 	(void)val;
 	(void)what;
@@ -272,11 +267,11 @@ sc_peg(void *priv, const char *what, unsigned adr, unsigned val,
 		if (which[0] == 's' && which[1] == 'P') {
 			// 32 bit pointer on stack
 			u = m68k_debug_read_memory_32(sp);
-			VSB_printf(syscall_vsb, "\t\tPointer: 0x%x ", u);
-			if (u)
+			VSB_printf(syscall_vsb, "\t\tPointer: ");
+			if (u && u < 0x80000)
 				hexdump(syscall_vsb, ram_space + u, 0x10, u);
 			else
-				VSB_cat(syscall_vsb, "\n");
+				VSB_printf(syscall_vsb, "0x%x\n", u);
 			sp += 4;
 			continue;
 		}
@@ -323,6 +318,32 @@ sc_peg(void *priv, const char *what, unsigned adr, unsigned val,
 			sp += 4;
 			continue;
 		}
+		if (which[0] == 'x' && which[1] == '1') {
+			// A2 -> string, lengtn in D1
+			// Length is second previous arg on stack
+			u = m68k_get_reg(NULL, M68K_REG_A2);
+			v = m68k_get_reg(NULL, M68K_REG_D1);
+			VSB_printf(syscall_vsb, "\t\tText[0x%x]: 0x%x ", v, u);
+			dump_text(syscall_vsb, u, v);
+			VSB_cat(syscall_vsb, "\n");
+			continue;
+		}
+		if (which[0] == 'x' && which[1] == '2') {
+			// 10568 magic
+			v = m68k_get_reg(NULL, M68K_REG_A7);
+			u = m68k_debug_read_memory_32(v);
+			VSB_printf(syscall_vsb, "\t\t@ret\n");
+			hexdump(syscall_vsb, ram_space + u, 0x40, u);
+			w = m68k_debug_read_memory_16(u);
+			VSB_printf(syscall_vsb, "\t\t@0.W: 0x%04x\n", w);
+			w = m68k_debug_read_memory_8(u + 2);
+			VSB_printf(syscall_vsb, "\t\t@2.B: 0x%02x\n", w);
+			VSB_printf(syscall_vsb, "\t\t@3.S:");
+			dump_text(syscall_vsb, u + 3, w);
+			VSB_printf(syscall_vsb, "\n");
+			hexdump(syscall_vsb, ram_space + v + w, 0x40, v+w);
+			continue;
+		}
 		WRONG();
 	}
 	if (sc->dump) {
@@ -335,6 +356,7 @@ sc_peg(void *priv, const char *what, unsigned adr, unsigned val,
 }
 
 static struct syscall syscalls[] = {
+	{ ">CONSOLE.3",		0x02374, 0x023de, 0x023e0, 0, "x1", ""},
 	{ ">CONSOLE.2",		0x028dc, 0,	  0x02978, 0, "", ""},
 	{ ">CONSOLE.0",		0x02978, 0,	  0x029a6, 0, "", ""},
 	{ ">CONSOLE.1",		0x02992, 0,	  0x02ab0, 0, "", ""},
@@ -371,8 +393,10 @@ static struct syscall syscalls[] = {
 	{ "WR_CON_C",		0x15210, 0,	  0x15286, 0, "sB", ""},
 	{ "WR_CON_S",		0x15392, 0x15408, 0x15408, 0, "sS", ""},
 	{ "ASK_CONS1",		0x15694, 0x158be, 0,	   1, "sS", "sS"},
+	{ "fs_10472",		0x18bf4, 0x18c90, 0,	   1, "sLsLsP", "sLsLsP"},
 	{ "send_experiment",	0x18d24, 0x18d60, 0,	   1, "sPsB", "sP"},
 	{ "fs_10484",		0x18d62, 0x18df6, 0,	   1, "sPsPsP", "sPsPsP"},
+	{ "fs_10568",		0x1a118, 0x1a232, 0,	   1, "x2", ""},
 
 	{ NULL, 0, 0, 0, 0, NULL, NULL },
 };
