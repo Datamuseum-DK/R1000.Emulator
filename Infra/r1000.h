@@ -56,6 +56,7 @@ struct vsb;
 #define TRACE_SCSI_DATA	(1<<3)		// Trace SCSI-CDBs
 #define TRACE_PIT	(1<<4)		// PIT timer tracing
 #define TRACE_SYSCALL	(1<<5)		// PIT timer tracing
+#define TRACE_DIAG	(1<<6)		// DIAG bus
 
 #define TRACE_ALL	((1LU<<32U)-1)	// Hvergang Perikles, Hvergang...
 
@@ -135,6 +136,12 @@ void callout_callback(struct sim *cs, callout_callback_f *func,
     void *priv, nanosec when, nanosec repeat);
 
 nanosec callout_poll(struct sim *cs);
+
+/* DIAG *************************************************************/
+
+extern struct elastic *diag_elastic;
+
+void i8052_init(void);
 
 /* MEMORY *************************************************************/
 

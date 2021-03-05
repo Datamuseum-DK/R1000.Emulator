@@ -261,7 +261,7 @@ cpu_instr_callback(unsigned int pc)
 
 	ioc_pc = pc;
 
-	if (0 && 0x374c <= pc && pc <= 0x37a0)
+	if (0 && 0x00018d24 <= pc && pc <= 0x00018d60)
 		ioc_dump_registers(TRACE_68K);
 	if (r1000sim->do_trace)
 		cpu_trace(pc);

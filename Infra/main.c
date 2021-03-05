@@ -145,6 +145,7 @@ main(int argc, char **argv)
 	mem_init();
 	cs = r1000sim;
 	ioc_init(cs);
+	i8052_init();	// After so diag_elastic is there
 
 	while ((ch = getopt(argc, argv, "f:ht:T:")) != -1) {
 		switch (ch) {

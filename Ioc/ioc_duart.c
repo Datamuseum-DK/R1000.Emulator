@@ -16,6 +16,8 @@
 #include "elastic.h"
 #include "memspace.h"
 
+struct elastic *diag_elastic;
+
 static const char * const rd_reg[] = {
 	"MODEM R MR1A_2A",
 	"MODEM R SRA",
@@ -419,6 +421,8 @@ ioc_duart_init(struct sim *sim)
 	ioc_duart->chan[1].ep->text = 0;
 	ioc_duart->chan[1].rx_irq = &IRQ_DIAG_BUS_RXRDY;
 	ioc_duart->chan[1].tx_irq = &IRQ_DIAG_BUS_TXRDY;
+
+	diag_elastic = ioc_duart->chan[1].ep;
 
 	ioc_duart->chan[1].isdiag = 1;
 	callout_callback(r1000sim, ioc_duart_pit_callback, NULL, 0, 25600);

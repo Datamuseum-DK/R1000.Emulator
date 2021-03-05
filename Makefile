@@ -37,8 +37,11 @@ OBJS	+= ioc_scsi_ctl.o
 OBJS	+= ioc_scsi_dev.o
 OBJS	+= ioc_syscall.o
 
+OBJS	+= i8052.o
+
 CFLAGS	+= -Wall -Werror -pthread -g -O0
 CFLAGS	+= -I. -IInfra -IMusashi -IIoc -DMUSASHI_CNF='"musashi_conf.h"'
+CFLAGS	+= -IDiag
 LDFLAGS	+= -lm
 
 BINFILES += IOC_EEPROM.bin
@@ -143,13 +146,12 @@ telnet:	r1000 ${BINFILES}
 fuzz:	r1000 ${BINFILES}
 	./r1000 \
 		-T ${TRACE_FILE} \
-		-t 0x02 \
+		-t 0x6b \
 		"syscall" \
-		"ioc go_until_increment 10000000000" \
 		"console > _.console" \
+		"console serial /dev/nmdm0A" \
 		"modem > _.modem" \
-		"diag tcp localhost:1400" \
-		"console tcp localhost:1401" \
+		"diag > _.diag" \
 		"scsi_tape" \
 		"scsi_disk 0 ${DISK0_IMAGE}" \
 		"scsi_disk 1 ${DISK1_IMAGE}" \
@@ -244,6 +246,8 @@ ioc_scsi_ctl.o:		${CLI_INCL} Ioc/ioc.h Ioc/ioc_scsi.h Ioc/ioc_scsi_ctl.c
 ioc_scsi_dev.o:		${CLI_INCL} Ioc/ioc.h Ioc/ioc_scsi.h Ioc/ioc_scsi_dev.c
 ioc_syscall.o:		${CLI_INCL} Ioc/ioc.h Ioc/ioc_syscall.c
 
+i8052.o:		${CLI_INCL} Diag/i8052.h Diag/i8052.c
+
 m68kops.o:		Musashi/m68kcpu.h m68kops.h m68kops.c
 m68kops.h m68kops.c:	m68kmake Ioc/musashi_conf.h
 			./m68kmake `pwd` Musashi/m68k_in.c
@@ -258,7 +262,7 @@ m68kmake:		Musashi/m68kmake.c
 Musashi/m68kcpu.h:	Musashi/m68k.h
 
 flint:
-	flexelint flint.lnt ${CFLAGS} Infra/*.c Ioc/*.c _memcfg.c
+	flexelint flint.lnt ${CFLAGS} Infra/*.c Ioc/*.c _memcfg.c Diag/*.c
 
 setup:	${BINFILES}
 	git clone https://github.com/kstenerud/Musashi
