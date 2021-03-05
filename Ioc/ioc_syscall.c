@@ -106,17 +106,6 @@ dump_10204(struct vsb *vsb, unsigned a7)
 	ioc_dump_regs(syscall_vsb);
 }
 
-static void
-dump_103d8(struct vsb *vsb, unsigned a7)
-{
-	(void)vsb;
-	unsigned u;
-	u = vbe32dec(ram_space + a7 + 4);
-	VSB_printf(vsb, "0x%08x ", u);
-	dump_string(vsb, u);
-	VSB_cat(vsb, "\n");
-}
-
 void
 ioc_trace_syscall(unsigned pc)
 {
@@ -132,15 +121,33 @@ ioc_trace_syscall(unsigned pc)
 	VSB_printf(syscall_vsb, "%12jd Syscall 0x%x ", cs->simclock, pc);
 
 	a7 =  m68k_get_reg(NULL, M68K_REG_A7);
+	if (0x10460 <= pc && pc <= 0x104c0)
+		return;
 	switch (pc) {
 	case 0x10204: dump_10204(syscall_vsb, a7); break;
+	case 0x10206: return;
 	case 0x1020a: return;
 	case 0x1022a: return;
 	case 0x10238: return;
 	case 0x102c4: return;
+	case 0x102c8: return;
+	case 0x102cc: return;
+	case 0x102d0: return;
+	case 0x102d4: return;
+	case 0x102e4: return;
+	case 0x10310: return;
+	case 0x10380: return;
 	case 0x103d0: return;
-	case 0x103d8: dump_103d8(syscall_vsb, a7); break;
+	case 0x103d8: return;
+	case 0x103e0: return;
+	case 0x103e4: return;
+	case 0x10460: return;
+	case 0x10466: return;
+	case 0x1046c: return;
 	case 0x10472: return;
+	case 0x10478: return;
+	case 0x1047e: return;
+	case 0x10484: return;
 	case 0x10568: return;
 	case 0x10da4: return;
 	default:
@@ -264,6 +271,18 @@ sc_peg(void *priv, const char *what, unsigned adr, unsigned val,
 			sp += 2;
 			continue;
 		}
+		if (which[0] == 's' && which[1] == 'E') {
+			// 32 bit experiment pointer on stack
+			u = m68k_debug_read_memory_32(sp);
+			if (u && u < 0x80000) {
+				VSB_printf(syscall_vsb, "\t\tExperiment:\n");
+				hexdump(syscall_vsb, ram_space + u, 0x40, u);
+			} else {
+				VSB_printf(syscall_vsb, "\t\tExperiment: 0x%x\n", u);
+			}
+			sp += 4;
+			continue;
+		}
 		if (which[0] == 's' && which[1] == 'P') {
 			// 32 bit pointer on stack
 			u = m68k_debug_read_memory_32(sp);
@@ -367,6 +386,7 @@ static struct syscall syscalls[] = {
 	{ "_CHS9_LBA10",	0x04b20, 0,	  0x04b82, 0, "", ""},
 	{ "_SCSID.0",		0x05502, 0,	  0x05556, 0, "", ""},
 	{ "_DISPATCH_KERNCALL",	0x08370, 0,	  0x0838c, 0, "", ""},
+	{ "KC_03_WAIT_DISK",	0x08536, 0x8562,  0x8564,  0, "", ""},
 	{ "KC_1C",		0x089aa, 0,	  0x089ee, 0, "", ""},
 	{ "DEFDMAMAP",		0x08e12, 0,	  0x08eb0, 0, "D0", ""},
 	{ "DEFXXMAP",		0x09cee, 0x9d30,  0x09d32, 0, "", ""},
@@ -383,20 +403,53 @@ static struct syscall syscalls[] = {
 	{ "FREE",		0x108fa, 0x109fc, 0x109fc, 0, "sLsq", "" },
 	{ "ALLOC_STR",		0x10cfa, 0x10d34, 0x10d34, 0, "", "sq" },
 	{ "FILL_STR",		0x10da4, 0x10e60, 0x10e60, 0, "sWsWx0", "iwiwilsS"},
-	{ "STRCAT",		0x10f2c, 0x10fc8, 0x10fc8, 0, "sSsS", "ilsS"},
-	{ "ASK_CONS3",		0x1127c, 0x113ae, 0,	   1, "sQsq", "sqsq"},
-	{ "ASK_CONS2",		0x113b0, 0x11424, 0,	   1, "sS", "sS"},
+	{ "AppendChar",		0x10d66, 0x10da2, 0x10da4, 0, "sBsS", "sBsS" },
+	{ "StringEqual",	0x10e62, 0x10ed8, 0x10eda, 0, "sSsS", "ililsB" },
+	{ "StringDup",		0x10eda, 0x10f2a, 0x10f2c, 0, "sSsL", "sSsS" },
+	{ "StringCat",		0x10f2c, 0x10fc8, 0x10fc8, 0, "sSsSil", "ililsS"},
+	{ "StringCat2",		0x10fca, 0x10ffe, 0x11000, 0, "sSsSsS", "ililsS" },
+	{ "LongInt2String",	0x110c0, 0x111cc, 0x111ce, 0, "sL", "ilsS" },
+	{ "String2LongInt",	0x1127c, 0x113ae, 0x113b0, 0, "sPsPsS", "sPsPsL"},
+	{ "ToUpper",		0x113b0, 0x11424, 0x11426, 0, "sS", "sS"},
+	{ "Str2Int",		0x11a36, 0x11ab2, 0,	   0, "sPsLsLsPsS", "sPsLsLsPsS" },
+	{ "MONTH",		0x11ab4, 0x11b82, 0,	   0, "sPsPsS", "sPsPsS"},
+	{ "ConvertTimestamp",	0x11b84, 0x11d02, 0x11d04, 0, "sPsPsS", "sPsPsS"},
+	{ "DiskIO",		0x127c4, 0x12992, 0x12994, 0, "sPsPsLsWsB", "sPsPsLsWsB"},
+	{ "NameI",		0x13718, 0x138b2, 0x138b4, 0, "sPsP", "sPsP" },
 	{ "OPEN?",		0x138b4, 0x13a6e, 0,	   0, "sPsPsLsBsBsS", "sQsPsLsBsBsS"},
 	{ "RW1?",		0x13ae6, 0x13bb6, 0,	   0, "sPsPsBsW", "sPsPsBsW"},
 	{ "RW2?",		0x13bb8, 0x13c88, 0,	   0, "sPsPsBsW", "sPsPsBsW"},
 	{ "RW3?",		0x13c8a, 0x13e5a, 0,	   1, "sPsPsBsWsB", "sPsPsBsWsB"},
+	{ "XXX1",		0x144e6, 0x1473e, 0,	   1, "sPsB", "sPsB" },
+	{ "PopProgram",		0x14e18, 0x14f66, 0,	   1, "sLsB", ""},
 	{ "WR_CON_C",		0x15210, 0,	  0x15286, 0, "sB", ""},
-	{ "WR_CON_S",		0x15392, 0x15408, 0x15408, 0, "sS", ""},
-	{ "ASK_CONS1",		0x15694, 0x158be, 0,	   1, "sS", "sS"},
+	{ "ReadChar",		0x15286, 0x15390, 0x15392, 0, "", "sB"},
+	{ "WriteConsole",	0x15392, 0x15408, 0x15408, 0, "sS", ""},
+	{ "WriteConsoleCRLF",	0x1540a, 0x154ae, 0x154b0, 0, "", ""},
+	{ "WriteLnConsole",	0x154b0, 0x154f4, 0x154f4, 0, "sS", ""},
+	{ "AskConsoleString",	0x15694, 0x158be, 0x158c0, 0, "sS", "ilsS"},
+	{ "ReadDir",		0x17d1a, 0x17e94, 0,	   1, "", ""},
 	{ "fs_10472",		0x18bf4, 0x18c90, 0,	   1, "sLsLsP", "sLsLsP"},
-	{ "send_experiment",	0x18d24, 0x18d60, 0,	   1, "sPsB", "sP"},
+	{ "fs_10460",		0x1866c, 0x18b26, 0,	   1, "sPsPsL", "sPsPsP"},
+	{ "fs_10466",		0x18b28, 0x18b84, 0,	   1, "", ""},
+	{ "fs_1046c",		0x18b86, 0x18bf2, 0,	   1, "", ""},
+	{ "fs_10472",		0x18bf4, 0x18c90, 0,	   1, "", ""},
+	{ "fs_10478",		0x18c92, 0x18d22, 0,	   1, "", ""},
+	{ "fs_1047e_exp_xmit",	0x18d24, 0x18d60, 0,	   1, "sEsB", "sE"},
 	{ "fs_10484",		0x18d62, 0x18df6, 0,	   1, "sPsPsP", "sPsPsP"},
+	{ "fs_1048a",		0x18df8, 0x18e40, 0,	   1, "", ""},
+	{ "fs_10490",		0x18e42, 0x18eea, 0,	   1, "", ""},
+	{ "fs_10496_exp_close",	0x18eec, 0x18ff0, 0,	   1, "", ""},
+	{ "fs_1049c",		0x18ff2, 0x190a2, 0,	   1, "", ""},
+	{ "fs_104a2",		0x190a4, 0x190f8, 0,	   1, "", ""},
+	{ "fs_104a8",		0x190fa, 0x19168, 0,	   1, "", ""},
+	{ "fs_104ae",		0x1916a, 0x191d4, 0,	   1, "", ""},
+	{ "fs_104b4",		0x191d6, 0x1927c, 0,	   1, "", ""},
+	{ "fs_104ba",		0x1927e, 0x194f4, 0,	   1, "sEsBsBsW", "sEsBsBsW"},
+	{ "fs_104c0",		0x194f6, 0x195fc, 0,	   1, "", ""},
 	{ "fs_10568",		0x1a118, 0x1a232, 0,	   1, "x2", ""},
+	{ "fs_10592",		0x1a96a, 0x1a9ba, 0,	   1, "sLsW", "sLsW"},
+	{ "fs_10610",		0x1afd0, 0x1b01e, 0x1b020, 0, "", "sB"},
 
 	{ NULL, 0, 0, 0, 0, NULL, NULL },
 };
