@@ -95,13 +95,12 @@ test:	r1000 ${BINFILES}
 cli:	r1000 ${BINFILES}
 	./r1000 \
 		-T ${TRACE_FILE} \
-		-t 0x2b \
+		-t 0x6b \
 		"syscall" \
 		"console > _.console" \
 		"console serial /dev/nmdm0A" \
 		"modem > _.modem" \
 		"diag > _.diag" \
-		"diag get_to_cli" \
 		"scsi_tape" \
 		"scsi_disk 0 ${DISK0_IMAGE}" \
 		"scsi_disk 1 ${DISK1_IMAGE}" \

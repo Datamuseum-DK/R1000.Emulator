@@ -231,6 +231,15 @@ sc_peg(void *priv, const char *what, unsigned adr, unsigned val,
 				VSB_printf(syscall_vsb, " 0x%x\n", u);
 			continue;
 		}
+		if (which[0] == 'A' && which[1] == '1') {
+			u = m68k_get_reg(NULL, M68K_REG_A1);
+			VSB_printf(syscall_vsb, "\t\tA1: ");
+			if (u < 0x80000)
+				hexdump(syscall_vsb, ram_space + u, 0x10, u);
+			else
+				VSB_printf(syscall_vsb, " 0x%x\n", u);
+			continue;
+		}
 		if (which[0] == 'A' && which[1] == '2') {
 			u = m68k_get_reg(NULL, M68K_REG_A2);
 			VSB_printf(syscall_vsb, "\t\tA2: ");
@@ -363,6 +372,10 @@ sc_peg(void *priv, const char *what, unsigned adr, unsigned val,
 			hexdump(syscall_vsb, ram_space + v + w, 0x40, v+w);
 			continue;
 		}
+		if (which[0] == 'x' && which[1] == '3') {
+			hexdump(syscall_vsb, ram_space + 0x150c, 0x100, 0x150c);
+			continue;
+		}
 		WRONG();
 	}
 	if (sc->dump) {
@@ -380,7 +393,7 @@ static struct syscall syscalls[] = {
 	{ ">CONSOLE.0",		0x02978, 0,	  0x029a6, 0, "", ""},
 	{ ">CONSOLE.1",		0x02992, 0,	  0x02ab0, 0, "", ""},
 	{ ">CONSOLE",		0x02ab0, 0,	  0x02ad2, 0, "", ""},
-	{ "DiagBusResponse",	0x0362c, 0x036a8, 0,	   1, "D2", ""},
+	{ "DiagBusResponse",	0x0362c, 0x036a8, 0,	   1, "D2", "x3"},
 	// { "IS_IDLE?",		0x03638, 0,	  0x0364a, 0, "", ""},
 	{ "DO_KC15_DiagBus",	0x0374c, 0x037b0, 0,       0, "D0A0", "D0"},
 	{ "_CHS9_LBA10",	0x04b20, 0,	  0x04b82, 0, "", ""},
@@ -396,6 +409,7 @@ static struct syscall syscalls[] = {
 	{ "CancelTimeout",	0x09e00, 0x09e2e, 0,       0, "A2", ""},
 	{ ">PIT",		0x09e30, 0x09e68, 0x09e6a, 0, "", ""},
 	{ "$IDLE",		0x09e74, 0x09f04, 0x09f06, 0, "", ""},
+	{ "KC15_DiagBus",	0x1022a, 0,	  0,	   1, "sPsWsP", "sP,sW,SP"},
 	{ "memcpy_protected",	0x10238, 0,	  0,       0, "sWsPsL", ""},
 	{ "LINK",		0x103b0, 0,		   0,	    1, "sPsWsSsS", ""},
 	{ "INIT.PROGRAM",	0x10656, 0,	  0x10704, 0, "", "" },
@@ -429,11 +443,10 @@ static struct syscall syscalls[] = {
 	{ "WriteLnConsole",	0x154b0, 0x154f4, 0x154f4, 0, "sS", ""},
 	{ "AskConsoleString",	0x15694, 0x158be, 0x158c0, 0, "sS", "ilsS"},
 	{ "ReadDir",		0x17d1a, 0x17e94, 0,	   1, "", ""},
-	{ "fs_10472",		0x18bf4, 0x18c90, 0,	   1, "sLsLsP", "sLsLsP"},
 	{ "fs_10460",		0x1866c, 0x18b26, 0,	   1, "sPsPsL", "sPsPsP"},
 	{ "fs_10466",		0x18b28, 0x18b84, 0,	   1, "", ""},
 	{ "fs_1046c",		0x18b86, 0x18bf2, 0,	   1, "", ""},
-	{ "fs_10472",		0x18bf4, 0x18c90, 0,	   1, "", ""},
+	{ "fs_10472",		0x18bf4, 0x18c90, 0,	   1, "sLsLsPsP", "sLsLsPsP"},
 	{ "fs_10478",		0x18c92, 0x18d22, 0,	   1, "", ""},
 	{ "fs_1047e_exp_xmit",	0x18d24, 0x18d60, 0,	   1, "sEsB", "sE"},
 	{ "fs_10484",		0x18d62, 0x18df6, 0,	   1, "sPsPsP", "sPsPsP"},
@@ -450,6 +463,9 @@ static struct syscall syscalls[] = {
 	{ "fs_10568",		0x1a118, 0x1a232, 0,	   1, "x2", ""},
 	{ "fs_10592",		0x1a96a, 0x1a9ba, 0,	   1, "sLsW", "sLsW"},
 	{ "fs_10610",		0x1afd0, 0x1b01e, 0x1b020, 0, "", "sB"},
+
+	{ "novram_0",		0x21cda, 0,	  0, 	   1, "sB", ""},
+	{ "novram_0",		0x21e48, 0,	  0, 	   1, "A1", ""},
 
 	{ NULL, 0, 0, 0, 0, NULL, NULL },
 };

@@ -30,6 +30,7 @@
  */
 
 #include <stdlib.h>
+#include <unistd.h>
 
 #include "r1000.h"
 #include "vqueue.h"
@@ -129,11 +130,13 @@ i8052_diag_rx(void *priv, const void * ptr, size_t len)
 	}
 	if (i52->state == STATE_UPLOAD) {
 		trace(TRACE_DIAG, "%s %s [%02x %02x] Uploading\n", i52->name, i52->state, i52->ram[8], i52->ram[9]);
-		i52->ram[0x11] = 2;
-		i8052_tx(i52, i52->ram[0x11]);
+		usleep(100000);
+		i8052_tx(i52, 0x01);
+		i8052_tx(i52, 0xaa);
 		i52->pointer = i52->ram[8];
-		for (u8 = 0; u8 < 1 + i52->ram[9]; u8++)
-			i8052_tx(i52, i52->ram[i52->pointer++]);
+		for (u8 = 0; u8 < i52->ram[9]; u8++)
+			i8052_tx(i52, i52->pointer++);
+			//i8052_tx(i52, i52->ram[i52->pointer++]);
 		i52->state = STATE_CMD;
 	}
 }
@@ -158,7 +161,7 @@ i8052_init(void)
 	AN(diag_elastic);
 	i8052_start(0x2, 5, "i8052.SEQ.2");
 	i8052_start(0x3, 5, "i8052.FIU.3");
-	i8052_start(0x4, 5, "i8052.4");
+	i8052_start(0x4, 5, "i8052.IOC.4");
 	i8052_start(0x6, 5, "i8052.TYP.6");
 	i8052_start(0x7, 5, "i8052.VAL.7");
 	i8052_start(0xc, 5, "i8052.MEM0.c");
