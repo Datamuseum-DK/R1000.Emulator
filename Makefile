@@ -197,7 +197,7 @@ ioc_scsi_dev.o:		${CLI_INCL} Ioc/ioc.h Ioc/ioc_scsi.h Ioc/ioc_scsi_dev.c
 ioc_syscall.o:		${CLI_INCL} Ioc/ioc.h Ioc/ioc_syscall.c
 ioc_uart.o:		${CLI_INCL} Ioc/ioc.h Ioc/ioc_uart.c
 
-i8052.o:		${CLI_INCL} Diag/i8052.h Diag/i8052.c
+i8052.o:		${CLI_INCL} Diag/i8052.c
 
 m68kops.o:		Musashi/m68kcpu.h m68kops.h m68kops.c
 m68kops.h m68kops.c:	m68kmake Ioc/musashi_conf.h Musashi/m68k_in.c
