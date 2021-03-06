@@ -83,8 +83,7 @@ CLI_INCL = \
 test:	r1000 ${BINFILES}
 	./r1000 \
 		-T ${TRACE_FILE} \
-		-t 0x2b \
-		"syscall" \
+		-t 0x6a \
 		"console > _.console" \
 		"console telnet :1400" \
 		"modem > _.modem" \
@@ -101,19 +100,14 @@ test:	r1000 ${BINFILES}
 		'console << ""' \
 		'console match expect "User program   (0,1,2) [0] : "' \
 		'console << ""' \
-		'console match expect "Enter part number [47] : "' \
-		'console << ""' \
-		'console match expect "Enter serial number [0] : "' \
-		'console << ""' \
-		'console match expect "Enter artwork revision [2] : "' \
-		'console << ""' \
-		'console match expect "Enter ECO level [0] : "' \
-		'console << ""' \
-		'console match expect "Enter build date as DD-MMM-YY ["' \
-		'console match expect "] : "' \
-		'console << ""' \
 		'console match expect "Enter option [enter CLI] : "' \
-		'console << "1"'
+		'console << "1"' \
+		'console match expect "CLI>"' \
+		'console << "x novram"' \
+		'console match expect "Enter option : "' \
+		'console << "1"' \
+		'console match expect "Enter option : "' \
+		'console << "0"'
 		
 
 seagate:	r1000 ${BINFILES}

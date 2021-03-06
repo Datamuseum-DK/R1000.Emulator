@@ -54,12 +54,15 @@ struct i8052 {
 	uint8_t				counter;
 	uint8_t				pointer;
 	uint8_t				resp_0;
+	int				adhoc;
+	uint8_t				txsum;
 };
 
 static void
-i8052_tx(const struct i8052 *i52, uint8_t x)
+i8052_tx(struct i8052 *i52, uint8_t x)
 {
 	trace(TRACE_DIAG, "%s %s tx %02x\n", i52->name, i52->state, x);
+	i52->txsum += x;
 	elastic_inject(diag_elastic, &x, 1);
 }
 
@@ -78,7 +81,12 @@ i8052_diag_rx(void *priv, const void * ptr, size_t len)
 			if ((u8 & 0xf) != i52->unit)
 				return;
 			trace(TRACE_DIAG, "%s %s got %02x\n", i52->name, i52->state, u8);
-			i8052_tx(i52, i52->resp_0);
+			if (i52->adhoc) {
+				i8052_tx(i52, i52->adhoc);
+				i52->adhoc = 0;
+			} else {
+				i8052_tx(i52, i52->resp_0);
+			}
 			break;
 		case 0x2:
 			if ((u8 & 0xf) != i52->unit) {
@@ -89,6 +97,12 @@ i8052_diag_rx(void *priv, const void * ptr, size_t len)
 				i52->state = STATE_DOWNLOAD;
 				i52->pointer = 0x8;
 				i52->state_after_download = STATE_UPLOAD;
+			}
+			break;
+		case 0x8:
+			if ((u8 & 0xf) == i52->unit && i52->resp_0 != 9) {
+				trace(TRACE_DIAG, "%s %s Guessing Reset %02x\n", i52->name, i52->state, u8);
+				i52->adhoc = 5;
 			}
 			break;
 		case 0xa:
@@ -123,6 +137,7 @@ i8052_diag_rx(void *priv, const void * ptr, size_t len)
 		trace(TRACE_DIAG, "%s %s Downloading %02x @ %02x\n", i52->name, i52->state, u8, i52->pointer);
 		i52->ram[i52->pointer++] = u8;
 		if (!--i52->counter) {
+			i52->adhoc = 0;
 			trace(TRACE_DIAG, "%s %s Download complete\n", i52->name, i52->state);
 			i52->state = i52->state_after_download;
 			i52->resp_0 = 1;
@@ -130,13 +145,13 @@ i8052_diag_rx(void *priv, const void * ptr, size_t len)
 	}
 	if (i52->state == STATE_UPLOAD) {
 		trace(TRACE_DIAG, "%s %s [%02x %02x] Uploading\n", i52->name, i52->state, i52->ram[8], i52->ram[9]);
-		usleep(100000);
-		i8052_tx(i52, 0x01);
-		i8052_tx(i52, 0xaa);
+		i52->txsum = 0;
+		i52->ram[0x11] = 0x02;
+		i8052_tx(i52, i52->ram[0x11]);
 		i52->pointer = i52->ram[8];
 		for (u8 = 0; u8 < i52->ram[9]; u8++)
-			i8052_tx(i52, i52->pointer++);
-			//i8052_tx(i52, i52->ram[i52->pointer++]);
+			i8052_tx(i52, i52->ram[i52->pointer++]);
+		i8052_tx(i52, i52->txsum);
 		i52->state = STATE_CMD;
 	}
 }
@@ -165,7 +180,7 @@ i8052_init(void)
 	i8052_start(0x6, 5, "i8052.TYP.6");
 	i8052_start(0x7, 5, "i8052.VAL.7");
 	i8052_start(0xc, 5, "i8052.MEM0.c");
-	i8052_start(0xd, 1, "i8052.MEM1.d");
-	i8052_start(0xe, 1, "i8052.MEM2.e");
-	i8052_start(0xf, 1, "i8052.MEM3.f");
+	i8052_start(0xd, 9, "i8052.MEM1.d");
+	i8052_start(0xe, 9, "i8052.MEM2.e");
+	i8052_start(0xf, 9, "i8052.MEM3.f");
 }
