@@ -103,19 +103,32 @@ struct cli {
 	int			help;
 	int			ac;
 	char			**av;
+	char			**av0;
 };
+
+typedef void cli_func_f(struct cli *);
+
+struct cli_cmds {
+	const char		*cmd;
+	cli_func_f		*func;
+};
+
+void cli_path(struct cli *cli);
+void cli_usage(struct cli *cli, const char *fmt, ...) __printflike(2,3);
+void cli_dispatch(struct cli *cli, const struct cli_cmds *cmds);
 
 int cli_exec(struct sim *, const char *);
 int cli_from_file(struct sim *cs, FILE *fi, int fatal);
 
-typedef void cli_func_f(struct cli *);
 
 void cli_printf(struct cli *cli, const char *fmt, ...) __printflike(2, 3);
 int cli_error(struct cli *cli, const char *fmt, ...) __printflike(2, 3);
 
 void cli_io_help(struct cli *, const char *desc, int trace, int elastic);
 
-int cli_n_args(struct cli *cli, int n);
+int cli_n_m_args(struct cli *cli, int minarg, int maxarg, const char *fmt, ...) \
+    __printflike(4, 5);
+int cli_n_args(struct cli *cli, int maxarg);
 void cli_unknown(struct cli *cli);
 
 /* Tracing & Debugging ************************************************/

@@ -37,35 +37,25 @@
 #include <unistd.h>
 
 #include "r1000.h"
-#include "elastic.h"
 #include "vav.h"
 #include "ioc.h"
-
-static int cli_alias_help(struct cli *cli, const char *canonical);
 
 static void
 cli_exit(struct cli *cli)
 {
-	uint16_t w;
+	uint16_t w = 0;
 
 	if (cli->help) {
-		cli_printf(cli, "%s [<word>]\n", cli->av[0]);
-		cli_printf(cli,
-		    "\t\tExit emulator with optional return code\n");
+		cli_printf(cli, "%s [<exit status>]\n", cli->av[0]);
+		cli_printf(cli, "\t\tExit emulator.\n");
 		return;
 	}
-	printf("%ju instructions, %ju paces, %ju pace nsecs\n",
-	    cli->cs->ins_count,
-	    cli->cs->pace_n,
-	    cli->cs->pace_nsec
-	);
-	if (cli->ac == 1)
-		exit(0);
-	if (cli_n_args(cli, 1))
+	cli->ac--;
+	cli->av++;
+	if (cli_n_m_args(cli, 0, 1, "[exit status]\n"))
 		return;
-	w = atoi(cli->av[1]);
-	if (cli->status)
-		exit(-1);
+	if (cli->ac == 1)
+		w = atoi(cli->av[0]);
 	exit(w);
 }
 
@@ -96,21 +86,11 @@ cli_error(struct cli *cli, const char *fmt, ...)
 	return (1);
 }
 
-static int
-cli_alias_help(struct cli *cli, const char *canonical)
-{
-	if (strcmp(cli->av[0], canonical)) {
-		cli_printf(cli, "%s\t\tAlias for %s\n", cli->av[0], canonical);
-		return (1);
-	}
-	return (0);
-}
-
 void
 cli_io_help(struct cli *cli, const char *desc, int has_trace, int has_elastic)
 {
-	cli_printf(cli, "%s [<unit>] [arguments]\n", cli->av[0]);
-	cli_printf(cli, "\t\t%s\n", desc);
+	cli_printf(cli, "%s\n", desc);
+	cli_usage(cli, " ...\n");
 	if (has_trace) {
 		cli_printf(cli, "\ttrace <word>\n");
 		cli_printf(cli, "\t\tI/O trace level.\n");
@@ -130,31 +110,55 @@ cli_unknown(struct cli *cli)
 }
 
 int
-cli_n_args(struct cli *cli, int n)
+cli_n_m_args(struct cli *cli, int minarg, int maxarg, const char *fmt, ...)
 {
-	if (cli->ac == n + 1)
+	va_list ap;
+
+	assert (minarg <= maxarg);
+	AN(fmt);
+	if (cli->ac >= minarg && cli->ac <= maxarg)
 		return (0);
-	if (n == 0)
-		return (cli_error(cli, "Expected no arguments after '%s'\n",
-		    cli->av[0]));
-	return(cli_error(cli, "Expected %d arguments after '%s'\n",
-	    n, cli->av[0]));
+	if (maxarg == 0) {
+		(void)cli_error(cli, "Expected no arguments after '");
+		cli_path(cli);
+		cli_printf(cli,"'\n");
+		return (1);
+	}
+	(void)cli_error(cli, "Wrong number of arguments after '");
+	cli_path(cli);
+	if (minarg != maxarg) {
+		cli_printf(cli, "', expected: [%d…%d]", minarg, maxarg);
+	} else {
+		cli_printf(cli, "', expected: %d", minarg);
+	}
+	if (*fmt) {
+		cli_printf(cli, ":\n\t");
+		va_start(ap, fmt);
+		(void)vprintf(fmt, ap);
+		va_end(ap);
+	} else {
+		cli_printf(cli, "\n");
+	}
+	return (1);
+}
+
+int
+cli_n_args(struct cli *cli, int args)
+{
+	return (cli_n_m_args(cli, args, args + 1, ""));
 }
 
 static cli_func_f cli_help;
 
-static const struct cli_cmds {
-	const char		*cmd;
-	cli_func_f		*func;
-} cli_cmds[] = {
+static const struct cli_cmds cli_cmds[] = {
 	{ "help",		cli_help },
 	{ "exit",		cli_exit },
 	{ "?",			cli_help },
 	{ "console",		cli_ioc_console },
 	{ "modem",		cli_ioc_modem },
-	{ "diag",		cli_ioc_diag },
+	{ "ioc",		cli_ioc },
 	{ "reset",		cli_ioc_reset },
-	{ "ioc",		cli_ioc_main },
+	{ "ioc_main",		cli_ioc_main },
 	{ "scsi_disk",		cli_scsi_disk },
 	{ "scsi_tape",		cli_scsi_tape },
 	{ "syscall",		cli_ioc_syscall },
@@ -164,33 +168,73 @@ static const struct cli_cmds {
 static void v_matchproto_(cli_func_t)
 cli_help(struct cli *cli)
 {
-	const struct cli_cmds *cc;
-	char *save;
-	int bug;
 
-	if (cli->help) {
-		if (cli_alias_help(cli, "help"))
-			return;
-		cli_printf(cli, "%s [<command>]\n", cli->av[0]);
-		cli_printf(cli, "\t\tShow command syntax\n");
+	cli->help = 1;
+	cli->av0++;
+	cli->av++;
+	cli->ac--;
+	cli_dispatch(cli, cli_cmds);
+}
+
+void
+cli_path(struct cli *cli)
+{
+	size_t sz;
+	char **av;
+	const char *sep = "";
+
+	for (av = cli->av0; *av; av++) {
+		sz = strcspn(*av, " \t");
+		if ((*av)[sz])
+			cli_printf(cli, "%s\"%s\"", sep, *av);
+		else
+			cli_printf(cli, "%s%s", sep, *av);
+		if (av == cli->av)
+			break;
+		sep = " ";
+	}
+}
+
+void
+cli_usage(struct cli *cli, const char *fmt, ...)
+{
+	va_list ap;
+
+	cli_printf(cli, "Usage: ");
+	if (*cli->av0)
+		cli_path(cli);
+	else
+		cli_printf(cli, " ");
+
+	va_start(ap, fmt);
+	(void)vprintf(fmt, ap);
+	va_end(ap);
+}
+
+void
+cli_dispatch(struct cli *cli, const struct cli_cmds *cmds)
+{
+	const struct cli_cmds *cc;
+
+	if (cli->ac == 0 && cli->help) {
+		cli_usage(cli, " ...\n");
+		for (cc = cmds; cc->cmd != NULL; cc++)
+			cli_printf(cli, "\t%s\n", cc->cmd);
 		return;
 	}
-	cli->help = 1;
-	bug = cli->ac;
-	for (cc = cli_cmds; cc->cmd != NULL; cc++) {
-		if (cli->ac > 1 && strcmp(cli->av[1], cc->cmd))
-			continue;
-		save = cli->av[0];
-		cli->av[0] = strdup(cc->cmd);
-		AN(cli->av[0]);
+
+	for (cc = cmds; cc->cmd != NULL; cc++)
+		if (!strcasecmp(cc->cmd, *cli->av))
+			break;
+
+	if (cc->func != NULL) {
 		cc->func(cli);
-		free(cli->av[0]);
-		cli->av[0] = save;
-		assert(bug == cli->ac);
-		cli_printf(cli, "\n");
+		return;
 	}
-	if (cli->ac == 1 || (cli->ac > 1 && !strcmp(cli->av[1], "elastic")))
-		(void)cli_elastic(NULL, cli);
+
+	(void)cli_error(cli, "CLI error, no command: ");
+	cli_path(cli);
+	cli_printf(cli, "\n");
 }
 
 int
@@ -198,7 +242,6 @@ cli_exec(struct sim *cs, const char *s)
 {
 	int ac;
 	char **av;
-	const struct cli_cmds *cc;
 	struct cli cli;
 
 	av = VAV_Parse(s, &ac, ARGV_COMMENT);
@@ -212,21 +255,12 @@ cli_exec(struct sim *cs, const char *s)
 		VAV_Free(av);
 		return (0);
 	}
-	for (cc = cli_cmds; cc->cmd != NULL; cc++)
-		if (!strcasecmp(cc->cmd, av[1]))
-			break;
-	if (cc->cmd == NULL) {
-		printf("CLI error: no command '%s'\n", av[1]);
-		VAV_Free(av);
-		return (1);
-	}
-
 	memset(&cli, 0, sizeof cli);
 	cli.cs = cs;
 	cli.ac = ac - 1;
+	cli.av0 = av + 1;
 	cli.av = av + 1;
-	AN(cc->func);
-	cc->func(&cli);
+	cli_dispatch(&cli, cli_cmds);
 	VAV_Free(av);
 	return (cli.status);
 }

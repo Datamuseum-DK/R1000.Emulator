@@ -3,6 +3,7 @@ void v_matchproto_(cli_func_f) cli_ioc_console(struct cli *cli);
 void v_matchproto_(cli_func_f) cli_ioc_modem(struct cli *cli);
 void v_matchproto_(cli_func_f) cli_ioc_diag(struct cli *cli);
 void v_matchproto_(cli_func_f) cli_ioc_reset(struct cli *cli);
+void v_matchproto_(cli_func_f) cli_ioc(struct cli *cli);
 void v_matchproto_(cli_func_f) cli_ioc_main(struct cli *cli);
 void v_matchproto_(cli_func_f) cli_scsi_disk(struct cli *cli);
 void v_matchproto_(cli_func_f) cli_scsi_tape(struct cli *cli);

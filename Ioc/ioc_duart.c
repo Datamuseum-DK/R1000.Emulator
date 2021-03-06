@@ -356,7 +356,8 @@ cli_ioc_diag(struct cli *cli)
 	struct chan *chp = &ioc_duart->chan[1];
 
 	if (cli->help) {
-		cli_io_help(cli, "IOC duart", 0, 1);
+		cli_io_help(cli, "IOC diagbus", 0, 1);
+		cli_elastic(chp->ep, cli);
 		return;
 	}
 
@@ -366,12 +367,6 @@ cli_ioc_diag(struct cli *cli)
 	while (cli->ac && !cli->status) {
 		if (cli_elastic(chp->ep, cli))
 			continue;
-		if (cli->ac >= 1 && !strcmp(cli->av[0], "test")) {
-			elastic_put(chp->ep, "Hello World\r\n", -1);
-			cli->ac -= 1;
-			cli->av += 1;
-			continue;
-		}
 		cli_unknown(cli);
 		break;
 	}

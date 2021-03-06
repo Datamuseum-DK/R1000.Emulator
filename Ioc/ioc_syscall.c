@@ -464,8 +464,8 @@ static struct syscall syscalls[] = {
 	{ "fs_10592",		0x1a96a, 0x1a9ba, 0,	   1, "sLsW", "sLsW"},
 	{ "fs_10610",		0x1afd0, 0x1b01e, 0x1b020, 0, "", "sB"},
 
-	{ "novram_0",		0x21cda, 0,	  0, 	   1, "sB", ""},
-	{ "novram_0",		0x21e48, 0,	  0, 	   1, "A1", ""},
+	{ "novram_0",		0x21cda, 0,	  0,	   1, "sB", ""},
+	{ "novram_0",		0x21e48, 0,	  0,	   1, "A1", ""},
 
 	{ NULL, 0, 0, 0, 0, NULL, NULL },
 };

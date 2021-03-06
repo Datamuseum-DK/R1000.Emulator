@@ -49,8 +49,8 @@ struct i8052 {
 	uint8_t				unit;
 	uint8_t				ram[256];
 	struct elastic_subscriber	*esp;
-	const char 			*state;
-	const char 			*state_after_download;
+	const char			*state;
+	const char			*state_after_download;
 	uint8_t				counter;
 	uint8_t				pointer;
 	uint8_t				resp_0;
