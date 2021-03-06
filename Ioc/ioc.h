@@ -11,6 +11,7 @@ void v_matchproto_(cli_func_f) cli_ioc_step(struct cli *cli);
 void v_matchproto_(cli_func_f) cli_ioc_state(struct cli *cli);
 void v_matchproto_(cli_func_f) cli_ioc_stop(struct cli *cli);
 void v_matchproto_(cli_func_f) cli_ioc_start(struct cli *cli);
+void v_matchproto_(cli_func_f) cli_ioc_maxins(struct cli *cli);
 
 void *main_ioc(void *priv);
 

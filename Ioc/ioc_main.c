@@ -51,6 +51,8 @@
 
 static pthread_t ioc_cpu;
 
+static uintmax_t ioc_maxins = 0;
+uintmax_t ioc_nins = 0;
 static uintmax_t ioc_cpu_quota = 0;
 static unsigned ioc_cpu_running = 0;
 static pthread_cond_t ioc_cpu_cond_state = PTHREAD_COND_INITIALIZER;
@@ -185,6 +187,22 @@ cli_ioc_start(struct cli *cli)
 	if (cli_n_m_args(cli, 0, 0, ""))
 		return;
 	ioc_start_cpu(0);
+}
+
+void v_matchproto_(cli_func_f)
+cli_ioc_maxins(struct cli *cli)
+{
+
+	if (cli->help) {
+		cli_usage(cli,
+		    " [count]\n\tTerminate after `count` instructions\n");
+		return;
+	}
+	cli->ac--;
+	cli->av++;
+	if (cli_n_m_args(cli, 1, 1, "[count]"))
+		return;
+	ioc_maxins = strtoumax(*cli->av, NULL, 0);
 }
 
 /**********************************************************************
@@ -459,6 +477,11 @@ main_ioc(void *priv)
 			io_sreg8_space[3] |= (~irq_level) & 7;
 		}
 		simclock += 100ULL * m68k_execute(1);
+		ioc_nins++;
+		if (ioc_maxins && ioc_nins > ioc_maxins) {
+			printf("maxins reached, exiting\n");
+			exit(4);
+		}
 		(void)callout_poll();
 		AZ(pthread_mutex_lock(&ioc_cpu_mtx));
 		if (ioc_cpu_quota)
