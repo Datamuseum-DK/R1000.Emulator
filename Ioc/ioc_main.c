@@ -452,6 +452,8 @@ void *
 main_ioc(void *priv)
 {
 	unsigned last_irq_level = 0;
+	int i;
+	nanosec ns;
 
 	(void)priv;
 
@@ -476,13 +478,19 @@ main_ioc(void *priv)
 			io_sreg8_space[3] &= ~7;
 			io_sreg8_space[3] |= (~irq_level) & 7;
 		}
-		simclock += 100ULL * m68k_execute(1);
+		i = m68k_execute(1);
+		simclock += 100ULL * i;
 		ioc_nins++;
 		if (ioc_maxins && ioc_nins > ioc_maxins) {
 			printf("maxins reached, exiting\n");
 			exit(4);
 		}
-		(void)callout_poll();
+		ns = callout_poll();
+		if (i == 1) {
+			ns -= simclock;
+			usleep(1 + (ns / 1000));
+			simclock += ns;
+		}
 		AZ(pthread_mutex_lock(&ioc_cpu_mtx));
 		if (ioc_cpu_quota)
 			ioc_cpu_quota--;
