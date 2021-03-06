@@ -14,7 +14,7 @@ https://datamuseum.dk/wiki/Rational/R1000s400
 
 5. `make`
 
-6. Wait for 4-ish seconds of simulated time and get:
+6. Wait for 3 million simulated instructions and get:
 
 ```
      R1000-400 IOC SELFTEST 1.3.2
@@ -67,12 +67,6 @@ https://datamuseum.dk/wiki/Rational/R1000s400
     Restarting system after loss of AC power
     
     CrashSave has created tombstone file R1000_DUMP1.
-    MEM0 NOVRAM checksum error, enter new data, defaults are best guess
-    Enter part number [47] : 
-    Enter serial number [0] : 
-    Enter artwork revision [2] : 
-    Enter ECO level [0] : 
-    Enter build date as DD-MMM-YY [07-MAR-21] : 
     >>> Automatic Crash Recovery is disabled
      
     >>> NOTICE: the EPROM WRT PROT switch is OFF (at front of RESHA board) <<<
@@ -85,7 +79,33 @@ https://datamuseum.dk/wiki/Rational/R1000s400
       5 => Boot EEDB configuration
       6 => Boot STANDARD configuration
     Enter option [enter CLI] : 1
+    CLI> x novram
+    
+    Options are:
+        0 => Exit.
+        1 => Display novram contents.
+        2 => Modify  novram contents.
+        3 => Change TCP/IP board serial number.
+    Enter option : 1
+            Part   Serial  Artwork    ECO     Date of
+    Board  Number  Number  Revision  Level  Manufacture
+    IOC     49      10295    3        13     10-JUL-92
+    VAL     0       0        0        0      ??-???-??
+    TYP     0       0        0        0      ??-???-??
+    SEQ     0       0        0        0      ??-???-??
+    FIU     0       0        0        0      ??-???-??
+    MEM0    0       0        0        0      ??-???-??
+    RESHA   41      10272    3        13     24-JUN-92
+    TCP/IP (CMC) board serial number is 1671
+    
+    Options are:
+        0 => Exit.
+        1 => Display novram contents.
+        2 => Modify  novram contents.
+        3 => Change TCP/IP board serial number.
+    Enter option : 0
     CLI> 
+
 ```
 
 At this point you can "telnet localhost 1400" and interact with
