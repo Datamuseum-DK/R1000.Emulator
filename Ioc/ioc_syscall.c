@@ -8,9 +8,11 @@
 
 static struct vsb *syscall_vsb;
 
-static void
-ioc_dump_regs(struct vsb *vsb)
+void
+ioc_dump_cpu_regs(struct vsb *vsb)
 {
+	VSB_printf(vsb, "PC = 0x%x", m68k_get_reg(NULL, M68K_REG_PC));
+	VSB_printf(vsb, "  SR = 0x%x\n", m68k_get_reg(NULL, M68K_REG_SR));
 	VSB_printf(vsb, "D0 = %08x  D4 = %08x   A0 = %08x  A4 = %08x\n",
 	    m68k_get_reg(NULL, M68K_REG_D0), m68k_get_reg(NULL, M68K_REG_D4),
 	    m68k_get_reg(NULL, M68K_REG_A0), m68k_get_reg(NULL, M68K_REG_A4)
@@ -37,16 +39,16 @@ void
 ioc_dump_registers(unsigned lvl)
 {
 
-	if (fd_trace < 0 || !(do_trace & lvl))
+	if (trace_fd < 0 || !(do_trace & lvl))
 		return;
 	if (syscall_vsb == NULL)
 		syscall_vsb = VSB_new_auto();
 	AN(syscall_vsb);
 	VSB_clear(syscall_vsb);
 	VSB_printf(syscall_vsb, "%12jd Registers\n", simclock);
-	ioc_dump_regs(syscall_vsb);
+	ioc_dump_cpu_regs(syscall_vsb);
 	AZ(VSB_finish(syscall_vsb));
-	VSB_tofile(syscall_vsb, fd_trace);
+	VSB_tofile(syscall_vsb, trace_fd);
 }
 
 static void
@@ -102,7 +104,7 @@ dump_10204(struct vsb *vsb, unsigned a7)
 	VSB_printf(vsb, " h=0x%02x", ram_space[ u + 14]);
 	VSB_printf(vsb, " s=0x%02x", ram_space[u + 15]);
 	VSB_printf(vsb, "}\n");
-	ioc_dump_regs(syscall_vsb);
+	ioc_dump_cpu_regs(syscall_vsb);
 }
 
 void
@@ -110,7 +112,7 @@ ioc_trace_syscall(unsigned pc)
 {
 	unsigned a7, u;
 
-	if (fd_trace < 0 || !(do_trace & TRACE_SYSCALL))
+	if (trace_fd < 0 || !(do_trace & TRACE_SYSCALL))
 		return;
 	if (syscall_vsb == NULL)
 		syscall_vsb = VSB_new_auto();
@@ -150,7 +152,7 @@ ioc_trace_syscall(unsigned pc)
 	case 0x10da4: return;
 	default:
 		VSB_cat(syscall_vsb, "\n");
-		ioc_dump_regs(syscall_vsb);
+		ioc_dump_cpu_regs(syscall_vsb);
 		hexdump(syscall_vsb, ram_space + a7, 0x80, a7);
 		u = vbe32dec(ram_space + a7 + 4);
 		if (0x10000 < u && u < 0x80000)
@@ -164,7 +166,7 @@ ioc_trace_syscall(unsigned pc)
 		break;
 	}
 	AZ(VSB_finish(syscall_vsb));
-	VSB_tofile(syscall_vsb, fd_trace);
+	VSB_tofile(syscall_vsb, trace_fd);
 }
 
 struct syscall {
@@ -377,11 +379,11 @@ sc_peg(void *priv, const char *what, unsigned adr, unsigned val,
 	}
 	if (sc->dump) {
 		VSB_printf(syscall_vsb, "PC = 0x%x\n", adr);
-		ioc_dump_regs(syscall_vsb);
+		ioc_dump_cpu_regs(syscall_vsb);
 		hexdump(syscall_vsb, ram_space + a7, 0x80, a7);
 	}
 	AZ(VSB_finish(syscall_vsb));
-	VSB_tofile(syscall_vsb, fd_trace);
+	VSB_tofile(syscall_vsb, trace_fd);
 }
 
 static struct syscall syscalls[] = {

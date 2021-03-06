@@ -103,7 +103,7 @@ static int v_matchproto_(scsi_func_f)
 scsi_08_read_6_disk(struct scsi_dev *dev, uint8_t *cdb)
 {
 	size_t lba;
-	unsigned nsect;
+	size_t nsect;
 
 	trace_scsi_dev(dev, "READ_6(DISK)");
 
@@ -152,7 +152,7 @@ static int v_matchproto_(scsi_func_f)
 scsi_0a_write_6(struct scsi_dev *dev, uint8_t *cdb)
 {
 	size_t lba;
-	unsigned nsect;
+	size_t nsect;
 
 	trace_scsi_dev(dev, "WRITE_6");
 

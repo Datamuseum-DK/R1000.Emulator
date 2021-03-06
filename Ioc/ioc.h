@@ -7,15 +7,19 @@ void v_matchproto_(cli_func_f) cli_ioc(struct cli *cli);
 void v_matchproto_(cli_func_f) cli_scsi_disk(struct cli *cli);
 void v_matchproto_(cli_func_f) cli_scsi_tape(struct cli *cli);
 void v_matchproto_(cli_func_f) cli_ioc_syscall(struct cli *cli);
+void v_matchproto_(cli_func_f) cli_ioc_step(struct cli *cli);
+void v_matchproto_(cli_func_f) cli_ioc_state(struct cli *cli);
+void v_matchproto_(cli_func_f) cli_ioc_stop(struct cli *cli);
+void v_matchproto_(cli_func_f) cli_ioc_start(struct cli *cli);
 
 void *main_ioc(void *priv);
 
-void ioc_console_init();
-void ioc_duart_init();
-void ioc_scsi_d_init();
-void ioc_scsi_t_init();
-void ioc_rtc_init();
-void ioc_init();
+void ioc_console_init(void);
+void ioc_duart_init(void);
+void ioc_scsi_d_init(void);
+void ioc_scsi_t_init(void);
+void ioc_rtc_init(void);
+void ioc_init(void);
 
 extern uintmax_t ioc_nins;
 extern unsigned ioc_pc;
@@ -26,6 +30,7 @@ void dma_read(unsigned segment, unsigned address, void *src, unsigned len);
 
 void ioc_trace_syscall(unsigned pc);
 void ioc_dump_registers(unsigned lvl);
+void ioc_dump_cpu_regs(struct vsb *vsb);
 
 /**********************************************************************/
 
@@ -64,6 +69,8 @@ INTERRUPT_TABLE
 #undef IRQ_VECTOR
 
 extern unsigned irq_level;
+
+unsigned irq_getvector(unsigned int arg);
 
 void irq_raise(struct irq_vector *vp);
 void irq_lower(struct irq_vector *vp);

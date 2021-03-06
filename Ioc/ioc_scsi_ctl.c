@@ -7,6 +7,7 @@
 
 #include "r1000.h"
 #include "ioc.h"
+#include "memspace.h"
 #include "ioc_scsi.h"
 #include "vend.h"
 
@@ -151,8 +152,8 @@ scsi_thread(void *priv)
 				sp->regs[0x17] = 0x42;
 			} else {
 				sp->regs[0x14] = i & 0xff;
-				sp->regs[0x13] = (i>>8) & 0xff;
-				sp->regs[0x12] = (i>>16) & 0xff;
+				sp->regs[0x13] = ((unsigned)i>>8) & 0xff;
+				sp->regs[0x12] = ((unsigned)i>>16) & 0xff;
 				sp->regs[0x17] = 0x16;
 			}
 		}

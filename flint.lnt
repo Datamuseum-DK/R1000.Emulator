@@ -56,6 +56,15 @@
 // 750     local macro '___' (___) not referenced
 -esym(750, REG_*)
 
+// 762     Redundantly declared symbol '___' previously declared at ___
+-esym(762, irq_getvector)
+-esym(762, m68k_write_memory_8)
+-esym(762, m68k_read_memory_8)
+-esym(762, m68k_write_memory_16)
+-esym(762, m68k_read_memory_16)
+-esym(762, m68k_write_memory_32)
+-esym(762, m68k_read_memory_32)
+
 // 714 Symbol '___' (___) not referenced
 // 759 header declaration for symbol '___' defined at (___) could be moved from header to module
 // 765 external '___' (___) could be made static

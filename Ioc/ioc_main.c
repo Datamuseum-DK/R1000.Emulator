@@ -37,9 +37,12 @@
 #include <string.h>
 #include <time.h>
 #include <unistd.h>
+
 #include "r1000.h"
 #include "ioc.h"
+
 #include "m68k.h"
+#include "vsb.h"
 #include "vend.h"
 
 #include "memspace.h"
@@ -72,6 +75,15 @@ ioc_stop_cpu(void)
 }
 
 static void
+ioc_wait_cpu_stopped(void)
+{
+	AZ(pthread_mutex_lock(&ioc_cpu_mtx));
+	while (ioc_cpu_quota || ioc_cpu_running)
+		AZ(pthread_cond_wait(&ioc_cpu_cond_state, &ioc_cpu_mtx));
+	AZ(pthread_mutex_unlock(&ioc_cpu_mtx));
+}
+
+static void
 ioc_start_cpu(uintmax_t quota)
 {
 	if (!quota)
@@ -91,9 +103,87 @@ cli_ioc_reset(struct cli *cli)
 		cli_usage(cli, "\n\tReset IOC CPU\n");
 		return;
 	}
-	if (cli_n_args(cli, 0))
+	cli->ac--;
+	cli->av++;
+	if (cli_n_m_args(cli, 0, 1, "[-stop]"))
 		return;
 	ioc_stop_cpu();
+	memcpy(ram_space, ioc_eeprom_space, 8);
+	m68k_pulse_reset();
+	if (cli->ac == 0)
+		ioc_start_cpu(0);
+}
+
+void v_matchproto_(cli_func_f)
+cli_ioc_state(struct cli *cli)
+{
+	struct vsb *vsb;
+
+	vsb = VSB_new_auto();
+	AN(vsb);
+	AZ(pthread_mutex_lock(&ioc_cpu_mtx));
+	if (ioc_cpu_running)
+		VSB_printf(vsb, "IOC CPU is running\n");
+	else
+		VSB_printf(vsb, "IOC CPU is stopped\n");
+	ioc_dump_cpu_regs(vsb);
+	AZ(pthread_mutex_unlock(&ioc_cpu_mtx));
+	AZ(VSB_finish(vsb));
+	cli_printf(cli, "%s", VSB_data(vsb));
+	VSB_destroy(&vsb);
+}
+
+void v_matchproto_(cli_func_f)
+cli_ioc_step(struct cli *cli)
+{
+	uintmax_t uj = 1;
+
+	if (cli->help) {
+		cli_usage(cli, " [count]\n\tSingle step IOC CPU\n");
+		return;
+	}
+	cli->ac--;
+	cli->av++;
+	if (cli_n_m_args(cli, 0, 1, "[count]"))
+		return;
+	if (cli->ac == 1)
+		uj = strtoumax(*cli->av, NULL, 0);
+	if (ioc_cpu_running) {
+		cli_error(cli, "IOC CPU is running\n");
+		return;
+	}
+	ioc_start_cpu(uj);
+	ioc_wait_cpu_stopped();
+	cli_ioc_state(cli);
+}
+
+void v_matchproto_(cli_func_f)
+cli_ioc_stop(struct cli *cli)
+{
+	if (cli->help) {
+		cli_usage(cli, "\n\tStop IOC CPU\n");
+		return;
+	}
+	cli->ac--;
+	cli->av++;
+	if (cli_n_m_args(cli, 0, 0, ""))
+		return;
+	ioc_stop_cpu();
+	ioc_wait_cpu_stopped();
+	cli_ioc_state(cli);
+}
+
+void v_matchproto_(cli_func_f)
+cli_ioc_start(struct cli *cli)
+{
+	if (cli->help) {
+		cli_usage(cli, "\n\tStart IOC CPU\n");
+		return;
+	}
+	cli->ac--;
+	cli->av++;
+	if (cli_n_m_args(cli, 0, 0, ""))
+		return;
 	ioc_start_cpu(0);
 }
 
@@ -248,7 +338,7 @@ cpu_trace(unsigned int pc)
 
 	char buff[100];
 	char buff2[100];
-	uint8_t *peg = NULL;
+	uint8_t *peg;
 	unsigned int instr_size;
 	static unsigned int last_pc = 0;
 	static unsigned repeats = 0;
@@ -285,8 +375,10 @@ cpu_instr_callback(unsigned int pc)
 
 	ioc_pc = pc;
 
+#if 0
 	if (0 && 0x00018ec8 <= pc && pc <= 0x00018eea)
 		ioc_dump_registers(TRACE_68K);
+#endif
 	if (do_trace)
 		cpu_trace(pc);
 	if (0x10000 <= pc && pc <= 0x1061c)
@@ -344,14 +436,6 @@ main_ioc(void *priv)
 	unsigned last_irq_level = 0;
 
 	(void)priv;
-	setbuf(stdout, NULL);
-	setbuf(stderr, NULL);
-
-	ioc_load_eeproms();
-
-	m68k_init();
-	m68k_set_cpu_type(IOC_CPU_TYPE);
-	m68k_pulse_reset();
 
 	io_sreg8_space[3] = 0x7;
 
@@ -374,19 +458,23 @@ main_ioc(void *priv)
 			io_sreg8_space[3] &= ~7;
 			io_sreg8_space[3] |= (~irq_level) & 7;
 		}
-		simclock += 100 * m68k_execute(1);
-		callout_poll();
+		simclock += 100ULL * m68k_execute(1);
+		(void)callout_poll();
 		AZ(pthread_mutex_lock(&ioc_cpu_mtx));
 		if (ioc_cpu_quota)
 			ioc_cpu_quota--;
 	}
-
-	return NULL;
+	return(NULL);
 }
 
 void
 ioc_init(void)
 {
+	m68k_init();
+	m68k_set_cpu_type(IOC_CPU_TYPE);
+
+	ioc_load_eeproms();
+
 	ioc_console_init();
 	ioc_duart_init();
 	ioc_scsi_d_init();

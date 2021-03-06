@@ -73,7 +73,7 @@ struct callout;
 typedef int64_t			nanosec;
 extern nanosec			simclock;
 extern unsigned			do_trace;
-extern int			fd_trace;
+extern int			trace_fd;
 
 /* CLI ****************************************************************/
 
@@ -127,7 +127,7 @@ typedef void callout_callback_f(void *);
 void callout_callback(callout_callback_f *func,
     void *priv, nanosec when, nanosec repeat);
 
-nanosec callout_poll();
+nanosec callout_poll(void);
 
 /* DIAG *************************************************************/
 

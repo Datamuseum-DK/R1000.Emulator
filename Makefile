@@ -40,10 +40,28 @@ OBJS	+= ioc_syscall.o
 
 OBJS	+= i8052.o
 
+CFLAGSMINUSI += -I. -IInfra -IMusashi -IIoc -IDiag
+CFLAGSMINUSD += -DMUSASHI_CNF='"musashi_conf.h"'
+
 CFLAGS	+= -Wall -Werror -pthread -g -O0
-CFLAGS	+= -I. -IInfra -IMusashi -IIoc -DMUSASHI_CNF='"musashi_conf.h"'
-CFLAGS	+= -IDiag
+CFLAGS	+= ${CFLAGSMINUSD}
+CFLAGS	+= ${CFLAGSMINUSI}
 LDFLAGS	+= -lm
+
+PARANOIA += -std=gnu99 -Wno-format-zero-length -nobuiltininc 
+PARANOIA += -fstack-protector-strong -Wsystem-headers -Werror -Wall 
+PARANOIA += -Wno-format-y2k -W -Wno-unused-parameter -Wstrict-prototypes
+PARANOIA += -Wmissing-prototypes -Wpointer-arith -Wreturn-type -Wcast-qual
+PARANOIA += -Wwrite-strings -Wswitch -Wshadow -Wunused-parameter -Wcast-align
+PARANOIA += -Wchar-subscripts -Winline -Wnested-externs -Wredundant-decls
+PARANOIA += -Wold-style-definition -Wno-pointer-sign
+PARANOIA += -Wmissing-variable-declarations -Wthread-safety -Wno-empty-body
+PARANOIA += -Wno-string-plus-int -Wno-unused-const-variable
+PARANOIA += -Qunused-arguments
+
+PARANOIA += -Wno-missing-field-initializers
+
+CFLAGS += ${PARANOIA}
 
 BINFILES += IOC_EEPROM.bin
 BINFILES += RESHA_EEPROM.bin
@@ -161,7 +179,8 @@ vsb.o:			Infra/r1000.h Infra/vsb.c
 
 m68kcpu.o:		${M68K_INCL} Musashi/m68kcpu.c
 m68kdasm.o:		${M68K_INCL} Musashi/m68kdasm.c
-softfloat.o:		${M68K_INCL} Musashi/softfloat/softfloat.c
+softfloat.o:		${M68K_INCL} Musashi/softfloat/softfloat.c \
+			Musashi/softfloat/softfloat-specialize
 
 _memcfg.o:		_memcfg.c _memcfg.h Infra/memspace.h
 
@@ -180,7 +199,7 @@ ioc_uart.o:		${CLI_INCL} Ioc/ioc.h Ioc/ioc_uart.c
 i8052.o:		${CLI_INCL} Diag/i8052.h Diag/i8052.c
 
 m68kops.o:		Musashi/m68kcpu.h m68kops.h m68kops.c
-m68kops.h m68kops.c:	m68kmake Ioc/musashi_conf.h
+m68kops.h m68kops.c:	m68kmake Ioc/musashi_conf.h Musashi/m68k_in.c
 			./m68kmake `pwd` Musashi/m68k_in.c
 
 Infra/memspace.h:	_memcfg.h
@@ -193,11 +212,16 @@ m68kmake:		Musashi/m68kmake.c
 Musashi/m68kcpu.h:	Musashi/m68k.h
 
 flint:
-	flexelint flint.lnt ${CFLAGS} Infra/*.c Ioc/*.c _memcfg.c Diag/*.c
+	flexelint flint.lnt \
+		${CFLAGSMINUSD} \
+		${CFLAGSMINUSI} \
+		Diag/*.c \
+		Infra/*.c \
+		Ioc/*.c \
+		_memcfg.c
 
 setup:	${BINFILES}
-	git clone https://github.com/kstenerud/Musashi
-	(cd Musashi && git apply ../Musashi.patch)
+	git clone https://github.com/Datamuseum-DK/Musashi
 
 ${BINFILES}:
 	curl -o IOC_EEPROM.bin https://datamuseum.dk/bits/30000502

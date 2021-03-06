@@ -12,6 +12,9 @@ static const struct cli_cmds cli_ioc_cmds[] = {
 	{ "scsi_disk",		cli_scsi_disk },
 	{ "scsi_tape",		cli_scsi_tape },
 	{ "syscall",		cli_ioc_syscall },
+	{ "step",		cli_ioc_step },
+	{ "stop",		cli_ioc_stop },
+	{ "start",		cli_ioc_start },
 	{ NULL,			NULL },
 };
 
@@ -24,5 +27,6 @@ cli_ioc(struct cli *cli)
 		cli->av++;
 		cli_dispatch(cli, cli_ioc_cmds);
 	}
+	cli_ioc_state(cli);
 }
 

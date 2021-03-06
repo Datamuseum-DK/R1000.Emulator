@@ -355,7 +355,7 @@ cli_ioc_diag(struct cli *cli)
 
 	if (cli->help) {
 		cli_io_help(cli, "IOC diagbus", 0, 1);
-		cli_elastic(chp->ep, cli);
+		(void)cli_elastic(chp->ep, cli);
 		return;
 	}
 

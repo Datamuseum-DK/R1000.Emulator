@@ -44,7 +44,6 @@ struct callout {
 typedef void callout_func_f(const struct callout *);
 
 struct callout_how {
-	const char			*name;
 	callout_func_f			*func;
 };
 
@@ -90,7 +89,7 @@ callout_func_signal_cond(const struct callout *co)
 }
 
 static const struct callout_how callout_signal_cond_how = {
-	.name = "Signal Condvar",
+	// .name = "Signal Condvar",
 	.func = callout_func_signal_cond,
 };
 
@@ -132,7 +131,7 @@ callout_func_callback(const struct callout *co)
 }
 
 static const struct callout_how callout_callback_how = {
-	.name = "Callback",
+	// .name = "Callback",
 	.func = callout_func_callback,
 };
 

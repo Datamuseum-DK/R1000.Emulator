@@ -41,16 +41,16 @@ typedef void mem_post_write(int, uint8_t *, unsigned, unsigned);
 extern struct memdesc *memdesc[];
 extern const unsigned n_memdesc;
 
-//void m68k_write_memory_8(unsigned, unsigned);
-//unsigned m68k_read_memory_8(unsigned);
+void m68k_write_memory_8(unsigned, unsigned);
+unsigned m68k_read_memory_8(unsigned);
 void m68k_debug_write_memory_8(unsigned, unsigned);
 unsigned m68k_debug_read_memory_8(unsigned);
-//void m68k_write_memory_16(unsigned, unsigned);
-//unsigned m68k_read_memory_16(unsigned);
+void m68k_write_memory_16(unsigned, unsigned);
+unsigned m68k_read_memory_16(unsigned);
 void m68k_debug_write_memory_16(unsigned, unsigned);
 unsigned m68k_debug_read_memory_16(unsigned);
-//void m68k_write_memory_32(unsigned, unsigned);
-//unsigned m68k_read_memory_32(unsigned);
+void m68k_write_memory_32(unsigned, unsigned);
+unsigned m68k_read_memory_32(unsigned);
 void m68k_debug_write_memory_32(unsigned, unsigned);
 unsigned m68k_debug_read_memory_32(unsigned);
 

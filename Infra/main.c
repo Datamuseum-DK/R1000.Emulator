@@ -37,7 +37,6 @@
 #include <unistd.h>
 
 #include "r1000.h"
-#include "elastic.h"
 #include "ioc.h"
 #include "vsb.h"
 
@@ -45,7 +44,7 @@ int optreset;		// Some have it, some not.
 
 nanosec	simclock;
 unsigned do_trace;
-int fd_trace = -1;
+int trace_fd = -1;
 
 void
 trace(unsigned level, const char *fmt, ...)
@@ -53,13 +52,13 @@ trace(unsigned level, const char *fmt, ...)
 	va_list ap;
 	char buf[BUFSIZ];
 
-	if (fd_trace < 0 || !(do_trace & level))
+	if (trace_fd < 0 || !(do_trace & level))
 		return;
 	bprintf(buf, "%12jd ", simclock);
 	va_start(ap, fmt);
 	vsnprintf(buf + 13, sizeof(buf) - 13, fmt, ap);
 	va_end(ap);
-	(void)write(fd_trace, buf, strlen(buf));
+	(void)write(trace_fd, buf, strlen(buf));
 }
 
 void
@@ -94,7 +93,7 @@ trace_dump(unsigned level, const void *ptr, size_t len, const char *fmt, ...)
 	va_list ap;
 
 	AN(ptr);
-	if (fd_trace < 0 || !(do_trace & level))
+	if (trace_fd < 0 || !(do_trace & level))
 		return;
 	vsb = VSB_new_auto();
 	AN(vsb);
@@ -104,7 +103,7 @@ trace_dump(unsigned level, const void *ptr, size_t len, const char *fmt, ...)
 	va_end(ap);
 	hexdump(vsb, ptr, len, 0);
 	AZ(VSB_finish(vsb));
-	VSB_tofile(vsb, fd_trace);
+	VSB_tofile(vsb, trace_fd);
 	VSB_destroy(&vsb);
 }
 
@@ -132,14 +131,14 @@ main(int argc, char **argv)
 			if (l == 0)
 				do_trace = 0;
 			else if (l < 0)
-				do_trace &= ~(-l);
+				do_trace &= ~((unsigned long)(-l));
 			else
 				do_trace |= l;
 			break;
 		case 'T':
-			fd_trace =
+			trace_fd =
 			    open(optarg, O_WRONLY|O_CREAT|O_TRUNC, 0644);
-			if (fd_trace < 0) {
+			if (trace_fd < 0) {
 				fprintf(stderr, "Cannot open: %s: %s\n",
 				    optarg, strerror(errno));
 				exit(2);
