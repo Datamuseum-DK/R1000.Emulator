@@ -52,7 +52,6 @@ struct elastic_subscriber {
 };
 
 struct elastic {
-	struct sim			*cs;
 	VTAILQ_HEAD(,elastic_subscriber)	subscribers;
 	VTAILQ_HEAD(,chunk)		chunks_out;
 	VTAILQ_HEAD(,chunk)		chunks_in;
@@ -68,7 +67,7 @@ struct elastic {
 	struct elastic_fd		*out;
 };
 
-struct elastic *elastic_new(struct sim *, int mode);
+struct elastic *elastic_new(int mode);
 nanosec elastic_nsec_per_char(const struct elastic *ep);
 
 struct elastic_subscriber *elastic_subscribe(struct elastic *ep, elastic_deliver_f *, void *);

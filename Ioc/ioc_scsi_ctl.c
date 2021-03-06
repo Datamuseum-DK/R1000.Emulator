@@ -250,9 +250,8 @@ scsi_d_post_write(int debug, uint8_t *space, unsigned width, unsigned adr)
 }
 
 void
-ioc_scsi_d_init(struct sim *cs)
+ioc_scsi_d_init(void)
 {
-	(void)cs;
 	scsi_d->name = "SCSI_D";
 	scsi_d->irq_vector = &IRQ_SCSI_D;
 	AZ(pthread_mutex_init(&scsi_d->mtx, NULL));
@@ -279,9 +278,8 @@ scsi_t_post_write(int debug, uint8_t *space, unsigned width, unsigned adr)
 }
 
 void
-ioc_scsi_t_init(struct sim *cs)
+ioc_scsi_t_init(void)
 {
-	(void)cs;
 	scsi_t->name = "SCSI_T";
 	scsi_t->irq_vector = &IRQ_SCSI_T;
 	AZ(pthread_mutex_init(&scsi_t->mtx, NULL));
@@ -326,8 +324,7 @@ scsi_ctl_post_write(int debug, uint8_t *space, unsigned width, unsigned adr)
 		if (sp->reset && !(space[adr + 1] & 0x1)) {
 			trace(2, "SCSI_CTL %s RESET\n", sp->name);
 			irq_lower(sp->irq_vector);
-			callout_callback(
-			    r1000sim, scsi_ctrl_reset, sp, 5000, 0);
+			callout_callback(scsi_ctrl_reset, sp, 5000, 0);
 		}
 		sp->reset = space[adr + 1] & 0x1;
 	}
@@ -336,8 +333,7 @@ scsi_ctl_post_write(int debug, uint8_t *space, unsigned width, unsigned adr)
 		if (sp->reset && !(space[adr + 1] & 0x10)) {
 			trace(2, "SCSI_CTL %s RESET\n", sp->name);
 			irq_lower(sp->irq_vector);
-			callout_callback(
-			    r1000sim, scsi_ctrl_reset, sp, 5000, 0);
+			callout_callback(scsi_ctrl_reset, sp, 5000, 0);
 		}
 		sp->reset = space[adr + 1] & 0x10;
 	}

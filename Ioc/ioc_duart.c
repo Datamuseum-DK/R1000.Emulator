@@ -199,8 +199,7 @@ io_duart_pre_read(int debug, uint8_t *space, unsigned width, unsigned adr)
 		 * RX holding register.  To avoid the race we hold back
 		 * the thr_duart_rx() thread back a little bit.
 		 */
-		callout_callback(r1000sim,
-		    io_duart_rx_readh_cb, chp, 100000, 0);
+		callout_callback(io_duart_rx_readh_cb, chp, 100000, 0);
 		break;
 	case REG_R_START_PIT:
 		ioc_duart->counter = io_duart_wr_space[REG_W_CTLR];
@@ -281,7 +280,6 @@ io_duart_post_write(int debug, uint8_t *space, unsigned width, unsigned adr)
 		break;
 	case REG_W_THRA:
 	case REG_W_THRB:
-		ioc_keep_going();
 		if (chp->isdiag && ioc_duart->opr & 4) {
 			// IOP.DLOOP~ on p21
 			chp->rxhold = space[adr];
@@ -373,14 +371,14 @@ cli_ioc_diag(struct cli *cli)
 }
 
 void
-ioc_duart_init(struct sim *sim)
+ioc_duart_init(void)
 {
 
-	ioc_duart->chan[0].ep = elastic_new(sim, O_RDWR);
+	ioc_duart->chan[0].ep = elastic_new(O_RDWR);
 	ioc_duart->chan[0].rx_irq = &IRQ_MODEM_RXRDY;
 	ioc_duart->chan[0].tx_irq = &IRQ_MODEM_TXRDY;
 
-	ioc_duart->chan[1].ep = elastic_new(sim, O_RDWR);
+	ioc_duart->chan[1].ep = elastic_new(O_RDWR);
 	ioc_duart->chan[1].ep->text = 0;
 	ioc_duart->chan[1].rx_irq = &IRQ_DIAG_BUS_RXRDY;
 	ioc_duart->chan[1].tx_irq = &IRQ_DIAG_BUS_TXRDY;
@@ -388,6 +386,6 @@ ioc_duart_init(struct sim *sim)
 	diag_elastic = ioc_duart->chan[1].ep;
 
 	ioc_duart->chan[1].isdiag = 1;
-	callout_callback(r1000sim, ioc_duart_pit_callback, NULL, 0, 25600);
+	callout_callback(ioc_duart_pit_callback, NULL, 0, 25600);
 	AZ(pthread_create(&diag_rx, NULL, thr_duart_rx, &ioc_duart->chan[1]));
 }

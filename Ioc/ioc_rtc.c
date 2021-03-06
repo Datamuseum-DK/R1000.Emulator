@@ -89,10 +89,10 @@ ioc_rtc_setclock(void)
 static void *
 ioc_rtc_thread(void *priv)
 {
-	struct sim *cs = priv;
 
+	(void)priv;
 	AZ(pthread_mutex_lock(&rtc_mtx));
-	callout_signal_cond(cs, &rtc_cond, &rtc_mtx, 1000000, 1000000);
+	callout_signal_cond(&rtc_cond, &rtc_mtx, 1000000, 1000000);
 	while (1) {
 		AZ(pthread_cond_wait(&rtc_cond, &rtc_mtx));
 		trace(2, "RTC tick\n");
@@ -173,9 +173,9 @@ io_rtc_post_write(int debug, uint8_t *space, unsigned width, unsigned adr)
 }
 
 void
-ioc_rtc_init(struct sim *cs)
+ioc_rtc_init(void)
 {
 
 	ioc_rtc_setclock();
-	AZ(pthread_create(&rtc_thr, NULL, ioc_rtc_thread, cs));
+	AZ(pthread_create(&rtc_thr, NULL, ioc_rtc_thread, NULL));
 }

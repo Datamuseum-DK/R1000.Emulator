@@ -29,6 +29,7 @@ OBJS	+= _memcfg.o
 OBJS	+= ioc_uart.o
 OBJS	+= ioc_cli.o
 OBJS	+= ioc_duart.o
+OBJS	+= ioc_eeproms.o
 OBJS	+= ioc_interrupt.o
 OBJS	+= ioc_hotfix.o
 OBJS	+= ioc_main.o
@@ -166,14 +167,15 @@ _memcfg.o:		_memcfg.c _memcfg.h Infra/memspace.h
 
 ioc_cli.o:		${CLI_INCL} Ioc/ioc.h Ioc/ioc_cli.c
 ioc_duart.o:		${CLI_INCL} Ioc/ioc.h Ioc/ioc_duart.c
-ioc_uart.o:		${CLI_INCL} Ioc/ioc.h Ioc/ioc_uart.c
+ioc_eeproms.o:		${CLI_INCL} Ioc/ioc.h Ioc/ioc_eeproms.c
+ioc_hotfix.o:		${M68K_INCL} Ioc/ioc.h Ioc/ioc_hotfix.c
 ioc_interrupt.o:	${CLI_INCL} Ioc/ioc.h Ioc/ioc_interrupt.c
 ioc_main.o:		${M68K_INCL} Ioc/ioc.h Ioc/ioc_main.c
-ioc_hotfix.o:		${M68K_INCL} Ioc/ioc.h Ioc/ioc_hotfix.c
 ioc_rtc.o:		${CLI_INCL} Ioc/ioc.h Ioc/ioc_rtc.c
 ioc_scsi_ctl.o:		${CLI_INCL} Ioc/ioc.h Ioc/ioc_scsi.h Ioc/ioc_scsi_ctl.c
 ioc_scsi_dev.o:		${CLI_INCL} Ioc/ioc.h Ioc/ioc_scsi.h Ioc/ioc_scsi_dev.c
 ioc_syscall.o:		${CLI_INCL} Ioc/ioc.h Ioc/ioc_syscall.c
+ioc_uart.o:		${CLI_INCL} Ioc/ioc.h Ioc/ioc_uart.c
 
 i8052.o:		${CLI_INCL} Diag/i8052.h Diag/i8052.c
 

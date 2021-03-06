@@ -1,3 +1,34 @@
+/*-
+ * Copyright (c) 2021 Poul-Henning Kamp
+ * All rights reserved.
+ *
+ * Author: Poul-Henning Kamp <phk@phk.freebsd.dk>
+ *
+ * SPDX-License-Identifier: BSD-2-Clause
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions
+ * are met:
+ * 1. Redistributions of source code must retain the above copyright
+ *    notice, this list of conditions and the following disclaimer.
+ * 2. Redistributions in binary form must reproduce the above copyright
+ *    notice, this list of conditions and the following disclaimer in the
+ *    documentation and/or other materials provided with the distribution.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE AUTHOR AND CONTRIBUTORS ``AS IS'' AND
+ * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+ * ARE DISCLAIMED.  IN NO EVENT SHALL AUTHOR OR CONTRIBUTORS BE LIABLE
+ * FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+ * DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
+ * OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
+ * HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
+ * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
+ * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
+ * SUCH DAMAGE.
+ *
+ */
+
 #include <fcntl.h>
 #include <inttypes.h>
 #include <stdio.h>
@@ -15,18 +46,59 @@
 
 #define IOC_CPU_TYPE	M68K_CPU_TYPE_68020
 
-/* Prototypes */
-// static void exit_error(char* fmt, ...);
+static pthread_t ioc_cpu;
 
-static uint8_t resha_eeprom[32768];
+static uintmax_t ioc_cpu_quota = 0;
+static unsigned ioc_cpu_running = 0;
+static pthread_cond_t ioc_cpu_cond_state = PTHREAD_COND_INITIALIZER;
+static pthread_cond_t ioc_cpu_cond = PTHREAD_COND_INITIALIZER;
+static pthread_mutex_t ioc_cpu_mtx = PTHREAD_MUTEX_INITIALIZER;
 
 unsigned ioc_fc;
 
 unsigned int ioc_pc;
 
-static uintmax_t go_until_increment = 0;
-static uintmax_t go_until = 1000000000;
+/**********************************************************************
+ */
 
+static void
+ioc_stop_cpu(void)
+{
+	AZ(pthread_mutex_lock(&ioc_cpu_mtx));
+	ioc_cpu_quota = 0;
+	while (ioc_cpu_running)
+		AZ(pthread_cond_wait(&ioc_cpu_cond_state, &ioc_cpu_mtx));
+	AZ(pthread_mutex_unlock(&ioc_cpu_mtx));
+}
+
+static void
+ioc_start_cpu(uintmax_t quota)
+{
+	if (!quota)
+		quota = 1ULL << 60;
+
+	AZ(pthread_mutex_lock(&ioc_cpu_mtx));
+	AZ(ioc_cpu_running);
+	ioc_cpu_quota = quota;
+	AZ(pthread_cond_broadcast(&ioc_cpu_cond));
+	AZ(pthread_mutex_unlock(&ioc_cpu_mtx));
+}
+
+void v_matchproto_(cli_func_f)
+cli_ioc_reset(struct cli *cli)
+{
+	if (cli->help) {
+		cli_usage(cli, "\n\tReset IOC CPU\n");
+		return;
+	}
+	if (cli_n_args(cli, 0))
+		return;
+	ioc_stop_cpu();
+	ioc_start_cpu(0);
+}
+
+/**********************************************************************
+ */
 static void
 dump_ram(void)
 {
@@ -46,31 +118,6 @@ crash(void)
 	exit(2);
 }
 
-void v_matchproto_(cli_func_f)
-cli_ioc_main(struct cli *cli)
-{
-
-	if (cli->help) {
-		cli_io_help(cli, "IOC main", 0, 1);
-		return;
-	}
-
-	cli->ac--;
-	cli->av++;
-
-	dump_ram();
-
-	while (cli->ac && !cli->status) {
-		if (cli->ac >= 2 && !strcmp(cli->av[0], "go_until_increment")) {
-			go_until_increment = strtoumax(cli->av[1], NULL, 0);
-			cli->ac -= 2;
-			cli->av += 2;
-			continue;
-		}
-		cli_unknown(cli);
-		break;
-	}
-}
 /**********************************************************************
  */
 
@@ -90,7 +137,6 @@ cli_ioc_main(struct cli *cli)
 	}
 
 GENERIC_POST_WRITE(fb000)
-GENERIC_POST_WRITE(f000)
 GENERIC_POST_WRITE(f200)
 GENERIC_POST_WRITE(f300)
 GENERIC_POST_WRITE(io_sreg4)
@@ -148,28 +194,6 @@ io_sreg8_pre_read(int debug, uint8_t *space, unsigned width, unsigned adr)
 }
 
 /**********************************************************************/
-
-void v_matchproto_(mem_post_write)
-resha_page_post_write(int debug, uint8_t *space, unsigned width, unsigned adr)
-{
-	(void)debug;
-	(void)adr;
-	// See 0x80000fa8-80000fb4
-	trace(TRACE_IO, "RESHA_PAGE W [%x] <- %x/%d\n", adr, space[adr], width);
-	space[1] = space[0];
-}
-
-void v_matchproto_(mem_pre_read)
-resha_eeprom_pre_read(int debug, uint8_t *space, unsigned width, unsigned adr)
-{
-	unsigned u;
-
-	(void)debug;
-	u = (resha_page_space[0] << 8) | adr;
-	u &= 0x7fff;
-	memcpy(space + adr, resha_eeprom + u, width);
-	trace(TRACE_IO, "RESHA_PAGE R [%x] -> %x/%d\n", adr, space[adr], width);
-}
 
 void v_matchproto_(mem_pre_read)
 irq_vector_pre_read(int debug, uint8_t *space, unsigned width, unsigned adr)
@@ -263,7 +287,7 @@ cpu_instr_callback(unsigned int pc)
 
 	if (0 && 0x00018ec8 <= pc && pc <= 0x00018eea)
 		ioc_dump_registers(TRACE_68K);
-	if (r1000sim->do_trace)
+	if (do_trace)
 		cpu_trace(pc);
 	if (0x10000 <= pc && pc <= 0x1061c)
 		ioc_trace_syscall(pc);
@@ -271,17 +295,17 @@ cpu_instr_callback(unsigned int pc)
 	if (pc == 0x80000088) {
 		// hit self-test fail, stop tracing
 		ioc_dump_registers(TRACE_68K);
-		r1000sim->do_trace = 0;
+		do_trace = 0;
 	}
 	if (pc == 0x100087ce) {
 		ioc_dump_registers(TRACE_68K);
-		r1000sim->do_trace = 0;
+		do_trace = 0;
 		printf("DIAGTX breakpoint\n");
 		crash();
 	}
 	if (pc == 0x00071286 || pc == 0x7056e || pc == 0x766a2) {
 		ioc_dump_registers(TRACE_68K);
-		r1000sim->do_trace = 0;
+		do_trace = 0;
 		printf("RESHA test failed\n");
 		crash();
 	}
@@ -293,7 +317,7 @@ cpu_instr_callback(unsigned int pc)
 	if (pc == 0x0000a090) {
 		ioc_dump_registers(TRACE_68K);
 		// hit trap, stop tracing
-		r1000sim->do_trace = 0;
+		do_trace = 0;
 	}
 	if (pc == 0x80004d08) {
 		printf("Hit debugger\n");
@@ -313,96 +337,36 @@ cpu_instr_callback(unsigned int pc)
 	}
 }
 
-static void
-insert_jump(unsigned int from, unsigned int to)
-{
-
-	from &= 0x7fffffff;
-	ioc_eeprom_space[from] = 0x4e;
-	ioc_eeprom_space[from+1L] = 0xf9;
-	vbe32enc(ioc_eeprom_space + from + 2, to);
-}
-
-void
-ioc_keep_going(void)
-{
-	if (go_until_increment) {
-		go_until = r1000sim->simclock + go_until_increment;
-		trace(TRACE_IO, "GO UNTIL %ju\n", go_until);
-	}
-}
-
 /* The main loop */
 void *
 main_ioc(void *priv)
 {
-	FILE* fhandle;
 	unsigned last_irq_level = 0;
 
 	(void)priv;
 	setbuf(stdout, NULL);
 	setbuf(stderr, NULL);
 
-	fhandle = fopen("IOC_EEPROM.bin", "rb");
-	AN(fhandle);
-	assert(fread(ioc_eeprom_space + 0x0000, 1, 8192, fhandle) == 8192);
-	assert(fread(ioc_eeprom_space + 0x4000, 1, 8192, fhandle) == 8192);
-	assert(fread(ioc_eeprom_space + 0x2000, 1, 8192, fhandle) == 8192);
-	assert(fread(ioc_eeprom_space + 0x6000, 1, 8192, fhandle) == 8192);
-	AZ(fclose(fhandle));
-	memcpy(ram_space, ioc_eeprom_space, 8);
-
-	Ioc_HotFix_Ioc(ioc_eeprom_space);
-
-	fhandle = fopen("RESHA_EEPROM.bin", "rb");
-	AN(fhandle);
-	assert(fread(resha_eeprom + 0x0000, 1, 32768, fhandle) == 32768);
-	AZ(fclose(fhandle));
-
-	Ioc_HotFix_Resha(resha_eeprom);
-
-	insert_jump(0x800001e4, 0x8000021a); // EEPROM CHECKSUM
-	insert_jump(0x800003a4, 0x80000546); // 512k RAM Test
-	insert_jump(0x80000568, 0x800007d0); // Parity
-	insert_jump(0x800007f4, 0x800009b2); // I/O Bus control
-	insert_jump(0x800009da, 0x80000a4a); // I/O Bus map parity
-	insert_jump(0x80000a74, 0x80000b8a); // I/O bus transactions
-
-	//insert_jump(0x80000ba2, 0x80000bf2); // PIT  (=> DUART)
-	//insert_jump(0x80000c1a, 0x80000d20); // Modem DUART channel
-	//insert_jump(0x80000d4e, 0x80000dd6); // Diagnostic DUART channel
-	//insert_jump(0x80000dfc, 0x80000ec4); // Clock / Calendar
-
-	// insert_jump(0x80000fa0, 0x80000fda); // RESHA EEProm Interface ...
-
-	insert_jump(0x80001170, 0x8000117c); // RESHA VEM sub-tests
-	insert_jump(0x8000117c, 0x80001188); // RESHA LANCE sub-tests
-	//insert_jump(0x80001188, 0x80001194); // RESHA DISK SUB-TESTs
-	insert_jump(0x80001194, 0x800011a0); // RESHA TAPE SUB-TESTs
-
-	//insert_jump(0x800011c0, 0x800014d0); // Local interrupts
-
-	insert_jump(0x80001502, 0x800015ce); // Illegal reference protection
-	insert_jump(0x800015f2, 0x8000166c); // I/O bus parity
-	insert_jump(0x8000169c, 0x800016d8); // I/O bus spurious interrupts
-	insert_jump(0x80001700, 0x80001746); // Temperature sensors
-	insert_jump(0x80001774, 0x800017f8); // IOC diagnostic processor
-	insert_jump(0x8000181c, 0x8000185c); // Power margining
-	insert_jump(0x80001880, 0x8000197c); // Clock margining
-	insert_jump(0x80001982, 0x80001992); // final check
-
-	// Local interrupts test
-	insert_jump(0x800011dc, 0x800011fc); // XXX: Where does vector 0x50 come from ?!
-	insert_jump(0x8000127a, 0x80001298); // XXX: Where does vector 0x51 come from ?!
-	insert_jump(0x80001358, 0x80001470); // XXX: Where does vector 0x52 come from ?!
+	ioc_load_eeproms();
 
 	m68k_init();
 	m68k_set_cpu_type(IOC_CPU_TYPE);
 	m68k_pulse_reset();
 
 	io_sreg8_space[3] = 0x7;
+
+	AZ(pthread_mutex_lock(&ioc_cpu_mtx));
 	while(1)
 	{
+		while (!ioc_cpu_quota) {
+			if (ioc_cpu_running)
+				AZ(pthread_cond_broadcast(&ioc_cpu_cond_state));
+			ioc_cpu_running = 0;
+			AZ(pthread_cond_wait(&ioc_cpu_cond, &ioc_cpu_mtx));
+		}
+		ioc_cpu_running = 1;
+		AZ(pthread_mutex_unlock(&ioc_cpu_mtx));
+
 		if (irq_level != last_irq_level) {
 			last_irq_level = irq_level;
 			m68k_set_irq(last_irq_level);
@@ -410,23 +374,23 @@ main_ioc(void *priv)
 			io_sreg8_space[3] &= ~7;
 			io_sreg8_space[3] |= (~irq_level) & 7;
 		}
-		r1000sim->simclock += 100 * m68k_execute(1);
-		callout_poll(r1000sim);
-		if (go_until_increment && r1000sim->simclock > go_until) {
-			printf("Ran clock out\n");
-			exit(0);
-		}
+		simclock += 100 * m68k_execute(1);
+		callout_poll();
+		AZ(pthread_mutex_lock(&ioc_cpu_mtx));
+		if (ioc_cpu_quota)
+			ioc_cpu_quota--;
 	}
 
 	return NULL;
 }
 
 void
-ioc_init(struct sim *cs)
+ioc_init(void)
 {
-	ioc_console_init(cs);
-	ioc_duart_init(cs);
-	ioc_scsi_d_init(cs);
-	ioc_scsi_t_init(cs);
-	ioc_rtc_init(cs);
+	ioc_console_init();
+	ioc_duart_init();
+	ioc_scsi_d_init();
+	ioc_scsi_t_init();
+	ioc_rtc_init();
+	AZ(pthread_create(&ioc_cpu, NULL, main_ioc, NULL));
 }

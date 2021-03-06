@@ -158,7 +158,6 @@ static const struct cli_cmds cli_cmds[] = {
 	{ "modem",		cli_ioc_modem },
 	{ "ioc",		cli_ioc },
 	{ "reset",		cli_ioc_reset },
-	{ "ioc_main",		cli_ioc_main },
 	{ "scsi_disk",		cli_scsi_disk },
 	{ "scsi_tape",		cli_scsi_tape },
 	{ "syscall",		cli_ioc_syscall },
@@ -238,7 +237,7 @@ cli_dispatch(struct cli *cli, const struct cli_cmds *cmds)
 }
 
 int
-cli_exec(struct sim *cs, const char *s)
+cli_exec(const char *s)
 {
 	int ac;
 	char **av;
@@ -256,7 +255,6 @@ cli_exec(struct sim *cs, const char *s)
 		return (0);
 	}
 	memset(&cli, 0, sizeof cli);
-	cli.cs = cs;
 	cli.ac = ac - 1;
 	cli.av0 = av + 1;
 	cli.av = av + 1;
@@ -266,7 +264,7 @@ cli_exec(struct sim *cs, const char *s)
 }
 
 int
-cli_from_file(struct sim *cs, FILE *fi, int fatal)
+cli_from_file(FILE *fi, int fatal)
 {
 	char buf[BUFSIZ];
 	char *p;
@@ -279,7 +277,7 @@ cli_from_file(struct sim *cs, FILE *fi, int fatal)
 		if (p != NULL)
 			*p = '\0';
 		printf("cli <%s>\n", buf);
-		rv = cli_exec(cs, buf);
+		rv = cli_exec(buf);
 		if (rv < 0 || (rv && fatal))
 			break;
 	}

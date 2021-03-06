@@ -67,38 +67,17 @@ struct vsb;
  */
 #define v_matchproto_(xxx)              /*lint --e{818} */
 
-struct sim;
 struct cli;
 struct callout;
 
 typedef int64_t			nanosec;
-
-struct sim {
-
-	pthread_mutex_t		run_mtx;
-	pthread_mutex_t		running_mtx;
-	pthread_cond_t		run_cond;
-	pthread_cond_t		wait_cond;
-
-	nanosec			simclock;
-
-	uint64_t		pace_nsec;
-	uint64_t		pace_n;
-	uint64_t		ins_count;
-
-	unsigned		do_trace;
-	int			fd_trace;
-
-	pthread_mutex_t		callout_mtx;
-	VTAILQ_HEAD(,callout)	callouts;
-};
-
-extern struct sim *r1000sim;
+extern nanosec			simclock;
+extern unsigned			do_trace;
+extern int			fd_trace;
 
 /* CLI ****************************************************************/
 
 struct cli {
-	struct sim		*cs;
 	int			status;
 	int			help;
 	int			ac;
@@ -117,8 +96,8 @@ void cli_path(struct cli *cli);
 void cli_usage(struct cli *cli, const char *fmt, ...) __printflike(2,3);
 void cli_dispatch(struct cli *cli, const struct cli_cmds *cmds);
 
-int cli_exec(struct sim *, const char *);
-int cli_from_file(struct sim *cs, FILE *fi, int fatal);
+int cli_exec(const char *);
+int cli_from_file(FILE *fi, int fatal);
 
 
 void cli_printf(struct cli *cli, const char *fmt, ...) __printflike(2, 3);
@@ -126,8 +105,8 @@ int cli_error(struct cli *cli, const char *fmt, ...) __printflike(2, 3);
 
 void cli_io_help(struct cli *, const char *desc, int trace, int elastic);
 
-int cli_n_m_args(struct cli *cli, int minarg, int maxarg, const char *fmt, ...) \
-    __printflike(4, 5);
+int cli_n_m_args(struct cli *cli, int minarg, int maxarg,
+    const char *fmt, ...) __printflike(4, 5);
 int cli_n_args(struct cli *cli, int maxarg);
 void cli_unknown(struct cli *cli);
 
@@ -135,20 +114,20 @@ void cli_unknown(struct cli *cli);
 
 void hexdump(struct vsb *vsb, const void *ptr, size_t len, unsigned offset);
 void trace(unsigned level, const char *fmt, ...) __printflike(2, 3);
-void trace_dump(unsigned level, const void *ptr, size_t len, const char *fmt, ...)
-    __printflike(4, 5);
+void trace_dump(unsigned level, const void *ptr, size_t len,
+    const char *fmt, ...) __printflike(4, 5);
 
 
 /* CALLOUTS ***********************************************************/
 
-void callout_signal_cond(struct sim *cs, pthread_cond_t *cond,
+void callout_signal_cond(pthread_cond_t *cond,
     pthread_mutex_t *mtx, nanosec when, nanosec repeat);
 
 typedef void callout_callback_f(void *);
-void callout_callback(struct sim *cs, callout_callback_f *func,
+void callout_callback(callout_callback_f *func,
     void *priv, nanosec when, nanosec repeat);
 
-nanosec callout_poll(struct sim *cs);
+nanosec callout_poll();
 
 /* DIAG *************************************************************/
 

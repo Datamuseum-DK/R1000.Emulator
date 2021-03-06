@@ -35,7 +35,6 @@
 
 struct callout {
 	VTAILQ_ENTRY(callout)		next;
-	struct sim			*cs;
 	nanosec				when;
 	nanosec				repeat;
 	const struct callout_how	*how;
@@ -49,24 +48,27 @@ struct callout_how {
 	callout_func_f			*func;
 };
 
+static pthread_mutex_t callout_mtx = PTHREAD_MUTEX_INITIALIZER;
+
+static VTAILQ_HEAD(,callout) callouts = VTAILQ_HEAD_INITIALIZER(callouts);
+
 static void
 callout_insert(struct callout *co)
 {
 	struct callout *co2;
 
 	AN(co);
-	AN(co->cs);
 	AN(co->how);
 
-	AZ(pthread_mutex_lock(&co->cs->callout_mtx));
-	VTAILQ_FOREACH(co2, &co->cs->callouts, next)
+	AZ(pthread_mutex_lock(&callout_mtx));
+	VTAILQ_FOREACH(co2, &callouts, next)
 		if (co2->when > co->when)
 			break;
 	if (co2 == NULL)
-		VTAILQ_INSERT_TAIL(&co->cs->callouts, co, next);
+		VTAILQ_INSERT_TAIL(&callouts, co, next);
 	else
 		VTAILQ_INSERT_BEFORE(co2, co, next);
-	AZ(pthread_mutex_unlock(&co->cs->callout_mtx));
+	AZ(pthread_mutex_unlock(&callout_mtx));
 }
 
 /**********************************************************************/
@@ -93,7 +95,7 @@ static const struct callout_how callout_signal_cond_how = {
 };
 
 void
-callout_signal_cond(struct sim *cs, pthread_cond_t *cond,
+callout_signal_cond(pthread_cond_t *cond,
     pthread_mutex_t *mtx, nanosec when, nanosec repeat)
 {
 	struct callout *co;
@@ -106,8 +108,7 @@ callout_signal_cond(struct sim *cs, pthread_cond_t *cond,
 	psc = (void*)(p + sizeof *co);
 	psc->cond = cond;
 	psc->mtx = mtx;
-	co->cs = cs;
-	co->when = cs->simclock + when;
+	co->when = simclock + when;
 	co->repeat = repeat;
 	co->priv = psc;
 	co->how = &callout_signal_cond_how;
@@ -136,7 +137,7 @@ static const struct callout_how callout_callback_how = {
 };
 
 void
-callout_callback(struct sim *cs, callout_callback_f *func,
+callout_callback(callout_callback_f *func,
     void *priv, nanosec when, nanosec repeat)
 {
 	struct callout *co;
@@ -149,8 +150,7 @@ callout_callback(struct sim *cs, callout_callback_f *func,
 	psc = (void*)(p + sizeof *co);
 	psc->func = func;
 	psc->priv = priv;
-	co->cs = cs;
-	co->when = cs->simclock + when;
+	co->when = simclock + when;
 	co->repeat = repeat;
 	co->priv = psc;
 	co->how = &callout_callback_how;
@@ -160,22 +160,22 @@ callout_callback(struct sim *cs, callout_callback_f *func,
 /**********************************************************************/
 
 nanosec
-callout_poll(struct sim *cs)
+callout_poll(void)
 {
 	struct callout *co;
 	nanosec rv = 0;
 
 	while (1) {
-		AZ(pthread_mutex_lock(&cs->callout_mtx));
-		co = VTAILQ_FIRST(&cs->callouts);
-		if (co != NULL && co->when < cs->simclock) {
-			VTAILQ_REMOVE(&cs->callouts, co, next);
+		AZ(pthread_mutex_lock(&callout_mtx));
+		co = VTAILQ_FIRST(&callouts);
+		if (co != NULL && co->when < simclock) {
+			VTAILQ_REMOVE(&callouts, co, next);
 		} else {
 			if (co != NULL)
 				rv = co->when;
 			co = NULL;
 		}
-		AZ(pthread_mutex_unlock(&cs->callout_mtx));
+		AZ(pthread_mutex_unlock(&callout_mtx));
 		if (co == NULL)
 			return (rv);
 		co->how->func(co);

@@ -131,7 +131,7 @@ cons_txshift_done(void * priv)
 				elastic_put(cons->ep, &cons->txhold, 1);
 			cons->txshift = cons->txhold;
 			cons->txshiftfull = 1;
-			callout_callback(r1000sim, cons_txshift_done, NULL, CONSOLE_RATE, 0);
+			callout_callback(cons_txshift_done, NULL, CONSOLE_RATE, 0);
 			cons->status |= 0x01;			// txhold is empty
 			irq_raise(&IRQ_CONSOLE_TXRDY);
 		}
@@ -243,15 +243,15 @@ io_uart_post_write(int debug, uint8_t *space, unsigned width, unsigned adr)
 	AZ(pthread_cond_broadcast(&cons_cond));
 	AZ(pthread_mutex_unlock(&uart_mtx));
 	if (cons->txbreak && cons->loopback)
-		callout_callback(r1000sim, cons_txshift_done, NULL, CONSOLE_RATE, 0);
+		callout_callback(cons_txshift_done, NULL, CONSOLE_RATE, 0);
 	else if (!(cons->status & 1) && !cons->txshiftfull)
 		cons_txshift_done(NULL);
 }
 
 void
-ioc_console_init(struct sim *sim)
+ioc_console_init(void)
 {
 
-	cons->ep = elastic_new(sim, O_RDWR);
+	cons->ep = elastic_new(O_RDWR);
 	AZ(pthread_create(&cons_rx, NULL, thr_console_rx, NULL));
 }

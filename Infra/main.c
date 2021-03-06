@@ -43,44 +43,23 @@
 
 int optreset;		// Some have it, some not.
 
-struct sim *r1000sim;
-
-static struct sim *
-sim_new(void)
-{
-	struct sim *cs;
-
-	cs = calloc(1, sizeof *cs);
-	AN(cs);
-
-	AZ(pthread_mutex_init(&cs->run_mtx, NULL));
-	AZ(pthread_mutex_init(&cs->running_mtx, NULL));
-	AZ(pthread_mutex_init(&cs->callout_mtx, NULL));
-	AZ(pthread_cond_init(&cs->run_cond, NULL));
-	AZ(pthread_cond_init(&cs->wait_cond, NULL));
-	AZ(pthread_cond_init(&cs->wait_cond, NULL));
-	VTAILQ_INIT(&cs->callouts);
-
-	cs->fd_trace = -1;
-
-	return (cs);
-}
+nanosec	simclock;
+unsigned do_trace;
+int fd_trace = -1;
 
 void
 trace(unsigned level, const char *fmt, ...)
 {
 	va_list ap;
-	struct sim *cs = r1000sim;
 	char buf[BUFSIZ];
 
-	AN(cs);
-	if (cs->fd_trace < 0 || !(cs->do_trace & level))
+	if (fd_trace < 0 || !(do_trace & level))
 		return;
-	bprintf(buf, "%12jd ", cs->simclock);
+	bprintf(buf, "%12jd ", simclock);
 	va_start(ap, fmt);
 	vsnprintf(buf + 13, sizeof(buf) - 13, fmt, ap);
 	va_end(ap);
-	(void)write(cs->fd_trace, buf, strlen(buf));
+	(void)write(fd_trace, buf, strlen(buf));
 }
 
 void
@@ -112,21 +91,20 @@ void
 trace_dump(unsigned level, const void *ptr, size_t len, const char *fmt, ...)
 {
 	struct vsb *vsb;
-	struct sim *cs = r1000sim;
 	va_list ap;
 
 	AN(ptr);
-	if (cs->fd_trace < 0 || !(cs->do_trace & level))
+	if (fd_trace < 0 || !(do_trace & level))
 		return;
 	vsb = VSB_new_auto();
 	AN(vsb);
-	VSB_printf(vsb, "%12jd ", cs->simclock);
+	VSB_printf(vsb, "%12jd ", simclock);
 	va_start(ap, fmt);
 	VSB_vprintf(vsb, fmt, ap);
 	va_end(ap);
 	hexdump(vsb, ptr, len, 0);
 	AZ(VSB_finish(vsb));
-	VSB_tofile(vsb, cs->fd_trace);
+	VSB_tofile(vsb, fd_trace);
 	VSB_destroy(&vsb);
 }
 
@@ -134,17 +112,14 @@ int
 main(int argc, char **argv)
 {
 	int ch, i;
-	struct sim *cs = NULL;
 	long l;
 	FILE *fi;
 
 	setbuf(stdout, NULL);
 	setbuf(stderr, NULL);
 
-	r1000sim = sim_new();
 	mem_init();
-	cs = r1000sim;
-	ioc_init(cs);
+	ioc_init();
 	i8052_init();	// After so diag_elastic is there
 
 	while ((ch = getopt(argc, argv, "f:ht:T:")) != -1) {
@@ -155,16 +130,16 @@ main(int argc, char **argv)
 		case 't':
 			l = strtoul(optarg, NULL, 0);
 			if (l == 0)
-				cs->do_trace = 0;
+				do_trace = 0;
 			else if (l < 0)
-				cs->do_trace &= ~(-l);
+				do_trace &= ~(-l);
 			else
-				cs->do_trace |= l;
+				do_trace |= l;
 			break;
 		case 'T':
-			cs->fd_trace =
+			fd_trace =
 			    open(optarg, O_WRONLY|O_CREAT|O_TRUNC, 0644);
-			if (cs->fd_trace < 0) {
+			if (fd_trace < 0) {
 				fprintf(stderr, "Cannot open: %s: %s\n",
 				    optarg, strerror(errno));
 				exit(2);
@@ -187,7 +162,7 @@ main(int argc, char **argv)
 				    optarg, strerror(errno));
 				exit(2);
 			}
-			if (cli_from_file(cs, fi, 1))
+			if (cli_from_file(fi, 1))
 				exit(2);
 			AZ(fclose(fi));
 			break;
@@ -201,12 +176,12 @@ main(int argc, char **argv)
 
 	for (i = 0; i < argc; i++) {
 		printf("CLI <%s>\n", argv[i]);
-		if (cli_exec(cs, argv[i]))
+		if (cli_exec(argv[i]))
 			exit(2);
 	}
 
 	printf("CLI open\n");
 
-	(void)cli_from_file(cs, stdin, 0);
+	(void)cli_from_file(stdin, 0);
 	return (0);
 }

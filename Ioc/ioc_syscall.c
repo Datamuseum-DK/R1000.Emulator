@@ -36,18 +36,17 @@ ioc_dump_regs(struct vsb *vsb)
 void
 ioc_dump_registers(unsigned lvl)
 {
-	struct sim *cs = r1000sim;
 
-	if (cs->fd_trace < 0 || !(cs->do_trace & lvl))
+	if (fd_trace < 0 || !(do_trace & lvl))
 		return;
 	if (syscall_vsb == NULL)
 		syscall_vsb = VSB_new_auto();
 	AN(syscall_vsb);
 	VSB_clear(syscall_vsb);
-	VSB_printf(syscall_vsb, "%12jd Registers\n", cs->simclock);
+	VSB_printf(syscall_vsb, "%12jd Registers\n", simclock);
 	ioc_dump_regs(syscall_vsb);
 	AZ(VSB_finish(syscall_vsb));
-	VSB_tofile(syscall_vsb, cs->fd_trace);
+	VSB_tofile(syscall_vsb, fd_trace);
 }
 
 static void
@@ -110,15 +109,14 @@ void
 ioc_trace_syscall(unsigned pc)
 {
 	unsigned a7, u;
-	struct sim *cs = r1000sim;
 
-	if (cs->fd_trace < 0 || !(cs->do_trace & TRACE_SYSCALL))
+	if (fd_trace < 0 || !(do_trace & TRACE_SYSCALL))
 		return;
 	if (syscall_vsb == NULL)
 		syscall_vsb = VSB_new_auto();
 	AN(syscall_vsb);
 	VSB_clear(syscall_vsb);
-	VSB_printf(syscall_vsb, "%12jd Syscall 0x%x ", cs->simclock, pc);
+	VSB_printf(syscall_vsb, "%12jd Syscall 0x%x ", simclock, pc);
 
 	a7 =  m68k_get_reg(NULL, M68K_REG_A7);
 	if (0x10460 <= pc && pc <= 0x104c0)
@@ -166,7 +164,7 @@ ioc_trace_syscall(unsigned pc)
 		break;
 	}
 	AZ(VSB_finish(syscall_vsb));
-	VSB_tofile(syscall_vsb, cs->fd_trace);
+	VSB_tofile(syscall_vsb, fd_trace);
 }
 
 struct syscall {
@@ -184,7 +182,6 @@ sc_peg(void *priv, const char *what, unsigned adr, unsigned val,
     unsigned width, unsigned peg)
 {
 	struct syscall *sc = priv;
-	struct sim *cs = r1000sim;
 	const char *which;
 	unsigned a7, sp, u, v, w;
 
@@ -200,7 +197,7 @@ sc_peg(void *priv, const char *what, unsigned adr, unsigned val,
 		syscall_vsb = VSB_new_auto();
 	AN(syscall_vsb);
 	VSB_clear(syscall_vsb);
-	VSB_printf(syscall_vsb, "%12jd ", cs->simclock);
+	VSB_printf(syscall_vsb, "%12jd ", simclock);
 
 	a7 =  m68k_get_reg(NULL, M68K_REG_A7);
 	if (adr == sc->lo) {
@@ -384,7 +381,7 @@ sc_peg(void *priv, const char *what, unsigned adr, unsigned val,
 		hexdump(syscall_vsb, ram_space + a7, 0x80, a7);
 	}
 	AZ(VSB_finish(syscall_vsb));
-	VSB_tofile(syscall_vsb, cs->fd_trace);
+	VSB_tofile(syscall_vsb, fd_trace);
 }
 
 static struct syscall syscalls[] = {

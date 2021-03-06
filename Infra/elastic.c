@@ -36,11 +36,10 @@
 #include "elastic.h"
 
 struct elastic *
-elastic_new(struct sim *cs, int mode)
+elastic_new(int mode)
 {
 	struct elastic *ep;
 
-	AN(cs);
 	ep = calloc(1, sizeof *ep);
 	AN(ep);
 	VTAILQ_INIT(&ep->chunks_in);
@@ -52,7 +51,6 @@ elastic_new(struct sim *cs, int mode)
 	assert(mode == O_RDONLY || mode == O_RDWR || mode == O_WRONLY);
 	ep->text = 1;
 	ep->mode = mode;
-	ep->cs = cs;
 	ep->bits_per_char = 8;
 	return (ep);
 }
