@@ -113,7 +113,8 @@ test:	r1000 ${BINFILES}
 		'console match expect "] : "' \
 		'console << ""' \
 		'console match expect "Enter option [enter CLI] : "' \
-		'console << "1"' \
+		'console << "1"'
+		
 
 seagate:	r1000 ${BINFILES}
 	./r1000 \

@@ -14,7 +14,7 @@ https://datamuseum.dk/wiki/Rational/R1000s400
 
 5. `make`
 
-6. Wait for who knows how many million simulated instructions and get:
+6. Wait for 4-ish seconds of simulated time and get:
 
 ```
      R1000-400 IOC SELFTEST 1.3.2
@@ -67,8 +67,14 @@ https://datamuseum.dk/wiki/Rational/R1000s400
     Restarting system after loss of AC power
     
     CrashSave has created tombstone file R1000_DUMP1.
-    Memory 0 is in configuration but does not respond.
-    
+    MEM0 NOVRAM checksum error, enter new data, defaults are best guess
+    Enter part number [47] : 
+    Enter serial number [0] : 
+    Enter artwork revision [2] : 
+    Enter ECO level [0] : 
+    Enter build date as DD-MMM-YY [07-MAR-21] : 
+    >>> Automatic Crash Recovery is disabled
+     
     >>> NOTICE: the EPROM WRT PROT switch is OFF (at front of RESHA board) <<<
     >>> WARNING: the system clock or power is margined <<<
     CLI/CRASH MENU - options are:
@@ -81,6 +87,9 @@ https://datamuseum.dk/wiki/Rational/R1000s400
     Enter option [enter CLI] : 1
     CLI> 
 ```
+
+At this point you can "telnet localhost 1400" and interact with
+the DFS CLI interface.  `HELP` is a valid command :-)
 
 Disassembly of the IOC EEPROM: http://datamuseum.dk/aa/r1k_dfs/be/bed92cf60.html
 
@@ -101,10 +110,6 @@ Hat-Tip to @kstenerud: The 68k20 IOC is emulated with his https://github.com/kst
 Add a cli commands:
 
 * `breakpoint address` -- Stop emulation and dump 68K registers.  Leave CPU stopped.
-
-* `continue` -- Continue after breakpoint
-
-* `step` -- Execute single instruction while stopped
 
 * `examine address` -- Dump 256 bytes of memory.
 
