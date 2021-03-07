@@ -57,36 +57,58 @@ elastic_new(int mode)
 
 /* Output Subscriptions ***********************************************/
 
+int
+elastic_subscriber_fetch(struct elastic_subscriber **espp,
+    void **pptr, size_t *plen)
+{
+	struct elastic_subscriber *esp;
+	struct chunk *cp;
+	struct elastic *ep;
+
+	AN(espp);
+	esp = *espp;
+	AN(esp);
+	ep = esp->ep;
+	AN(ep);
+
+	AZ(pthread_mutex_lock(&ep->mtx));
+	while (!esp->die && VTAILQ_EMPTY(&esp->chunks))
+		AZ(pthread_cond_wait(&esp->cond, &ep->mtx));
+	cp = VTAILQ_FIRST(&esp->chunks);
+	if (cp != NULL)
+		VTAILQ_REMOVE(&esp->chunks, cp, next);
+	AZ(pthread_mutex_unlock(&ep->mtx));
+
+	if (cp != NULL) {
+		*pptr = cp->ptr;
+		*plen = cp->len;
+		free(cp);
+		return (1);
+	}
+	AN(esp->die);
+	*pptr = NULL;
+	*plen = 0;
+	AZ(pthread_cond_destroy(&esp->cond));
+	free(esp);
+	*espp = NULL;
+	return (0);
+}
+
 static void *
 elastic_subscriber_thread(void *priv)
 {
 	struct elastic_subscriber *esp = priv;
-	struct elastic *ep = esp->ep;
-	struct chunk *cp;
+	void *ptr;
+	size_t len;
 
-	AZ(pthread_mutex_lock(&ep->mtx));
-	while (1) {
-		while (!esp->die && VTAILQ_EMPTY(&esp->chunks))
-			AZ(pthread_cond_wait(&esp->cond, &ep->mtx));
-		cp = VTAILQ_FIRST(&esp->chunks);
-		if (cp != NULL)
-			VTAILQ_REMOVE(&esp->chunks, cp, next);
-		AZ(pthread_mutex_unlock(&ep->mtx));
-		if (esp->die && cp == NULL)
-			break;
-		AN(cp);
-		AN(esp->func);
-		AN(esp->priv);
-		AN(cp->ptr);
-		AN(cp->len);
-		if (!esp->die)
-			esp->func(esp->priv, cp->ptr, cp->len);
-		free(cp->ptr);
-		free(cp);
-		AZ(pthread_mutex_lock(&ep->mtx));
+	AN(esp->func);
+	AN(esp->priv);
+	while (elastic_subscriber_fetch(&esp, &ptr, &len)) {
+		AN(ptr);
+		AN(len);
+		esp->func(esp->priv, ptr, len);
+		free(ptr);
 	}
-	AZ(pthread_cond_destroy(&esp->cond));
-	free(esp);
 	return (NULL);
 }
 
@@ -108,8 +130,11 @@ elastic_subscribe(struct elastic *ep, elastic_deliver_f *func, void *priv)
 	if (!VTAILQ_EMPTY(&ep->chunks_out))
 		VTAILQ_CONCAT(&esp->chunks, &ep->chunks_out, next);
 	AZ(pthread_mutex_unlock(&ep->mtx));
-	AZ(pthread_create(&esp->thread, NULL, elastic_subscriber_thread, esp));
-	AZ(pthread_detach(esp->thread));
+	if (esp->func != NULL) {
+		AZ(pthread_create(&esp->thread, NULL,
+		    elastic_subscriber_thread, esp));
+		AZ(pthread_detach(esp->thread));
+	}
 	return (esp);
 }
 

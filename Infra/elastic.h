@@ -70,11 +70,15 @@ struct elastic {
 struct elastic *elastic_new(int mode);
 nanosec elastic_nsec_per_char(const struct elastic *ep);
 
-struct elastic_subscriber *elastic_subscribe(struct elastic *ep, elastic_deliver_f *, void *);
+/* "output" side */
+int elastic_subscriber_fetch(struct elastic_subscriber **espp,
+    void **pptr, size_t *plen);
+struct elastic_subscriber *elastic_subscribe(struct elastic *ep,
+    elastic_deliver_f *, void *);
 void elastic_unsubscribe(struct elastic *ep, struct elastic_subscriber *);
-
 void elastic_inject(struct elastic *ep, const void *ptr, ssize_t len);
 
+/* "input" side */
 void elastic_put(struct elastic *ep, const void *ptr, ssize_t len);
 ssize_t elastic_get(struct elastic *ep, void *ptr, ssize_t len);
 int elastic_empty(const struct elastic *ep);
