@@ -34,130 +34,126 @@
 
 #include "r1000.h"
 #include "vqueue.h"
+#include "vsb.h"
 
 #include "elastic.h"
-
-static const char * const STATE_CMD = "{CMD}";
-static const char * const STATE_OTHER_DOWNLOAD = "{OTHER_DOWNLOAD}";
-static const char * const STATE_MY_DOWNLOAD = "{MY_DOWNLOAD}";
-static const char * const STATE_IGNORE = "{IGNORE}";
-static const char * const STATE_DOWNLOAD = "{DOWNLOAD}";
-static const char * const STATE_UPLOAD = "{UPLOAD}";
 
 struct i8052 {
 	const char			*name;
 	uint8_t				unit;
 	uint8_t				ram[256];
 	struct elastic_subscriber	*esp;
-	const char			*state;
-	const char			*state_after_download;
-	uint8_t				counter;
-	uint8_t				pointer;
-	uint8_t				resp_0;
-	int				adhoc;
-	uint8_t				txsum;
+	uint8_t				present;
+	pthread_t			thread;
 };
 
 static void
-i8052_tx(struct i8052 *i52, uint8_t x)
+i8052_tx_diagbus(const struct i8052 *i52, uint8_t x)
 {
-	trace(TRACE_DIAG, "%s %s tx %02x\n", i52->name, i52->state, x);
-	i52->txsum += x;
+	(void)i52;
 	elastic_inject(diag_elastic, &x, 1);
 }
 
-static void
-i8052_diag_rx(void *priv, const void * ptr, size_t len)
+static uint8_t
+i8052_rx_diagbus(struct i8052 *i52)
+{
+	void *ptr;
+	size_t len;
+	uint8_t u8;
+
+	AN(elastic_subscriber_fetch(&i52->esp, &ptr, &len));
+	assert(len == 1);
+	u8 = *(uint8_t*)ptr;
+	free(ptr);
+	return (u8);
+}
+
+static void *
+i8052_thread(void *priv)
 {
 	struct i8052 *i52 = priv;
-	uint8_t u8 = *(const uint8_t *)ptr;
+	uint8_t csum, counter, pointer, reply;
+	uint8_t u8;
+	struct vsb *vsb;
+	int me;
 
-	AN(priv);
-	AN(ptr);
-	assert(len == 1);
-	if (i52->state == STATE_CMD) {
+	vsb = VSB_new_auto();
+	AN(vsb);
+
+	reply = 0;
+	while (1) {
+		u8 = i8052_rx_diagbus(i52);
+		me = (u8 & 0xf) == i52->unit;
 		switch (u8 >> 4) {
 		case 0x0:
-			if ((u8 & 0xf) != i52->unit)
-				return;
-			trace(TRACE_DIAG, "%s %s got %02x\n", i52->name, i52->state, u8);
-			if (i52->adhoc) {
-				i8052_tx(i52, i52->adhoc);
-				i52->adhoc = 0;
+			if (!me)
+				break;
+			if (reply) {
+				i8052_tx_diagbus(i52, reply);
+				reply = 0;
 			} else {
-				i8052_tx(i52, i52->resp_0);
+				i8052_tx_diagbus(i52, 1);
 			}
 			break;
 		case 0x2:
-			if ((u8 & 0xf) != i52->unit) {
-				i52->counter = 2;
-				i52->state = STATE_IGNORE;
-			} else {
-				i52->counter = 2;
-				i52->state = STATE_DOWNLOAD;
-				i52->pointer = 0x8;
-				i52->state_after_download = STATE_UPLOAD;
+			pointer = i8052_rx_diagbus(i52);
+			counter = i8052_rx_diagbus(i52);
+			if (!me)
+				break;
+			csum = 0;
+			i52->ram[0x11] = 0x02;
+			VSB_clear(vsb);
+			VSB_printf(vsb, " %02x", i52->ram[0x11]);
+			i8052_tx_diagbus(i52, i52->ram[0x11]);
+			csum += i52->ram[0x11];
+			while (counter--) {
+				u8 = i52->ram[pointer++];
+				csum += u8;
+				i8052_tx_diagbus(i52, u8);
+				VSB_printf(vsb, " %02x", u8);
 			}
+			i8052_tx_diagbus(i52, csum);
+			AZ(VSB_finish(vsb));
+			trace(TRACE_DIAG, "%s UL%s\n", i52->name, VSB_data(vsb));
 			break;
 		case 0x8:
-			if ((u8 & 0xf) == i52->unit && i52->resp_0 != 9) {
-				trace(TRACE_DIAG, "%s %s Guessing Reset %02x\n", i52->name, i52->state, u8);
-				i52->adhoc = 5;
-			}
+			if (!me || !i52->present)
+				break;
+			reply = 5;
 			break;
 		case 0xa:
-			if ((u8 & 0xf) != i52->unit) {
-				i52->state = STATE_OTHER_DOWNLOAD;
+			pointer = 0x10;
+			csum = 0;
+			counter = i8052_rx_diagbus(i52);
+			csum += counter;
+			if (!me) {
+				while (counter--)
+					csum += i8052_rx_diagbus(i52);
 			} else {
-				trace(TRACE_DIAG, "%s %s Download %02x\n", i52->name, i52->state, u8);
-				i52->state = STATE_MY_DOWNLOAD;
-				i52->state_after_download = STATE_CMD;
+				VSB_clear(vsb);
+				while (counter--) {
+					u8 = i8052_rx_diagbus(i52);
+					csum += u8;
+					i52->ram[pointer++] = u8;
+					VSB_printf(vsb, " %02x", u8);
+				}
+				AZ(VSB_finish(vsb));
+				trace(TRACE_DIAG, "%s DL%s\n", i52->name, VSB_data(vsb));
 			}
+			assert (csum == i8052_rx_diagbus(i52));
 			break;
 		default:
-			if ((u8 & 0xf) != i52->unit)
-				return;
-			trace(TRACE_DIAG, "%s %s Ignoring %02x\n", i52->name, i52->state, u8);
+			if (!me)
+				break;
+			trace(TRACE_DIAG, "%s Ignoring %02x\n", i52->name, u8);
 			break;
 		}
-	} else if (i52->state == STATE_OTHER_DOWNLOAD) {
-		AN(u8);
-		i52->counter = u8 + 1;
-		i52->state = STATE_IGNORE;
-	} else if (i52->state == STATE_IGNORE) {
-		if (!--i52->counter)
-			i52->state = STATE_CMD;
-	} else if (i52->state == STATE_MY_DOWNLOAD) {
-		AN(u8);
-		trace(TRACE_DIAG, "%s %s Will download %02x\n", i52->name, i52->state, u8);
-		i52->counter = u8 + 1;
-		i52->pointer = 0x10;
-		i52->state = STATE_DOWNLOAD;
-	} else if (i52->state == STATE_DOWNLOAD) {
-		trace(TRACE_DIAG, "%s %s Downloading %02x @ %02x\n", i52->name, i52->state, u8, i52->pointer);
-		i52->ram[i52->pointer++] = u8;
-		if (!--i52->counter) {
-			i52->adhoc = 0;
-			trace(TRACE_DIAG, "%s %s Download complete\n", i52->name, i52->state);
-			i52->state = i52->state_after_download;
-			i52->resp_0 = 1;
-		}
 	}
-	if (i52->state == STATE_UPLOAD) {
-		trace(TRACE_DIAG, "%s %s [%02x %02x] Uploading\n", i52->name, i52->state, i52->ram[8], i52->ram[9]);
-		i52->txsum = 0;
-		i52->ram[0x11] = 0x02;
-		i8052_tx(i52, i52->ram[0x11]);
-		i52->pointer = i52->ram[8];
-		for (u8 = 0; u8 < i52->ram[9]; u8++)
-			i8052_tx(i52, i52->ram[i52->pointer++]);
-		i8052_tx(i52, i52->txsum);
-		i52->state = STATE_CMD;
-	}
+	return (NULL);
 }
 
 static void
-i8052_start(unsigned unit, uint8_t resp_0, const char *name)
+i8052_start(unsigned unit, uint8_t present, const char *name)
 {
 	struct i8052 *i52;
 
@@ -165,22 +161,28 @@ i8052_start(unsigned unit, uint8_t resp_0, const char *name)
 	AN(i52);
 	i52->name = name;
 	i52->unit = unit;
-	i52->resp_0 = resp_0;
-	i52->state = STATE_CMD;
-	i52->esp = elastic_subscribe(diag_elastic, i8052_diag_rx, i52);
+	i52->present = present;
+	i52->esp = elastic_subscribe(diag_elastic, NULL, NULL);
+	AZ(pthread_create(&i52->thread, NULL, i8052_thread, i52));
 }
 
 void
 i8052_init(void)
 {
 	AN(diag_elastic);
-	i8052_start(0x2, 5, "i8052.SEQ.2");
-	i8052_start(0x3, 5, "i8052.FIU.3");
-	i8052_start(0x4, 5, "i8052.IOC.4");
-	i8052_start(0x6, 5, "i8052.TYP.6");
-	i8052_start(0x7, 5, "i8052.VAL.7");
-	i8052_start(0xc, 5, "i8052.MEM0.c");
-	i8052_start(0xd, 9, "i8052.MEM1.d");
-	i8052_start(0xe, 9, "i8052.MEM2.e");
-	i8052_start(0xf, 9, "i8052.MEM3.f");
+	i8052_start(0x2, 1, "i8052.SEQ.2");
+	i8052_start(0x3, 1, "i8052.FIU.3");
+	i8052_start(0x4, 1, "i8052.IOC.4");
+	i8052_start(0x6, 1, "i8052.TYP.6");
+	i8052_start(0x7, 1, "i8052.VAL.7");
+	i8052_start(0xc, 1, "i8052.MEM0.c");
+
+	/*
+	 * XXX: Who answers for MEM boards not in their slots ?
+	 * XXX: Sending no reply does not seem to lead to timeout.
+	 */
+
+	i8052_start(0xd, 0, "i8052.MEM1.d");
+	i8052_start(0xe, 0, "i8052.MEM2.e");
+	i8052_start(0xf, 0, "i8052.MEM3.f");
 }
