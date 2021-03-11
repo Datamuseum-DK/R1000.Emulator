@@ -201,11 +201,14 @@ io_duart_pre_read(int debug, uint8_t *space, unsigned width, unsigned adr)
 		 */
 		callout_callback(io_duart_rx_readh_cb, chp, 100000, 0);
 		break;
+	case REG_R_CTU:
+	case REG_R_CTL:
+		io_duart_rd_space[REG_R_CTU] = ioc_duart->counter >> 8;
+		io_duart_rd_space[REG_R_CTL] = ioc_duart->counter;
+		break;
 	case REG_R_START_PIT:
 		ioc_duart->counter = io_duart_wr_space[REG_W_CTLR];
 		ioc_duart->counter |= io_duart_wr_space[REG_W_CTUR] << 8;
-		io_duart_rd_space[REG_R_CTU] = ioc_duart->counter >> 8;
-		io_duart_rd_space[REG_R_CTL] = ioc_duart->counter;
 		ioc_duart->pit_running = 1;
 		trace(TRACE_PIT, "PIT START 0x%02x%02x\n",
 		    io_duart_rd_space[REG_R_CTU],
