@@ -84,8 +84,8 @@ CLI_INCL = \
 test:	r1000 ${BINFILES}
 	./r1000 \
 		-T ${TRACE_FILE} \
-		-t 0x6a \
-		"trace +diagbus_bytes" \
+		-t 0x0 \
+		"trace +ioc_interrupt" \
 		"console > _.console" \
 		"console telnet :1400" \
 		"modem > _.modem" \

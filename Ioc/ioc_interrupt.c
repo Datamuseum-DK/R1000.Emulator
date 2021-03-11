@@ -26,9 +26,6 @@ INTERRUPT_TABLE
 
 static pthread_mutex_t irq_mtx = PTHREAD_MUTEX_INITIALIZER;
 
-#define DEFAULT_VECTOR	0x50		// See IOC_EEPROM 0x800011f0
-
-static unsigned cur_vector = DEFAULT_VECTOR;
 unsigned irq_level = 0x0;
 
 void
@@ -38,7 +35,7 @@ irq_raise(struct irq_vector *vp)
 
 	AZ(pthread_mutex_lock(&irq_mtx));
 	if (!vp->pending) {
-		trace(4, "IRQ +%s\n", vp->name);
+		Trace(trace_ioc_interrupt, "IRQ +%s", vp->name);
 		vp->pending = 1;
 		VTAILQ_FOREACH(vp2, &pending, list) {
 			if (vp2->priority > vp->priority) {
@@ -49,10 +46,9 @@ irq_raise(struct irq_vector *vp)
 		if (vp2 == NULL)
 			VTAILQ_INSERT_TAIL(&pending, vp,  list);
 		vp = VTAILQ_FIRST(&pending);
-		cur_vector = vp->vector;
 		irq_level = vp->level;
 	} else {
-		trace(4, "IRQ (+%s)\n", vp->name);
+		Trace(trace_ioc_interrupt, "IRQ (+%s)", vp->name);
 	}
 	AZ(pthread_mutex_unlock(&irq_mtx));
 }
@@ -62,19 +58,17 @@ irq_lower(struct irq_vector *vp)
 {
 	AZ(pthread_mutex_lock(&irq_mtx));
 	if (vp->pending) {
-		trace(4, "IRQ -%s\n", vp->name);
+		Trace(trace_ioc_interrupt, "IRQ -%s", vp->name);
 		vp->pending = 0;
 		VTAILQ_REMOVE(&pending, vp, list);
 		vp = VTAILQ_FIRST(&pending);
 		if (vp != NULL) {
-			cur_vector = vp->vector;
 			irq_level = vp->level;
 		} else {
-			cur_vector = DEFAULT_VECTOR;
 			irq_level = 0;
 		}
 	} else {
-		trace(4, "IRQ (-%s)\n", vp->name);
+		Trace(trace_ioc_interrupt, "IRQ (-%s)", vp->name);
 	}
 	AZ(pthread_mutex_unlock(&irq_mtx));
 }
@@ -82,10 +76,21 @@ irq_lower(struct irq_vector *vp)
 unsigned
 irq_getvector(unsigned int arg)
 {
+	struct irq_vector *vp;
 	unsigned retval;
+
 	AZ(pthread_mutex_lock(&irq_mtx));
-	trace(TRACE_68K, "VECTOR 0x%x (arg=0x%x)\n", cur_vector, arg);
-	retval = cur_vector;
+	vp = VTAILQ_FIRST(&pending);
+	if (vp != NULL) {
+		retval = vp->vector;
+		Trace(trace_ioc_interrupt,
+		    "VECTOR 0x%x %s (arg=0x%x)", retval,
+		    vp->name, arg);
+	} else {
+		retval = 0;
+		Trace(trace_ioc_interrupt,
+		    "VECTOR 0x%x (arg=0x%x)", 0, arg);
+	}
 	AZ(pthread_mutex_unlock(&irq_mtx));
 	return (retval);
 }

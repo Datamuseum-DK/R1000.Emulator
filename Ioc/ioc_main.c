@@ -372,11 +372,11 @@ cpu_trace(unsigned int pc)
 	make_hex(buff2, pc, instr_size);
 	if (pc != last_pc) {
 		if (repeats)
-			trace(TRACE_68K, "E … × %x\n", repeats);
+			Trace(trace_ioc_instructions, "E … × %x", repeats);
 		repeats = 0;
-		trace(
-		    TRACE_68K,
-		    "E %08x %04x: %02x %-20s: %s\n",
+		Trace(
+		    trace_ioc_instructions,
+		    "E %08x %04x: %02x %-20s: %s",
 		    pc,
 		    m68k_get_reg(NULL, M68K_REG_SR),
 		    *peg,
@@ -400,7 +400,7 @@ cpu_instr_callback(unsigned int pc)
 	if (0 && 0x00018ec8 <= pc && pc <= 0x00018eea)
 		ioc_dump_registers(TRACE_68K);
 #endif
-	if (do_trace)
+	if (trace_ioc_instructions)
 		cpu_trace(pc);
 	if (0x10000 <= pc && pc <= 0x1061c)
 		ioc_trace_syscall(pc);
@@ -477,7 +477,8 @@ main_ioc(void *priv)
 		if (irq_level != last_irq_level) {
 			last_irq_level = irq_level;
 			m68k_set_irq(last_irq_level);
-			trace(TRACE_68K, "IRQ level %x\n", last_irq_level);
+			Trace(trace_ioc_interrupt,
+			    "IRQ level 0x%x", last_irq_level);
 			io_sreg8_space[3] &= ~7;
 			io_sreg8_space[3] |= (~irq_level) & 7;
 		}
