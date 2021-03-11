@@ -48,18 +48,7 @@
 
 struct vsb;
 
-// Trace bits
-
-#define TRACE_68K	(1<<0)		// Trace instructions
-#define TRACE_IO	(1<<1)		// General I/O tracing
-#define TRACE_SCSI	(1<<2)		// Trace SCSI-CDBs
-#define TRACE_SCSI_DATA	(1<<3)		// Trace SCSI-CDBs
-#define TRACE_PIT	(1<<4)		// PIT timer tracing
-#define TRACE_SYSCALL	(1<<5)		// PIT timer tracing
-#define TRACE_DIAG	(1<<6)		// DIAG bus
-
-#define TRACE_ALL	((1LU<<32U)-1)	// Hvergang Perikles, Hvergang...
-
+/**********************************************************************/
 /*
  * In OO-light situations, functions have to match their prototype
  * even if that means not const'ing a const'able argument.
@@ -112,11 +101,34 @@ void cli_unknown(struct cli *cli);
 
 /* Tracing & Debugging ************************************************/
 
-void hexdump(struct vsb *vsb, const void *ptr, size_t len, unsigned offset);
-void trace(unsigned level, const char *fmt, ...) __printflike(2, 3);
-void trace_dump(unsigned level, const void *ptr, size_t len,
+void Trace(int flag, const char *fmt, ...) __printflike(2, 3);
+void TraceDump(int flag, const void *ptr, size_t len,
     const char *fmt, ...) __printflike(4, 5);
 
+#define trace(level, ...) \
+	Trace(do_trace & level, __VA_ARGS__)
+
+#define trace_dump(level, ptr, len, ...) \
+	Trace(do_trace & level, ptr, len, __VA_ARGS__)
+
+#include "trace.h"
+#define TRACER(name, unused) extern int trace_##name;
+TRACERS
+#undef TRACER
+
+cli_func_f cli_trace;
+
+// Trace bits
+
+#define TRACE_68K	(1<<0)		// Trace instructions
+#define TRACE_IO	(1<<1)		// General I/O tracing
+#define TRACE_SCSI	(1<<2)		// Trace SCSI-CDBs
+#define TRACE_SCSI_DATA	(1<<3)		// Trace SCSI-CDBs
+#define TRACE_PIT	(1<<4)		// PIT timer tracing
+#define TRACE_SYSCALL	(1<<5)		// PIT timer tracing
+#define TRACE_DIAG	(1<<6)		// DIAG bus
+
+#define TRACE_ALL	((1LU<<32U)-1)	// Hvergang Perikles, Hvergang...
 
 /* CALLOUTS ***********************************************************/
 
@@ -141,6 +153,8 @@ void mem_init(void);
 
 /* UTILITIES **********************************************************/
 
+void hexdump(struct vsb *vsb, const void *ptr, size_t len, unsigned offset);
+
 /* Safe printf into a fixed-size buffer */
 #define bprintf(buf, fmt, ...)						\
 	do {								\
@@ -148,3 +162,4 @@ void mem_init(void);
 		ibprintf = snprintf(buf, sizeof buf, fmt, __VA_ARGS__);	\
 		assert(ibprintf >= 0 && ibprintf < (int)sizeof buf);	\
 	} while (0)
+

@@ -44,22 +44,6 @@ int optreset;		// Some have it, some not.
 
 nanosec	simclock;
 unsigned do_trace;
-int trace_fd = -1;
-
-void
-trace(unsigned level, const char *fmt, ...)
-{
-	va_list ap;
-	char buf[BUFSIZ];
-
-	if (trace_fd < 0 || !(do_trace & level))
-		return;
-	bprintf(buf, "%12jd ", simclock);
-	va_start(ap, fmt);
-	vsnprintf(buf + 13, sizeof(buf) - 13, fmt, ap);
-	va_end(ap);
-	(void)write(trace_fd, buf, strlen(buf));
-}
 
 void
 hexdump(struct vsb *vsb, const void *ptr, size_t len, unsigned offset)
@@ -84,27 +68,6 @@ hexdump(struct vsb *vsb, const void *ptr, size_t len, unsigned offset)
 		VSB_putc(vsb, '|');
 		VSB_putc(vsb, '\n');
 	}
-}
-
-void
-trace_dump(unsigned level, const void *ptr, size_t len, const char *fmt, ...)
-{
-	struct vsb *vsb;
-	va_list ap;
-
-	AN(ptr);
-	if (trace_fd < 0 || !(do_trace & level))
-		return;
-	vsb = VSB_new_auto();
-	AN(vsb);
-	VSB_printf(vsb, "%12jd ", simclock);
-	va_start(ap, fmt);
-	VSB_vprintf(vsb, fmt, ap);
-	va_end(ap);
-	hexdump(vsb, ptr, len, 0);
-	AZ(VSB_finish(vsb));
-	VSB_tofile(vsb, trace_fd);
-	VSB_destroy(&vsb);
 }
 
 int

@@ -292,6 +292,9 @@ io_duart_post_write(int debug, uint8_t *space, unsigned width, unsigned adr)
 			chp->rxhold = space[adr];
 			chp->sr |= 1;
 		} else {
+			if (adr == REG_W_THRB)
+				Trace(trace_diagbus_bytes, "i8052.* RX %02x",
+				    space[adr]);
 			elastic_put(chp->ep, &space[adr], 1);
 		}
 		break;

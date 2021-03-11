@@ -50,7 +50,7 @@ struct i8052 {
 static void
 i8052_tx_diagbus(const struct i8052 *i52, uint8_t x)
 {
-	(void)i52;
+	Trace(trace_diagbus_bytes, "%s TX %02x", i52->name, x);
 	elastic_inject(diag_elastic, &x, 1);
 }
 
@@ -114,7 +114,8 @@ i8052_thread(void *priv)
 			}
 			i8052_tx_diagbus(i52, csum);
 			AZ(VSB_finish(vsb));
-			trace(TRACE_DIAG, "%s UL%s\n", i52->name, VSB_data(vsb));
+			Trace(trace_diagbus_upload,
+			    "%s UL%s", i52->name, VSB_data(vsb));
 			break;
 		case 0x8:
 			if (!me || !i52->present)
@@ -138,14 +139,14 @@ i8052_thread(void *priv)
 					VSB_printf(vsb, " %02x", u8);
 				}
 				AZ(VSB_finish(vsb));
-				trace(TRACE_DIAG, "%s DL%s\n", i52->name, VSB_data(vsb));
+				Trace(trace_diagbus_download,
+				    "%s DL%s", i52->name, VSB_data(vsb));
 			}
 			assert (csum == i8052_rx_diagbus(i52));
 			break;
 		default:
 			if (!me)
 				break;
-			trace(TRACE_DIAG, "%s Ignoring %02x\n", i52->name, u8);
 			break;
 		}
 	}

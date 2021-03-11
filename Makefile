@@ -17,7 +17,7 @@ DISK1B_IMAGE = "/critter/DDHF/R1000/R1K_Seagate/R1K_Seagate1.BIN"
 
 VPATH	= Musashi:Musashi/softfloat:Infra:Ioc
 
-OBJS	= main.o callout.o cli.o memory.o
+OBJS	= main.o callout.o cli.o memory.o trace.o
 OBJS	+= elastic.o elastic_fd.o elastic_tcp.o elastic_match.o
 OBJS	+= vav.o
 OBJS	+= vsb.o
@@ -78,12 +78,14 @@ M68K_INCL = \
 CLI_INCL = \
 	_memcfg.h \
 	Infra/r1000.h \
+	Infra/trace.h \
 	Infra/elastic.h
 
 test:	r1000 ${BINFILES}
 	./r1000 \
 		-T ${TRACE_FILE} \
 		-t 0x6a \
+		"trace +diagbus_bytes" \
 		"console > _.console" \
 		"console telnet :1400" \
 		"modem > _.modem" \
@@ -167,8 +169,8 @@ elastic.o:		Infra/r1000.h Infra/elastic.h Infra/elastic.c
 elastic_fd.o:		Infra/r1000.h Infra/elastic.h Infra/elastic_fd.c
 elastic_match.o:	Infra/r1000.h Infra/elastic.h Infra/elastic_match.c
 elastic_tcp.o:		Infra/r1000.h Infra/elastic.h Infra/elastic_tcp.c
-main.o:			Infra/r1000.h Infra/main.c
 memory.o:		Infra/r1000.h Infra/memspace.h Infra/memory.c
+trace.o:		Infra/r1000.h Infra/trace.h Infra/trace.c
 vav.o:			Infra/r1000.h Infra/vav.c
 vsb.o:			Infra/r1000.h Infra/vsb.c
 
