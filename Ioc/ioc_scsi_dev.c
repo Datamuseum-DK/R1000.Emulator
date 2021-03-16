@@ -137,6 +137,12 @@ scsi_08_read_6_tape(struct scsi_dev *dev, uint8_t *cdb)
 	dev->tape_head += 4;
 
 	scsi_fm_target(dev, dev->map + dev->tape_head, tape_length);
+
+	TraceDump(trace_tape_data,
+	    dev->map + dev->tape_head, tape_length,
+	    "READ TAPE ID=%d [0x%x] (@0x%08zx)\n",
+	    dev->scsi_id, tape_length, dev->tape_head);
+
 	dev->tape_head += tape_length;
 	assert(tape_length == vle32dec(dev->map + dev->tape_head));
 	dev->tape_head += 4;
