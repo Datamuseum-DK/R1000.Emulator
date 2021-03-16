@@ -1,3 +1,4 @@
+#include <pthread.h>
 #include <stdio.h>
 #include <stdlib.h>
 
@@ -20,37 +21,19 @@ const char * const mem_op_debug_write = "dbg_write";
 
 const char *mem_error_cause;
 
-void
-mem_fail(const char *what, unsigned width,
-    unsigned address, unsigned data)
-{
-	trace(TRACE_ALL, "Memory Failure: %s(%u) 0x%08x (= %x)\n",
-	    what, width, address, data);
-	printf("Memory Failure: %s(%u) 0x%08x (= %x)\n",
-	    what, width, address, data);
-}
+static pthread_mutex_t mem_mtx = PTHREAD_MUTEX_INITIALIZER;
 
-void
-mem_peg_check(const char *what, const struct memdesc *md,
-    unsigned adr, unsigned val, unsigned width, unsigned peg)
+static void
+mem_peg_reset(unsigned lo, unsigned hi, unsigned pegval)
 {
-	struct memevent *mev;
-
-	VTAILQ_FOREACH(mev, &md->events, list) {
-		if (mev->lo <= adr && adr < mev->hi)
-			mev->func(mev->priv, what, adr, val, width, peg);
-	}
-}
-
-void
-mem_init(void)
-{
-	struct memdesc *md;
 	unsigned u;
+	uint8_t *peg;
 
-	for(u = 0; u < n_memdesc; u++) {
-		md = memdesc[u];
-		VTAILQ_INIT(&md->events);
+	lo &= ~1;
+	for(u = lo; u < hi; u += 2) {
+		peg = mem_find_peg(u);
+		AN(peg);
+		*peg &= ~pegval;
 	}
 }
 
@@ -69,12 +52,54 @@ mem_peg_set(unsigned lo, unsigned hi, unsigned pegval)
 }
 
 void
+mem_fail(const char *what, unsigned width,
+    unsigned address, unsigned data)
+{
+	trace(TRACE_ALL, "Memory Failure: %s(%u) 0x%08x (= %x)\n",
+	    what, width, address, data);
+	printf("Memory Failure: %s(%u) 0x%08x (= %x)\n",
+	    what, width, address, data);
+}
+
+void
+mem_peg_check(const char *what, const struct memdesc *md,
+    unsigned adr, unsigned val, unsigned width, unsigned peg)
+{
+	struct memevent *mev;
+	int did = 0;
+
+	AZ(pthread_mutex_lock(&mem_mtx));
+	VTAILQ_FOREACH(mev, &md->events, list) {
+		if (mev->lo <= adr && adr < mev->hi) {
+			mev->func(mev->priv, md, what, adr, val, width, peg);
+			did = 1;
+		}
+	}
+	if (!did)
+		mem_peg_reset(adr, adr, PEG_CHECK);
+	AZ(pthread_mutex_unlock(&mem_mtx));
+}
+
+void
+mem_init(void)
+{
+	struct memdesc *md;
+	unsigned u;
+
+	for(u = 0; u < n_memdesc; u++) {
+		md = memdesc[u];
+		VTAILQ_INIT(&md->events);
+	}
+}
+
+void
 mem_peg_register(unsigned lo, unsigned hi, mem_event_f *func, void *priv)
 {
 	struct memdesc *md;
 	struct memevent *mev;
 	unsigned u;
 
+	AZ(pthread_mutex_lock(&mem_mtx));
 	for(u = 0; u < n_memdesc; u++) {
 		md = memdesc[u];
 		if (md->hi <= lo)
@@ -90,4 +115,26 @@ mem_peg_register(unsigned lo, unsigned hi, mem_event_f *func, void *priv)
 		VTAILQ_INSERT_TAIL(&md->events, mev, list);
 	}
 	mem_peg_set(lo, hi, PEG_CHECK);
+	AZ(pthread_mutex_unlock(&mem_mtx));
+}
+
+void
+mem_peg_expunge(const void *priv)
+{
+	struct memdesc *md;
+	struct memevent *mev, *mev2;
+	unsigned u;
+
+	AN(priv);
+	AZ(pthread_mutex_lock(&mem_mtx));
+	for(u = 0; u < n_memdesc; u++) {
+		md = memdesc[u];
+		VTAILQ_FOREACH_SAFE(mev, &md->events, list, mev2) {
+			if (mev->priv == priv) {
+				VTAILQ_REMOVE(&md->events, mev, list);
+				free(mev);
+			}
+		}
+	}
+	AZ(pthread_mutex_unlock(&mem_mtx));
 }

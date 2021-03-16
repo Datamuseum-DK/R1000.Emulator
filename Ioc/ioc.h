@@ -1,17 +1,18 @@
 
-void v_matchproto_(cli_func_f) cli_ioc_console(struct cli *cli);
-void v_matchproto_(cli_func_f) cli_ioc_modem(struct cli *cli);
-void v_matchproto_(cli_func_f) cli_ioc_diag(struct cli *cli);
-void v_matchproto_(cli_func_f) cli_ioc_reset(struct cli *cli);
 void v_matchproto_(cli_func_f) cli_ioc(struct cli *cli);
+void v_matchproto_(cli_func_f) cli_ioc_console(struct cli *cli);
+void v_matchproto_(cli_func_f) cli_ioc_diag(struct cli *cli);
+void v_matchproto_(cli_func_f) cli_ioc_maxins(struct cli *cli);
+void v_matchproto_(cli_func_f) cli_ioc_memtrace(struct cli *cli);
+void v_matchproto_(cli_func_f) cli_ioc_modem(struct cli *cli);
+void v_matchproto_(cli_func_f) cli_ioc_reset(struct cli *cli);
+void v_matchproto_(cli_func_f) cli_ioc_start(struct cli *cli);
+void v_matchproto_(cli_func_f) cli_ioc_state(struct cli *cli);
+void v_matchproto_(cli_func_f) cli_ioc_step(struct cli *cli);
+void v_matchproto_(cli_func_f) cli_ioc_stop(struct cli *cli);
+void v_matchproto_(cli_func_f) cli_ioc_syscall(struct cli *cli);
 void v_matchproto_(cli_func_f) cli_scsi_disk(struct cli *cli);
 void v_matchproto_(cli_func_f) cli_scsi_tape(struct cli *cli);
-void v_matchproto_(cli_func_f) cli_ioc_syscall(struct cli *cli);
-void v_matchproto_(cli_func_f) cli_ioc_step(struct cli *cli);
-void v_matchproto_(cli_func_f) cli_ioc_state(struct cli *cli);
-void v_matchproto_(cli_func_f) cli_ioc_stop(struct cli *cli);
-void v_matchproto_(cli_func_f) cli_ioc_start(struct cli *cli);
-void v_matchproto_(cli_func_f) cli_ioc_maxins(struct cli *cli);
 
 void *main_ioc(void *priv);
 

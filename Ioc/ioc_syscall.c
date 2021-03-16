@@ -180,13 +180,14 @@ struct syscall {
 };
 
 static void v_matchproto_(mem_event_f)
-sc_peg(void *priv, const char *what, unsigned adr, unsigned val,
+sc_peg(void *priv, const struct memdesc *md, const char *what, unsigned adr, unsigned val,
     unsigned width, unsigned peg)
 {
 	struct syscall *sc = priv;
 	const char *which;
 	unsigned a7, sp, u, v, w;
 
+	(void)md;
 	(void)val;
 	(void)what;
 	(void)width;

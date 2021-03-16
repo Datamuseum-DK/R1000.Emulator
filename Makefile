@@ -28,6 +28,7 @@ OBJS	+= _memcfg.o
 
 OBJS	+= ioc_uart.o
 OBJS	+= ioc_cli.o
+OBJS	+= ioc_debug.o
 OBJS	+= ioc_duart.o
 OBJS	+= ioc_eeproms.o
 OBJS	+= ioc_interrupt.o
@@ -172,6 +173,7 @@ softfloat.o:		${M68K_INCL} Musashi/softfloat/softfloat.c \
 _memcfg.o:		_memcfg.c _memcfg.h Infra/memspace.h
 
 ioc_cli.o:		${CLI_INCL} Ioc/ioc.h Ioc/ioc_cli.c
+ioc_debug.o:		${CLI_INCL} Ioc/ioc.h Ioc/ioc_debug.c
 ioc_duart.o:		${CLI_INCL} Ioc/ioc.h Ioc/ioc_duart.c
 ioc_eeproms.o:		${CLI_INCL} Ioc/ioc.h Ioc/ioc_eeproms.c
 ioc_hotfix.o:		${M68K_INCL} Ioc/ioc.h Ioc/ioc_hotfix.c

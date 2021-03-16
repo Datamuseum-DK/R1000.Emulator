@@ -7,6 +7,7 @@
 #include "ioc.h"
 
 static const struct cli_cmds cli_ioc_cmds[] = {
+	{ "memtrace",		cli_ioc_memtrace },
 	{ "diagbus",		cli_ioc_diag },
 	{ "reset",		cli_ioc_reset },
 	{ "scsi_disk",		cli_scsi_disk },
@@ -28,6 +29,7 @@ cli_ioc(struct cli *cli)
 		cli->av++;
 		cli_dispatch(cli, cli_ioc_cmds);
 	}
-	cli_ioc_state(cli);
+	if (!cli->help)
+		cli_ioc_state(cli);
 }
 

@@ -1,5 +1,7 @@
 
-typedef void mem_event_f(void *priv, const char *what,
+struct memdesc;
+
+typedef void mem_event_f(void *priv, const struct memdesc *, const char *what,
     unsigned adr, unsigned val, unsigned width, unsigned peg);
 
 struct memevent;
@@ -31,6 +33,7 @@ uint8_t * mem_find_peg(unsigned address);
 void mem_peg_set(unsigned lo, unsigned hi, unsigned pegval);
 
 void mem_peg_register(unsigned lo, unsigned hi, mem_event_f *func, void *priv);
+void mem_peg_expunge(const void *priv);
 
 void mem_fail(const char *, unsigned, unsigned, unsigned);
 extern const char *mem_error_cause;
