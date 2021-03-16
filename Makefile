@@ -15,7 +15,7 @@ DFS_TAPE = "/critter/BitStoreCache/30000750.bin"
 DISK0B_IMAGE = "/critter/DDHF/R1000/R1K_Seagate/R1K_Seagate0.BIN"
 DISK1B_IMAGE = "/critter/DDHF/R1000/R1K_Seagate/R1K_Seagate1.BIN"
 
-VPATH	= Musashi:Musashi/softfloat:Infra:Ioc
+VPATH	= Musashi:Musashi/softfloat:Infra:Ioc:Diag
 
 OBJS	= main.o callout.o cli.o memory.o trace.o
 OBJS	+= elastic.o elastic_fd.o elastic_tcp.o elastic_match.o
@@ -48,18 +48,7 @@ CFLAGS	+= ${CFLAGSMINUSD}
 CFLAGS	+= ${CFLAGSMINUSI}
 LDFLAGS	+= -lm
 
-PARANOIA += -std=gnu99 -Wno-format-zero-length -nobuiltininc 
-PARANOIA += -fstack-protector-strong -Wsystem-headers -Werror -Wall 
-PARANOIA += -Wno-format-y2k -W -Wno-unused-parameter -Wstrict-prototypes
-PARANOIA += -Wmissing-prototypes -Wpointer-arith -Wreturn-type -Wcast-qual
-PARANOIA += -Wwrite-strings -Wswitch -Wshadow -Wunused-parameter -Wcast-align
-PARANOIA += -Wchar-subscripts -Winline -Wnested-externs -Wredundant-decls
-PARANOIA += -Wold-style-definition -Wno-pointer-sign
-PARANOIA += -Wmissing-variable-declarations -Wthread-safety -Wno-empty-body
-PARANOIA += -Wno-string-plus-int -Wno-unused-const-variable
-PARANOIA += -Qunused-arguments
-
-PARANOIA += -Wno-missing-field-initializers
+PARANOIA != sh cflags.sh "${CC}"
 
 CFLAGS += ${PARANOIA}
 
@@ -85,9 +74,10 @@ test:	r1000 ${BINFILES}
 	./r1000 \
 		-T ${TRACE_FILE} \
 		-t 0x0 \
+		"trace +diagbus_bytes" \
 		"trace +ioc_interrupt" \
 		"console > _.console" \
-		"console telnet :1400" \
+		"console telnet localhost:1400" \
 		"modem > _.modem" \
 		"ioc diagbus > _.diag" \
 		"scsi_tape" \
@@ -103,7 +93,7 @@ test:	r1000 ${BINFILES}
 		'console match expect "User program   (0,1,2) [0] : "' \
 		'console << ""' \
 		'console match expect "Enter option [enter CLI] : "' \
-		'console << "1"' \
+		'console << "6"' \
 		'console match expect "CLI>"' \
 		'console << "x novram"' \
 		'console match expect "Enter option : "' \
