@@ -110,8 +110,11 @@ scsi_08_read_6_disk(struct scsi_dev *dev, uint8_t *cdb)
 	lba = vbe32dec(cdb) & 0x1fffff;
 	nsect = cdb[0x04];
 
-	trace_dump(TRACE_SCSI_DATA, dev->map + (lba<<10), nsect<<10,
-	    "READ LBA = 0x%zx * 0x%zx\n", lba, nsect);
+	TraceDump(trace_disk_data,
+	    dev->map + (lba << 10), nsect << 10,
+	    "READ DISK ID=%d LBA=%08zx (@0x%08zx)\n",
+	    dev->scsi_id, lba, lba << 10);
+
 	scsi_fm_target(dev, dev->map + (lba<<10), nsect<<10);
 	trace(TRACE_SCSI, "SCSI_D READ6 %zx (%08zx)\n", lba, lba << 10);
 	return (IOC_SCSI_OK);
@@ -160,8 +163,12 @@ scsi_0a_write_6(struct scsi_dev *dev, uint8_t *cdb)
 	nsect = cdb[0x04];
 
 	scsi_to_target(dev, dev->map + (lba<<10), nsect<<10);
-	trace_dump(TRACE_SCSI_DATA, dev->map + (lba<<10), nsect<<10,
-	    "WRITE LBA = 0x%zx * 0x%zx\n", lba, nsect);
+
+	TraceDump(trace_disk_data,
+	    dev->map + (lba << 10), nsect << 10,
+	    "WRITE DISK ID=%d LBA=%08zx (@0x%08zx)\n",
+	    dev->scsi_id, lba, lba << 10);
+
 	trace(TRACE_SCSI, "SCSI_D WRITE6 %zx\n", lba);
 	return (IOC_SCSI_OK);
 }
@@ -269,6 +276,7 @@ cli_scsi_disk(struct cli *cli)
 	if (sd == NULL) {
 		sd = calloc(1, sizeof *sd);
 		AN(sd);
+		sd->scsi_id = unit;
 		sd->ctl = scsi_d;
 		sd->funcs = scsi_disk_funcs;
 		scsi_d->dev[unit] = sd;
@@ -349,6 +357,7 @@ cli_scsi_tape(struct cli *cli)
 		sd->ctl = scsi_t;
 		sd->funcs = scsi_tape_funcs;
 		sd->is_tape = 1;
+		sd->scsi_id = 0;
 		scsi_t->dev[0] = sd;
 	}
 

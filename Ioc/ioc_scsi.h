@@ -9,6 +9,7 @@ typedef int scsi_func_f(struct scsi_dev *, uint8_t *cdb);
 struct scsi_dev {
 	scsi_func_f		* const * funcs;
 	struct scsi		*ctl;
+	int			scsi_id;
 	int			is_tape;
 	uint8_t			sense_3[36];
 	uint8_t			sense_4[32];
