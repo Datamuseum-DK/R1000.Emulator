@@ -139,18 +139,20 @@ class Range():
             else:
                 fo.write(j + self.rd_space + ", %d, " % width + self.effective_address + ");\n")
 
-        if not 'debug' in what:
-            self.peg_check(fo, what, "0", width)
-
-        fo.write("\t\treturn (")
+        fo.write("\t\tvalue = ")
         if width == 1:
-            fo.write(self.rd_space + "[" + self.effective_address + "]);\n")
+            fo.write(self.rd_space + "[" + self.effective_address + "];\n")
         elif width == 2:
-            fo.write("vbe16dec(" + self.rd_space + " + " + self.effective_address + "));\n")
+            fo.write("vbe16dec(" + self.rd_space + " + " + self.effective_address + ");\n")
         elif width == 4:
-            fo.write("vbe32dec(" + self.rd_space + " + " + self.effective_address + "));\n")
+            fo.write("vbe32dec(" + self.rd_space + " + " + self.effective_address + ");\n")
         else:
             assert False, "Bogo Width"
+
+        if not 'debug' in what:
+            self.peg_check(fo, what, "value", width)
+
+        fo.write("\t\treturn (value);\n")
         fo.write("\t}")
 
     def produce_write_call(self, what, width, fo):
@@ -266,6 +268,7 @@ class System():
         fo.write("{\n")
         if not 'debug' in what:
             fo.write("\tunsigned peg;\n\n")
+        fo.write("\tunsigned value;\n\n")
         sep = "\t"
         for i in self.ranges:
             if i.lo < i.hi + 1 - width:
