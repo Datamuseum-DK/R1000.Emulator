@@ -16,6 +16,11 @@ struct scsi scsi_d[1];
 
 /**********************************************************************/
 
+static const char * const scsi_cmd_name[256] = {
+#define SCSI_CMD(name, number) [number] = #name,
+SCSI_CMD_TABLE
+};
+
 static const char * const scsi_reg[] = {
 	"00_OWN_ID_CDB_SIZE",
 	"01_CONTROL",
@@ -111,7 +116,6 @@ scsi_fm_target(struct scsi_dev *sd, void *ptr, unsigned len)
 	trace(TRACE_SCSI, "%s T %p -> R [%x]\n", sd->ctl->name, ptr, len);
 }
 
-
 static void *
 scsi_thread(void *priv)
 {
@@ -119,6 +123,7 @@ scsi_thread(void *priv)
 	struct scsi_dev *sd = NULL;
 	scsi_func_f *sf;
 	unsigned id;
+	const char *p;
 	int i;
 
 	AZ(pthread_mutex_lock(&sp->mtx));
@@ -137,6 +142,30 @@ scsi_thread(void *priv)
 			WRONG();
 
 		id = sp->regs[0x15] & 7;
+
+		p = scsi_cmd_name[sp->regs[0x3]];
+		if (p == NULL)
+			p = "<unknown>";
+		if (sp->regs[0x3] >> 5) {
+			Trace(trace_scsi_cmd,
+			    "SCSI_CMD %s ID=%u %s "
+			    "[%02x %02x %02x %02x %02x "
+			    "%02x %02x %02x %02x %02x]",
+			    sp->name, id, p,
+			    sp->regs[0x3], sp->regs[0x4], sp->regs[0x5],
+			    sp->regs[0x6], sp->regs[0x7], sp->regs[0x8],
+			    sp->regs[0x9], sp->regs[0xa], sp->regs[0xb],
+			    sp->regs[0xc]
+			);
+		} else {
+			Trace(trace_scsi_cmd,
+			    "SCSI_CMD %s ID=%u %s "
+			    "[%02x %02x %02x %02x %02x %02x]",
+			    sp->name, id, p,
+			    sp->regs[0x3], sp->regs[0x4], sp->regs[0x5],
+			    sp->regs[0x6], sp->regs[0x7], sp->regs[0x8]
+			);
+		}
 		sd = sp->dev[id];
 		if (sd == NULL) {
 			trace_scsi_ctl(sp, "No Device at ID");
@@ -157,6 +186,8 @@ scsi_thread(void *priv)
 				sp->regs[0x17] = 0x16;
 			}
 		}
+		Trace(trace_scsi_cmd,
+		    "SCSI_RSP %s ID=%u %02x", sp->name, id, sp->regs[0x17]);
 		sp->regs[0x1f] |= 0x80;
 		irq_raise(sp->irq_vector);
 	}

@@ -239,13 +239,13 @@ scsi_28_read_10(struct scsi_dev *dev, uint8_t *cdb)
 /**********************************************************************/
 
 static scsi_func_f * const scsi_disk_funcs[256] = {
-	[0x00] = scsi_00_test_unit_ready,
-	[0x08] = scsi_08_read_6_disk,
-	[0x0a] = scsi_0a_write_6,
-	[0x0b] = scsi_0b_seek,
+	[SCSI_TEST_UNIT_READY] = scsi_00_test_unit_ready,
+	[SCSI_READ_6] = scsi_08_read_6_disk,
+	[SCSI_WRITE_6] = scsi_0a_write_6,
+	[SCSI_SEEK] = scsi_0b_seek,
 	[0x0d] = scsi_0d_vendor,
-	[0x1a] = scsi_1a_sense,
-	[0x28] = scsi_28_read_10,
+	[SCSI_MODE_SENSE_6] = scsi_1a_sense,
+	[SCSI_READ_10] = scsi_28_read_10,
 };
 
 /**********************************************************************/
@@ -331,11 +331,11 @@ cli_scsi_disk(struct cli *cli)
 
 /**********************************************************************/
 
-static scsi_func_f * const scsi_tape_funcs[256] = {
-	[0x00] = scsi_00_test_unit_ready,
-	[0x01] = scsi_01_rewind,
-	[0x03] = scsi_03_request_sense,
-	[0x08] = scsi_08_read_6_tape,
+static scsi_func_f * const scsi_tape_funcs [256] = {
+	[SCSI_TEST_UNIT_READY] = scsi_00_test_unit_ready,
+	[SCSI_REWIND] = scsi_01_rewind,
+	[SCSI_REQUEST_SENSE] = scsi_03_request_sense,
+	[SCSI_READ_6] = scsi_08_read_6_tape,
 };
 
 /**********************************************************************/

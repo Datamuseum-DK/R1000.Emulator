@@ -1,4 +1,6 @@
 
+#include "ioc_scsi_cmds.h"
+
 struct scsi_dev;
 struct scsi;
 
@@ -40,3 +42,8 @@ void scsi_fm_target(struct scsi_dev *, void *ptr, unsigned len);
 extern struct scsi scsi_t[1];
 extern struct scsi scsi_d[1];
 
+#define SCSI_CMD(name, number) SCSI_##name = number,
+enum SCSI_COMMANDS {
+SCSI_CMD_TABLE
+};
+#undef SCSI_CMD
