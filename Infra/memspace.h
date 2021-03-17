@@ -1,7 +1,7 @@
 
 struct memdesc;
 
-typedef void mem_event_f(void *priv, const struct memdesc *, const char *what,
+typedef int mem_event_f(void *priv, const struct memdesc *, const char *what,
     unsigned adr, unsigned val, unsigned width, unsigned peg);
 
 struct memevent;
@@ -27,7 +27,7 @@ extern const char * const mem_op_debug_write;
 #define PEG_CHECK	(1<<7)
 #define PEG_NOTRACE	(1<<6)
 
-void mem_peg_check(const char *, const struct memdesc *,
+void mem_peg_check(const char *, struct memdesc *,
     unsigned, unsigned, unsigned, unsigned);
 uint8_t * mem_find_peg(unsigned address);
 void mem_peg_set(unsigned lo, unsigned hi, unsigned pegval);

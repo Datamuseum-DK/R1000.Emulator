@@ -51,7 +51,7 @@ struct memtrace {
 static VTAILQ_HEAD(memtracehead, memtrace) memtraces =
     VTAILQ_HEAD_INITIALIZER(memtraces);
 
-static void
+static int v_matchproto_(mem_event_f)
 memtrace_event(void *priv, const struct memdesc *md, const char *what,
     unsigned adr, unsigned val, unsigned width, unsigned peg)
 {
@@ -74,6 +74,7 @@ memtrace_event(void *priv, const struct memdesc *md, const char *what,
 		Trace(1, "MEMTRACE PC %08x W 0x%08x %s 0x%x@%s",
 		    ioc_pc, adr, buf, adr - md->lo, md->name);
 	}
+	return (0);
 }
 
 #define USAGE \

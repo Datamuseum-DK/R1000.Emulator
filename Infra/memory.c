@@ -62,18 +62,24 @@ mem_fail(const char *what, unsigned width,
 }
 
 void
-mem_peg_check(const char *what, const struct memdesc *md,
+mem_peg_check(const char *what, struct memdesc *md,
     unsigned adr, unsigned val, unsigned width, unsigned peg)
 {
-	struct memevent *mev;
-	int did = 0;
+	struct memevent *mev, *mev2;
+	int did = 0, i;
 
 	AZ(pthread_mutex_lock(&mem_mtx));
-	VTAILQ_FOREACH(mev, &md->events, list) {
-		if (mev->lo <= adr && adr < mev->hi) {
-			mev->func(mev->priv, md, what, adr, val, width, peg);
-			did = 1;
+	VTAILQ_FOREACH_SAFE(mev, &md->events, list, mev2) {
+		if (adr < mev->lo || mev->hi <= adr)
+			continue;
+		AZ(pthread_mutex_unlock(&mem_mtx));
+		i = mev->func(mev->priv, md, what, adr, val, width, peg);
+		AZ(pthread_mutex_lock(&mem_mtx));
+		if (i) {
+			VTAILQ_REMOVE(&md->events, mev, list);
+			free(mev);
 		}
+		did = 1;
 	}
 	if (!did)
 		mem_peg_reset(adr, adr, PEG_CHECK);

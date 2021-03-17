@@ -179,7 +179,7 @@ struct syscall {
 	const char	*ret;
 };
 
-static void v_matchproto_(mem_event_f)
+static int v_matchproto_(mem_event_f)
 sc_peg(void *priv, const struct memdesc *md, const char *what, unsigned adr, unsigned val,
     unsigned width, unsigned peg)
 {
@@ -194,7 +194,7 @@ sc_peg(void *priv, const struct memdesc *md, const char *what, unsigned adr, uns
 	(void)peg;
 
 	if (ioc_fc != 2 && ioc_fc != 6)
-		return;
+		return (0);
 
 	if (syscall_vsb == NULL)
 		syscall_vsb = VSB_new_auto();
@@ -385,6 +385,7 @@ sc_peg(void *priv, const struct memdesc *md, const char *what, unsigned adr, uns
 	}
 	AZ(VSB_finish(syscall_vsb));
 	VSB_tofile(syscall_vsb, trace_fd);
+	return (0);
 }
 
 static struct syscall syscalls[] = {
