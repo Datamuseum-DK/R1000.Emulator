@@ -29,171 +29,53 @@
  *
  */
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-
-#include "vqueue.h"
-
 #include "r1000.h"
+#include "m68k.h"
 #include "ioc.h"
+#include "vsb.h"
 
-#include "memspace.h"
+static struct vsb *syscall_vsb;
 
-struct memtrace {
-	int			number;
-	const char		*seg;
-	char			*lo;
-	char			*hi;
-	VTAILQ_ENTRY(memtrace)	list;
-};
-
-static VTAILQ_HEAD(memtracehead, memtrace) memtraces =
-    VTAILQ_HEAD_INITIALIZER(memtraces);
-
-static int v_matchproto_(mem_event_f)
-memtrace_event(void *priv, const struct memdesc *md, const char *what,
-    unsigned adr, unsigned val, unsigned width, unsigned peg)
+void
+ioc_dump_registers(unsigned lvl)
 {
-	char buf[16];
 
-	(void)priv;
-	(void)peg;
-
-	if (width == 1)
-		bprintf(buf, "0x%02x", val);
-	else if (width == 2)
-		bprintf(buf, "0x%04x", val);
-	else
-		bprintf(buf, "0x%08x", val);
-
-	if (what == mem_op_read) {
-		Trace(1, "MEMTRACE PC %08x R 0x%08x %s 0x%x@%s",
-		    ioc_pc, adr, buf, adr - md->lo, md->name);
-	} else if (what == mem_op_write) {
-		Trace(1, "MEMTRACE PC %08x W 0x%08x %s 0x%x@%s",
-		    ioc_pc, adr, buf, adr - md->lo, md->name);
-	}
-	return (0);
+	if (trace_fd < 0 || !(do_trace & lvl))
+		return;
+	if (syscall_vsb == NULL)
+		syscall_vsb = VSB_new_auto();
+	AN(syscall_vsb);
+	VSB_clear(syscall_vsb);
+	VSB_printf(syscall_vsb, "%12jd Registers\n", simclock);
+	ioc_dump_cpu_regs(syscall_vsb);
+	AZ(VSB_finish(syscall_vsb));
+	VSB_tofile(syscall_vsb, trace_fd);
 }
 
-#define USAGE \
-    "Usage:\n" \
-    "\t'add' [-seg name] [-lo adr -hi adr]\n" \
-    "\t'del' index\n"
 
-void v_matchproto_(cli_func_f)
-cli_ioc_memtrace(struct cli *cli)
+void
+ioc_dump_cpu_regs(struct vsb *vsb)
 {
-	struct memtrace *mt1;
-	const struct memdesc *md;
-	unsigned u, lo, hi;
-	int n;
+	VSB_printf(vsb, "PC = 0x%x", m68k_get_reg(NULL, M68K_REG_PC));
+	VSB_printf(vsb, "  SR = 0x%x\n", m68k_get_reg(NULL, M68K_REG_SR));
+	VSB_printf(vsb, "D0 = %08x  D4 = %08x   A0 = %08x  A4 = %08x\n",
+	    m68k_get_reg(NULL, M68K_REG_D0), m68k_get_reg(NULL, M68K_REG_D4),
+	    m68k_get_reg(NULL, M68K_REG_A0), m68k_get_reg(NULL, M68K_REG_A4)
+	);
 
-	AN(cli);
-	(void)(memtrace_event);
-	if (cli->help) {
-		cli_printf(cli, USAGE);
-		return;
-	}
-	cli->ac--;
-	cli->av++;
-	if (cli->ac == 0) {
-		if (VTAILQ_EMPTY(&memtraces)) {
-			cli_printf(cli, "No active memory traces\n");
-			return;
-		}
-		VTAILQ_FOREACH(mt1, &memtraces, list) {
-			cli_printf(cli, "    %d:", mt1->number);
-			if (mt1->seg != NULL)
-				cli_printf(cli, " -seg %s", mt1->seg);
-			if (mt1->lo != NULL)
-				cli_printf(cli, " -lo %s", mt1->lo);
-			if (mt1->hi != NULL)
-				cli_printf(cli, " -lo %s", mt1->hi);
-			cli_printf(cli, "\n");
-		}
-		return;
-	} else if (!strcmp(cli->av[0], "add")) {
-		cli->ac--;
-		cli->av++;
-		if (cli_n_m_args(cli, 2, 4, ""))
-			return;
-		mt1 = VTAILQ_LAST(&memtraces, memtracehead);
-		if (mt1 != NULL)
-			n = mt1->number + 1;
-		else
-			n = 1;
-		mt1 = calloc(sizeof *mt1, 1);
-		AN(mt1);
-		mt1->number = n;
-		if (!strcmp(cli->av[0], "-seg")) {
-			cli->ac--;
-			cli->av++;
-			if (cli_n_m_args(cli, 1, 1, "")) {
-				free(mt1);
-				return;
-			}
-			for (u = 0; u < n_memdesc; u++) {
-				if (!strcmp(memdesc[u]->name, cli->av[0]))
-					break;
-			}
-			if (u == n_memdesc) {
-				free(mt1);
-				cli_error(cli, "Unknow segment name\n");
-				return;
-			}
-			md = memdesc[u];
-			mt1->seg = md->name;
-			mem_peg_register(md->lo, md->hi, memtrace_event, mt1);
-			VTAILQ_INSERT_TAIL(&memtraces, mt1, list);
-			return;
-		}
-		if (!strcmp(cli->av[0], "-lo")) {
-			cli->ac--;
-			cli->av++;
-			if (cli_n_m_args(cli, 3, 3, "")) {
-				free(mt1);
-				return;
-			}
-			lo = strtoul(cli->av[0], NULL, 0);
-			mt1->lo = strdup(cli->av[0]);
-			AN(mt1->lo);
-			cli->ac--;
-			cli->av++;
-			if (strcmp(cli->av[0], "-hi")) {
-				free(mt1);
-				cli_error(cli, USAGE);
-				return;
-			}
-			cli->ac--;
-			cli->av++;
-			hi = strtoul(cli->av[0], NULL, 0);
-			mt1->hi = strdup(cli->av[0]);
-			AN(mt1->hi);
-			mem_peg_register(lo, hi, memtrace_event, mt1);
-			VTAILQ_INSERT_TAIL(&memtraces, mt1, list);
-			return;
-		}
-		free(mt1);
-		(void)cli_error(cli, USAGE);
-	} else if (!strcmp(cli->av[0], "del")) {
-		cli->ac--;
-		cli->av++;
-		if (cli_n_m_args(cli, 1, 1, ""))
-			return;
-		n = strtoul(cli->av[0], NULL, 0);
-		VTAILQ_FOREACH(mt1, &memtraces, list) {
-			if (mt1->number == n) {
-				mem_peg_expunge(mt1);
-				VTAILQ_REMOVE(&memtraces, mt1, list);
-				free(mt1->lo);
-				free(mt1->hi);
-				free(mt1);
-				return;
-			}
-		}
-	} else {
-		(void)cli_error(cli, USAGE);
-	}
+	VSB_printf(vsb, "D1 = %08x  D5 = %08x   A1 = %08x  A5 = %08x\n",
+	    m68k_get_reg(NULL, M68K_REG_D1), m68k_get_reg(NULL, M68K_REG_D5),
+	    m68k_get_reg(NULL, M68K_REG_A1), m68k_get_reg(NULL, M68K_REG_A5)
+	);
+
+	VSB_printf(vsb, "D2 = %08x  D6 = %08x   A2 = %08x  A6 = %08x\n",
+	    m68k_get_reg(NULL, M68K_REG_D2), m68k_get_reg(NULL, M68K_REG_D6),
+	    m68k_get_reg(NULL, M68K_REG_A2), m68k_get_reg(NULL, M68K_REG_A6)
+	);
+
+	VSB_printf(vsb, "D3 = %08x  D7 = %08x   A3 = %08x  A7 = %08x\n",
+	    m68k_get_reg(NULL, M68K_REG_D3), m68k_get_reg(NULL, M68K_REG_D7),
+	    m68k_get_reg(NULL, M68K_REG_A3), m68k_get_reg(NULL, M68K_REG_A7)
+	);
+
 }

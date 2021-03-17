@@ -30,7 +30,6 @@ void dma_read(unsigned segment, unsigned address, void *src, unsigned len);
 
 /**********************************************************************/
 
-void ioc_trace_syscall(unsigned pc);
 void ioc_dump_registers(unsigned lvl);
 void ioc_dump_cpu_regs(struct vsb *vsb);
 

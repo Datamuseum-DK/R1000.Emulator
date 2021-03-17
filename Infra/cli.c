@@ -162,7 +162,6 @@ static const struct cli_cmds cli_cmds[] = {
 	{ "reset",		cli_ioc_reset },
 	{ "scsi_disk",		cli_scsi_disk },
 	{ "scsi_tape",		cli_scsi_tape },
-	{ "syscall",		cli_ioc_syscall },
 	{ "trace",		cli_trace },
 	{ NULL,			NULL },
 };

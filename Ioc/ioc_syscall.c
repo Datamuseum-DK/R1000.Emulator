@@ -1,39 +1,227 @@
+/*-
+ * Copyright (c) 2021 Poul-Henning Kamp
+ * All rights reserved.
+ *
+ * Author: Poul-Henning Kamp <phk@phk.freebsd.dk>
+ *
+ * SPDX-License-Identifier: BSD-2-Clause
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions
+ * are met:
+ * 1. Redistributions of source code must retain the above copyright
+ *    notice, this list of conditions and the following disclaimer.
+ * 2. Redistributions in binary form must reproduce the above copyright
+ *    notice, this list of conditions and the following disclaimer in the
+ *    documentation and/or other materials provided with the distribution.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE AUTHOR AND CONTRIBUTORS ``AS IS'' AND
+ * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+ * ARE DISCLAIMED.  IN NO EVENT SHALL AUTHOR OR CONTRIBUTORS BE LIABLE
+ * FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+ * DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
+ * OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
+ * HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
+ * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
+ * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
+ * SUCH DAMAGE.
+ *
+ */
+
+#include <stdlib.h>
 
 #include "r1000.h"
 #include "m68k.h"
-#include "ioc.h"
 #include "memspace.h"
-#include "vend.h"
+#include "ioc.h"
 #include "vsb.h"
 
-static struct vsb *syscall_vsb;
+struct sc_def {
+	unsigned		address;
+	const char		*name;
+	const char		*call_args;
+	const char		*ret_args;
+};
 
-void
-ioc_dump_cpu_regs(struct vsb *vsb)
+static struct sc_def sc_defs[] = {
+	{ 0x10284, "?string_lit2something", NULL, NULL },
+	{ 0x1028c, "?muls_d3_d4_to_d3", NULL, NULL },
+	{ 0x10290, "?mulu_d3_d4_to_d3", NULL, NULL },
+	{ 0x10294, "?divs_d3_d4", NULL, NULL },
+	{ 0x10298, "?divu_d3_d4", NULL, NULL },
+	{ 1U<<31, NULL, NULL, NULL },
+};
+
+struct sc_ctx {
+	int			nbr;
+	VTAILQ_ENTRY(sc_ctx)	list;
+};
+
+struct sc_call {
+	unsigned		sc;
+	const struct sc_def	*def;
+	nanosec			when;
+	struct sc_ctx		*ctx;
+};
+
+static int ctx_ctr = 0;
+static int ctx_level = 0;
+static struct vsb *sc_vsb;
+
+static VTAILQ_HEAD(sc_ctxhead, sc_ctx)	sc_ctxs =
+    VTAILQ_HEAD_INITIALIZER(sc_ctxs);
+
+/**********************************************************************/
+
+static void
+sc_render(int ret, const struct sc_def *def, unsigned a7)
 {
-	VSB_printf(vsb, "PC = 0x%x", m68k_get_reg(NULL, M68K_REG_PC));
-	VSB_printf(vsb, "  SR = 0x%x\n", m68k_get_reg(NULL, M68K_REG_SR));
-	VSB_printf(vsb, "D0 = %08x  D4 = %08x   A0 = %08x  A4 = %08x\n",
-	    m68k_get_reg(NULL, M68K_REG_D0), m68k_get_reg(NULL, M68K_REG_D4),
-	    m68k_get_reg(NULL, M68K_REG_A0), m68k_get_reg(NULL, M68K_REG_A4)
-	);
+	int i;
+	unsigned u;
+	const char *params = NULL;
 
-	VSB_printf(vsb, "D1 = %08x  D5 = %08x   A1 = %08x  A5 = %08x\n",
-	    m68k_get_reg(NULL, M68K_REG_D1), m68k_get_reg(NULL, M68K_REG_D5),
-	    m68k_get_reg(NULL, M68K_REG_A1), m68k_get_reg(NULL, M68K_REG_A5)
-	);
+	if (def != NULL)
+		params = ret ? def->ret_args : def->call_args;
+	VSB_clear(sc_vsb);
 
-	VSB_printf(vsb, "D2 = %08x  D6 = %08x   A2 = %08x  A6 = %08x\n",
-	    m68k_get_reg(NULL, M68K_REG_D2), m68k_get_reg(NULL, M68K_REG_D6),
-	    m68k_get_reg(NULL, M68K_REG_A2), m68k_get_reg(NULL, M68K_REG_A6)
-	);
+	if (def == NULL)
+		VSB_printf(sc_vsb, "<unknown>");
+	else
+		VSB_printf(sc_vsb, "%s", def->name);
 
-	VSB_printf(vsb, "D3 = %08x  D7 = %08x   A3 = %08x  A7 = %08x\n",
-	    m68k_get_reg(NULL, M68K_REG_D3), m68k_get_reg(NULL, M68K_REG_D7),
-	    m68k_get_reg(NULL, M68K_REG_A3), m68k_get_reg(NULL, M68K_REG_A7)
-	);
-
+	if (params == NULL) {
+		a7 += 4;
+		for (i = 0; i < 10; i++) {
+			u = m68k_debug_read_memory_16(a7);
+			VSB_printf(sc_vsb, " 0x%04x", u);
+			a7 += 2;
+		}
+	}
+	AZ(VSB_finish(sc_vsb));
 }
+
+/**********************************************************************/
+
+static int v_matchproto_(mem_event_f)
+sc_ret_peg(void *priv, const struct memdesc *md, const char *what,
+    unsigned adr, unsigned val, unsigned width, unsigned peg)
+{
+	struct sc_call *scc = priv;
+	unsigned a7;
+
+	(void)md;
+	(void)val;
+	(void)what;
+	(void)width;
+	(void)peg;
+	if (ioc_pc != adr || scc->ctx != VTAILQ_FIRST(&sc_ctxs))
+	       return (0);
+	a7 =  m68k_get_reg(NULL, M68K_REG_A7);
+	sc_render(1, scc->def, a7);
+	Trace(1, "SCEXIT %d %d SC=0x%08x %13ju RET=0x%08x %s",
+	    VTAILQ_FIRST(&sc_ctxs)->nbr, ctx_level,
+	    scc->sc, scc->when, adr, VSB_data(sc_vsb));
+	return (1);
+}
+
+static int v_matchproto_(mem_event_f)
+sc_peg(void *priv, const struct memdesc *md, const char *what,
+    unsigned adr, unsigned val, unsigned width, unsigned peg)
+{
+	unsigned a7, u;
+	struct sc_def *scd = priv;
+	struct sc_call *scc;
+	struct sc_ctx *sctx;
+
+	(void)md;
+	(void)what;
+	(void)val;
+	(void)width;
+	(void)peg;
+
+	if (ioc_pc != adr)
+		return (0);
+	a7 =  m68k_get_reg(NULL, M68K_REG_A7);
+	sc_render(0, scd, a7);
+	u = m68k_debug_read_memory_32(a7);
+	Trace(1, "SCCALL %d %d SC=0x%08x A7=0x%08x RET=0x%08x %s",
+	    VTAILQ_FIRST(&sc_ctxs)->nbr, ctx_level,
+	    adr, a7, u, VSB_data(sc_vsb));
+	if (adr == 0x10280)
+		return (0);
+	if (adr == 0x1021e)
+		return (0);
+	if (adr == 0x103b8) {
+		ctx_level--;
+		sctx = VTAILQ_FIRST(&sc_ctxs);
+		VTAILQ_REMOVE(&sc_ctxs, sctx, list);
+		free(sctx);
+		return (0);
+	}
+	scc = calloc(sizeof *scc, 1);
+	AN(scc);
+	scc->sc = adr;
+	scc->def = scd;
+	scc->when = simclock;
+	scc->ctx = VTAILQ_FIRST(&sc_ctxs);
+	mem_peg_register(u, u + 2, sc_ret_peg, scc);
+	if (adr == 0x103b0) {
+		sctx = calloc(sizeof *sctx, 1);
+		AN(sctx);
+		VTAILQ_INSERT_HEAD(&sc_ctxs, sctx, list);
+		sctx->nbr = ++ctx_ctr;
+		ctx_level++;
+	}
+	return (0);
+}
+
+static void
+start_syscall_tracing(void)
+{
+	unsigned a;
+	struct sc_def *scp = sc_defs;
+	struct sc_ctx *sctx;
+
+	a = 0x10200;
+	while (a < 0x1061c) {
+		if (scp->address == a) {
+			mem_peg_register(a, a + 2, sc_peg, scp++);
+		} else {
+			mem_peg_register(a, a + 2, sc_peg, NULL);
+		}
+		if (a < 0x10280)
+			a += 2;
+		else if (a < 0x10460)
+			a += 4;
+		else
+			a += 6;
+	}
+	sctx = calloc(sizeof *sctx, 1);
+	AN(sctx);
+	VTAILQ_INSERT_HEAD(&sc_ctxs, sctx, list);
+	sc_vsb = VSB_new_auto();
+	AN(sc_vsb);
+}
+
+void v_matchproto_(cli_func_f)
+cli_ioc_syscall(struct cli *cli)
+{
+	if (cli->help) {
+		cli_printf(cli, "XXX\n");
+		return;
+	}
+	if (VTAILQ_EMPTY(&sc_ctxs))
+		start_syscall_tracing();
+}
+
+
+#if 0
+
+#include "memspace.h"
+#include "vend.h"
+
+static struct vsb *syscall_vsb;
 
 void
 ioc_dump_registers(unsigned lvl)
@@ -497,3 +685,4 @@ cli_ioc_syscall(struct cli *cli)
 	}
 }
 
+#endif

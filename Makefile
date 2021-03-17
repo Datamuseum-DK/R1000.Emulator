@@ -34,6 +34,7 @@ OBJS	+= ioc_eeproms.o
 OBJS	+= ioc_interrupt.o
 OBJS	+= ioc_hotfix.o
 OBJS	+= ioc_main.o
+OBJS	+= ioc_memtrace.o
 OBJS	+= ioc_rtc.o
 OBJS	+= ioc_scsi_ctl.o
 OBJS	+= ioc_scsi_dev.o
@@ -80,6 +81,7 @@ test:	r1000 ${BINFILES}
 		"console > _.console" \
 		"console telnet localhost:1400" \
 		"modem > _.modem" \
+		"ioc syscall" \
 		"ioc diagbus > _.diag" \
 		"scsi_tape" \
 		"scsi_disk 0 ${DISK0_IMAGE}" \
@@ -125,8 +127,8 @@ seagate:	r1000 ${BINFILES}
 tape:	r1000 ${BINFILES}
 	./r1000 \
 		-T /critter/_r1000 \
-		-t 0x29 \
-		"syscall" \
+		-t 0x0 \
+		"ioc syscall" \
 		"scsi_tape ${DFS_TAPE}" \
 		"scsi_disk 0 ${DISK0_IMAGE}" \
 		"scsi_disk 1 ${DISK1_IMAGE}" \
@@ -179,6 +181,7 @@ ioc_eeproms.o:		${CLI_INCL} Ioc/ioc.h Ioc/ioc_eeproms.c
 ioc_hotfix.o:		${M68K_INCL} Ioc/ioc.h Ioc/ioc_hotfix.c
 ioc_interrupt.o:	${CLI_INCL} Ioc/ioc.h Ioc/ioc_interrupt.c
 ioc_main.o:		${M68K_INCL} Ioc/ioc.h Ioc/ioc_main.c
+ioc_memtrace.o:		${CLI_INCL} Ioc/ioc.h Ioc/ioc_memtrace.c
 ioc_rtc.o:		${CLI_INCL} Ioc/ioc.h Ioc/ioc_rtc.c
 ioc_scsi_ctl.o:		${CLI_INCL} Ioc/ioc.h Ioc/ioc_scsi.h Ioc/ioc_scsi_ctl.c
 ioc_scsi_dev.o:		${CLI_INCL} Ioc/ioc.h Ioc/ioc_scsi.h Ioc/ioc_scsi_dev.c

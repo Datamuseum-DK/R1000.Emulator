@@ -402,8 +402,6 @@ cpu_instr_callback(unsigned int pc)
 #endif
 	if (trace_ioc_instructions)
 		cpu_trace(pc);
-	if (0x10000 <= pc && pc <= 0x1061c)
-		ioc_trace_syscall(pc);
 
 	if (pc == 0x80000088) {
 		// hit self-test fail, stop tracing
