@@ -2,6 +2,7 @@
 void v_matchproto_(cli_func_f) cli_ioc(struct cli *cli);
 void v_matchproto_(cli_func_f) cli_ioc_console(struct cli *cli);
 void v_matchproto_(cli_func_f) cli_ioc_diag(struct cli *cli);
+void v_matchproto_(cli_func_f) cli_ioc_dump(struct cli *cli);
 void v_matchproto_(cli_func_f) cli_ioc_maxins(struct cli *cli);
 void v_matchproto_(cli_func_f) cli_ioc_memtrace(struct cli *cli);
 void v_matchproto_(cli_func_f) cli_ioc_modem(struct cli *cli);
@@ -32,6 +33,7 @@ void dma_read(unsigned segment, unsigned address, void *src, unsigned len);
 
 void ioc_dump_registers(unsigned lvl);
 void ioc_dump_cpu_regs(struct vsb *vsb);
+void ioc_dump_core(const char *);
 
 /**********************************************************************/
 

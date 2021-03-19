@@ -7,6 +7,7 @@
 #include "ioc.h"
 
 static const struct cli_cmds cli_ioc_cmds[] = {
+	{ "dump",		cli_ioc_dump },
 	{ "memtrace",		cli_ioc_memtrace },
 	{ "diagbus",		cli_ioc_diag },
 	{ "reset",		cli_ioc_reset },

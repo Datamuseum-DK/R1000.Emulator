@@ -29,10 +29,13 @@
  *
  */
 
+#include <stdio.h>
+
 #include "r1000.h"
 #include "m68k.h"
 #include "ioc.h"
 #include "vsb.h"
+#include "memspace.h"
 
 static struct vsb *syscall_vsb;
 
@@ -51,7 +54,6 @@ ioc_dump_registers(unsigned lvl)
 	AZ(VSB_finish(syscall_vsb));
 	VSB_tofile(syscall_vsb, trace_fd);
 }
-
 
 void
 ioc_dump_cpu_regs(struct vsb *vsb)
@@ -79,3 +81,37 @@ ioc_dump_cpu_regs(struct vsb *vsb)
 	);
 
 }
+
+void
+ioc_dump_core(const char *fn)
+{   
+        FILE *f;
+
+	AN(fn);
+        f = fopen(fn, "w");
+        assert (f != NULL);
+        (void)fwrite(ram_space, sizeof(ram_space), 1, f);
+        (void)fclose(f);
+}
+
+void v_matchproto_(cli_func_f)
+cli_ioc_dump(struct cli *cli)
+{
+	const char *fn;
+
+        if (cli->help) {
+                cli_usage(cli, "\n\tDump IOC RAM to file\n");
+                return;
+        }
+        cli->ac--;
+        cli->av++;
+        if (cli_n_m_args(cli, 0, 1, ""))
+                return;
+	if (cli->ac == 0)
+		fn = "/tmp/_ioc.ram";
+	else
+		fn = cli->av[0];
+	ioc_dump_core(fn);
+	cli_printf(cli, "Core dumped to '%s'\n", fn);
+}
+
