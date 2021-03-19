@@ -75,7 +75,7 @@ cli_trace(struct cli *cli)
 	struct trace_spec *tp;
 	const char *p;
 	modfunc *fp;
-	int i;
+	int i, j;
 
 	if (cli->help) {
 		for (tp = traces; tp->name; tp++) {
@@ -103,15 +103,19 @@ cli_trace(struct cli *cli)
 		case '!': fp = mod_inv; p++; break;
 		default: fp = mod_nop; break;
 		}
+		j = 0;
 		for (tp = traces; tp->name; tp++) {
 			if (fnmatch(p, tp->name, 0))
 				continue;
+			j++;
 			i = *(tp->flag);
 			fp(tp->flag);
 			if (i != *(tp->flag) || fp == mod_nop)
 				cli_printf(cli, "%s is %s\n",
 				    tp->name, *(tp->flag) ? "on" : "off");
 		}
+		if (!j)
+			cli_error(cli, "'%s' matched no tracers\n", p);
 	}
 }
 
