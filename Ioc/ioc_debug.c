@@ -84,14 +84,14 @@ ioc_dump_cpu_regs(struct vsb *vsb)
 
 void
 ioc_dump_core(const char *fn)
-{   
-        FILE *f;
+{
+	FILE *f;
 
 	AN(fn);
-        f = fopen(fn, "w");
-        assert (f != NULL);
-        (void)fwrite(ram_space, sizeof(ram_space), 1, f);
-        (void)fclose(f);
+	f = fopen(fn, "w");
+	assert (f != NULL);
+	(void)fwrite(ram_space, sizeof(ram_space), 1, f);
+	(void)fclose(f);
 }
 
 void v_matchproto_(cli_func_f)
@@ -99,14 +99,14 @@ cli_ioc_dump(struct cli *cli)
 {
 	const char *fn;
 
-        if (cli->help) {
-                cli_usage(cli, "\n\tDump IOC RAM to file\n");
-                return;
-        }
-        cli->ac--;
-        cli->av++;
-        if (cli_n_m_args(cli, 0, 1, ""))
-                return;
+	if (cli->help) {
+		cli_usage(cli, "\n\tDump IOC RAM to file\n");
+		return;
+	}
+	cli->ac--;
+	cli->av++;
+	if (cli_n_m_args(cli, 0, 1, ""))
+		return;
 	if (cli->ac == 0)
 		fn = "/tmp/_ioc.ram";
 	else

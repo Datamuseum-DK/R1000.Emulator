@@ -13,6 +13,7 @@ struct scsi_dev {
 	struct scsi		*ctl;
 	int			scsi_id;
 	int			is_tape;
+	uint8_t			req_sense[26];
 	uint8_t			sense_3[36];
 	uint8_t			sense_4[32];
 	int			fd;

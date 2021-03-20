@@ -88,14 +88,14 @@ scsi_01_rewind(struct scsi_dev *dev, uint8_t *cdb)
 static int v_matchproto_(scsi_func_f)
 scsi_03_request_sense(struct scsi_dev *dev, uint8_t *cdb)
 {
-	static uint8_t buf[0x1a];
 
 	trace_scsi_dev(dev, "REQUEST_SENSE");
-	buf[0] = 0x80;
-	buf[7] = 0x12;
-	assert(cdb[4] >= sizeof buf);
-	scsi_fm_target(dev, buf, sizeof buf);
-	// dev->ctl->regs[0xf] = 2;
+	assert(cdb[4] >= sizeof dev->req_sense);
+	TraceDump(trace_scsi_cmd,
+	    dev->req_sense, sizeof dev->req_sense,
+	    "SCSI_CMD %s ID=%u REQUEST SENSE RESPONSE ",
+	    dev->ctl->name, dev->scsi_id);
+	scsi_fm_target(dev, dev->req_sense, sizeof dev->req_sense);
 	return (IOC_SCSI_OK);
 }
 
@@ -131,7 +131,22 @@ scsi_08_read_6_tape(struct scsi_dev *dev, uint8_t *cdb)
 		return (IOC_SCSI_OK);
 	xfer_length = vbe32dec(cdb + 1) & 0xffffff;
 	tape_length = vle32dec(dev->map + dev->tape_head);
-	assert(0 < tape_length);
+	if (tape_length == 0) {
+		Trace(trace_tape_data | trace_scsi_cmd,
+		    "READ TAPE ID=%d TAPE_MARK (@0x%08zx)",
+		    dev->scsi_id, dev->tape_head);
+		dev->tape_head += 4;
+		dev->req_sense[2] = 0x80;
+		return (-1);
+	}
+	if (tape_length == 0xffffffff) {
+		Trace(trace_tape_data | trace_scsi_cmd,
+		    "READ TAPE ID=%d EOM (@0x%08zx)",
+		    dev->scsi_id, dev->tape_head);
+		dev->req_sense[2] = 0x40;
+		return (-1);
+	}
+	dev->req_sense[2] = 0;
 	assert(tape_length < 65535);
 	assert(tape_length <= xfer_length);
 	dev->tape_head += 4;
@@ -195,6 +210,19 @@ scsi_0d_vendor(struct scsi_dev *dev, uint8_t *cdb)
 
 	(void)cdb;
 	trace_scsi_dev(dev, "VENDOR");
+	return (IOC_SCSI_OK);
+}
+
+static int v_matchproto_(scsi_func_f)
+scsi_11_space(struct scsi_dev *dev, uint8_t *cdb)
+{
+
+	assert(cdb[0x01] == 0x1);
+	assert(cdb[0x02] == 0xff);
+	assert(cdb[0x03] == 0xff);
+	assert(cdb[0x04] == 0xff);
+	dev->tape_head -= 4;
+	dev->req_sense[2] = 0;
 	return (IOC_SCSI_OK);
 }
 
@@ -282,6 +310,8 @@ cli_scsi_disk(struct cli *cli)
 	if (sd == NULL) {
 		sd = calloc(1, sizeof *sd);
 		AN(sd);
+		sd->req_sense[0] = 0x80;
+		sd->req_sense[7] = 0x12;
 		sd->scsi_id = unit;
 		sd->ctl = scsi_d;
 		sd->funcs = scsi_disk_funcs;
@@ -336,6 +366,7 @@ static scsi_func_f * const scsi_tape_funcs [256] = {
 	[SCSI_REWIND] = scsi_01_rewind,
 	[SCSI_REQUEST_SENSE] = scsi_03_request_sense,
 	[SCSI_READ_6] = scsi_08_read_6_tape,
+	[SCSI_SPACE] = scsi_11_space,
 };
 
 /**********************************************************************/
@@ -360,6 +391,8 @@ cli_scsi_tape(struct cli *cli)
 	if (sd == NULL) {
 		sd = calloc(1, sizeof *sd);
 		AN(sd);
+		sd->req_sense[0] = 0xf0;
+		sd->req_sense[7] = 0x12;
 		sd->ctl = scsi_t;
 		sd->funcs = scsi_tape_funcs;
 		sd->is_tape = 1;

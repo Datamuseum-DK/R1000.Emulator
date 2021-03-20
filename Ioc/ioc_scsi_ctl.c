@@ -178,6 +178,9 @@ scsi_thread(void *priv)
 			AN(sf);
 			i = sf(sd, sp->regs+0x03);
 			if (i < 0) {
+				sp->regs[0x14] = 0;
+				sp->regs[0x13] = 0;
+				sp->regs[0x12] = 0;
 				sp->regs[0x17] = 0x42;
 			} else {
 				sp->regs[0x14] = i & 0xff;
