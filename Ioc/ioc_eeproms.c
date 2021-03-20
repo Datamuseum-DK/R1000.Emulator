@@ -116,9 +116,9 @@ void v_matchproto_(mem_post_write)
 resha_page_post_write(int debug, uint8_t *space, unsigned width, unsigned adr)
 {
 	(void)debug;
+	(void)width;
 	(void)adr;
 	// See 0x80000fa8-80000fb4
-	trace(TRACE_IO, "RESHA_PAGE W [%x] <- %x/%d\n", adr, space[adr], width);
 	space[1] = space[0];
 }
 
@@ -128,8 +128,8 @@ resha_eeprom_pre_read(int debug, uint8_t *space, unsigned width, unsigned adr)
 	unsigned u;
 
 	(void)debug;
+	(void)width;
 	u = (resha_page_space[0] << 8) | adr;
 	u &= 0x7fff;
 	memcpy(space + adr, resha_eeprom + u, width);
-	trace(TRACE_IO, "RESHA_PAGE R [%x] -> %x/%d\n", adr, space[adr], width);
 }

@@ -233,7 +233,8 @@ Ioc_HotFix_Kernel(uint8_t *ram)
 	}
 	if (!strcmp(buf, "@(#)400S IOP KERNEL,4_2_18,92/08/06,16:15:00")) {
 		hotfix_kernel_4_2_18(ram);
-	} else if (!strcmp(buf, "@(#)400S IOP KERNEL,4_2_14,92/05/07,16:15:00")) {
+	} else if (!strcmp(buf,
+	    "@(#)400S IOP KERNEL,4_2_14,92/05/07,16:15:00")) {
 		hotfix_kernel_4_2_14(ram);
 	} else {
 		printf("No hotfix for kernel %s\n", buf);
