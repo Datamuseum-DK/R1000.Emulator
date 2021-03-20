@@ -231,6 +231,8 @@ dma_write(unsigned segment, unsigned address, void *src, unsigned len)
 	u |= (segment & 0x7) << 6;
 	u |= address >> 10;
 	v = vbe32dec(io_map_space + u * 4L);
+	v |= (address & 0x3ff);
+	Trace(trace_ioc_dma, "DMA [0x%x] => 0x%08x", len, v);
 	memcpy(ram_space + v, src, len);
 }
 
@@ -243,6 +245,8 @@ dma_read(unsigned segment, unsigned address, void *src, unsigned len)
 	u |= address >> 10;
 	u |= (segment & 0x7) << 6;
 	v = vbe32dec(io_map_space + u * 4L);
+	v |= (address & 0x3ff);
+	Trace(trace_ioc_dma, "DMA [0x%x] <= 0x%08x", len, v);
 	memcpy(src, ram_space + v, len);
 }
 
