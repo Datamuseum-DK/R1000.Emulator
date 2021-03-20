@@ -15,15 +15,7 @@
 #include "elastic.h"
 #include "memspace.h"
 
-#if 0
-#   define CONSOLE_RATE	(1000000000 / 9600)
-#else
-#   define CONSOLE_RATE	(1000000000 / 96000)
-#endif
-
-
-static const char * const rd_reg[] = {"DATA", "STATUS", "MODE", "CMD"};
-static const char * const wr_reg[] = {"DATA", "SYN/DLE", "MODE", "CMD"};
+#define CONSOLE_RATE	(1000000000 / 96000)	// Finagle constant
 
 #define REG_R_DATA	0
 #define REG_R_STATUS	1
@@ -99,6 +91,7 @@ thr_console_rx(void *priv)
 		cons->status |= 0x02;
 		irq_raise(&IRQ_CONSOLE_RXRDY);
 		AZ(pthread_mutex_unlock(&uart_mtx));
+		usleep(CONSOLE_RATE);
 	}
 }
 
@@ -124,15 +117,16 @@ cons_txshift_done(void * priv)
 			irq_raise(&IRQ_CONSOLE_RXRDY);
 		}
 		cons->txshiftfull = 0;
-		if (cons->status & 0x01) {			// txhold is empty
-			cons->status |= 0x04;			// TxEmt
+		if (cons->status & 0x01) {		// txhold is empty
+			cons->status |= 0x04;		// TxEmt
 		} else {
 			if (!cons->loopback)
 				elastic_put(cons->ep, &cons->txhold, 1);
 			cons->txshift = cons->txhold;
 			cons->txshiftfull = 1;
-			callout_callback(cons_txshift_done, NULL, CONSOLE_RATE, 0);
-			cons->status |= 0x01;			// txhold is empty
+			callout_callback(cons_txshift_done,
+			    NULL, CONSOLE_RATE, 0);
+			cons->status |= 0x01;		// txhold is empty
 			irq_raise(&IRQ_CONSOLE_TXRDY);
 		}
 	}
@@ -168,7 +162,6 @@ io_uart_pre_read(int debug, uint8_t *space, unsigned width, unsigned adr)
 		break;
 	}
 	AZ(pthread_mutex_unlock(&uart_mtx));
-	trace(TRACE_IO, "UART R %s [%x] -> %x\n",  rd_reg[adr], adr, space[adr]);
 }
 
 /**********************************************************************/
@@ -181,7 +174,6 @@ io_uart_post_write(int debug, uint8_t *space, unsigned width, unsigned adr)
 	if (debug) return;
 	assert (width == 1);
 	assert (adr < 4);
-	trace(TRACE_IO, "UART W %s [%x] <- %x\n", wr_reg[adr], adr, space[adr]);
 	AZ(pthread_mutex_lock(&uart_mtx));
 	switch (adr) {
 	case REG_W_DATA:

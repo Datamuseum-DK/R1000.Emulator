@@ -25,6 +25,7 @@
 -esym(534, VSB_vprintf)
 -esym(534, VSB_tofile)
 -esym(534, VSB_cat)
+-esym(534, VSB_bcat)
 -esym(534, VSB_putc)
 -esym(534, printf)
 -esym(534, sprintf)
