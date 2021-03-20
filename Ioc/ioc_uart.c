@@ -15,8 +15,6 @@
 #include "elastic.h"
 #include "memspace.h"
 
-#define CONSOLE_RATE	(1000000000 / 96000)	// Finagle constant
-
 #define REG_R_DATA	0
 #define REG_R_STATUS	1
 #define REG_R_MODE	2
@@ -91,7 +89,7 @@ thr_console_rx(void *priv)
 		cons->status |= 0x02;
 		irq_raise(&IRQ_CONSOLE_RXRDY);
 		AZ(pthread_mutex_unlock(&uart_mtx));
-		usleep(CONSOLE_RATE);
+		usleep(1000);
 	}
 }
 
@@ -125,7 +123,7 @@ cons_txshift_done(void * priv)
 			cons->txshift = cons->txhold;
 			cons->txshiftfull = 1;
 			callout_callback(cons_txshift_done,
-			    NULL, CONSOLE_RATE, 0);
+			    NULL, 1000, 0);
 			cons->status |= 0x01;		// txhold is empty
 			irq_raise(&IRQ_CONSOLE_TXRDY);
 		}
@@ -235,7 +233,7 @@ io_uart_post_write(int debug, uint8_t *space, unsigned width, unsigned adr)
 	AZ(pthread_cond_broadcast(&cons_cond));
 	AZ(pthread_mutex_unlock(&uart_mtx));
 	if (cons->txbreak && cons->loopback)
-		callout_callback(cons_txshift_done, NULL, CONSOLE_RATE, 0);
+		callout_callback(cons_txshift_done, NULL, 1000, 0);
 	else if (!(cons->status & 1) && !cons->txshiftfull)
 		cons_txshift_done(NULL);
 }

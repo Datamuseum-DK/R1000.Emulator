@@ -157,6 +157,7 @@ thr_duart_rx(void *priv)
 		chp->rxwaitforit |= 0x01;
 		irq_raise(chp->rx_irq);
 		AZ(pthread_mutex_unlock(&duart_mtx));
+		usleep(1000);
 	}
 }
 
