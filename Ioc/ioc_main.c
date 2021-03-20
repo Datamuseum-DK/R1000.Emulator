@@ -207,57 +207,14 @@ cli_ioc_maxins(struct cli *cli)
 
 /**********************************************************************
  */
-static void
-dump_ram(void)
-{
-	int fd;
-
-	fd = open("/tmp/_.ram", O_WRONLY|O_CREAT|O_TRUNC, 0644);
-	assert (fd>0);
-	(void)write(fd, ram_space, sizeof(ram_space));
-	(void)close(fd);
-}
 
 static void
 crash(void)
 {
 	ioc_dump_registers(TRACE_68K);
-	dump_ram();
+	ioc_dump_core("/tmp/_ioc.dump");
 	exit(2);
 }
-
-/**********************************************************************
- */
-
-#define GENERIC_POST_WRITE(name)							\
-	void v_matchproto_(mem_post_write)						\
-	name##_post_write(int debug, uint8_t *space, unsigned width, unsigned adr)	\
-	{										\
-		unsigned v;								\
-		if (debug) return;							\
-		if (width == 1)								\
-			v = space[adr];							\
-		else if (width == 2)							\
-			v = vbe16dec(space + adr);					\
-		else									\
-			v = vbe32dec(space + adr);					\
-		trace(TRACE_IO, "PW " #name " W(%d) 0x%x <- 0x%x\n", width, adr, v);	\
-	}
-
-GENERIC_POST_WRITE(fb000)
-GENERIC_POST_WRITE(fifo_response_latch)
-GENERIC_POST_WRITE(f200)
-GENERIC_POST_WRITE(f300)
-GENERIC_POST_WRITE(io_sreg4)
-GENERIC_POST_WRITE(f500)
-GENERIC_POST_WRITE(fifo_response)
-GENERIC_POST_WRITE(fifo_request)
-GENERIC_POST_WRITE(io_sreg8)
-GENERIC_POST_WRITE(f900)
-GENERIC_POST_WRITE(fc00)
-GENERIC_POST_WRITE(fd00)
-GENERIC_POST_WRITE(fe00)
-
 
 /**********************************************************************
  * I/O Address mapping
@@ -274,8 +231,7 @@ dma_write(unsigned segment, unsigned address, void *src, unsigned len)
 	u |= (segment & 0x7) << 6;
 	u |= address >> 10;
 	v = vbe32dec(io_map_space + u * 4L);
-	trace(TRACE_IO, "MAP_DMA_W %08x:%08x: %08x -> %08x [%08x]\n", segment, address, u, v, len);
-	memcpy(ram_space+v, src, len);
+	memcpy(ram_space + v, src, len);
 }
 
 void
@@ -287,9 +243,7 @@ dma_read(unsigned segment, unsigned address, void *src, unsigned len)
 	u |= address >> 10;
 	u |= (segment & 0x7) << 6;
 	v = vbe32dec(io_map_space + u * 4L);
-	trace(TRACE_IO, "MAP_DMA_R %08x:%08x: %08x -> %08x [%08x]\n",
-	    segment, address, u, v, len);
-	memcpy(src, ram_space+v, len);
+	memcpy(src, ram_space + v, len);
 }
 
 /**********************************************************************/
