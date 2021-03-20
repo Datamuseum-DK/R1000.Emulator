@@ -177,13 +177,7 @@ i8052_init(void)
 	i8052_start(0x6, 1, "i8052.TYP.6");
 	i8052_start(0x7, 1, "i8052.VAL.7");
 	i8052_start(0xc, 1, "i8052.MEM0.c");
-
-	/*
-	 * XXX: Who answers for MEM boards not in their slots ?
-	 * XXX: Sending no reply does not seem to lead to timeout.
-	 */
-
-	i8052_start(0xd, 0, "i8052.MEM1.d");
+	// i8052_start(0xd, 0, "i8052.MEM1.d");
 	i8052_start(0xe, 0, "i8052.MEM2.e");
-	i8052_start(0xf, 0, "i8052.MEM3.f");
+	// i8052_start(0xf, 0, "i8052.MEM3.f");
 }
