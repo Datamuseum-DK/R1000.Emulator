@@ -46,45 +46,43 @@ struct sc_def {
 
 static struct sc_def sc_defs[] = {
 	{ 0x1022a, "DiagBus",
-	    "sp_5 !w W , sp_4 !w W , sp_2 !l L",
-	    "sp_3 !w W , sp_2 !w W , sp_0 !l L"
+	    "sp+5 !w W , sp+4 !w W , sp+2 !l L",
+	    "sp+3 !w W , sp+2 !w W , sp+0 !l L"
 	},
 	{ 0x10238, "ProtCopy",
-	    "'Dst=' sp_5 !l L , 'Src=' sp_3 !l L , 'Len=' sp_2 !w W",
-	    ""
+	    "'Dst=' sp+5 !l L , 'Src=' sp+3 !l L , 'Len=' sp+2 !w W",
+	    "stack"
 	},
 
-#define D3D4 "'D3=' D3 L , 'D4=' D4 L"
-	{ 0x1028c, "?muls_d3_d4_to_d3", D3D4, D3D4 },
-	{ 0x10290, "?mulu_d3_d4_to_d3", D3D4, D3D4 },
-	{ 0x10294, "?divs_d3_d4", D3D4, D3D4 },
-	{ 0x10298, "?divu_d3_d4", D3D4, D3D4 },
-#undef D3D4
+	{ 0x1028c, "?muls_d3_d4_to_d3", ".D3 , .D4", ".D3 , .D4" },
+	{ 0x10290, "?mulu_d3_d4_to_d3", ".D3 , .D4", ".D3 , .D4" },
+	{ 0x10294, "?divs_d3_d4", ".D3 , .D4", ".D3 , .D4" },
+	{ 0x10298, "?divu_d3_d4", ".D3 , .D4", ".D3 , .D4" },
 
-	{ 0x1029c, "Malloc", "sp_4 !l L , sp_2 !l L", "sp_2 !l !l L" },
-	{ 0x102a8, "Free", "sp_4 !l !l L , sp_2 !l L", "" },
-	{ 0x102b8, "NewString", "", "sp_0 !l String" },
-	{ 0x102bc, "FreeString", "sp_2 !l String", "" },
-	{ 0x102c0, "AppendChar", "sp_3 String , sp_2 !b B", "sp_1 String" },
-	{ 0x102c8, "StringEqual", "sp_4 String , sp_2 String", "sp_4 !b B" },
-	{ 0x102cc, "StringDup", "sp_2 String", "sp_0 String" },
-	{ 0x102d0, "StringCat2", "sp_4 String , sp_2 String", "sp_4 String" },
+	{ 0x1029c, "Malloc", "sp+4 !l L , sp+2 !l L", "sp+2 !l !l L" },
+	{ 0x102a8, "Free", "sp+4 !l !l L , sp+2 !l L", "" },
+	{ 0x102b8, "NewString", "", "sp+0 !l String" },
+	{ 0x102bc, "FreeString", "sp+2 !l String", "" },
+	{ 0x102c0, "AppendChar", "sp+3 String , sp+2 !b B", "sp+1 String" },
+	{ 0x102c8, "StringEqual", "sp+4 String , sp+2 String", "sp+4 !b B" },
+	{ 0x102cc, "StringDup", "sp+2 String", "sp+0 String" },
+	{ 0x102d0, "StringCat2", "sp+4 String , sp+2 String", "sp+4 String" },
 	{ 0x102d8, "StringCat3",
-	    "sp_8 String , sp_6 String , sp_4 String , sp_2 String",
-	    "sp_6 String"
+	    "sp+8 String , sp+6 String , sp+4 String , sp+2 String",
+	    "sp+6 String"
 	},
-	{ 0x102e4, "LongInt2String", "sp_2 !l L", "sp_2 String" },
+	{ 0x102e4, "LongInt2String", "sp+2 !l L", "sp+2 String" },
 	{ 0x102ec, "String2LongInt",
-	    "sp_6 String",
-	    "sp_0 !l !l L , sp_2 !l !b B"
+	    "sp+6 String",
+	    "sp+0 !l !l L , sp+2 !l !b B"
 	},
 	{ 0x10380, "Open",
-	    ".sp_10 String , sp_9 !w W , sp_8 !b B , sp_6 !l L",
-	    "sp_2 !b B , sp_0 !l Dirent"
+	    "sp+10 String , sp+9 !w W , sp+8 !b B , sp+6 !l L",
+	    "sp+2 !b B , sp+0 !l Dirent"
 	},
 	{ 0x103b0, "Chain",
-	    "sp_7 String , sp_5 String , sp_4 !b B",
-	    "sp_0 L ' => ' sp_0 !l L ' => ' sp_0 !l !l L"
+	    "sp+7 String , sp+5 String , sp+4 !b B",
+	    "sp+0 L ' => ' sp+0 !l L ' => ' sp+0 !l !l L"
 	},
 	{ 1U<<31, NULL, NULL, NULL },
 };
@@ -110,14 +108,15 @@ static VTAILQ_HEAD(sc_ctxhead, sc_ctx)	sc_ctxs =
 /**********************************************************************/
 
 static void
-sc_render(int ret, const struct sc_def *def, unsigned a7)
+sc_render(int ret, const struct sc_def *def)
 {
 	int i;
-	unsigned a, u;
 	const char *params;
 
 	AN(def);
 	params = ret ? def->ret_args : def->call_args;
+	if (params == NULL)
+		params = "stack ' ' regs";
 
 	VSB_clear(sc_vsb);
 
@@ -126,21 +125,6 @@ sc_render(int ret, const struct sc_def *def, unsigned a7)
 	else
 		VSB_printf(sc_vsb, "%s", def->name);
 
-	if (!ret)
-		a7 += 4;
-	if (params == NULL || *params == '.') {
-		a = a7;
-		for (i = 0; i < 10; i++) {
-			u = m68k_debug_read_memory_16(a);
-			VSB_printf(sc_vsb, " 0x%04x", u);
-			a += 2;
-		}
-		if (params == NULL) {
-			AZ(VSB_finish(sc_vsb));
-			return;
-		}
-		params++;
-	}
 	VSB_printf(sc_vsb, "(");
 	i = Rpn_Eval(sc_vsb, params);
 	VSB_printf(sc_vsb, ")");
@@ -158,7 +142,6 @@ sc_ret_peg(void *priv, const struct memdesc *md, const char *what,
     unsigned adr, unsigned val, unsigned width, unsigned peg)
 {
 	struct sc_call *scc = priv;
-	unsigned a7;
 
 	(void)md;
 	(void)val;
@@ -167,8 +150,7 @@ sc_ret_peg(void *priv, const struct memdesc *md, const char *what,
 	(void)peg;
 	if (ioc_pc != adr || scc->ctx != VTAILQ_FIRST(&sc_ctxs))
 	       return (0);
-	a7 =  m68k_get_reg(NULL, M68K_REG_A7);
-	sc_render(1, scc->def, a7);
+	sc_render(1, scc->def);
 	Trace(1, "SCEXIT %2d %d SC=0x%08x %13ju RET=0x%08x %s",
 	    VTAILQ_FIRST(&sc_ctxs)->nbr, ctx_level,
 	    scc->def->address, scc->when, adr, VSB_data(sc_vsb));
@@ -193,8 +175,8 @@ sc_peg(void *priv, const struct memdesc *md, const char *what,
 	AN(scd);
 	if (ioc_pc != adr)
 		return (0);
+	sc_render(0, scd);
 	a7 =  m68k_get_reg(NULL, M68K_REG_A7);
-	sc_render(0, scd, a7);
 	u = m68k_debug_read_memory_32(a7);
 	Trace(1, "SCCALL %2d %d SC=0x%08x A7=0x%08x RET=0x%08x %s",
 	    VTAILQ_FIRST(&sc_ctxs)->nbr, ctx_level,
@@ -651,9 +633,6 @@ static struct syscall syscalls[] = {
 	{ "CancelTimeout",	0x09e00, 0x09e2e, 0,       0, "A2", ""},
 	{ ">PIT",		0x09e30, 0x09e68, 0x09e6a, 0, "", ""},
 	{ "$IDLE",		0x09e74, 0x09f04, 0x09f06, 0, "", ""},
-	{ "KC15_DiagBus",	0x1022a, 0,	  0,	   1, "sPsWsP", "sP,sW,SP"},
-	{ "memcpy_protected",	0x10238, 0,	  0,       0, "sWsPsL", ""},
-	{ "LINK",		0x103b0, 0,		   0,	    1, "sPsWsSsS", ""},
 	{ "INIT.PROGRAM",	0x10656, 0,	  0x10704, 0, "", "" },
 	{ "MALLOC",		0x10856, 0x108b8, 0x108de, 0, "sL", "ilsq" },
 	{ "FREE",		0x108fa, 0x109fc, 0x109fc, 0, "sLsq", "" },

@@ -120,6 +120,8 @@ cli_ioc_dump(struct cli *cli)
  */
 
 #define RPN_REGS \
+	RPN_REG(PC) \
+	RPN_REG(SR) \
 	RPN_REG(A0) \
 	RPN_REG(A1) \
 	RPN_REG(A2) \
@@ -142,6 +144,12 @@ cli_ioc_dump(struct cli *cli)
 	rpn_##reg(struct rpn *rpn)				\
 	{							\
 		RPN_PUSH(m68k_get_reg(NULL, M68K_REG_##reg));	\
+	}							\
+	static void v_matchproto_(rpn_op_f)			\
+	rpn_dot_##reg(struct rpn *rpn)				\
+	{							\
+		Rpn_Printf(rpn, #reg "=%08x",			\
+		m68k_get_reg(NULL, M68K_REG_##reg));		\
 	}
 
 RPN_REGS
@@ -286,14 +294,45 @@ rpn_dirent(struct rpn *rpn)
 	Rpn_Printf(rpn, "}");
 }
 
+static void v_matchproto_(rpn_op_f)
+rpn_stack(struct rpn *rpn)
+{
+	unsigned a7, u;
+	const char *sep = "[";
+
+	a7 = m68k_get_reg(NULL, M68K_REG_A7);
+	for (u = 0; u < 32; u += 2) {
+		Rpn_Printf(rpn, "%s%04x",
+		    sep, m68k_debug_read_memory_16(a7 + u));
+		sep = " ";
+	}
+	Rpn_Printf(rpn, "]");
+}
+
+static void v_matchproto_(rpn_op_f)
+rpn_regs(struct rpn *rpn)
+{
+	const char *sep = "{";
+#define RPN_REG(reg) \
+	Rpn_Printf(rpn, "%s" #reg "=%08x", sep, m68k_get_reg(NULL, M68K_REG_##reg)); \
+	sep = ", ";
+RPN_REGS
+#undef RPN_REG
+	Rpn_Printf(rpn, "}");
+}
+
 void
 ioc_debug_init(void)
 {
-#define RPN_REG(reg)	Rpn_AddOp(#reg, rpn_##reg);
+#define RPN_REG(reg)				\
+	Rpn_AddOp(#reg, rpn_##reg);		\
+	Rpn_AddOp("." #reg, rpn_dot_##reg);
+
 	RPN_REGS
 #undef RPN_REG
-	Rpn_AddOp("sp_0", rpn_sp_0);
-#define RPN_SP(nbr)	Rpn_AddOp("sp_" #nbr, rpn_sp_##nbr);
+	Rpn_AddOp("sp", rpn_sp_0);
+	Rpn_AddOp("sp+0", rpn_sp_0);
+#define RPN_SP(nbr)	Rpn_AddOp("sp+" #nbr, rpn_sp_##nbr);
 	RPN_SPS
 #undef RPN_SP
 	Rpn_AddOp("!b", rpn_load_b);
@@ -302,4 +341,6 @@ ioc_debug_init(void)
 	Rpn_AddOp(",", rpn_comma);
 	Rpn_AddOp("String", rpn_string);
 	Rpn_AddOp("Dirent", rpn_dirent);
+	Rpn_AddOp("stack", rpn_stack);
+	Rpn_AddOp("regs", rpn_regs);
 }
