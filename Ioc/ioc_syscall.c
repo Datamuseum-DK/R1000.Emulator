@@ -51,7 +51,7 @@ static struct sc_def sc_defs[] = {
 	},
 	{ 0x10238, "ProtCopy",
 	    "'Dst=' sp+5 !l L , 'Src=' sp+3 !l L , 'Len=' sp+2 !w W",
-	    "stack"
+	    "sp+5 !w '=' W"
 	},
 
 	{ 0x1028c, "?muls_d3_d4_to_d3", ".D3 , .D4", ".D3 , .D4" },
@@ -148,7 +148,9 @@ sc_ret_peg(void *priv, const struct memdesc *md, const char *what,
 	(void)what;
 	(void)width;
 	(void)peg;
-	if (ioc_pc != adr || scc->ctx != VTAILQ_FIRST(&sc_ctxs))
+	if (ioc_pc != adr || !(ioc_fc & 2))
+		return (0);
+	if (scc->ctx != VTAILQ_FIRST(&sc_ctxs))
 	       return (0);
 	sc_render(1, scc->def);
 	Trace(1, "SCEXIT %2d %d SC=0x%08x %13ju RET=0x%08x %s",
@@ -173,7 +175,7 @@ sc_peg(void *priv, const struct memdesc *md, const char *what,
 	(void)peg;
 
 	AN(scd);
-	if (ioc_pc != adr)
+	if (ioc_pc != adr || !(ioc_fc & 2))
 		return (0);
 	sc_render(0, scd);
 	a7 =  m68k_get_reg(NULL, M68K_REG_A7);
