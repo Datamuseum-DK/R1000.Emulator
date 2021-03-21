@@ -68,11 +68,11 @@ memtrace_event(void *priv, const struct memdesc *md, const char *what,
 		bprintf(buf, "0x%08x", val);
 
 	if (what == mem_op_read) {
-		Trace(1, "MEMTRACE PC %08x R 0x%08x %s 0x%x@%s",
-		    ioc_pc, adr, buf, adr - md->lo, md->name);
+		Trace(1, "MEMTRACE PC %08x %d R 0x%08x %s 0x%x@%s",
+		    ioc_pc, ioc_fc, adr, buf, adr - md->lo, md->name);
 	} else if (what == mem_op_write) {
-		Trace(1, "MEMTRACE PC %08x W 0x%08x %s 0x%x@%s",
-		    ioc_pc, adr, buf, adr - md->lo, md->name);
+		Trace(1, "MEMTRACE PC %08x %d W 0x%08x %s 0x%x@%s",
+		    ioc_pc, ioc_fc, adr, buf, adr - md->lo, md->name);
 	}
 	return (0);
 }
