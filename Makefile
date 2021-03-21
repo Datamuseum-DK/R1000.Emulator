@@ -19,6 +19,7 @@ VPATH	= Musashi:Musashi/softfloat:Infra:Ioc:Diag
 
 OBJS	= main.o callout.o cli.o memory.o trace.o
 OBJS	+= elastic.o elastic_fd.o elastic_tcp.o elastic_match.o
+OBJS	+= rpn.o
 OBJS	+= vav.o
 OBJS	+= vsb.o
 
@@ -76,12 +77,14 @@ test:	r1000 ${BINFILES}
 	./r1000 \
 		-T ${TRACE_FILE} \
 		-t 0x0 \
-		"trace +diagbus_bytes" \
-		"trace +ioc_interrupt" \
+		"trace -diagbus_bytes" \
+		"trace -ioc_interrupt" \
+		"trace -ioc_instructions" \
+		"ioc memtrace add -lo 0x00000 -hi 0x00000" \
+		"ioc syscall" \
 		"console > _.console" \
 		"console telnet localhost:1400" \
 		"modem > _.modem" \
-		"ioc syscall" \
 		"ioc diagbus > _.diag" \
 		"scsi_tape" \
 		"scsi_disk 0 ${DISK0_IMAGE}" \
@@ -96,7 +99,7 @@ test:	r1000 ${BINFILES}
 		'console match expect "User program   (0,1,2) [0] : "' \
 		'console << ""' \
 		'console match expect "Enter option [enter CLI] : "' \
-		'console << "6"' \
+		'console << "1"' \
 		'console match expect "CLI>"' \
 		'console << "x novram"' \
 		'console match expect "Enter option : "' \
@@ -163,6 +166,7 @@ elastic_fd.o:		Infra/r1000.h Infra/elastic.h Infra/elastic_fd.c
 elastic_match.o:	Infra/r1000.h Infra/elastic.h Infra/elastic_match.c
 elastic_tcp.o:		Infra/r1000.h Infra/elastic.h Infra/elastic_tcp.c
 memory.o:		Infra/r1000.h Infra/memspace.h Infra/memory.c
+rpn.o:			Infra/r1000.h Infra/rpn.c
 trace.o:		Infra/r1000.h Infra/trace.h Infra/trace.c
 vav.o:			Infra/r1000.h Infra/vav.c
 vsb.o:			Infra/r1000.h Infra/vsb.c

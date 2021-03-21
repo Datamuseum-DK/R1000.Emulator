@@ -115,3 +115,191 @@ cli_ioc_dump(struct cli *cli)
 	cli_printf(cli, "Core dumped to '%s'\n", fn);
 }
 
+/**********************************************************************
+ * RPN operators
+ */
+
+#define RPN_REGS \
+	RPN_REG(A0) \
+	RPN_REG(A1) \
+	RPN_REG(A2) \
+	RPN_REG(A3) \
+	RPN_REG(A4) \
+	RPN_REG(A5) \
+	RPN_REG(A6) \
+	RPN_REG(A7) \
+	RPN_REG(D0) \
+	RPN_REG(D1) \
+	RPN_REG(D2) \
+	RPN_REG(D3) \
+	RPN_REG(D4) \
+	RPN_REG(D5) \
+	RPN_REG(D6) \
+	RPN_REG(D7)
+
+#define RPN_REG(reg)						\
+	static void v_matchproto_(rpn_op_f)			\
+	rpn_##reg(struct rpn *rpn)				\
+	{							\
+		RPN_PUSH(m68k_get_reg(NULL, M68K_REG_##reg));	\
+	}
+
+RPN_REGS
+#undef RPN_REG
+
+static void v_matchproto_(rpn_op_f)
+rpn_sp_0(struct rpn *rpn)
+{
+	intmax_t a7;
+	a7 = m68k_get_reg(NULL, M68K_REG_A7);
+	RPN_PUSH(a7);
+}
+
+#define RPN_SPS \
+	RPN_SP(1) \
+	RPN_SP(2) \
+	RPN_SP(3) \
+	RPN_SP(4) \
+	RPN_SP(5) \
+	RPN_SP(6) \
+	RPN_SP(7) \
+	RPN_SP(8) \
+	RPN_SP(9) \
+	RPN_SP(10) \
+	RPN_SP(11) \
+	RPN_SP(12)
+
+#define RPN_SP(nbr)						\
+	static void v_matchproto_(rpn_op_f)			\
+	rpn_sp_##nbr(struct rpn *rpn)				\
+	{							\
+		intmax_t a7;					\
+		a7 = m68k_get_reg(NULL, M68K_REG_A7);		\
+		RPN_PUSH(a7 + 2U * nbr);			\
+	}
+
+RPN_SPS
+#undef RPN_SP
+
+static void v_matchproto_(rpn_op_f)
+rpn_load_b(struct rpn *rpn)
+{
+	intmax_t a, b;
+
+	RPN_POP(a);
+	b = m68k_debug_read_memory_8((unsigned)a);
+	RPN_PUSH(b);
+}
+
+static void v_matchproto_(rpn_op_f)
+rpn_load_w(struct rpn *rpn)
+{
+	intmax_t a, b;
+
+	RPN_POP(a);
+	b = m68k_debug_read_memory_16((unsigned)a);
+	RPN_PUSH(b);
+}
+
+static void v_matchproto_(rpn_op_f)
+rpn_load_l(struct rpn *rpn)
+{
+	intmax_t a, b;
+
+	RPN_POP(a);
+	b = m68k_debug_read_memory_32((unsigned)a);
+	RPN_PUSH(b);
+}
+
+static void v_matchproto_(rpn_op_f)
+rpn_comma(struct rpn *rpn)
+{
+
+	Rpn_Printf(rpn, ", ");
+}
+
+static void v_matchproto_(rpn_op_f)
+rpn_string(struct rpn *rpn)
+{
+	intmax_t a;
+	unsigned u, v;
+	uint8_t c;
+
+	RPN_POP(a);
+	u = m68k_debug_read_memory_32((unsigned)a);
+	if (u == 1) {
+		Rpn_Printf(rpn, "NullString");
+		return;
+	}
+	v = m68k_debug_read_memory_32(u - 4);
+	if (v != u) {
+		Rpn_Printf(rpn, "BadString(%08x vs %08x)", u, v);
+		return;
+	}
+	v = m68k_debug_read_memory_16(u);
+	if (v > 0x7d) {
+		Rpn_Printf(rpn, "BadString(len %04x)", v);
+		return;
+	}
+	u += 2;
+	Rpn_Printf(rpn, "'");
+	while (v--) {
+		c = m68k_debug_read_memory_8(u++);
+		if (0x20 <= c && c <= 0x7e)
+			Rpn_Printf(rpn, "%c", c);
+		else
+			Rpn_Printf(rpn, "\\x%02x", c);
+	}
+	Rpn_Printf(rpn, "'");
+}
+
+static void v_matchproto_(rpn_op_f)
+rpn_dirent(struct rpn *rpn)
+{
+	intmax_t a;
+	unsigned u, v;
+	uint8_t c;
+
+	RPN_POP(a);
+	u = m68k_debug_read_memory_32((unsigned)a);
+	// u = m68k_debug_read_memory_32(u);
+	Rpn_Printf(rpn, "Dirent{'");
+	for (v = 0; v < 0x1c; v++) {
+		c = m68k_debug_read_memory_8(u++);
+		if (!c)
+			break;
+		if (0x20 <= c && c <= 0x7e)
+			Rpn_Printf(rpn, "%c", c);
+		else
+			Rpn_Printf(rpn, "\\x%02x", c);
+	}
+	Rpn_Printf(rpn, "',");
+	for (; v < 0x1c; v++) {
+		c = m68k_debug_read_memory_8(u++);
+		if (c)
+			Rpn_Printf(rpn, " [Bogo @%x: x%02x]", v, c);
+	}
+	for (; v < 0x40; v++) {
+		c = m68k_debug_read_memory_8(u++);
+		Rpn_Printf(rpn, " %02x", c);
+	}
+	Rpn_Printf(rpn, "}");
+}
+
+void
+ioc_debug_init(void)
+{
+#define RPN_REG(reg)	Rpn_AddOp(#reg, rpn_##reg);
+	RPN_REGS
+#undef RPN_REG
+	Rpn_AddOp("sp_0", rpn_sp_0);
+#define RPN_SP(nbr)	Rpn_AddOp("sp_" #nbr, rpn_sp_##nbr);
+	RPN_SPS
+#undef RPN_SP
+	Rpn_AddOp("!b", rpn_load_b);
+	Rpn_AddOp("!w", rpn_load_w);
+	Rpn_AddOp("!l", rpn_load_l);
+	Rpn_AddOp(",", rpn_comma);
+	Rpn_AddOp("String", rpn_string);
+	Rpn_AddOp("Dirent", rpn_dirent);
+}

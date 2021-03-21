@@ -35,6 +35,7 @@
 -esym(534, memset)
 -esym(534, memcpy)
 -esym(534, usleep)
+-esym(534, rpn_error)
 
 // 740 Unusual pointer cast (incompatible indirect types)
 -emacro((740), VTAILQ_LAST)

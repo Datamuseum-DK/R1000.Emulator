@@ -17,6 +17,7 @@ void v_matchproto_(cli_func_f) cli_scsi_tape(struct cli *cli);
 
 void *main_ioc(void *priv);
 
+void ioc_debug_init(void);
 void ioc_console_init(void);
 void ioc_duart_init(void);
 void ioc_scsi_d_init(void);

@@ -45,11 +45,47 @@ struct sc_def {
 };
 
 static struct sc_def sc_defs[] = {
-	{ 0x10284, "?string_lit2something", NULL, NULL },
-	{ 0x1028c, "?muls_d3_d4_to_d3", NULL, NULL },
-	{ 0x10290, "?mulu_d3_d4_to_d3", NULL, NULL },
-	{ 0x10294, "?divs_d3_d4", NULL, NULL },
-	{ 0x10298, "?divu_d3_d4", NULL, NULL },
+	{ 0x1022a, "DiagBus",
+	    "sp_5 !w W , sp_4 !w W , sp_2 !l L",
+	    "sp_3 !w W , sp_2 !w W , sp_0 !l L"
+	},
+	{ 0x10238, "ProtCopy",
+	    "'Dst=' sp_5 !l L , 'Src=' sp_3 !l L , 'Len=' sp_2 !w W",
+	    ""
+	},
+
+#define D3D4 "'D3=' D3 L , 'D4=' D4 L"
+	{ 0x1028c, "?muls_d3_d4_to_d3", D3D4, D3D4 },
+	{ 0x10290, "?mulu_d3_d4_to_d3", D3D4, D3D4 },
+	{ 0x10294, "?divs_d3_d4", D3D4, D3D4 },
+	{ 0x10298, "?divu_d3_d4", D3D4, D3D4 },
+#undef D3D4
+
+	{ 0x1029c, "Malloc", "sp_4 !l L , sp_2 !l L", "sp_2 !l !l L" },
+	{ 0x102a8, "Free", "sp_4 !l !l L , sp_2 !l L", "" },
+	{ 0x102b8, "NewString", "", "sp_0 !l String" },
+	{ 0x102bc, "FreeString", "sp_2 !l String", "" },
+	{ 0x102c0, "AppendChar", "sp_3 String , sp_2 !b B", "sp_1 String" },
+	{ 0x102c8, "StringEqual", "sp_4 String , sp_2 String", "sp_4 !b B" },
+	{ 0x102cc, "StringDup", "sp_2 String", "sp_0 String" },
+	{ 0x102d0, "StringCat2", "sp_4 String , sp_2 String", "sp_4 String" },
+	{ 0x102d8, "StringCat3",
+	    "sp_8 String , sp_6 String , sp_4 String , sp_2 String",
+	    "sp_6 String"
+	},
+	{ 0x102e4, "LongInt2String", "sp_2 !l L", "sp_2 String" },
+	{ 0x102ec, "String2LongInt",
+	    "sp_6 String",
+	    "sp_0 !l !l L , sp_2 !l !b B"
+	},
+	{ 0x10380, "Open",
+	    ".sp_10 String , sp_9 !w W , sp_8 !b B , sp_6 !l L",
+	    "sp_2 !b B , sp_0 !l Dirent"
+	},
+	{ 0x103b0, "Chain",
+	    "sp_7 String , sp_5 String , sp_4 !b B",
+	    "sp_0 L ' => ' sp_0 !l L ' => ' sp_0 !l !l L"
+	},
 	{ 1U<<31, NULL, NULL, NULL },
 };
 
@@ -59,7 +95,6 @@ struct sc_ctx {
 };
 
 struct sc_call {
-	unsigned		sc;
 	const struct sc_def	*def;
 	nanosec			when;
 	struct sc_ctx		*ctx;
@@ -78,27 +113,42 @@ static void
 sc_render(int ret, const struct sc_def *def, unsigned a7)
 {
 	int i;
-	unsigned u;
-	const char *params = NULL;
+	unsigned a, u;
+	const char *params;
 
-	if (def != NULL)
-		params = ret ? def->ret_args : def->call_args;
+	AN(def);
+	params = ret ? def->ret_args : def->call_args;
+
 	VSB_clear(sc_vsb);
 
-	if (def == NULL)
-		VSB_printf(sc_vsb, "<unknown>");
+	if (def->name == NULL)
+		VSB_printf(sc_vsb, "FS_CALL_%08x", def->address);
 	else
 		VSB_printf(sc_vsb, "%s", def->name);
 
-	if (params == NULL) {
+	if (!ret)
 		a7 += 4;
+	if (params == NULL || *params == '.') {
+		a = a7;
 		for (i = 0; i < 10; i++) {
-			u = m68k_debug_read_memory_16(a7);
+			u = m68k_debug_read_memory_16(a);
 			VSB_printf(sc_vsb, " 0x%04x", u);
-			a7 += 2;
+			a += 2;
 		}
+		if (params == NULL) {
+			AZ(VSB_finish(sc_vsb));
+			return;
+		}
+		params++;
 	}
+	VSB_printf(sc_vsb, "(");
+	i = Rpn_Eval(sc_vsb, params);
+	VSB_printf(sc_vsb, ")");
 	AZ(VSB_finish(sc_vsb));
+	if (i) {
+		printf("\nBad RPN in syscall 0x%08x: %s\n",
+		    def->address, params);
+	}
 }
 
 /**********************************************************************/
@@ -119,9 +169,9 @@ sc_ret_peg(void *priv, const struct memdesc *md, const char *what,
 	       return (0);
 	a7 =  m68k_get_reg(NULL, M68K_REG_A7);
 	sc_render(1, scc->def, a7);
-	Trace(1, "SCEXIT %d %d SC=0x%08x %13ju RET=0x%08x %s",
+	Trace(1, "SCEXIT %2d %d SC=0x%08x %13ju RET=0x%08x %s",
 	    VTAILQ_FIRST(&sc_ctxs)->nbr, ctx_level,
-	    scc->sc, scc->when, adr, VSB_data(sc_vsb));
+	    scc->def->address, scc->when, adr, VSB_data(sc_vsb));
 	return (1);
 }
 
@@ -140,14 +190,15 @@ sc_peg(void *priv, const struct memdesc *md, const char *what,
 	(void)width;
 	(void)peg;
 
+	AN(scd);
 	if (ioc_pc != adr)
 		return (0);
 	a7 =  m68k_get_reg(NULL, M68K_REG_A7);
 	sc_render(0, scd, a7);
 	u = m68k_debug_read_memory_32(a7);
-	Trace(1, "SCCALL %d %d SC=0x%08x A7=0x%08x RET=0x%08x %s",
+	Trace(1, "SCCALL %2d %d SC=0x%08x A7=0x%08x RET=0x%08x %s",
 	    VTAILQ_FIRST(&sc_ctxs)->nbr, ctx_level,
-	    adr, a7, u, VSB_data(sc_vsb));
+	    scd->address, a7, u, VSB_data(sc_vsb));
 	if (adr == 0x10280)
 		return (0);
 	if (adr == 0x1021e)
@@ -161,7 +212,6 @@ sc_peg(void *priv, const struct memdesc *md, const char *what,
 	}
 	scc = calloc(sizeof *scc, 1);
 	AN(scc);
-	scc->sc = adr;
 	scc->def = scd;
 	scc->when = simclock;
 	scc->ctx = VTAILQ_FIRST(&sc_ctxs);
@@ -177,19 +227,23 @@ sc_peg(void *priv, const struct memdesc *md, const char *what,
 }
 
 static void
-start_syscall_tracing(void)
+start_syscall_tracing(int intern)
 {
 	unsigned a;
-	struct sc_def *scp = sc_defs;
+	struct sc_def *scp = sc_defs, *scp2;
 	struct sc_ctx *sctx;
 
+	(void)intern;
 	a = 0x10200;
 	while (a < 0x1061c) {
 		if (scp->address == a) {
-			mem_peg_register(a, a + 2, sc_peg, scp++);
+			scp2 = scp++;
 		} else {
-			mem_peg_register(a, a + 2, sc_peg, NULL);
+			scp2 = calloc(sizeof *scp2, 1);
+			AN(scp2);
+			scp2->address = a;
 		}
+		mem_peg_register(a, a + 2, sc_peg, scp2);
 		if (a < 0x10280)
 			a += 2;
 		else if (a < 0x10460)
@@ -212,9 +266,8 @@ cli_ioc_syscall(struct cli *cli)
 		return;
 	}
 	if (VTAILQ_EMPTY(&sc_ctxs))
-		start_syscall_tracing();
+		start_syscall_tracing(0);
 }
-
 
 #if 0
 

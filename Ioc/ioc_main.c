@@ -464,6 +464,7 @@ ioc_init(void)
 	m68k_init();
 	m68k_set_cpu_type(IOC_CPU_TYPE);
 
+	ioc_debug_init();
 	ioc_load_eeproms();
 
 	ioc_console_init();

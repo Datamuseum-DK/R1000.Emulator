@@ -99,6 +99,34 @@ int cli_n_m_args(struct cli *cli, int minarg, int maxarg,
 int cli_n_args(struct cli *cli, int maxarg);
 void cli_unknown(struct cli *cli);
 
+/* RPN evaluator ******************************************************/
+
+struct rpn;
+
+typedef void rpn_op_f(struct rpn *);
+
+int Rpn_Eval(struct vsb *vsb, const char *pgm);
+void Rpn_AddOp(const char *name, rpn_op_f *func);
+int Rpn_Need(struct rpn *rpn, unsigned up, unsigned down);
+intmax_t Rpn_Pop(struct rpn *rpn);
+void Rpn_Push(struct rpn *rpn, intmax_t a);
+int Rpn_Failed(const struct rpn *rpn);
+void Rpn_Printf(const struct rpn *rpn, const char *fmt, ...);
+
+#define RPN_POP(var)						\
+	do {							\
+		var = Rpn_Pop(rpn);				\
+		if (Rpn_Failed(rpn))				\
+			return;					\
+	} while (0)
+
+#define RPN_PUSH(val)						\
+	do {							\
+		Rpn_Push(rpn, val);				\
+		if (Rpn_Failed(rpn))				\
+			return;					\
+	} while (0)
+
 /* Tracing & Debugging ************************************************/
 
 void Trace(int flag, const char *fmt, ...) __printflike(2, 3);
