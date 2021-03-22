@@ -350,7 +350,16 @@ cpu_trace(unsigned int pc)
 void
 cpu_instr_callback(unsigned int pc)
 {
+	uint8_t *peg;
 	unsigned int a6;
+
+	do {
+		pc = m68k_get_reg(NULL, M68K_REG_PC);
+		peg = mem_find_peg(pc);
+		AN(peg);
+		if (*peg & PEG_BREAKPOINT)
+			ioc_breakpoint_check(pc);
+	} while (pc != m68k_get_reg(NULL, M68K_REG_PC));
 
 	ioc_pc = pc;
 

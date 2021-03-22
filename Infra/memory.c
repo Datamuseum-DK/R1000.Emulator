@@ -23,7 +23,7 @@ const char *mem_error_cause;
 
 static pthread_mutex_t mem_mtx = PTHREAD_MUTEX_INITIALIZER;
 
-static void
+void
 mem_peg_reset(unsigned lo, unsigned hi, unsigned pegval)
 {
 	unsigned u;
@@ -46,6 +46,10 @@ mem_peg_set(unsigned lo, unsigned hi, unsigned pegval)
 	lo &= ~1;
 	for(u = lo; u < hi; u += 2) {
 		peg = mem_find_peg(u);
+		if (peg == NULL) {
+			printf("No PEG at 0x%x\n", u);
+			continue;
+		}
 		AN(peg);
 		*peg |= pegval;
 	}

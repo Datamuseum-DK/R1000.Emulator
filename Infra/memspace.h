@@ -26,10 +26,12 @@ extern const char * const mem_op_debug_write;
 
 #define PEG_CHECK	(1<<7)
 #define PEG_NOTRACE	(1<<6)
+#define PEG_BREAKPOINT	(1<<5)
 
 void mem_peg_check(const char *, struct memdesc *,
     unsigned, unsigned, unsigned, unsigned);
 uint8_t * mem_find_peg(unsigned address);
+void mem_peg_reset(unsigned lo, unsigned hi, unsigned pegval);
 void mem_peg_set(unsigned lo, unsigned hi, unsigned pegval);
 
 void mem_peg_register(unsigned lo, unsigned hi, mem_event_f *func, void *priv);
