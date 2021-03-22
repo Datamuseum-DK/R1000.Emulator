@@ -13,61 +13,57 @@
 #define NLOOP	10
 
 void
-Ioc_HotFix_Ioc(uint8_t *eeprom)
+Ioc_HotFix_Ioc(void)
 {
+
 	/*
 	 * 80000060 20 3c 00 00 82 35          MOVE.L  #0x00008235,D0
 	 * 80000066 51 c8 ff fe                DBF     D0,0x80000066
 	 */
-	vbe32enc(eeprom + 0x0062, NLOOP);
+	ioc_breakpoint_rpn(0x80000066, "D0 0xa min !D0");
 
 	/*
 	 * 800000fe 20 3c 00 01 04 6a          MOVE.L  #0x0001046a,D0
 	 * 80000104 53 80                      SUBQ.L  #0x1,D0
 	 */
-	vbe32enc(eeprom + 0x0100, NLOOP);
+	ioc_breakpoint_rpn(0x80000104, "D0 0xa min !D0");
 
 	/*
 	 * 80000132 20 3c 00 00 82 35          MOVE.L  #0x00008235,D0
 	 * 80000138 51 c8 ff fe                DBF     D0,0x80000138
 	 */
-	vbe32enc(eeprom + 0x0134, NLOOP);
+	ioc_breakpoint_rpn(0x80000138, "D0 0xa min !D0");
 
 	/*
 	 * 80000338 20 3c 00 00 82 35          MOVE.L  #0x00008235,D0
 	 * 8000033e 51 c8 ff fe                DBF     D0,0x8000033e
 	 */
-	vbe32enc(eeprom + 0x033a, NLOOP);
+	ioc_breakpoint_rpn(0x8000033e, "D0 0xa min !D0");
 
 	/*
 	 * 80000348 20 3c 00 00 82 35          MOVE.L  #0x00008235,D0
 	 * 8000034e 51 c8 ff fe                DBF     D0,0x8000034e
 	 */
-	vbe32enc(eeprom + 0x034a, NLOOP);
-
-	/*
-	 * 80003822 4e 96                      OUTTEXT
-	 * 80003824 20 31 39 00                .TXT    ' 19'
-	 */
-	vbe32enc(eeprom + 0x3825, 0x20323000); // Y2K
+	ioc_breakpoint_rpn(0x8000034e, "D0 0xa min !D0");
 }
 
 void
-Ioc_HotFix_Resha(uint8_t *eeprom)
+Ioc_HotFix_Resha(void)
 {
+
 	/*
 	 * 00077176 24 3c 00 0b 42 0f          MOVE.L  #0x000b420f,D2
 	 * 0007717c 08 38 00 01 90 01          BTST.B  #0x1,IO_UART_STATUS
 	 * 00077182 67 1e                      BEQ     0x771a2
 	 */
-	vbe32enc(eeprom + 0x7178, NLOOP);
+	ioc_breakpoint_rpn(0x0007717c, "D2 0xa min !D2");
 
 	/*
 	 * 00074588 20 3c 00 00 05 00          MOVE.L  #0x00000500,D0
 	 * 0007458e 53 80                      SUBQ.L  #0x1,D0
 	 * 00074590 66 fc                      BNE     0x7458e
 	 */
-	vbe32enc(eeprom + 0x458a, NLOOP);
+	ioc_breakpoint_rpn(0x0007458e, "D0 0xa min !D0");
 
 	/*
 	 * 00077386                    SCSI_T_AWAIT_INTERRUPT():
@@ -76,7 +72,7 @@ Ioc_HotFix_Resha(uint8_t *eeprom)
 	 * 0007738e 53 80                      SUBQ.L  #0x1,D0
 	 * 00077390 66 fc                      BNE     0x7738e
 	 */
-	vbe32enc(eeprom + 0x738a, NLOOP);
+	ioc_breakpoint_rpn(0x0007738e, "D0 0xa min !D0");
 }
 
 void

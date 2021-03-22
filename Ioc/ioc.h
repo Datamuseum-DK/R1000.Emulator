@@ -43,8 +43,8 @@ void ioc_dump_core(const char *);
 /**********************************************************************/
 
 void Ioc_HotFix_Bootloader(uint8_t *ram);
-void Ioc_HotFix_Ioc(uint8_t *eeprom);
-void Ioc_HotFix_Resha(uint8_t *eeprom);
+void Ioc_HotFix_Ioc(void);
+void Ioc_HotFix_Resha(void);
 void Ioc_HotFix_Kernel(uint8_t *ram);
 
 /**********************************************************************/

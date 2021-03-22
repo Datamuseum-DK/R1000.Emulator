@@ -42,13 +42,12 @@
 static uint8_t resha_eeprom[32768];
 
 static void
-insert_jump(unsigned int from, unsigned int to)
+skip_code(unsigned int from, unsigned int to, const char *why)
 {
+	char buf[100];
 
-	from &= 0x7fffffff;
-	ioc_eeprom_space[from] = 0x4e;
-	ioc_eeprom_space[from+1L] = 0xf9;
-	vbe32enc(ioc_eeprom_space + from + 2, to);
+	bprintf(buf, ".PC ' => ' 0x%x !PC .PC ' Skipping %s'", to, why);
+	ioc_breakpoint_rpn(from, buf);
 }
 
 void
@@ -64,50 +63,52 @@ ioc_load_eeproms(void)
 	assert(fread(ioc_eeprom_space + 0x6000, 1, 8192, fhandle) == 8192);
 	AZ(fclose(fhandle));
 
-	Ioc_HotFix_Ioc(ioc_eeprom_space);
+	Ioc_HotFix_Ioc();
 
 	fhandle = fopen("RESHA_EEPROM.bin", "rb");
 	AN(fhandle);
 	assert(fread(resha_eeprom + 0x0000, 1, 32768, fhandle) == 32768);
 	AZ(fclose(fhandle));
 
-	Ioc_HotFix_Resha(resha_eeprom);
+	Ioc_HotFix_Resha();
 
-	insert_jump(0x800001e4, 0x8000021a); // EEPROM CHECKSUM
-	insert_jump(0x800003a4, 0x80000546); // 512k RAM Test
-	insert_jump(0x80000568, 0x800007d0); // Parity
-	insert_jump(0x800007f4, 0x800009b2); // I/O Bus control
-	insert_jump(0x800009da, 0x80000a4a); // I/O Bus map parity
-	insert_jump(0x80000a74, 0x80000b8a); // I/O bus transactions
+	skip_code(0x800001e4, 0x8000021a, "EEPROM CHECKSUM");
+	skip_code(0x800003a4, 0x80000546, "512k RAM Test");
+	skip_code(0x80000568, 0x800007d0, "Parity");
+	skip_code(0x800007f4, 0x800009b2, "I/O Bus control");
+	skip_code(0x800009da, 0x80000a4a, "I/O Bus map parity");
+	skip_code(0x80000a74, 0x80000b8a, "I/O bus transactions");
 
-	//insert_jump(0x80000ba2, 0x80000bf2); // PIT  (=> DUART)
-	//insert_jump(0x80000c1a, 0x80000d20); // Modem DUART channel
-	//insert_jump(0x80000d4e, 0x80000dd6); // Diagnostic DUART channel
-	//insert_jump(0x80000dfc, 0x80000ec4); // Clock / Calendar
+	//skip_code(0x80000ba2, 0x80000bf2, "PIT  (=> DUART)");
+	//skip_code(0x80000c1a, 0x80000d20, "Modem DUART channel");
+	//skip_code(0x80000d4e, 0x80000dd6, "Diagnostic DUART channel");
+	//skip_code(0x80000dfc, 0x80000ec4, "Clock / Calendar");
 
-	// insert_jump(0x80000fa0, 0x80000fda); // RESHA EEProm Interface ...
+	// skip_code(0x80000fa0, 0x80000fda, "RESHA EEProm Interface ...");
 
-	insert_jump(0x80001170, 0x8000117c); // RESHA VEM sub-tests
-	insert_jump(0x8000117c, 0x80001188); // RESHA LANCE sub-tests
-	//insert_jump(0x80001188, 0x80001194); // RESHA DISK SUB-TESTs
-	insert_jump(0x80001194, 0x800011a0); // RESHA TAPE SUB-TESTs
+	skip_code(0x80001170, 0x8000117c, "RESHA VME sub-tests");
+	skip_code(0x8000117c, 0x80001188, "RESHA LANCE sub-tests");
+	//skip_code(0x80001188, 0x80001194, "RESHA DISK SUB-TESTs");
+	skip_code(0x80001194, 0x800011a0, "RESHA TAPE SUB-TESTs");
 
-	//insert_jump(0x800011c0, 0x800014d0); // Local interrupts
+	//skip_code(0x800011c0, 0x800014d0, "Local interrupts");
 
-	insert_jump(0x80001502, 0x800015ce); // Illegal reference protection
-	insert_jump(0x800015f2, 0x8000166c); // I/O bus parity
-	insert_jump(0x8000169c, 0x800016d8); // I/O bus spurious interrupts
-	insert_jump(0x80001700, 0x80001746); // Temperature sensors
-	insert_jump(0x80001774, 0x800017f8); // IOC diagnostic processor
-	insert_jump(0x8000181c, 0x8000185c); // Power margining
-	insert_jump(0x80001880, 0x8000197c); // Clock margining
-	insert_jump(0x80001982, 0x80001992); // final check
+	skip_code(0x80001502, 0x800015ce, "Illegal reference protection");
+	skip_code(0x800015f2, 0x8000166c, "I/O bus parity");
+	skip_code(0x8000169c, 0x800016d8, "I/O bus spurious interrupts");
+	skip_code(0x80001700, 0x80001746, "Temperature sensors");
+	skip_code(0x80001774, 0x800017f8, "IOC diagnostic processor");
+	skip_code(0x8000181c, 0x8000185c, "Power margining");
+	skip_code(0x80001880, 0x8000197c, "Clock margining");
+	skip_code(0x80001982, 0x80001992, "final check");
 
 	// Local interrupts test
-	insert_jump(0x800011dc, 0x800011fc); // XXX: Where does vector 0x50 come from ?!
-	insert_jump(0x8000127a, 0x80001298); // XXX: Where does vector 0x51 come from ?!
-	insert_jump(0x80001358, 0x80001470); // XXX: Where does vector 0x52 come from ?!
-
+	skip_code(0x800011dc, 0x800011fc,
+	    "XXX: Where does vector 0x50 come from ?!");
+	skip_code(0x8000127a, 0x80001298,
+	    "XXX: Where does vector 0x51 come from ?!");
+	skip_code(0x80001358, 0x80001470,
+	    "XXX: Where does vector 0x52 come from ?!");
 }
 
 /**********************************************************************/
