@@ -41,15 +41,6 @@
 
 static uint8_t resha_eeprom[32768];
 
-static void
-skip_code(unsigned int from, unsigned int to, const char *why)
-{
-	char buf[100];
-
-	bprintf(buf, ".PC ' => ' 0x%x !PC .PC ' Skipping %s'", to, why);
-	ioc_breakpoint_rpn(from, buf);
-}
-
 void
 ioc_load_eeproms(void)
 {
@@ -71,44 +62,6 @@ ioc_load_eeproms(void)
 	AZ(fclose(fhandle));
 
 	Ioc_HotFix_Resha();
-
-	skip_code(0x800001e4, 0x8000021a, "EEPROM CHECKSUM");
-	skip_code(0x800003a4, 0x80000546, "512k RAM Test");
-	skip_code(0x80000568, 0x800007d0, "Parity");
-	skip_code(0x800007f4, 0x800009b2, "I/O Bus control");
-	skip_code(0x800009da, 0x80000a4a, "I/O Bus map parity");
-	skip_code(0x80000a74, 0x80000b8a, "I/O bus transactions");
-
-	//skip_code(0x80000ba2, 0x80000bf2, "PIT  (=> DUART)");
-	//skip_code(0x80000c1a, 0x80000d20, "Modem DUART channel");
-	//skip_code(0x80000d4e, 0x80000dd6, "Diagnostic DUART channel");
-	//skip_code(0x80000dfc, 0x80000ec4, "Clock / Calendar");
-
-	// skip_code(0x80000fa0, 0x80000fda, "RESHA EEProm Interface ...");
-
-	skip_code(0x80001170, 0x8000117c, "RESHA VME sub-tests");
-	skip_code(0x8000117c, 0x80001188, "RESHA LANCE sub-tests");
-	//skip_code(0x80001188, 0x80001194, "RESHA DISK SUB-TESTs");
-	skip_code(0x80001194, 0x800011a0, "RESHA TAPE SUB-TESTs");
-
-	//skip_code(0x800011c0, 0x800014d0, "Local interrupts");
-
-	skip_code(0x80001502, 0x800015ce, "Illegal reference protection");
-	skip_code(0x800015f2, 0x8000166c, "I/O bus parity");
-	skip_code(0x8000169c, 0x800016d8, "I/O bus spurious interrupts");
-	skip_code(0x80001700, 0x80001746, "Temperature sensors");
-	skip_code(0x80001774, 0x800017f8, "IOC diagnostic processor");
-	skip_code(0x8000181c, 0x8000185c, "Power margining");
-	skip_code(0x80001880, 0x8000197c, "Clock margining");
-	skip_code(0x80001982, 0x80001992, "final check");
-
-	// Local interrupts test
-	skip_code(0x800011dc, 0x800011fc,
-	    "XXX: Where does vector 0x50 come from ?!");
-	skip_code(0x8000127a, 0x80001298,
-	    "XXX: Where does vector 0x51 come from ?!");
-	skip_code(0x80001358, 0x80001470,
-	    "XXX: Where does vector 0x52 come from ?!");
 }
 
 /**********************************************************************/

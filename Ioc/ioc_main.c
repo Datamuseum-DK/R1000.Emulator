@@ -350,15 +350,6 @@ cpu_instr_callback(unsigned int pc)
 
 	if (trace_ioc_instructions)
 		cpu_trace(pc, peg);
-
-	if (pc == 0x000540f6) {
-		printf("Bootloader jumps to kernel\n");
-		Ioc_HotFix_Kernel(ram_space);
-	}
-	if (pc == 0x0007678a) {
-		printf("Resha tape loader jumps to kernel\n");
-		Ioc_HotFix_Kernel(ram_space);
-	}
 }
 
 /* The main loop */
@@ -427,7 +418,6 @@ ioc_init(void)
 	ioc_scsi_d_init();
 	ioc_scsi_t_init();
 	ioc_rtc_init();
-	ioc_breakpoint(0x54000, Ioc_HotFix_Bootloader, NULL);
 
 	AZ(pthread_create(&ioc_cpu, NULL, main_ioc, NULL));
 }
