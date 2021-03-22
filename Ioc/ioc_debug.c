@@ -46,26 +46,13 @@ static pthread_mutex_t bpt_mtx = PTHREAD_MUTEX_INITIALIZER;
 
 struct breakpoint {
 	uint32_t			adr;
-	const char			*rpn;
+	ioc_bpt_f			*func;
+	void				*priv;
 	VTAILQ_ENTRY(breakpoint)	list;
 };
 
 static VTAILQ_HEAD(, breakpoint) breakpoints =
     VTAILQ_HEAD_INITIALIZER(breakpoints);
-
-void
-ioc_dump_registers(unsigned lvl)
-{
-
-	if (trace_fd < 0 || !(do_trace & lvl))
-		return;
-	AN(debug_vsb);
-	VSB_clear(debug_vsb);
-	VSB_printf(debug_vsb, "%12jd Registers\n", simclock);
-	ioc_dump_cpu_regs(debug_vsb);
-	AZ(VSB_finish(debug_vsb));
-	VSB_tofile(debug_vsb, trace_fd);
-}
 
 void
 ioc_dump_cpu_regs(struct vsb *vsb)
@@ -130,49 +117,73 @@ cli_ioc_dump(struct cli *cli)
 /**********************************************************************
  */
 
-void
-ioc_breakpoint_check(uint32_t adr)
+static int v_matchproto_(ioc_bpt_f)
+ioc_breakpoint_rpn_func(void *priv, uint32_t adr)
 {
-	struct breakpoint *bp, *bp2;
 	int i;
 
-	AZ(pthread_mutex_lock(&bpt_mtx));
-	VTAILQ_FOREACH_SAFE(bp, &breakpoints, list, bp2)
-		if (bp->adr == adr)
-			break;
-	if (bp != NULL) {
-		VTAILQ_REMOVE(&breakpoints, bp, list);
-		VTAILQ_INSERT_TAIL(&breakpoints, bp, list);
-	}
-	AZ(pthread_mutex_unlock(&bpt_mtx));
-	if (bp == NULL) {
-		mem_peg_reset(adr, adr + 2, PEG_BREAKPOINT);
-		return;
-	}
 	AN(debug_vsb);
 	VSB_clear(debug_vsb);
-	i = Rpn_Eval(debug_vsb, bp->rpn);
+	i = Rpn_Eval(debug_vsb, (const char *)priv);
 	AZ(VSB_finish(debug_vsb));
 	if (VSB_len(debug_vsb))
 		Trace(1, "Breakpoint %08x %s", adr, VSB_data(debug_vsb));
 	if (i)
-		printf("\nBad RPN in breakpoint 0x%08x: %s\n", adr, bp->rpn);
+		printf("\nBad RPN in breakpoint 0x%08x: %s\n",
+		    adr, (const char *)priv);
+	return (0);
+}
+
+void
+ioc_breakpoint_check(uint32_t adr)
+{
+	struct breakpoint *bp, *bp2;
+	int did = 0, i;
+
+	AZ(pthread_mutex_lock(&bpt_mtx));
+	VTAILQ_FOREACH_SAFE(bp, &breakpoints, list, bp2) {
+		if (bp->adr == adr) {
+			did = 1;
+			AZ(pthread_mutex_unlock(&bpt_mtx));
+			i = bp->func(bp->priv, bp->adr);
+			AZ(pthread_mutex_lock(&bpt_mtx));
+			VTAILQ_REMOVE(&breakpoints, bp, list);
+			if (i)
+				free(bp);
+			else
+				VTAILQ_INSERT_HEAD(&breakpoints, bp, list);
+		}
+	}
+	AZ(pthread_mutex_unlock(&bpt_mtx));
+	if (!did)
+		mem_peg_reset(adr, adr + 2, PEG_BREAKPOINT);
+}
+
+void
+ioc_breakpoint(uint32_t adr, ioc_bpt_f *func, void *priv)
+{
+	struct breakpoint *bp;
+
+	AN(func);
+	bp = calloc(sizeof *bp, 1);
+	AN(bp);
+	bp->adr = adr;
+	bp->func = func;
+	bp->priv = priv;
+	AZ(pthread_mutex_lock(&bpt_mtx));
+	VTAILQ_INSERT_TAIL(&breakpoints, bp, list);
+	AZ(pthread_mutex_unlock(&bpt_mtx));
+	mem_peg_set(adr, adr + 2, PEG_BREAKPOINT);
 }
 
 void
 ioc_breakpoint_rpn(uint32_t adr, const char *rpn)
 {
-	struct breakpoint *bp;
+	char *p;
 
-	bp = calloc(sizeof *bp, 1);
-	AN(bp);
-	bp->adr = adr;
-	bp->rpn = strdup(rpn);
-	AN(bp->rpn);
-	AZ(pthread_mutex_lock(&bpt_mtx));
-	VTAILQ_INSERT_TAIL(&breakpoints, bp, list);
-	AZ(pthread_mutex_unlock(&bpt_mtx));
-	mem_peg_set(adr, adr + 2, PEG_BREAKPOINT);
+	p = strdup(rpn);
+	AN(p);
+	ioc_breakpoint(adr, ioc_breakpoint_rpn_func, p);
 }
 
 void v_matchproto_(cli_func_f)

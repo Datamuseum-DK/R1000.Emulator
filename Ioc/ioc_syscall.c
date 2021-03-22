@@ -137,21 +137,13 @@ sc_render(int ret, const struct sc_def *def)
 
 /**********************************************************************/
 
-static int v_matchproto_(mem_event_f)
-sc_ret_peg(void *priv, const struct memdesc *md, const char *what,
-    unsigned adr, unsigned val, unsigned width, unsigned peg)
+static int v_matchproto_(ioc_bpt_f)
+sc_bpt_ret(void *priv, uint32_t adr)
 {
 	struct sc_call *scc = priv;
 
-	(void)md;
-	(void)val;
-	(void)what;
-	(void)width;
-	(void)peg;
-	if (ioc_pc != adr || !(ioc_fc & 2))
-		return (0);
 	if (scc->ctx != VTAILQ_FIRST(&sc_ctxs))
-	       return (0);
+		return (0);
 	sc_render(1, scc->def);
 	Trace(1, "SCEXIT %2d %d SC=0x%08x %13ju RET=0x%08x %s",
 	    VTAILQ_FIRST(&sc_ctxs)->nbr, ctx_level,
@@ -159,24 +151,15 @@ sc_ret_peg(void *priv, const struct memdesc *md, const char *what,
 	return (1);
 }
 
-static int v_matchproto_(mem_event_f)
-sc_peg(void *priv, const struct memdesc *md, const char *what,
-    unsigned adr, unsigned val, unsigned width, unsigned peg)
+static int v_matchproto_(ioc_bpt_f)
+sc_bpt(void *priv, uint32_t adr)
 {
 	unsigned a7, u;
 	struct sc_def *scd = priv;
 	struct sc_call *scc;
 	struct sc_ctx *sctx;
 
-	(void)md;
-	(void)what;
-	(void)val;
-	(void)width;
-	(void)peg;
-
 	AN(scd);
-	if (ioc_pc != adr || !(ioc_fc & 2))
-		return (0);
 	sc_render(0, scd);
 	a7 =  m68k_get_reg(NULL, M68K_REG_A7);
 	u = m68k_debug_read_memory_32(a7);
@@ -199,7 +182,7 @@ sc_peg(void *priv, const struct memdesc *md, const char *what,
 	scc->def = scd;
 	scc->when = simclock;
 	scc->ctx = VTAILQ_FIRST(&sc_ctxs);
-	mem_peg_register(u, u + 2, sc_ret_peg, scc);
+	ioc_breakpoint(u, sc_bpt_ret, scc);
 	if (adr == 0x103b0) {
 		sctx = calloc(sizeof *sctx, 1);
 		AN(sctx);
@@ -227,7 +210,7 @@ start_syscall_tracing(int intern)
 			AN(scp2);
 			scp2->address = a;
 		}
-		mem_peg_register(a, a + 2, sc_peg, scp2);
+		ioc_breakpoint(a, sc_bpt, scp2);
 		if (a < 0x10280)
 			a += 2;
 		else if (a < 0x10460)

@@ -46,6 +46,8 @@
      __attribute__((__format__ (__printf__, fmtarg, firstvararg)))
 #endif
 
+#define TRUST_ME(ptr)  ((void*)(uintptr_t)(ptr))
+
 struct vsb;
 
 /**********************************************************************/

@@ -7,6 +7,7 @@
 -sem(callout_insert, custodial(1))
 -sem(elastic_subscribe, custodial(3))
 -sem(mem_peg_register, custodial(4))
+-sem(ioc_breakpoint, custodial(3))
 
 -efile(451, "Ioc/interrupts.h")	// Header file 'Ioc/interrupts.h' repeatedly included but does not have a standard include guard
 
