@@ -50,8 +50,8 @@ static struct sc_def sc_defs[] = {
 	    "sp+3 !w W , sp+2 !w W , sp+0 !l L"
 	},
 	{ 0x10238, "ProtCopy",
-	    "'Dst=' sp+5 !l L , 'Src=' sp+3 !l L , 'Len=' sp+2 !w W",
-	    "sp+5 !w '=' W"
+	    "'Src=' sp+5 !l L , 'Dst=' sp+3 !l L , 'Len=' sp+2 !w W",
+	    "'=' sp+3 !l !b B"
 	},
 
 	{ 0x1028c, "?muls_d3_d4_to_d3", ".D3 , .D4", ".D3 , .D4" },
