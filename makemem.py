@@ -15,7 +15,7 @@ def main():
 
     ioc += Range("ram", 0x00000000, 0x00080000)
 
-    ioc += Range("ioc_eeprom", 0x80000000, 0x80008000, read_only=True)
+    ioc += Range("ioc_eeprom", 0x80000000, 0x80008000)
 
     ioc += Range("resha_page", 0x9303e00a, 0x3, post_write = True)
 
