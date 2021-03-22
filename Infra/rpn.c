@@ -214,6 +214,32 @@ TWO_ARGS
 #undef TWO_ARG
 
 static void v_matchproto_(rpn_op_f)
+rpn_min(struct rpn *rpn)
+{
+	intmax_t a, b;
+
+	RPN_POP(a);
+	RPN_POP(b);
+	if (a > b)
+		RPN_PUSH(b);
+	else
+		RPN_PUSH(a);
+}
+
+static void v_matchproto_(rpn_op_f)
+rpn_max(struct rpn *rpn)
+{
+	intmax_t a, b;
+
+	RPN_POP(a);
+	RPN_POP(b);
+	if (a > b)
+		RPN_PUSH(a);
+	else
+		RPN_PUSH(b);
+}
+
+static void v_matchproto_(rpn_op_f)
 rpn_modulus(struct rpn *rpn)
 {
 	intmax_t a, b;
@@ -245,6 +271,8 @@ static struct rpn_op rpn_builtin[] = {
 #define TWO_ARG(name, oper) { #oper, rpn_##name },
 TWO_ARGS
 #undef TWO_ARG
+	{ "min", rpn_min },
+	{ "max", rpn_max },
 	{ "/", rpn_divide },
 	{ "%", rpn_modulus },
 	{ "B", rpn_B },
