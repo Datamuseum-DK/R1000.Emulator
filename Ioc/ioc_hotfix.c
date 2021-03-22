@@ -197,10 +197,6 @@ hotfix_kernel_4_2_18(uint8_t *ram)
 	 */
 	vbe16enc(ram + 0x9b58, NLOOP);
 
-	// XXX: 'tape' make target:
-	// XXX: kernel fails tape initialization
-	// 00008f80: 0c39 0012 0000 0bfd : cmpi.b  #$12, $bfd.l
-	ram[0xbfd] = 0x12;
 }
 
 void
