@@ -16,6 +16,15 @@ void
 Ioc_HotFix_Ioc(void)
 {
 
+	ioc_breakpoint_rpn(0x80000088,
+	    "'Hit self-test fail. ' regs ' ' stack ' ' stop");
+
+	ioc_breakpoint_rpn(0x800000b4,
+	    "'Self-test at ' .A6 ' Failed ' regs ' ' stack ' ' stop");
+
+	ioc_breakpoint_rpn(0x80004d08,
+	    "'Hit debugger ' regs ' ' stack ' ' stop");
+
 	/*
 	 * 80000060 20 3c 00 00 82 35          MOVE.L  #0x00008235,D0
 	 * 80000066 51 c8 ff fe                DBF     D0,0x80000066
@@ -50,6 +59,15 @@ Ioc_HotFix_Ioc(void)
 void
 Ioc_HotFix_Resha(void)
 {
+
+	ioc_breakpoint_rpn(0x00071286,
+	    "'Hit RESHA self-test fail. ' regs ' ' stack ' ' stop");
+
+	ioc_breakpoint_rpn(0x0007056e,
+	    "'Hit RESHA self-test fail. ' regs ' ' stack ' ' stop");
+
+	ioc_breakpoint_rpn(0x000766a2,
+	    "'Hit RESHA self-test fail. ' regs ' ' stack ' ' stop");
 
 	/*
 	 * 00077176 24 3c 00 0b 42 0f          MOVE.L  #0x000b420f,D2

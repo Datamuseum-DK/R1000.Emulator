@@ -405,6 +405,14 @@ RPN_REGS
 	Rpn_Printf(rpn, "}");
 }
 
+static void v_matchproto_(rpn_op_f)
+rpn_stop(struct rpn *rpn)
+{
+	ioc_stop_cpu();
+	Rpn_Printf(rpn, "IOC CPU Stopped");
+	printf("\nIOC CPU stopped by breakpoint\n");
+}
+
 void
 ioc_debug_init(void)
 {
@@ -431,4 +439,5 @@ ioc_debug_init(void)
 	Rpn_AddOp("Dirent", rpn_dirent);
 	Rpn_AddOp("stack", rpn_stack);
 	Rpn_AddOp("regs", rpn_regs);
+	Rpn_AddOp("stop", rpn_stop);
 }

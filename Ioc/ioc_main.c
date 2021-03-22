@@ -66,13 +66,11 @@ unsigned int ioc_pc;
 /**********************************************************************
  */
 
-static void
+void
 ioc_stop_cpu(void)
 {
 	AZ(pthread_mutex_lock(&ioc_cpu_mtx));
 	ioc_cpu_quota = 0;
-	while (ioc_cpu_running)
-		AZ(pthread_cond_wait(&ioc_cpu_cond_state, &ioc_cpu_mtx));
 	AZ(pthread_mutex_unlock(&ioc_cpu_mtx));
 }
 
@@ -110,6 +108,7 @@ cli_ioc_reset(struct cli *cli)
 	if (cli_n_m_args(cli, 0, 1, "[-stop]"))
 		return;
 	ioc_stop_cpu();
+	ioc_wait_cpu_stopped();
 	memcpy(ram_space, ioc_eeprom_space, 8);
 	m68k_pulse_reset();
 	if (cli->ac == 0)
@@ -203,17 +202,6 @@ cli_ioc_maxins(struct cli *cli)
 	if (cli_n_m_args(cli, 1, 1, "[count]"))
 		return;
 	ioc_maxins = strtoumax(*cli->av, NULL, 0);
-}
-
-/**********************************************************************
- */
-
-static void
-crash(void)
-{
-	ioc_dump_registers(TRACE_68K);
-	ioc_dump_core("/tmp/_ioc.dump");
-	exit(2);
 }
 
 /**********************************************************************
@@ -312,17 +300,15 @@ make_hex(char* buff, unsigned int pc, unsigned int length)
 }
 
 static void
-cpu_trace(unsigned int pc)
+cpu_trace(unsigned int pc, uint8_t *peg)
 {
 
 	char buff[100];
 	char buff2[100];
-	uint8_t *peg;
 	unsigned int instr_size;
 	static unsigned int last_pc = 0;
 	static unsigned repeats = 0;
 
-	peg = mem_find_peg(pc);
 	AN(peg);
 	if (*peg & PEG_NOTRACE)
 		return;
@@ -351,7 +337,6 @@ void
 cpu_instr_callback(unsigned int pc)
 {
 	uint8_t *peg;
-	unsigned int a6;
 
 	do {
 		pc = m68k_get_reg(NULL, M68K_REG_PC);
@@ -363,44 +348,10 @@ cpu_instr_callback(unsigned int pc)
 
 	ioc_pc = pc;
 
-#if 0
-	if (0 && 0x00018ec8 <= pc && pc <= 0x00018eea)
-		ioc_dump_registers(TRACE_68K);
-#endif
 	if (trace_ioc_instructions)
-		cpu_trace(pc);
+		cpu_trace(pc, peg);
 
-	if (pc == 0x80000088) {
-		// hit self-test fail, stop tracing
-		ioc_dump_registers(TRACE_68K);
-		do_trace = 0;
-	}
-	if (pc == 0x100087ce) {
-		ioc_dump_registers(TRACE_68K);
-		do_trace = 0;
-		printf("DIAGTX breakpoint\n");
-		crash();
-	}
-	if (pc == 0x00071286 || pc == 0x7056e || pc == 0x766a2) {
-		ioc_dump_registers(TRACE_68K);
-		do_trace = 0;
-		printf("RESHA test failed\n");
-		crash();
-	}
-	if (pc == 0x800000b4) {
-		a6 =  m68k_get_reg(NULL, M68K_REG_A6);
-		printf("Self test at 0x%x failed\n", a6);
-		crash();
-	}
-	if (pc == 0x0000a090) {
-		ioc_dump_registers(TRACE_68K);
-		// hit trap, stop tracing
-		do_trace = 0;
-	}
-	if (pc == 0x80004d08) {
-		printf("Hit debugger\n");
-		crash();
-	}
+
 	if (pc == 0x000741e6) {
 		printf("Resha jumps to bootloader\n");
 		Ioc_HotFix_Bootloader(ram_space);
@@ -481,5 +432,6 @@ ioc_init(void)
 	ioc_scsi_d_init();
 	ioc_scsi_t_init();
 	ioc_rtc_init();
+
 	AZ(pthread_create(&ioc_cpu, NULL, main_ioc, NULL));
 }

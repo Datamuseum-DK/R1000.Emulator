@@ -34,6 +34,7 @@ void dma_read(unsigned segment, unsigned address, void *src, unsigned len);
 
 /**********************************************************************/
 
+void ioc_stop_cpu(void);
 void ioc_breakpoint_check(uint32_t adr);
 void ioc_breakpoint_rpn(uint32_t, const char *);
 void ioc_dump_registers(unsigned lvl);
