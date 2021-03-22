@@ -8,6 +8,7 @@
 #include <string.h>
 #include "r1000.h"
 #include "ioc.h"
+#include "memspace.h"
 #include "vend.h"
 
 #define NLOOP	10
@@ -93,10 +94,12 @@ Ioc_HotFix_Resha(void)
 	ioc_breakpoint_rpn(0x0007738e, "D0 0xa min !D0");
 }
 
-void
-Ioc_HotFix_Bootloader(uint8_t *ram)
+int v_matchproto_(ioc_bpt_f)
+Ioc_HotFix_Bootloader(void *priv, uint32_t adr)
 {
 
+	(void)priv;
+	(void)adr;
 	/*
 	 * 000541ee 32 3c 7f ff                MOVE.W  #0x7fff,D1
 	 * 000541f2 20 3c 00 00 05 00          MOVE.L  #0x00000500,D0
@@ -106,10 +109,11 @@ Ioc_HotFix_Bootloader(uint8_t *ram)
 	 * 00054204 66 1c                      BNE     0x54222
 	 * 00054206 51 c9 ff ea                DBF     D1,0x541f2
 	 */
-	if (vbe32dec(ram + 0x541ee) == 0x323c7fff)
-		vbe16enc(ram + 0x541f0, NLOOP);
-	if (vbe32dec(ram + 0x541f4) == 0x500)
-		vbe32enc(ram + 0x541f4, NLOOP);
+	if (m68k_debug_read_memory_32(0x541ee) == 0x323c7fff) {
+		ioc_breakpoint_rpn(0x000541f2, ".D1 D1 0xa min !D1");
+		ioc_breakpoint_rpn(0x000541f8, ".D0 D0 0xa min !D0");
+	}
+	return (1);
 }
 
 static void

@@ -76,7 +76,7 @@ void ioc_dump_core(const char *);
 
 /**********************************************************************/
 
-void Ioc_HotFix_Bootloader(uint8_t *ram);
+ioc_bpt_f Ioc_HotFix_Bootloader;
 void Ioc_HotFix_Ioc(void);
 void Ioc_HotFix_Resha(void);
 void Ioc_HotFix_Kernel(uint8_t *ram);
