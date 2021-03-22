@@ -46,12 +46,12 @@ struct sc_def {
 
 static struct sc_def sc_defs[] = {
 	{ 0x1022a, "DiagBus",
-	    "sp+5 !w W , sp+4 !w W , sp+2 !l L",
-	    "sp+3 !w W , sp+2 !w W , sp+0 !l L"
+	    "sp+5 @w W , sp+4 @w W , sp+2 @l L",
+	    "sp+3 @w W , sp+2 @w W , sp+0 @l L"
 	},
 	{ 0x10238, "ProtCopy",
-	    "'Src=' sp+5 !l L , 'Dst=' sp+3 !l L , 'Len=' sp+2 !w W",
-	    "'=' sp+3 !l !b B"
+	    "'Src=' sp+5 @l L , 'Dst=' sp+3 @l L , 'Len=' sp+2 @w W",
+	    "'=' sp+3 @l @b B"
 	},
 
 	{ 0x1028c, "?muls_d3_d4_to_d3", ".D3 , .D4", ".D3 , .D4" },
@@ -59,30 +59,30 @@ static struct sc_def sc_defs[] = {
 	{ 0x10294, "?divs_d3_d4", ".D3 , .D4", ".D3 , .D4" },
 	{ 0x10298, "?divu_d3_d4", ".D3 , .D4", ".D3 , .D4" },
 
-	{ 0x1029c, "Malloc", "sp+4 !l L , sp+2 !l L", "sp+2 !l !l L" },
-	{ 0x102a8, "Free", "sp+4 !l !l L , sp+2 !l L", "" },
-	{ 0x102b8, "NewString", "", "sp+0 !l String" },
-	{ 0x102bc, "FreeString", "sp+2 !l String", "" },
-	{ 0x102c0, "AppendChar", "sp+3 String , sp+2 !b B", "sp+1 String" },
-	{ 0x102c8, "StringEqual", "sp+4 String , sp+2 String", "sp+4 !b B" },
+	{ 0x1029c, "Malloc", "sp+4 @l L , sp+2 @l L", "sp+2 @l @l L" },
+	{ 0x102a8, "Free", "sp+4 @l @l L , sp+2 @l L", "" },
+	{ 0x102b8, "NewString", "", "sp+0 @l String" },
+	{ 0x102bc, "FreeString", "sp+2 @l String", "" },
+	{ 0x102c0, "AppendChar", "sp+3 String , sp+2 @b B", "sp+1 String" },
+	{ 0x102c8, "StringEqual", "sp+4 String , sp+2 String", "sp+4 @b B" },
 	{ 0x102cc, "StringDup", "sp+2 String", "sp+0 String" },
 	{ 0x102d0, "StringCat2", "sp+4 String , sp+2 String", "sp+4 String" },
 	{ 0x102d8, "StringCat3",
 	    "sp+8 String , sp+6 String , sp+4 String , sp+2 String",
 	    "sp+6 String"
 	},
-	{ 0x102e4, "LongInt2String", "sp+2 !l L", "sp+2 String" },
+	{ 0x102e4, "LongInt2String", "sp+2 @l L", "sp+2 String" },
 	{ 0x102ec, "String2LongInt",
 	    "sp+6 String",
-	    "sp+0 !l !l L , sp+2 !l !b B"
+	    "sp+0 @l @l L , sp+2 @l @b B"
 	},
 	{ 0x10380, "Open",
-	    "sp+10 String , sp+9 !w W , sp+8 !b B , sp+6 !l L",
-	    "sp+2 !b B , sp+0 !l Dirent"
+	    "sp+10 String , sp+9 @w W , sp+8 @b B , sp+6 @l L",
+	    "sp+2 @b B , sp+0 @l Dirent"
 	},
 	{ 0x103b0, "Chain",
-	    "sp+7 String , sp+5 String , sp+4 !b B",
-	    "sp+0 L ' => ' sp+0 !l L ' => ' sp+0 !l !l L"
+	    "sp+7 String , sp+5 String , sp+4 @b B",
+	    "sp+0 L ' => ' sp+0 @l L ' => ' sp+0 @l @l L"
 	},
 	{ 1U<<31, NULL, NULL, NULL },
 };

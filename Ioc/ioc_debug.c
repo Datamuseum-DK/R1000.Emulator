@@ -30,6 +30,8 @@
  */
 
 #include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 
 #include "r1000.h"
 #include "m68k.h"
@@ -37,7 +39,7 @@
 #include "vsb.h"
 #include "memspace.h"
 
-static struct vsb *syscall_vsb;
+static struct vsb *debug_vsb;
 
 void
 ioc_dump_registers(unsigned lvl)
@@ -45,14 +47,12 @@ ioc_dump_registers(unsigned lvl)
 
 	if (trace_fd < 0 || !(do_trace & lvl))
 		return;
-	if (syscall_vsb == NULL)
-		syscall_vsb = VSB_new_auto();
-	AN(syscall_vsb);
-	VSB_clear(syscall_vsb);
-	VSB_printf(syscall_vsb, "%12jd Registers\n", simclock);
-	ioc_dump_cpu_regs(syscall_vsb);
-	AZ(VSB_finish(syscall_vsb));
-	VSB_tofile(syscall_vsb, trace_fd);
+	AN(debug_vsb);
+	VSB_clear(debug_vsb);
+	VSB_printf(debug_vsb, "%12jd Registers\n", simclock);
+	ioc_dump_cpu_regs(debug_vsb);
+	AZ(VSB_finish(debug_vsb));
+	VSB_tofile(debug_vsb, trace_fd);
 }
 
 void
@@ -116,6 +116,66 @@ cli_ioc_dump(struct cli *cli)
 }
 
 /**********************************************************************
+ */
+
+struct breakpoint {
+	const char	*rpn;
+};
+
+static int v_matchproto_(mem_event_f)
+bp_peg(void *priv, const struct memdesc *md, const char *what,
+    unsigned adr, unsigned val, unsigned width, unsigned peg)
+{
+	struct breakpoint *bp = priv;
+	int i;
+
+	(void)md;
+	(void)what;
+	(void)val;
+	(void)width;
+	(void)peg;
+	if (ioc_pc != adr || !(ioc_fc & 2))
+		return (0);
+
+	AN(debug_vsb);
+	VSB_clear(debug_vsb);
+	i = Rpn_Eval(debug_vsb, bp->rpn);
+	AZ(VSB_finish(debug_vsb));
+	if (VSB_len(debug_vsb))
+		Trace(1, "Breakpoint %08x %s", adr, VSB_data(debug_vsb));
+	if (i)
+		printf("\nBad RPN in breakpoint 0x%08x: %s\n", adr, bp->rpn);
+	return (0);
+}
+
+void
+ioc_breakpoint(uint32_t address, const char *rpn)
+{
+	struct breakpoint *bp;
+
+	bp = calloc(sizeof *bp, 1);
+	AN(bp);
+	bp->rpn = strdup(rpn);
+	AN(bp->rpn);
+
+	mem_peg_register(address, address + 2, bp_peg, bp);
+}
+
+void v_matchproto_(cli_func_f)
+cli_ioc_breakpoint(struct cli *cli)
+{
+	if (cli->help) {
+		cli_usage(cli, " <address> <rpn>\n\tSet Breakpoint\n");
+		return;
+	}
+	cli->ac--;
+	cli->av++;
+	if (cli_n_m_args(cli, 2, 2, ""))
+		return;
+	ioc_breakpoint(strtoul(cli->av[0], NULL, 0), cli->av[1]);
+}
+
+/**********************************************************************
  * RPN operators
  */
 
@@ -150,6 +210,13 @@ cli_ioc_dump(struct cli *cli)
 	{							\
 		Rpn_Printf(rpn, #reg "=%08x",			\
 		m68k_get_reg(NULL, M68K_REG_##reg));		\
+	}							\
+	static void v_matchproto_(rpn_op_f)			\
+	rpn_bang_##reg(struct rpn *rpn)				\
+	{							\
+		unsigned u;					\
+		RPN_POP(u);					\
+		m68k_set_reg(M68K_REG_##reg, u);		\
 	}
 
 RPN_REGS
@@ -324,9 +391,13 @@ RPN_REGS
 void
 ioc_debug_init(void)
 {
+	debug_vsb = VSB_new_auto();
+	AN(debug_vsb);
+
 #define RPN_REG(reg)				\
 	Rpn_AddOp(#reg, rpn_##reg);		\
-	Rpn_AddOp("." #reg, rpn_dot_##reg);
+	Rpn_AddOp("." #reg, rpn_dot_##reg);	\
+	Rpn_AddOp("!" #reg, rpn_bang_##reg);
 
 	RPN_REGS
 #undef RPN_REG
@@ -335,9 +406,9 @@ ioc_debug_init(void)
 #define RPN_SP(nbr)	Rpn_AddOp("sp+" #nbr, rpn_sp_##nbr);
 	RPN_SPS
 #undef RPN_SP
-	Rpn_AddOp("!b", rpn_load_b);
-	Rpn_AddOp("!w", rpn_load_w);
-	Rpn_AddOp("!l", rpn_load_l);
+	Rpn_AddOp("@b", rpn_load_b);
+	Rpn_AddOp("@w", rpn_load_w);
+	Rpn_AddOp("@l", rpn_load_l);
 	Rpn_AddOp(",", rpn_comma);
 	Rpn_AddOp("String", rpn_string);
 	Rpn_AddOp("Dirent", rpn_dirent);

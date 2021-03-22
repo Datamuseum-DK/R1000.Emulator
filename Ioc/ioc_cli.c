@@ -18,6 +18,7 @@ static const struct cli_cmds cli_ioc_cmds[] = {
 	{ "stop",		cli_ioc_stop },
 	{ "start",		cli_ioc_start },
 	{ "maxins",		cli_ioc_maxins },
+	{ "breakpoint",		cli_ioc_breakpoint },
 	{ NULL,			NULL },
 };
 
