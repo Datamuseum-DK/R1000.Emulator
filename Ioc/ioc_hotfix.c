@@ -208,8 +208,6 @@ Ioc_HotFix_Bootloader(void *priv, uint32_t adr)
 	 * 00054206 51 c9 ff ea                DBF     D1,0x541f2
 	 */
 	if (m68k_debug_read_memory_32(0x541ee) == 0x323c7fff) {
-		//ioc_breakpoint_rpn(0x000541f2, ".D1 D1 0x1 min !D1 ' Shorten outer loop'");
-		//ioc_breakpoint_rpn(0x000541f8, ".D0 D0 0x1 min !D0 ' Shorten innner loop'");
 		ioc_breakpoint_rpn(0x000541f2, "D1 0x1 min !D1");
 		ioc_breakpoint_rpn(0x000541f8, "D0 0x1 min !D0");
 	}
@@ -301,7 +299,7 @@ hotfix_kernel_4_2_18(void)
 	 * 00009826 13 fc 00 00 93 03 ec 18    MOVE.B  #0x00,IO_SCSI_T_18_CMD
 	 * 0000982e 4e b9 00 00 97 f4          JSR     0x97f4
 	 */
-	ioc_breakpoint_rpn(0x0000981e, "D0 0xa min !D0");
+	ioc_breakpoint_rpn(0x0000981e, "D0 0x20 min !D0");
 
 	/*
 	 * 00009af6 20 3c 00 07 ff ff          MOVE.L  #0x0007ffff,D0
