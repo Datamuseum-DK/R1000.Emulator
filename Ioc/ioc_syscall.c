@@ -84,6 +84,19 @@ static struct sc_def sc_defs[] = {
 	    "sp+7 String , sp+5 String , sp+4 @b B",
 	    "sp+0 L ' => ' sp+0 @l L ' => ' sp+0 @l @l L"
 	},
+	{ 0x10568, "Experiment",
+	    "sp+0 @l @w W , "
+	    "sp+0 @l 3 + sp+0 @l 2 + @b ascii , "
+	    "sp+0 @l 3 + sp+0 @l 2 + @b + @w W , "
+	    "sp+0 @l 3 + sp+0 @l 2 + @b + 2 + @b B , "
+	    "sp+0 @l 3 + sp+0 @l 2 + @b + 3 + @b B , "
+	    "sp+0 @l sp+0 @l 2 + @b + 7 + "
+		"sp+0 @l 3 + sp+0 @l 2 + @b + 2 + @b "
+		"sp+0 @l 3 + sp+0 @l 2 + @b + 3 + @b "
+		"+ 'params=' hexdump , "
+	    "A7 8 + sp+0 @l @w 8 - 'args=' hexdump",
+	    ""
+	},
 	{ 1U<<31, NULL, NULL, NULL },
 };
 
@@ -161,7 +174,7 @@ sc_bpt(void *priv, uint32_t adr)
 
 	AN(scd);
 	sc_render(0, scd);
-	a7 =  m68k_get_reg(NULL, M68K_REG_A7);
+	a7 = m68k_get_reg(NULL, M68K_REG_A7);
 	u = m68k_debug_read_memory_32(a7);
 	Trace(1, "SCCALL %2d %d SC=0x%08x A7=0x%08x RET=0x%08x %s",
 	    VTAILQ_FIRST(&sc_ctxs)->nbr, ctx_level,

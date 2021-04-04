@@ -102,6 +102,7 @@
 -e716		// while(1) ...
 
 -e726		// Extraneous comma ignored
+-e786		// String concatenation within initializer
 
 // Threads/Locking
 -e457		// Function '___' of thread '___' has an unprotected write access to variable '___' which is used by function '___' of thread '___'
