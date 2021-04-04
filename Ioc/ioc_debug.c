@@ -390,6 +390,47 @@ rpn_dirent(struct rpn *rpn)
 }
 
 static void v_matchproto_(rpn_op_f)
+rpn_hexdump(struct rpn *rpn)
+{
+	unsigned u;
+	const char *sep = "[";
+	intmax_t a, b;
+
+	RPN_POP(a);
+	RPN_POP(b);
+	for (u = 0; u < a; u++) {
+		Rpn_Printf(rpn, "%s%02x",
+		    sep, m68k_debug_read_memory_8(b + u));
+		sep = " ";
+	}
+	if (!a)
+		Rpn_Printf(rpn, "%s", sep);
+	Rpn_Printf(rpn, "]");
+}
+
+static void v_matchproto_(rpn_op_f)
+rpn_ascii(struct rpn *rpn)
+{
+	unsigned u, c;
+	const char *sep = "\"";
+	intmax_t a, b;
+
+	RPN_POP(a);
+	RPN_POP(b);
+	for (u = 0; u < a; u++) {
+		c = m68k_debug_read_memory_8(b + u);
+		if (0x20 <= c && c <= 0x7e)
+			Rpn_Printf(rpn, "%s%c", sep, c);
+		else
+			Rpn_Printf(rpn, "%s\\x%02x", sep, c);
+		sep = "";
+	}
+	if (!a)
+		Rpn_Printf(rpn, "%s", sep);
+	Rpn_Printf(rpn, "\"");
+}
+
+static void v_matchproto_(rpn_op_f)
 rpn_stack(struct rpn *rpn)
 {
 	unsigned a7, u;
@@ -451,4 +492,6 @@ ioc_debug_init(void)
 	Rpn_AddOp("stack", rpn_stack);
 	Rpn_AddOp("regs", rpn_regs);
 	Rpn_AddOp("stop", rpn_stop);
+	Rpn_AddOp("hexdump", rpn_hexdump);
+	Rpn_AddOp("ascii", rpn_ascii);
 }
