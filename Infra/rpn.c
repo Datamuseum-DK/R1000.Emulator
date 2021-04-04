@@ -207,7 +207,7 @@ rpn_Q(struct rpn *rpn)
 		intmax_t a, b;					\
 		RPN_POP(a);					\
 		RPN_POP(b);					\
-		RPN_PUSH(a oper b);				\
+		RPN_PUSH(b oper a);				\
 	}
 
 TWO_ARGS
@@ -246,8 +246,8 @@ rpn_modulus(struct rpn *rpn)
 
 	RPN_POP(a);
 	RPN_POP(b);
-	if (b)
-		RPN_PUSH(a % b);
+	if (a)
+		RPN_PUSH(b % a);
 	else
 		RPN_PUSH(0);
 }
@@ -259,8 +259,8 @@ rpn_divide(struct rpn *rpn)
 
 	RPN_POP(a);
 	RPN_POP(b);
-	if (b)
-		RPN_PUSH(a / b);
+	if (a)
+		RPN_PUSH(b / a);
 	else
 		RPN_PUSH(0);
 }
