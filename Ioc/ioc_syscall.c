@@ -85,16 +85,15 @@ static struct sc_def sc_defs[] = {
 	    "sp+0 .L ' => ' sp+0 @L .L ' => ' sp+0 @L @L .L"
 	},
 	{ 0x10568, "Experiment",
-	    "sp+0 @L @W .W , "
-	    "sp+0 @L 3 + sp+0 @L 2 + @B ascii , "
-	    "sp+0 @L 3 + sp+0 @L 2 + @B + @W .W , "
-	    "sp+0 @L 3 + sp+0 @L 2 + @B + 2 + @B .B , "
-	    "sp+0 @L 3 + sp+0 @L 2 + @B + 3 + @B .B , "
-	    "sp+0 @L sp+0 @L 2 + @B + 7 + "
-		"sp+0 @L 3 + sp+0 @L 2 + @B + 2 + @B "
-		"sp+0 @L 3 + sp+0 @L 2 + @B + 3 + @B "
-		"+ 'params=' hexdump , "
-	    "A7 8 + sp+0 @L @W 8 - 'args=' hexdump",
+	    "sp+0 @L !a "
+	    "'stackdepth=' @a @W .W , "
+	    "'experiment=' @a 3 + @a 2 + @B ascii , "
+	    "@a 3 + @a 2 + @B + !b "
+	    "'adr=' @b @W .W , "
+	    "'n_out=' @b 2 + @B .B , "
+	    "'n_in=' @b 3 + @B .B , "
+	    "'params=' @b 4 + @b 2 + @B @b 3 + @B + hexdump , "
+	    "'stack=' A7 8 + @a @W 8 - hexdump",
 	    ""
 	},
 	{ 1U<<31, NULL, NULL, NULL },
@@ -145,6 +144,7 @@ sc_render(int ret, const struct sc_def *def)
 	if (i) {
 		printf("\nBad RPN in syscall 0x%08x: %s\n",
 		    def->address, params);
+		printf("%s", VSB_data(sc_vsb));
 	}
 }
 
@@ -369,7 +369,6 @@ ioc_trace_syscall(unsigned pc)
 	case 0x10478: return;
 	case 0x1047e: return;
 	case 0x10484: return;
-	case 0x10568: return;
 	case 0x10da4: return;
 	default:
 		VSB_cat(syscall_vsb, "\n");
@@ -577,22 +576,6 @@ sc_peg(void *priv, const struct memdesc *md, const char *what, unsigned adr, uns
 			VSB_cat(syscall_vsb, "\n");
 			continue;
 		}
-		if (which[0] == 'x' && which[1] == '2') {
-			// 10568 magic
-			v = m68k_get_reg(NULL, M68K_REG_A7);
-			u = m68k_debug_read_memory_32(v);
-			VSB_printf(syscall_vsb, "\t\t@ret\n");
-			hexdump(syscall_vsb, ram_space + u, 0x40, u);
-			w = m68k_debug_read_memory_16(u);
-			VSB_printf(syscall_vsb, "\t\t@0.W: 0x%04x\n", w);
-			w = m68k_debug_read_memory_8(u + 2);
-			VSB_printf(syscall_vsb, "\t\t@2.B: 0x%02x\n", w);
-			VSB_printf(syscall_vsb, "\t\t@3.S:");
-			dump_text(syscall_vsb, u + 3, w);
-			VSB_printf(syscall_vsb, "\n");
-			hexdump(syscall_vsb, ram_space + v + w, 0x40, v+w);
-			continue;
-		}
 		if (which[0] == 'x' && which[1] == '3') {
 			hexdump(syscall_vsb, ram_space + 0x150c, 0x100, 0x150c);
 			continue;
@@ -679,7 +662,6 @@ static struct syscall syscalls[] = {
 	{ "fs_104b4",		0x191d6, 0x1927c, 0,	   1, "", ""},
 	{ "fs_104ba",		0x1927e, 0x194f4, 0,	   1, "sEsBsBsW", "sEsBsBsW"},
 	{ "fs_104c0",		0x194f6, 0x195fc, 0,	   1, "", ""},
-	{ "fs_10568",		0x1a118, 0x1a232, 0,	   1, "x2", ""},
 	{ "fs_10592",		0x1a96a, 0x1a9ba, 0,	   1, "sLsW", "sLsW"},
 	{ "fs_10610",		0x1afd0, 0x1b01e, 0x1b020, 0, "", "sB"},
 
