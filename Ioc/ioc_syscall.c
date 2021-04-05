@@ -45,6 +45,12 @@ struct sc_def {
 };
 
 static struct sc_def sc_defs[] = {
+	{ 0x1020a, "WriteConsole",
+	    "sp+2 @L !a "
+	    "@a @W .W , "
+	    "@a 2 + @a @W ascii",
+	    ""
+	},
 	{ 0x1022a, "DiagBus",
 	    "sp+5 @W .W , sp+4 @W .W , sp+2 @L .L",
 	    "sp+3 @W .W , sp+2 @W .W , sp+0 @L .L"
@@ -64,10 +70,21 @@ static struct sc_def sc_defs[] = {
 	{ 0x102b8, "NewString", "", "sp+0 @L String" },
 	{ 0x102bc, "FreeString", "sp+2 @L String", "" },
 	{ 0x102c0, "AppendChar", "sp+3 String , sp+2 @B .B", "sp+1 String" },
+	{ 0x102c4, "FillString",
+	    "sp+6 .L , "
+	    "sp+4 @L sp+2 @W ascii , "
+	    "sp+3 @W .W , "
+	    "sp+2 @W .W " ,
+	    "sp+4 String"
+	},
 	{ 0x102c8, "StringEqual", "sp+4 String , sp+2 String", "sp+4 @B .B" },
 	{ 0x102cc, "StringDup", "sp+2 String", "sp+0 String" },
 	{ 0x102d0, "StringCat2", "sp+4 String , sp+2 String", "sp+4 String" },
-	{ 0x102d8, "StringCat3",
+	{ 0x102d4, "StringCat3",
+	    "sp+8 .L , sp+6 String , sp+4 String , sp+2 String",
+	    "sp+6 String"
+	},
+	{ 0x102d8, "StringCat4",
 	    "sp+8 String , sp+6 String , sp+4 String , sp+2 String",
 	    "sp+6 String"
 	},
@@ -83,6 +100,25 @@ static struct sc_def sc_defs[] = {
 	{ 0x103b0, "Chain",
 	    "sp+7 String , sp+5 String , sp+4 @B .B",
 	    "sp+0 .L ' => ' sp+0 @L .L ' => ' sp+0 @L @L .L"
+	},
+	{ 0x103b8, "PopProgram", "sp+2 String , sp+4 @B .B", "" },
+	{ 0x103d0, "WriteConsoleChar",
+	    "sp+2 @B .B",
+	    ""
+	},
+	{ 0x103d8, "WriteConsoleString",
+	    "sp+2 String",
+	    ""
+	},
+	{ 0x103dc, "WriteConsoleCrLf", "", "" },
+	{ 0x103e0, "WriteLineConsoleString",
+	    "sp+2 String",
+	    ""
+	},
+	{ 0x103e4, "AskConsoleString",
+	    "sp+4 .L , "
+	    "sp+2 String ",
+	    "sp+2 String"
 	},
 	{ 0x10568, "Experiment",
 	    "sp+0 @L !a "
