@@ -154,7 +154,7 @@ Rpn_Push(struct rpn *rpn, intmax_t a)
 }
 
 static void v_matchproto_(rpn_op_f)
-rpn_B(struct rpn *rpn)
+rpn_dotB(struct rpn *rpn)
 {
 	intmax_t a;
 
@@ -164,7 +164,7 @@ rpn_B(struct rpn *rpn)
 
 
 static void v_matchproto_(rpn_op_f)
-rpn_W(struct rpn *rpn)
+rpn_dotW(struct rpn *rpn)
 {
 	intmax_t a;
 
@@ -174,7 +174,7 @@ rpn_W(struct rpn *rpn)
 
 
 static void v_matchproto_(rpn_op_f)
-rpn_L(struct rpn *rpn)
+rpn_dotL(struct rpn *rpn)
 {
 	intmax_t a;
 
@@ -184,7 +184,7 @@ rpn_L(struct rpn *rpn)
 
 
 static void v_matchproto_(rpn_op_f)
-rpn_Q(struct rpn *rpn)
+rpn_dotQ(struct rpn *rpn)
 {
 	intmax_t a;
 
@@ -275,10 +275,10 @@ TWO_ARGS
 	{ "max", rpn_max },
 	{ "/", rpn_divide },
 	{ "%", rpn_modulus },
-	{ "B", rpn_B },
-	{ "W", rpn_W },
-	{ "L", rpn_L },
-	{ "Q", rpn_Q },
+	{ ".B", rpn_dotB },
+	{ ".W", rpn_dotW },
+	{ ".L", rpn_dotL },
+	{ ".Q", rpn_dotQ },
 	{ NULL, NULL }
 };
 /*lint -restore */
