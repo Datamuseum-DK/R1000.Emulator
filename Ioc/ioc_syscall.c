@@ -44,21 +44,38 @@ struct sc_def {
 	const char		*ret_args;
 };
 
+static const char supress[] = "";
+
 static struct sc_def sc_defs[] = {
+	{ 0x10204, "DiskIO",
+	    "D1 .W , sp+2 @W .W , sp+3 @L .L , sp+5 @L .L sp+5 @L 16 hexdump",
+	    "D1 .W , sp+0 @W .W , sp+1 @L .L , sp+3 @L .L sp+3 @L 16 hexdump"
+	},
+	{ 0x10206, "WaitDiskIO",
+	    "sp+4 @W .W , sp+2 .L",
+	    "sp+2 @W .W , sp+0 @B .B"
+	},
 	{ 0x1020a, "WriteConsole",
 	    "sp+2 @L !a "
 	    "@a @W .W , "
 	    "@a 2 + @a @W ascii",
-	    ""
+	    supress
+	},
+	{ 0x1021e, "ReInit",
+	    "sp+2 @L 16 hexdump",
+	    supress
 	},
 	{ 0x1022a, "DiagBus",
 	    "sp+5 @W .W , sp+4 @W .W , sp+2 @L .L",
 	    "sp+3 @W .W , sp+2 @W .W , sp+0 @L .L"
 	},
 	{ 0x10238, "ProtCopy",
-	    "'Src=' sp+5 @L .L , 'Dst=' sp+3 @L .L , 'Len=' sp+2 @W .W",
-	    "'=' sp+3 @L @B .B"
+	    "'Src=' sp+5 @L .L , 'Dst=' sp+3 @L .L , 'Len=' sp+2 @W .W "
+	    "' ' sp+5 @L sp+2 @W hexdump",
+	    supress
 	},
+
+	{ 0x10280, "StartProg", ".A7", supress },
 
 	{ 0x1028c, "?muls_d3_d4_to_d3", ".D3 , .D4", ".D3 , .D4" },
 	{ 0x10290, "?mulu_d3_d4_to_d3", ".D3 , .D4", ".D3 , .D4" },
@@ -66,9 +83,9 @@ static struct sc_def sc_defs[] = {
 	{ 0x10298, "?divu_d3_d4", ".D3 , .D4", ".D3 , .D4" },
 
 	{ 0x1029c, "Malloc", "sp+4 @L .L , sp+2 @L .L", "sp+2 @L @L .L" },
-	{ 0x102a8, "Free", "sp+4 @L @L .L , sp+2 @L .L", "" },
+	{ 0x102a8, "Free", "sp+4 @L @L .L , sp+2 @L .L", supress },
 	{ 0x102b8, "NewString", "", "sp+0 @L String" },
-	{ 0x102bc, "FreeString", "sp+2 @L String", "" },
+	{ 0x102bc, "FreeString", "sp+2 @L String", supress },
 	{ 0x102c0, "AppendChar", "sp+3 String , sp+2 @B .B", "sp+1 String" },
 	{ 0x102c4, "FillString",
 	    "sp+6 .L , "
@@ -97,23 +114,36 @@ static struct sc_def sc_defs[] = {
 	    "sp+10 String , sp+9 @W .W , sp+8 @B .B , sp+6 @L .L",
 	    "sp+2 @B .B , sp+0 @L Dirent"
 	},
-	{ 0x103b0, "Chain",
+	{ 0x1038c, "Close",
+	    "sp+9 @B .B , "
+	    "sp+8 @B .B , "
+	    "sp+6 @L .L , "
+	    "sp+4 @L .L sp+4 @L 4 hexdump , "
+	    "sp+2 @L Dirent",
+
+	    "sp+7 @B .B , "
+	    "sp+6 @B .B , "
+	    "sp+3 @L .L , "
+	    "sp+2 @L .L sp+2 @L 4 hexdump , "
+	    "'<closed>'"
+	},
+	{ 0x103b0, "PushProgram",
 	    "sp+7 String , sp+5 String , sp+4 @B .B",
 	    "sp+0 .L ' => ' sp+0 @L .L ' => ' sp+0 @L @L .L"
 	},
 	{ 0x103b8, "PopProgram", "sp+2 String , sp+4 @B .B", "" },
 	{ 0x103d0, "WriteConsoleChar",
 	    "sp+2 @B .B",
-	    ""
+	    supress
 	},
 	{ 0x103d8, "WriteConsoleString",
 	    "sp+2 String",
-	    ""
+	    supress
 	},
 	{ 0x103dc, "WriteConsoleCrLf", "", "" },
 	{ 0x103e0, "WriteLineConsoleString",
 	    "sp+2 String",
-	    ""
+	    supress
 	},
 	{ 0x103e4, "AskConsoleString",
 	    "sp+4 .L , "
@@ -215,24 +245,22 @@ sc_bpt(void *priv, uint32_t adr)
 	Trace(1, "SCCALL %2d %d SC=0x%08x A7=0x%08x RET=0x%08x %s",
 	    VTAILQ_FIRST(&sc_ctxs)->nbr, ctx_level,
 	    scd->address, a7, u, VSB_data(sc_vsb));
-	if (adr == 0x10280)
-		return (0);
-	if (adr == 0x1021e)
-		return (0);
-	if (adr == 0x103b8) {
+	if (adr == 0x103b8) {	// PopProgram
 		ctx_level--;
 		sctx = VTAILQ_FIRST(&sc_ctxs);
 		VTAILQ_REMOVE(&sc_ctxs, sctx, list);
 		free(sctx);
 		return (0);
 	}
+	if (scd->ret_args == supress)
+		return (0);
 	scc = calloc(sizeof *scc, 1);
 	AN(scc);
 	scc->def = scd;
 	scc->when = simclock;
 	scc->ctx = VTAILQ_FIRST(&sc_ctxs);
 	ioc_breakpoint(u, sc_bpt_ret, scc);
-	if (adr == 0x103b0) {
+	if (adr == 0x103b0) {	// PushProgram
 		sctx = calloc(sizeof *sctx, 1);
 		AN(sctx);
 		VTAILQ_INSERT_HEAD(&sc_ctxs, sctx, list);

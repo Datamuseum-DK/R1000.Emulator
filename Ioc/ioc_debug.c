@@ -366,7 +366,7 @@ rpn_dirent(struct rpn *rpn)
 	RPN_POP(a);
 	u = m68k_debug_read_memory_32((unsigned)a);
 	// u = m68k_debug_read_memory_32(u);
-	Rpn_Printf(rpn, "Dirent{'");
+	Rpn_Printf(rpn, "Dirent@0x%08x{'", a);
 	for (v = 0; v < 0x1c; v++) {
 		c = m68k_debug_read_memory_8(u++);
 		if (!c)
