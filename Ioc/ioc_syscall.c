@@ -47,6 +47,10 @@ struct sc_def {
 static const char supress[] = "";
 
 static struct sc_def sc_defs[] = {
+	{ 0x10200, "FSC_10200",
+	    "sp+4 @B .B , sp+2 @W .W",
+	    "sp+2 @B .B , sp+0 @W .W",
+	},
 	{ 0x10202, "DumpOn",
 	    "sp+2 @W .W , sp+3 @W .W",
 	    supress
@@ -97,12 +101,26 @@ static struct sc_def sc_defs[] = {
 	    "'cmd=' sp+2 @W .W , "
 	    "sp+0 @L @W .W",
 	},
+	{ 0x10232, "FSC_10232",
+	    "'Src=' sp+5 @L .L , 'Dst=' sp+3 @L .L , 'Len=' sp+2 @B .B "
+	    "' ' sp+5 @L sp+2 @B hexdump",
+	    supress
+	},
 	{ 0x10238, "ProtCopy",
 	    "'Src=' sp+5 @L .L , 'Dst=' sp+3 @L .L , 'Len=' sp+2 @W .W "
 	    "' ' sp+5 @L sp+2 @W hexdump",
 	    supress
 	},
-
+	{ 0x1023a, "AdrSpaceCopy",
+	    "'src=' sp+7 @L .L , "
+	    "sp+6 @W .W , "
+	    "'dst=' sp+4 @L .L , "
+	    "sp+3 @W .W , "
+	    "'len=' sp+2 @W .W "
+	    "sp+7 @L sp+2 @W hexdump"
+	    ,
+	    supress
+	},
 	{ 0x10280, "StartProg", ".A7", supress },
 
 	{ 0x1028c, "?muls_d3_d4_to_d3", ".D3 , .D4", ".D3 , .D4" },
@@ -133,13 +151,35 @@ static struct sc_def sc_defs[] = {
 	    "sp+8 String , sp+6 String , sp+4 String , sp+2 String",
 	    "sp+6 String"
 	},
+	{ 0x102dc, "StringCat5",
+	    "sp+10 String , sp+8 String , sp+6 String , sp+4 String , sp+2 String",
+	    "sp+8 String"
+	},
 	{ 0x102e4, "LongInt2String", "sp+2 @L .L", "sp+2 String" },
 	{ 0x102ec, "String2LongInt",
 	    "sp+6 String",
 	    "sp+0 @L @L .L , sp+2 @L @B .B"
 	},
 	{ 0x102f0, "ToUpper", "sp+2 String", "sp+0 String" },
+	{ 0x102f8, "RightPad", "sp+4 String , sp+2 @L .L", "sp+2 String" },
 	{ 0x10304, "Timestamp", "sp+2 @L .L", "sp+0 @L @L .L" },
+	{ 0x10308, "Time2Text",
+	    "sp+4 @L .L , "
+	    "sp+2 @L .L",
+	    "sp+2 String , "
+	    "sp+0 @L @L .L"
+	},
+	{ 0x10364, "FSC_10364",
+	    "sp+8 @L .L sp+8 @L sp+6 @L ascii , "
+	    "sp+6 @L .L , "
+	    "sp+4 @L .L , "
+	    "sp+2 @L .L "
+	    ,
+	    "sp+6 @L .L sp+6 @L sp+4 @L ascii , "
+	    "sp+4 @L .L , "
+	    "sp+2 @L .L , "
+	    "sp+0 @L .L"
+	},
 	{ 0x10368, "LBA2CHS",
 	    "sp+6 @W .W , sp+4 @L .L , sp+2 @L .L",
 	    "sp+4 @W .W , sp+2 @L @W .W , sp+0 @L @W .W"
@@ -195,6 +235,10 @@ static struct sc_def sc_defs[] = {
 	    "sp+2 @L .L sp+2 @L 4 hexdump , "
 	    "'<closed>'"
 	},
+	{ 0x103a4, "Foo",
+	    "sp+2 @L 16 hexdump",
+	    "sp+0 @L 16 hexdump"
+	},
 	{ 0x103b0, "PushProgram",
 	    "sp+7 String , sp+5 String , sp+4 @B .B",
 	    "sp+0 .L ' => ' sp+0 @L .L ' => ' sp+0 @L @L .L"
@@ -243,6 +287,16 @@ static struct sc_def sc_defs[] = {
 	    "sp+2 @L .L , "
 	    "sp+0 @L .L "
 	},
+	{ 0x10478, "FSC_10478",
+	    "sp+2 @L 16 hexdump",
+	    supress
+	},
+	{ 0x1047e, "DiagBusXmit",
+	    "sp+4 @B .B , "
+	    "sp+2 @L 16 hexdump ",
+	    "sp+2 @B .B , "
+	    "sp+0 @L 16 hexdump "
+	},
 	{ 0x10484, "DiagBusPing",
 	    "'adr=' sp+8 @B .B , "
 	    "sp+6 @L .L , "
@@ -257,6 +311,10 @@ static struct sc_def sc_defs[] = {
 	    "'adr=' sp+3 @B .B , 'cmd=' sp+2 @B .B",
 	    supress
 	},
+	{ 0x10496, "CloseExperiment",
+	    "sp+2 @L @L 16 hexdump",
+	    supress
+	},
 	{ 0x104ba, "DiagDownload",
 	    "sp+5 @B .B , "
 	    "'adr=' sp+4 @B .B , "
@@ -265,6 +323,9 @@ static struct sc_def sc_defs[] = {
 	    "sp+3 @B .B , "
 	    "sp+2 @B .B , "
 	    "sp+0 @L .L sp+0 @L 16 hexdump , "
+	},
+	{ 0x104c0, "FSC_104c0",
+	    "sp+4 @B .B , sp+2 @B .B", "sp+2 @B .B , sp+0 @B .B",
 	},
 	{ 0x10568, "Experiment",
 	    "sp+0 @L !a "
