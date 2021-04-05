@@ -80,8 +80,8 @@ ioc_rtc_setclock(void)
 	rtcregs[4] = (tm->tm_hour % 10);
 	rtcregs[4] |= (tm->tm_hour / 10) * 16;
 	rtcregs[5] = tm->tm_wday;
-	rtcregs[6] = ((tm->tm_mday+1) % 10);
-	rtcregs[6] |= ((tm->tm_mday+1) / 10) * 16;
+	rtcregs[6] = ((tm->tm_mday) % 10);
+	rtcregs[6] |= ((tm->tm_mday) / 10) * 16;
 	rtcregs[7] = ((tm->tm_mon+1) % 10);
 	rtcregs[7] |= ((tm->tm_mon+1) / 10) * 16;
 }
