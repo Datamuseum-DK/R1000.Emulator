@@ -88,6 +88,7 @@
 -esym(785, scsi_funcs)
 -esym(785, scsi_cmd_name)
 -esym(785, mem_desc_*)
+-esym(785, pseudo_number)
 
 // 826 Suspicious pointer-to-pointer conversion (area too small)
 -emacro((826), VTAILQ_LAST)

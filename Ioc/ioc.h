@@ -76,6 +76,10 @@ void ioc_dump_core(const char *);
 
 /**********************************************************************/
 
+void cli_start_internal_syscall_tracing(void);
+
+/**********************************************************************/
+
 void Ioc_HotFix_Ioc(void);
 void Ioc_HotFix_Resha(void);
 

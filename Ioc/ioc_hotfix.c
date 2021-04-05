@@ -360,5 +360,6 @@ Ioc_HotFix_Kernel(void *priv, uint32_t adr)
 		return (0);
 	}
 	printf("Hotfixes applied to kernel %s\n", buf);
+	cli_start_internal_syscall_tracing();
 	return (0);
 }

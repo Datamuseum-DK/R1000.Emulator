@@ -30,6 +30,7 @@
  */
 
 #include <stdlib.h>
+#include <string.h>
 
 #include "r1000.h"
 #include "m68k.h"
@@ -43,6 +44,8 @@ struct sc_def {
 	const char		*call_args;
 	const char		*ret_args;
 };
+
+static int is_tracing = 0;
 
 static const char supress[] = "";
 
@@ -184,6 +187,39 @@ static struct sc_def sc_defs[] = {
 	    "sp+6 @W .W , sp+4 @L .L , sp+2 @L .L",
 	    "sp+4 @W .W , sp+2 @L @W .W , sp+0 @L @W .W"
 	},
+	{ 0x1036c, "RW_Sectors",
+	    "sp+9 @B .B , "
+	    "'lba=' sp+8 @W .W , "
+	    "'nsect=' sp+6 @L .L , "
+	    "'dst=' sp+4 @L .L , "
+	    "sp+2 @L @B .B "
+	    ,
+	    "sp+7 @B .B , "
+	    "'lba=' sp+6 @W .W , "
+	    "'nsect=' sp+4 @L .L , "
+	    "'dst=' sp+2 @L .L , "
+	    "sp+0 @L @B .B "
+	},
+	{ 0x10374, "FSC_10374",
+	    "'lba=' sp+8 @W .W , "
+	    "sp+7 @W .W , "
+	    "sp+5 @L .L , "
+	    "sp+4 @W .W , "
+	    "sp+2 @L .L "
+	    ,
+	    "'lba=' sp+6 @W .W , "
+	    "sp+5 @W .W , "
+	    "sp+3 @L .L , "
+	    "sp+2 @W .W , "
+	    "sp+0 @L .L , "
+	},
+	{ 0x1037c, "FSC_1037c",
+	    "sp+4 @L .L sp+4 @L 16 ascii , "
+	    "sp+2 @L .L "
+	    ,
+	    "sp+2 @L .L sp+2 @L 16 ascii , "
+	    "sp+0 @L .L "
+	},
 	{ 0x10380, "OpenFile",
 	    "sp+10 String , sp+9 @W .W , sp+8 @B .B , sp+6 @L .L",
 	    "sp+2 @B .B , sp+0 @L Dirent"
@@ -235,7 +271,7 @@ static struct sc_def sc_defs[] = {
 	    "sp+2 @L .L sp+2 @L 4 hexdump , "
 	    "'<closed>'"
 	},
-	{ 0x103a4, "Foo",
+	{ 0x103a4, "FSC_103a4",
 	    "sp+2 @L 16 hexdump",
 	    "sp+0 @L 16 hexdump"
 	},
@@ -262,13 +298,13 @@ static struct sc_def sc_defs[] = {
 	    "sp+2 String ",
 	    "sp+2 String"
 	},
-	{ 0x1043c, "FSC_1043c",
+	{ 0x1043c, "FileReadLine",
 	    "sp+6 Dirent , "
-	    "sp+4 @L String , "
+	    "sp+4 @L .L , "
 	    "sp+2 @B .B"
 	    ,
 	    "sp+4 Dirent , "
-	    "sp+2 @L .L sp+2 @L @L 16 hexdump , "
+	    "sp+2 @L String , "
 	    "sp+0 @B .B"
 	},
 	{ 0x10460, "LoadExperiment",
@@ -451,7 +487,7 @@ sc_bpt(void *priv, uint32_t adr)
 static void
 start_syscall_tracing(int intern)
 {
-	unsigned a;
+	unsigned a, b;
 	struct sc_def *scp = sc_defs, *scp2;
 	struct sc_ctx *sctx;
 
@@ -465,13 +501,19 @@ start_syscall_tracing(int intern)
 			AN(scp2);
 			scp2->address = a;
 		}
-		ioc_breakpoint(a, sc_bpt, scp2);
-		if (a < 0x10280)
+		b = a;
+		if (a < 0x10280) {
 			a += 2;
-		else if (a < 0x10460)
+		} else if (a < 0x10460) {
+			if (intern)
+				b = a + 2 + m68k_debug_read_memory_16(a + 2);
 			a += 4;
-		else
+		} else {
+			if (intern)
+				b = m68k_debug_read_memory_32(a + 2);
 			a += 6;
+		}
+		ioc_breakpoint(b, sc_bpt, scp2);
 	}
 	sctx = calloc(sizeof *sctx, 1);
 	AN(sctx);
@@ -480,16 +522,48 @@ start_syscall_tracing(int intern)
 	AN(sc_vsb);
 }
 
+/*
+ * Internal tracing cannot start until FS is loaded, so we trigger that
+ * from ioc_hotfix.c
+ */
+
+void
+cli_start_internal_syscall_tracing(void)
+{
+	if (is_tracing == 2)
+		start_syscall_tracing(1);
+}
+
 void v_matchproto_(cli_func_f)
 cli_ioc_syscall(struct cli *cli)
 {
 	if (cli->help) {
-		cli_printf(cli, "XXX\n");
+		cli_usage(cli, " [internal]\n");
+		cli_printf(cli, "\tTrace DFS system calls.\n");
 		return;
 	}
-	if (VTAILQ_EMPTY(&sc_ctxs))
+	if (is_tracing)
+		return;
+
+	cli->ac--;
+	cli->av++;
+	if (cli->ac > 0 && !strcmp(*cli->av, "internal")) {
+		is_tracing = 2;
+	} else if (cli->ac != 0) {
+		cli_error(cli, "Wrong argument.\n");
+		cli_usage(cli, " [internal]\n");
+	} else {
+		is_tracing = 1;
 		start_syscall_tracing(0);
+	}
 }
+
+/*************************************************************************/
+/*************************************************************************/
+/*************************************************************************/
+/*************************************************************************/
+/*************************************************************************/
+/*************************************************************************/
 
 #if 0
 
