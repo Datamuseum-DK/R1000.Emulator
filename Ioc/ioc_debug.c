@@ -483,9 +483,9 @@ ioc_debug_init(void)
 #define RPN_SP(nbr)	Rpn_AddOp("sp+" #nbr, rpn_sp_##nbr);
 	RPN_SPS
 #undef RPN_SP
-	Rpn_AddOp("@b", rpn_load_b);
-	Rpn_AddOp("@w", rpn_load_w);
-	Rpn_AddOp("@l", rpn_load_l);
+	Rpn_AddOp("@B", rpn_load_b);
+	Rpn_AddOp("@W", rpn_load_w);
+	Rpn_AddOp("@L", rpn_load_l);
 	Rpn_AddOp(",", rpn_comma);
 	Rpn_AddOp("String", rpn_string);
 	Rpn_AddOp("Dirent", rpn_dirent);
