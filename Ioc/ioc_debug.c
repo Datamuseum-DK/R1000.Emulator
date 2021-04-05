@@ -360,13 +360,13 @@ static void v_matchproto_(rpn_op_f)
 rpn_dirent(struct rpn *rpn)
 {
 	intmax_t a;
-	unsigned u, v;
+	unsigned u, v, w;
 	uint8_t c;
 
 	RPN_POP(a);
 	u = m68k_debug_read_memory_32((unsigned)a);
 	// u = m68k_debug_read_memory_32(u);
-	Rpn_Printf(rpn, "Dirent@0x%08x{'", a);
+	Rpn_Printf(rpn, "Dirent@0x%08x{'", u);
 	for (v = 0; v < 0x1c; v++) {
 		c = m68k_debug_read_memory_8(u++);
 		if (!c)
@@ -376,15 +376,28 @@ rpn_dirent(struct rpn *rpn)
 		else
 			Rpn_Printf(rpn, "\\x%02x", c);
 	}
-	Rpn_Printf(rpn, "',");
+	Rpn_Printf(rpn, "', ");
 	for (; v < 0x1c; v++) {
+		c = m68k_debug_read_memory_8(u++);
+		if (c)
+			Rpn_Printf(rpn, " [Bogo @%x: x%02x]", v, c);
+	}
+	for (; v < 0x23; v++) {
+		c = m68k_debug_read_memory_8(u++);
+		Rpn_Printf(rpn, "%02x", c);
+	}
+	w = m68k_debug_read_memory_16(u);
+	Rpn_Printf(rpn, ", lba=0x%04x, ", w);
+	v += 2;
+	u += 2;
+	for (; v < 0x39; v++) {
 		c = m68k_debug_read_memory_8(u++);
 		if (c)
 			Rpn_Printf(rpn, " [Bogo @%x: x%02x]", v, c);
 	}
 	for (; v < 0x40; v++) {
 		c = m68k_debug_read_memory_8(u++);
-		Rpn_Printf(rpn, " %02x", c);
+		Rpn_Printf(rpn, "%02x", c);
 	}
 	Rpn_Printf(rpn, "}");
 }
