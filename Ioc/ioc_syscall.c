@@ -47,9 +47,21 @@ struct sc_def {
 static const char supress[] = "";
 
 static struct sc_def sc_defs[] = {
+	{ 0x10202, "DumpOn",
+	    "sp+2 @W .W , sp+3 @W .W",
+	    supress
+	},
 	{ 0x10204, "DiskIO",
-	    "D1 .W , sp+2 @W .W , sp+3 @L .L , sp+5 @L .L sp+5 @L 16 hexdump",
-	    "D1 .W , sp+0 @W .W , sp+1 @L .L , sp+3 @L .L sp+3 @L 16 hexdump"
+	    "D1 .W , sp+2 @W .W , sp+3 @L .L , sp+5 @L .L ':{'"
+	    "sp+5 @L !a "
+	    "'cyl=' @a 12 + @W .W "
+	    "' hd=' @a 14 + @B .B "
+	    "' sec=' @a 15 + @B .B "
+	    "' (=> lba=' @a 12 + @W 0x8fe @W * "
+	    "    @a 14 + @B + 0x8f6 @W * "
+	    "    @a 15 + @B + "
+	    "    2 / .W ')}'",
+	    "D1 .W , sp+0 @W .W , sp+1 @L .L , sp+3 @L .L"
 	},
 	{ 0x10206, "WaitDiskIO",
 	    "sp+4 @W .W , sp+2 .L",
@@ -61,13 +73,29 @@ static struct sc_def sc_defs[] = {
 	    "@a 2 + @a @W ascii",
 	    supress
 	},
+	{ 0x1020c, "PutCharConsole",
+	    "sp+2 @W .B ' (' sp+2 1 + 1 ascii ')'",
+	    supress
+	},
+	{ 0x1020e, "GetCharConsole",
+	    "sp+2 @L .L ",
+	    "sp+0 @L @W .B ' (' sp+0 @L 1 + 1 ascii ')'",
+	},
 	{ 0x1021e, "ReInit",
 	    "sp+2 @L 16 hexdump",
 	    supress
 	},
+	{ 0x10226, "Calendar",
+	    "sp+2 @L .L",
+	    "sp+0 @L 7 hexdump"
+	},
 	{ 0x1022a, "DiagBus",
-	    "sp+5 @W .W , sp+4 @W .W , sp+2 @L .L",
-	    "sp+3 @W .W , sp+2 @W .W , sp+0 @L .L"
+	    "sp+5 @L .L sp+5 @L 32 hexdump , "
+	    "'cmd=' sp+4 @W .W , "
+	    "sp+2 @L @W .W",
+	    "sp+3 @L .L sp+3 @L 32 hexdump , "
+	    "'cmd=' sp+2 @W .W , "
+	    "sp+0 @L @W .W",
 	},
 	{ 0x10238, "ProtCopy",
 	    "'Src=' sp+5 @L .L , 'Dst=' sp+3 @L .L , 'Len=' sp+2 @W .W "
@@ -110,11 +138,51 @@ static struct sc_def sc_defs[] = {
 	    "sp+6 String",
 	    "sp+0 @L @L .L , sp+2 @L @B .B"
 	},
-	{ 0x10380, "Open",
+	{ 0x102f0, "ToUpper", "sp+2 String", "sp+0 String" },
+	{ 0x10304, "Timestamp", "sp+2 @L .L", "sp+0 @L @L .L" },
+	{ 0x10368, "LBA2CHS",
+	    "sp+6 @W .W , sp+4 @L .L , sp+2 @L .L",
+	    "sp+4 @W .W , sp+2 @L @W .W , sp+0 @L @W .W"
+	},
+	{ 0x10380, "OpenFile",
 	    "sp+10 String , sp+9 @W .W , sp+8 @B .B , sp+6 @L .L",
 	    "sp+2 @B .B , sp+0 @L Dirent"
 	},
-	{ 0x1038c, "Close",
+	{ 0x10384, "ReadFile",
+	    "sp+10 Dirent , "
+	    "'secno=' sp+9 @W .W , "
+	    "sp+8 @W .W , "
+	    "sp+7 @W .W , "
+	    "sp+6 @B .B , "
+	    "'ptr=' sp+4 @L .L sp+4 @L 16 hexdump , "
+	    "sp+2 @L .L",
+
+	    "sp+8 Dirent , "
+	    "'secno=' sp+7 @W .W , "
+	    "sp+6 @W .W , "
+	    "sp+5 @W .W , "
+	    "sp+4 @B .B , "
+	    "'ptr=' sp+2 @L .L sp+2 @L 16 hexdump , "
+	    "sp+0 @L .L"
+	},
+	{ 0x10388, "WriteFile",
+	    "sp+10 Dirent , "
+	    "'secno=' sp+9 @W .W , "
+	    "sp+8 @W .W , "
+	    "sp+7 @W .W , "
+	    "sp+6 @B .B , "
+	    "'ptr=' sp+4 @L .L sp+4 @L 16 hexdump , "
+	    "sp+2 @L .L",
+
+	    "sp+8 Dirent , "
+	    "'secno=' sp+7 @W .W , "
+	    "sp+6 @W .W , "
+	    "sp+5 @W .W , "
+	    "sp+4 @B .B , "
+	    "'ptr=' sp+2 @L .L sp+2 @L 16 hexdump , "
+	    "sp+0 @L .L"
+	},
+	{ 0x1038c, "CloseFile",
 	    "sp+9 @B .B , "
 	    "sp+8 @B .B , "
 	    "sp+6 @L .L , "
@@ -150,6 +218,54 @@ static struct sc_def sc_defs[] = {
 	    "sp+2 String ",
 	    "sp+2 String"
 	},
+	{ 0x1043c, "FSC_1043c",
+	    "sp+6 Dirent , "
+	    "sp+4 @L String , "
+	    "sp+2 @B .B"
+	    ,
+	    "sp+4 Dirent , "
+	    "sp+2 @L .L sp+2 @L @L 16 hexdump , "
+	    "sp+0 @B .B"
+	},
+	{ 0x10460, "LoadExperiment",
+	    "sp+4 String , "
+	    "sp+2 @L .L "
+	    ,
+	    "'<freed>' , "
+	    "sp+0 @L .L '=>' sp+0 @L @L .L ' ' sp+0 @L @L 16 hexdump "
+	},
+	{ 0x10472, "DiagGetOutParam",
+	    "sp+6 @L .L , "
+	    "sp+4 @L .L , "
+	    "sp+2 @L .L "
+	    ,
+	    "sp+4 @L sp+0 @L 1 +  hexdump , "
+	    "sp+2 @L .L , "
+	    "sp+0 @L .L "
+	},
+	{ 0x10484, "DiagBusPing",
+	    "'adr=' sp+8 @B .B , "
+	    "sp+6 @L .L , "
+	    "sp+4 @L @B .B , "
+	    "sp+2 @L @B .B",
+	    "'adr=' sp+6 @B .B , "
+	    "'status=' sp+4 @L @B .B , "
+	    "sp+2 @L @B .B , "
+	    "sp+0 @L @B .B"
+	},
+	{ 0x1048a, "DiagBusCmd",
+	    "'adr=' sp+3 @B .B , 'cmd=' sp+2 @B .B",
+	    supress
+	},
+	{ 0x104ba, "DiagDownload",
+	    "sp+5 @B .B , "
+	    "'adr=' sp+4 @B .B , "
+	    "sp+2 @L .L sp+2 @L 16 hexdump , "
+	    ,
+	    "sp+3 @B .B , "
+	    "sp+2 @B .B , "
+	    "sp+0 @L .L sp+0 @L 16 hexdump , "
+	},
 	{ 0x10568, "Experiment",
 	    "sp+0 @L !a "
 	    "'stackdepth=' @a @W .W , "
@@ -162,6 +278,7 @@ static struct sc_def sc_defs[] = {
 	    "'stack=' A7 8 + @a @W 8 - hexdump",
 	    ""
 	},
+	{ 0x10592, "ReadConfig", "sp+2 @L .L ", "sp+0 @L .L , sp+2 @W .W" },
 	{ 1U<<31, NULL, NULL, NULL },
 };
 
