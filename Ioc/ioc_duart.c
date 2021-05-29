@@ -252,6 +252,9 @@ io_duart_post_write(int debug, uint8_t *space, unsigned width, unsigned adr)
 	case REG_W_CRA:
 	case REG_W_CRB:
 		switch ((space[adr] >> 4) & 0x7) {
+		case 0x1:
+			chp->mrptr = 0;
+			break;
 		case 0x2:
 			break;
 		case 0x3:
@@ -293,9 +296,10 @@ io_duart_post_write(int debug, uint8_t *space, unsigned width, unsigned adr)
 			chp->rxhold = space[adr];
 			chp->sr |= 1;
 		} else {
-			if (adr == REG_W_THRB)
-				Trace(trace_diagbus_bytes, "i8052.* RX %02x",
-				    space[adr]);
+			if (adr == REG_W_THRB) {
+				Trace(trace_diagbus_bytes, "i8052.* RX %02x %x",
+				    space[adr], (chp->mode[0] >> 2) & 1);
+			}
 			elastic_put(chp->ep, &space[adr], 1);
 		}
 		break;
