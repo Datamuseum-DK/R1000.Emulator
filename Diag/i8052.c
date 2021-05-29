@@ -43,7 +43,6 @@ struct i8052 {
 	uint8_t				unit;
 	uint8_t				ram[256];
 	struct elastic_subscriber	*esp;
-	uint8_t				present;
 	pthread_t			thread;
 };
 
@@ -88,12 +87,14 @@ i8052_thread(void *priv)
 	reply = 0;
 	while (1) {
 		u = i8052_rx_diagbus(i52);
+		if (!(u & 0x100))
+			continue;
+		me = (u & 0x1f) == i52->unit;
+		if (!me)
+			continue;
 		u8 = u & 0xff;
-		me = (u8 & 0xf) == i52->unit;
 		switch (u8 >> 4) {
 		case 0x0:
-			if (!me)
-				break;
 			if (reply) {
 				i8052_tx_diagbus(i52, reply);
 				reply = 0;
@@ -104,8 +105,6 @@ i8052_thread(void *priv)
 		case 0x2:
 			pointer = i8052_rx_diagbus(i52);
 			counter = i8052_rx_diagbus(i52);
-			if (!me)
-				break;
 			csum = 0;
 			i52->ram[0x11] = 0x02;
 			VSB_clear(vsb);
@@ -124,8 +123,6 @@ i8052_thread(void *priv)
 			    "%s UL%s", i52->name, VSB_data(vsb));
 			break;
 		case 0x8:
-			if (!me || !i52->present)
-				break;
 			reply = 5;
 			break;
 		case 0xa:
@@ -133,26 +130,19 @@ i8052_thread(void *priv)
 			csum = 0;
 			counter = i8052_rx_diagbus(i52);
 			csum += counter;
-			if (!me) {
-				while (counter--)
-					csum += i8052_rx_diagbus(i52);
-			} else {
-				VSB_clear(vsb);
-				while (counter--) {
-					u8 = i8052_rx_diagbus(i52);
-					csum += u8;
-					i52->ram[pointer++] = u8;
-					VSB_printf(vsb, " %02x", u8);
-				}
-				AZ(VSB_finish(vsb));
-				Trace(trace_diagbus_download,
-				    "%s DL%s", i52->name, VSB_data(vsb));
+			VSB_clear(vsb);
+			while (counter--) {
+				u8 = i8052_rx_diagbus(i52);
+				csum += u8;
+				i52->ram[pointer++] = u8;
+				VSB_printf(vsb, " %02x", u8);
 			}
+			AZ(VSB_finish(vsb));
+			Trace(trace_diagbus_download,
+			    "%s DL%s", i52->name, VSB_data(vsb));
 			assert (csum == i8052_rx_diagbus(i52));
 			break;
 		default:
-			if (!me)
-				break;
 			break;
 		}
 	}
@@ -160,7 +150,7 @@ i8052_thread(void *priv)
 }
 
 static void
-i8052_start(unsigned unit, uint8_t present, const char *name)
+i8052_start(unsigned unit, const char *name)
 {
 	struct i8052 *i52;
 
@@ -168,7 +158,6 @@ i8052_start(unsigned unit, uint8_t present, const char *name)
 	AN(i52);
 	i52->name = name;
 	i52->unit = unit;
-	i52->present = present;
 	i52->esp = elastic_subscribe(diag_elastic, NULL, NULL);
 	AZ(pthread_create(&i52->thread, NULL, i8052_thread, i52));
 }
@@ -178,13 +167,13 @@ i8052_init(void)
 {
 	AN(diag_elastic);
 	// According to i8052 firmware (0x678), address 5 is broadcast.
-	i8052_start(0x2, 1, "i8052.SEQ.2");
-	i8052_start(0x3, 1, "i8052.FIU.3");
-	i8052_start(0x4, 1, "i8052.IOC.4");
-	i8052_start(0x6, 1, "i8052.TYP.6");
-	i8052_start(0x7, 1, "i8052.VAL.7");
-	i8052_start(0xc, 1, "i8052.MEM0.c");
-	// i8052_start(0xd, 0, "i8052.MEM1.d");
-	i8052_start(0xe, 0, "i8052.MEM2.e");
-	// i8052_start(0xf, 0, "i8052.MEM3.f");
+	i8052_start(0x2, "i8052.SEQ.2");
+	i8052_start(0x3, "i8052.FIU.3");
+	i8052_start(0x4, "i8052.IOC.4");
+	i8052_start(0x6, "i8052.TYP.6");
+	i8052_start(0x7, "i8052.VAL.7");
+	i8052_start(0xc, "i8052.MEM0.c");
+	// i8052_start(0xd, "i8052.MEM1.d");
+	// i8052_start(0xe, "i8052.MEM2.e");
+	// i8052_start(0xf, "i8052.MEM3.f");
 }
