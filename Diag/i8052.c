@@ -54,18 +54,22 @@ i8052_tx_diagbus(const struct i8052 *i52, uint8_t x)
 	elastic_inject(diag_elastic, &x, 1);
 }
 
-static uint8_t
+static unsigned
 i8052_rx_diagbus(struct i8052 *i52)
 {
 	void *ptr;
 	size_t len;
-	uint8_t u8;
+	uint8_t *u8p;
+	unsigned retval;
 
 	AN(elastic_subscriber_fetch(&i52->esp, &ptr, &len));
-	assert(len == 1);
-	u8 = *(uint8_t*)ptr;
+	assert(len == 2);
+	u8p = ptr;
+	assert(u8p[0] < 2);
+	retval = u8p[0]<<8;
+	retval |= u8p[1];
 	free(ptr);
-	return (u8);
+	return (retval);
 }
 
 static void *
@@ -73,6 +77,7 @@ i8052_thread(void *priv)
 {
 	struct i8052 *i52 = priv;
 	uint8_t csum, counter, pointer, reply;
+	unsigned u;
 	uint8_t u8;
 	struct vsb *vsb;
 	int me;
@@ -82,7 +87,8 @@ i8052_thread(void *priv)
 
 	reply = 0;
 	while (1) {
-		u8 = i8052_rx_diagbus(i52);
+		u = i8052_rx_diagbus(i52);
+		u8 = u & 0xff;
 		me = (u8 & 0xf) == i52->unit;
 		switch (u8 >> 4) {
 		case 0x0:
@@ -171,6 +177,7 @@ void
 i8052_init(void)
 {
 	AN(diag_elastic);
+	// According to i8052 firmware (0x678), address 5 is broadcast.
 	i8052_start(0x2, 1, "i8052.SEQ.2");
 	i8052_start(0x3, 1, "i8052.FIU.3");
 	i8052_start(0x4, 1, "i8052.IOC.4");

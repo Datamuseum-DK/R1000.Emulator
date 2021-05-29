@@ -236,6 +236,7 @@ void v_matchproto_(mem_post_write)
 io_duart_post_write(int debug, uint8_t *space, unsigned width, unsigned adr)
 {
 	struct chan *chp;
+	uint8_t diag_txbuf[2];
 
 	if (debug) return;
 	assert (width == 1);
@@ -299,8 +300,12 @@ io_duart_post_write(int debug, uint8_t *space, unsigned width, unsigned adr)
 			if (adr == REG_W_THRB) {
 				Trace(trace_diagbus_bytes, "i8052.* RX %02x %x",
 				    space[adr], (chp->mode[0] >> 2) & 1);
+				diag_txbuf[0] = (chp->mode[0] >> 2) & 1;
+				diag_txbuf[1] = space[adr];
+				elastic_put(chp->ep, diag_txbuf, 2);
+			} else {
+				elastic_put(chp->ep, &space[adr], 1);
 			}
-			elastic_put(chp->ep, &space[adr], 1);
 		}
 		break;
 	case REG_W_OPCR:
