@@ -77,6 +77,13 @@ CLI_INCL = \
 	Infra/trace.h \
 	Infra/elastic.h
 
+#######################################################################
+# To include SystemC simulator, download more firmware with:
+#	make setup_systemc
+# and uncomment this `include` line:
+#	include SystemC/Makefile.inc
+#######################################################################
+
 test:	r1000sim ${BINFILES}
 	./r1000sim \
 		-T ${TRACE_FILE} \
@@ -133,7 +140,7 @@ seagate:	r1000sim ${BINFILES}
 
 tape:	r1000sim ${BINFILES}
 	./r1000sim \
-		-T /critter/_r1000 \
+		-T ${TRACE_FILE} \
 		-t 0x0 \
 		"ioc syscall" \
 		"scsi_tape ${DFS_TAPE}" \
@@ -157,7 +164,7 @@ tape:	r1000sim ${BINFILES}
 		
 
 r1000sim:	${OBJS}
-	${CC} -o r1000sim ${CFLAGS} ${LDFLAGS} ${OBJS}
+	${CC} -o r1000sim ${CFLAGS} ${LDFLAGS} ${OBJS} ${SIMLDFLAGS}
 	rm -f *.tmp
 
 clean:
@@ -198,6 +205,8 @@ ioc_uart.o:		${CLI_INCL} Ioc/ioc.h Ioc/ioc_uart.c
 
 i8052.o:		${CLI_INCL} Diag/i8052.c
 
+sc.o:			${CLI_INCL} SystemC/sc.c
+
 m68kops.o:		Musashi/m68kcpu.h m68kops.h m68kops.c
 m68kops.h m68kops.c:	m68kmake Ioc/musashi_conf.h Musashi/m68k_in.c
 			./m68kmake `pwd` Musashi/m68k_in.c
@@ -222,6 +231,9 @@ flint:
 
 setup:	${BINFILES}
 	git clone https://github.com/Datamuseum-DK/Musashi
+
+setup_systemc:
+	python3 -u fetch_firmware.py all
 
 ${BINFILES}:
 	python3 -u fetch_firmware.py

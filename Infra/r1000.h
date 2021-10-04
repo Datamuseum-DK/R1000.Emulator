@@ -133,6 +133,10 @@ void Rpn_Printf(const struct rpn *rpn, const char *fmt, ...);
 			return;					\
 	} while (0)
 
+/* SystemC ************************************************************/
+
+cli_func_f cli_sc;
+
 /* Tracing & Debugging ************************************************/
 
 void Trace(int flag, const char *fmt, ...) __printflike(2, 3);

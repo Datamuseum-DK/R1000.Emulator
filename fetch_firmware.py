@@ -33,8 +33,9 @@
    --------------------------------------------------------------
 '''
 
-import http.client
+import sys
 import os
+import http.client
 
 FWPATH = '_Firmware'
 
@@ -70,9 +71,10 @@ def getone(nbr):
 def firmwarelist():
     ''' See: https://datamuseum.dk/wiki/Bits:Keyword/RATIONAL_1000/SW '''
     yield from range(30000502, 30000504)
-    # yield from range(30002508, 30002518)
-    # yield from range(30002520, 30002616)
-    # yield from range(30002631, 30002641)
+    if sys.argv[1:] == ["all"]:
+        yield from range(30002508, 30002518)
+        yield from range(30002520, 30002616)
+        yield from range(30002631, 30002641)
 
 try:
     os.mkdir(FWPATH)

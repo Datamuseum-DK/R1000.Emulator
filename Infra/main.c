@@ -45,6 +45,14 @@ int optreset;		// Some have it, some not.
 nanosec	simclock;
 unsigned do_trace;
 
+#if !defined(WITH_SYSTEMC)
+void v_matchproto_(cli_func_f)
+cli_sc(struct cli *cli)
+{
+	cli_printf(cli, "SystemC not compiled in\n");
+}
+#endif
+
 void
 hexdump(struct vsb *vsb, const void *ptr, size_t len, unsigned offset)
 {
