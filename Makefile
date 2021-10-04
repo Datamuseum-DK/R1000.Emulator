@@ -3,10 +3,10 @@
 TRACE_FILE = "/critter/_r1000"
 
 # Set this to copy of https://datamuseum.dk/bits/30000551 (also ~1GB)
-DISK0_IMAGE = "/critter/DDHF/20191107_R1K_TAPES/R1K/PE_R1K_Disk0.dd"
+DISK0_IMAGE = "/critter/R1K/DiskImages/PE_R1K_Disk0.dd"
 
 # Set this to copy of https://datamuseum.dk/bits/30000552 (also ~1GB)
-DISK1_IMAGE = "/critter/DDHF/20191107_R1K_TAPES/R1K/PE_R1K_Disk1.dd"
+DISK1_IMAGE = "/critter/R1K/DiskImages/PE_R1K_Disk1.dd"
 
 # DFS tape copy of https://datamuseum.dk/bits/30000528 (20 MB)
 DFS_TAPE = "/critter/BitStoreCache/30000750.bin"
@@ -73,8 +73,8 @@ CLI_INCL = \
 	Infra/trace.h \
 	Infra/elastic.h
 
-test:	r1000 ${BINFILES}
-	./r1000 \
+test:	r1000sim ${BINFILES}
+	./r1000sim \
 		-T ${TRACE_FILE} \
 		-t 0x0 \
 		"trace -diagbus_bytes" \
@@ -108,8 +108,8 @@ test:	r1000 ${BINFILES}
 		'console << "0"'
 		
 
-seagate:	r1000 ${BINFILES}
-	./r1000 \
+seagate:	r1000sim ${BINFILES}
+	./r1000sim \
 		-T ${TRACE_FILE} \
 		-t 254 \
 		"console > _.console" \
@@ -127,8 +127,8 @@ seagate:	r1000 ${BINFILES}
 		'console match expect "User program   (0,1,2) [0] : "' \
 		'console << ""' 
 
-tape:	r1000 ${BINFILES}
-	./r1000 \
+tape:	r1000sim ${BINFILES}
+	./r1000sim \
 		-T /critter/_r1000 \
 		-t 0x0 \
 		"ioc syscall" \
@@ -152,12 +152,12 @@ tape:	r1000 ${BINFILES}
 		'console << "0"'
 		
 
-r1000:	${OBJS}
-	${CC} -o r1000 ${CFLAGS} ${LDFLAGS} ${OBJS}
+r1000sim:	${OBJS}
+	${CC} -o r1000sim ${CFLAGS} ${LDFLAGS} ${OBJS}
 	rm -f *.tmp
 
 clean:
-	rm -f *.o *.tmp r1000 m68kops.h m68kops.c m68kmake _memcfg.[ch]
+	rm -f *.o *.tmp r1000sim m68kops.h m68kops.c m68kmake _memcfg.[ch]
 
 callout.o:		Infra/r1000.h Infra/callout.c
 cli.o:			Infra/r1000.h Infra/vav.h Infra/cli.c Ioc/ioc.h
