@@ -15,6 +15,9 @@ DFS_TAPE = "/critter/BitStoreCache/30000750.bin"
 DISK0B_IMAGE = "/critter/DDHF/R1000/R1K_Seagate/R1K_Seagate0.BIN"
 DISK1B_IMAGE = "/critter/DDHF/R1000/R1K_Seagate/R1K_Seagate1.BIN"
 
+# Cache directory for firmware files, (relative to this directory)
+FIRMWARE_PATH = _Firmware
+
 VPATH	= Musashi:Musashi/softfloat:Infra:Ioc:Diag
 
 OBJS	= main.o callout.o cli.o memory.o trace.o
@@ -45,6 +48,7 @@ OBJS	+= i8052.o
 
 CFLAGSMINUSI += -I. -IInfra -IMusashi -IIoc -IDiag
 CFLAGSMINUSD += -DMUSASHI_CNF='"musashi_conf.h"'
+CFLAGSMINUSD += -DFIRMWARE_PATH='"${FIRMWARE_PATH}"'
 
 CFLAGS	+= -Wall -Werror -pthread -g -O0
 CFLAGS	+= ${CFLAGSMINUSD}
@@ -55,8 +59,8 @@ PARANOIA != sh cflags.sh "${CC}"
 
 CFLAGS += ${PARANOIA}
 
-BINFILES += IOC_EEPROM.bin
-BINFILES += RESHA_EEPROM.bin
+BINFILES += ${FIRMWARE_PATH}/IOC_EEPROM.bin
+BINFILES += ${FIRMWARE_PATH}/RESHA_EEPROM.bin
 
 M68K_INCL = \
 	_memcfg.h \
@@ -220,5 +224,4 @@ setup:	${BINFILES}
 	git clone https://github.com/Datamuseum-DK/Musashi
 
 ${BINFILES}:
-	curl -o IOC_EEPROM.bin https://datamuseum.dk/bits/30000502
-	curl -o RESHA_EEPROM.bin https://datamuseum.dk/bits/30000503
+	python3 -u fetch_firmware.py

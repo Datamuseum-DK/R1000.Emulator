@@ -35,6 +35,10 @@
 #include <pthread.h>
 #include <sys/types.h>
 
+#ifndef FIRMWARE_PATH
+#  define FIRMWARE_PATH "_FirmwareXXX"
+#endif
+
 #include "vqueue.h"
 
 #define AZ(x) assert((x) == 0);

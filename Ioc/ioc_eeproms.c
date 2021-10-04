@@ -46,7 +46,7 @@ ioc_load_eeproms(void)
 {
 	FILE* fhandle;
 
-	fhandle = fopen("IOC_EEPROM.bin", "rb");
+	fhandle = fopen(FIRMWARE_PATH "/IOC_EEPROM.bin", "rb");
 	AN(fhandle);
 	assert(fread(ioc_eeprom_space + 0x0000, 1, 8192, fhandle) == 8192);
 	assert(fread(ioc_eeprom_space + 0x4000, 1, 8192, fhandle) == 8192);
@@ -56,7 +56,7 @@ ioc_load_eeproms(void)
 
 	Ioc_HotFix_Ioc();
 
-	fhandle = fopen("RESHA_EEPROM.bin", "rb");
+	fhandle = fopen(FIRMWARE_PATH "/RESHA_EEPROM.bin", "rb");
 	AN(fhandle);
 	assert(fread(resha_eeprom + 0x0000, 1, 32768, fhandle) == 32768);
 	AZ(fclose(fhandle));
