@@ -8,4 +8,5 @@
 	TRACER(diagbus_upload, "Uploads on DiagBus")			\
 	TRACER(disk_data, "Data to/from disk(s)")			\
 	TRACER(tape_data, "Data to/from tape(s)")			\
-	TRACER(scsi_cmd, "SCSI commands, both busses")
+	TRACER(scsi_cmd, "SCSI commands, both busses")			\
+	TRACER(systemc, "SystemC model")
