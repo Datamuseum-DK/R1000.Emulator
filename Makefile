@@ -81,15 +81,17 @@ CLI_INCL = \
 # To include SystemC simulator, download more firmware with:
 #	make setup_systemc
 # and uncomment this `include` line:
-#	include SystemC/Makefile.inc
+include SystemC/Makefile.inc
 #######################################################################
 
-test:	r1000sim ${BINFILES}
+cli:	r1000sim ${BINFILES}
+	(cd SystemC && make)
 	./r1000sim \
 		-T ${TRACE_FILE} \
 		-t 0x0 \
 		"trace -diagbus_bytes" \
 		"trace -ioc_interrupt" \
+		"trace -ioc_dma" \
 		"trace -ioc_instructions" \
 		"ioc memtrace add -lo 0x00000 -hi 0x00000" \
 		"ioc syscall" \
@@ -111,12 +113,45 @@ test:	r1000sim ${BINFILES}
 		'console << ""' \
 		'console match expect "Enter option [enter CLI] : "' \
 		'console << "1"' \
+		'console match expect "CLI>"'
+
+test:	r1000sim ${BINFILES}
+	(cd SystemC && make)
+	./r1000sim \
+		-T ${TRACE_FILE} \
+		-t 0x0 \
+		"trace -diagbus_bytes" \
+		"trace -ioc_interrupt" \
+		"trace -ioc_dma" \
+		"trace -ioc_instructions" \
+		"ioc memtrace add -lo 0x00000 -hi 0x00000" \
+		"ioc syscall" \
+		"console > _.console" \
+		"console telnet localhost:1400" \
+		"modem > _.modem" \
+		"ioc diagbus > _.diag" \
+		"scsi_tape" \
+		"scsi_disk 0 ${DISK0_IMAGE}" \
+		"scsi_disk 1 ${DISK1_IMAGE}" \
+		"dummy_diproc seq fiu ioc typ val mem0" \
+		"reset" \
+		'console match expect "Boot from (Tn or Dn)  [D0] : "' \
+		'console << ""' \
+		'console match expect "Kernel program (0,1,2) [0] : "' \
+		'console << ""' \
+		'console match expect "File system    (0,1,2) [0] : "' \
+		'console << ""' \
+		'console match expect "User program   (0,1,2) [0] : "' \
+		'console << ""' \
+		'console match expect "Enter option [enter CLI] : "' \
+		'console << "1"' \
 		'console match expect "CLI>"' \
 		'console << "x novram"' \
 		'console match expect "Enter option : "' \
 		'console << "1"' \
 		'console match expect "Enter option : "' \
-		'console << "0"'
+		'console << "0"' \
+		'console match expect "CLI>"'
 		
 
 seagate:	r1000sim ${BINFILES}
@@ -227,6 +262,7 @@ flint:
 		Diag/*.c \
 		Infra/*.c \
 		Ioc/*.c \
+		SystemC/sc.c \
 		_memcfg.c
 
 setup:	${BINFILES}

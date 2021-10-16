@@ -183,7 +183,7 @@ nanosec callout_poll(void);
 
 extern struct elastic *diag_elastic;
 
-void i8052_init(void);
+cli_func_f cli_dummy_diproc;
 
 /* MEMORY *************************************************************/
 

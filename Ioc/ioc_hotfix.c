@@ -207,7 +207,7 @@ Ioc_HotFix_Bootloader(void *priv, uint32_t adr)
 	 * 00054204 66 1c                      BNE     0x54222
 	 * 00054206 51 c9 ff ea                DBF     D1,0x541f2
 	 */
-	if (m68k_debug_read_memory_32(0x541ee) == 0x323c7fff) {
+	if (0 && m68k_debug_read_memory_32(0x541ee) == 0x323c7fff) {
 		ioc_breakpoint_rpn(0x000541f2, "D1 0x2 min !D1");
 		ioc_breakpoint_rpn(0x000541f8, "D0 0x2 min !D0");
 	}

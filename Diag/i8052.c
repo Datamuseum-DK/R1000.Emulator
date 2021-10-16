@@ -30,6 +30,7 @@
  */
 
 #include <stdlib.h>
+#include <string.h>
 #include <unistd.h>
 
 #include "r1000.h"
@@ -146,7 +147,6 @@ i8052_thread(void *priv)
 			break;
 		}
 	}
-	return (NULL);
 }
 
 static void
@@ -162,18 +162,29 @@ i8052_start(unsigned unit, const char *name)
 	AZ(pthread_create(&i52->thread, NULL, i8052_thread, i52));
 }
 
-void
-i8052_init(void)
+void v_matchproto_(cli_func_f)
+cli_dummy_diproc(struct cli *cli)
 {
-	AN(diag_elastic);
-	// According to i8052 firmware (0x678), address 5 is broadcast.
-	i8052_start(0x2, "i8052.SEQ.2");
-	i8052_start(0x3, "i8052.FIU.3");
-	i8052_start(0x4, "i8052.IOC.4");
-	i8052_start(0x6, "i8052.TYP.6");
-	i8052_start(0x7, "i8052.VAL.7");
-	i8052_start(0xc, "i8052.MEM0.c");
-	// i8052_start(0xd, "i8052.MEM1.d");
-	// i8052_start(0xe, "i8052.MEM2.e");
-	// i8052_start(0xf, "i8052.MEM3.f");
+	int i;
+
+	for (i = 1; i < cli->ac; i++) {
+		if (!strcmp(cli->av[i], "seq"))
+			i8052_start(0x2, "i8052.SEQ.2");
+		else if (!strcmp(cli->av[i], "fiu"))
+			i8052_start(0x3, "i8052.FIU.3");
+		else if (!strcmp(cli->av[i], "ioc"))
+			i8052_start(0x4, "i8052.IOC.4");
+		else if (!strcmp(cli->av[i], "typ"))
+			i8052_start(0x6, "i8052.TYP.6");
+		else if (!strcmp(cli->av[i], "val"))
+			i8052_start(0x7, "i8052.VAL.7");
+		else if (!strcmp(cli->av[i], "mem0"))
+			i8052_start(0xc, "i8052.MEM0.c");
+		else if (!strcmp(cli->av[i], "mem2"))
+			i8052_start(0xe, "i8052.MEM2.e");
+		else
+			cli_printf(cli,
+			    "Usage: dummy_diproc "
+			    "[seq|fiu|ioc|typ|val|mem0|mem2]…\n");
+	}
 }
