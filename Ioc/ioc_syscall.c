@@ -49,6 +49,45 @@ static int is_tracing = 0;
 
 static const char supress[] = "";
 
+static struct sc_def sc_kernel[] = {
+	{ 0x0362c, "DiagBus_Response",
+	    "'D2=' D2 .W",
+	    supress
+	},
+	{ 0x0374c, "DiagBus_KC15",
+	    "'D0=' D0 .W , 'A0=' A0 .L , A0 16 hexdump",
+	    supress
+	},
+	{ 0x37a8, "DiagBus_KC15_CMDx",
+	    "'D0=' D0 .W",
+	    supress
+	},
+	{ 0x37b2, "DiagBus_KC15_CMD0", supress, supress },
+	{ 0x37d0, "DiagBus_KC15_CMD1", supress, supress },
+	{ 0x3840, "DiagBus_KC15_CMD5", supress, supress },
+	{ 0x09d6e, "Timeout_Stop_PIT",
+	    "'A1=' A1 .L",
+	    supress
+	},
+	{ 0x09d8e, "Timeout_Start_PIT",
+	    supress,
+	    supress
+	},
+	{ 0x09dc4, "Timeout_Arm",
+	    "'ticks=' D0 .W , 'func=' A2 .L",
+	    supress
+	},
+	{ 0x09e00, "Timeout_Cancal",
+	    "'func=' A2 .L",
+	    supress
+	},
+	{ 0x09e74, "Await_Interrupt",
+	    supress,
+	    "'Got awaited Interrupt'"
+	},
+	{ 1U<<31, NULL, NULL, NULL },
+};
+
 static struct sc_def sc_defs[] = {
 	{ 0x10200, "FSC_10200",
 	    "sp+4 @B .B , sp+2 @W .W",
@@ -488,10 +527,17 @@ static void
 start_syscall_tracing(int intern)
 {
 	unsigned a, b;
-	struct sc_def *scp = sc_defs, *scp2;
+	struct sc_def *scp, *scp2;
 	struct sc_ctx *sctx;
 
-	(void)intern;
+	if (intern) {
+		scp = sc_kernel;
+		while (scp->address < 0x10000) {
+			ioc_breakpoint(scp->address, sc_bpt, scp);
+			scp++;
+		}
+	}
+	scp = sc_defs;
 	a = 0x10200;
 	while (a < 0x1061c) {
 		if (scp->address == a) {
@@ -914,9 +960,7 @@ static struct syscall syscalls[] = {
 	{ ">CONSOLE.0",		0x02978, 0,	  0x029a6, 0, "", ""},
 	{ ">CONSOLE.1",		0x02992, 0,	  0x02ab0, 0, "", ""},
 	{ ">CONSOLE",		0x02ab0, 0,	  0x02ad2, 0, "", ""},
-	{ "DiagBusResponse",	0x0362c, 0x036a8, 0,	   1, "D2", "x3"},
 	// { "IS_IDLE?",		0x03638, 0,	  0x0364a, 0, "", ""},
-	{ "DO_KC15_DiagBus",	0x0374c, 0x037b0, 0,       0, "D0A0", "D0"},
 	{ "_CHS9_LBA10",	0x04b20, 0,	  0x04b82, 0, "", ""},
 	{ "_SCSID.0",		0x05502, 0,	  0x05556, 0, "", ""},
 	{ "_DISPATCH_KERNCALL",	0x08370, 0,	  0x0838c, 0, "", ""},
@@ -926,8 +970,6 @@ static struct syscall syscalls[] = {
 	{ "DEFXXMAP",		0x09cee, 0x9d30,  0x09d32, 0, "", ""},
 	{ ">PIT.0",		0x09d6e, 0x09d8c, 0x09d8e, 0, "", ""},
 	{ ">PIT.1",		0x09d8e, 0x09dc2, 0x09dc4, 0, "", ""},
-	{ "ArmTimeout",		0x09dc4, 0x09dfe, 0,       0, "D0A2", ""},
-	{ "CancelTimeout",	0x09e00, 0x09e2e, 0,       0, "A2", ""},
 	{ ">PIT",		0x09e30, 0x09e68, 0x09e6a, 0, "", ""},
 	{ "$IDLE",		0x09e74, 0x09f04, 0x09f06, 0, "", ""},
 	{ "INIT.PROGRAM",	0x10656, 0,	  0x10704, 0, "", "" },
