@@ -59,7 +59,7 @@ cli_exit(struct cli *cli)
 	cli_printf(cli,
 	    "Exit after %ju IOC instructions and %ju nanoseconds\n",
 	    ioc_nins, simclock
-        );
+	);
 	exit(w);
 }
 
