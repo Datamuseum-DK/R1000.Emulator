@@ -42,7 +42,8 @@
 
 int optreset;		// Some have it, some not.
 
-nanosec	simclock;
+volatile nanosec simclock;
+volatile int systemc_clock;
 unsigned do_trace;
 
 #if !defined(WITH_SYSTEMC)

@@ -66,7 +66,8 @@ struct cli;
 struct callout;
 
 typedef int64_t			nanosec;
-extern nanosec			simclock;
+extern volatile nanosec		simclock;
+extern volatile int		systemc_clock;
 extern unsigned			do_trace;
 extern int			trace_fd;
 
@@ -176,6 +177,7 @@ void callout_signal_cond(pthread_cond_t *cond,
 typedef void callout_callback_f(void *);
 void callout_callback(callout_callback_f *func,
     void *priv, nanosec when, nanosec repeat);
+void callout_sleep(nanosec duration);
 
 nanosec callout_poll(void);
 
