@@ -81,11 +81,10 @@ CLI_INCL = \
 # To include SystemC simulator, download more firmware with:
 #	make setup_systemc
 # and uncomment this `include` line:
-include SystemC/Makefile.inc
+# include SystemC/Makefile.inc
 #######################################################################
 
 cli:	r1000sim ${BINFILES}
-	(cd SystemC && make)
 	./r1000sim \
 		-T ${TRACE_FILE} \
 		-t 0x0 \
@@ -152,6 +151,59 @@ test:	r1000sim ${BINFILES}
 		'console match expect "Enter option : "' \
 		'console << "0"' \
 		'console match expect "CLI>"'
+		
+
+expmon:	r1000sim ${BINFILES}
+	(cd SystemC && make)
+	./r1000sim \
+		-T ${TRACE_FILE} \
+		-t 0x0 \
+		"trace +diagbus_bytes" \
+		"trace -ioc_interrupt" \
+		"trace -ioc_dma" \
+		"trace -ioc_io" \
+		"trace -ioc_instructions" \
+		"ioc memtrace add -lo 0x00000 -hi 0x00000" \
+		"ioc syscall internal" \
+		"console > _.console" \
+		"console telnet localhost:1400" \
+		"console serial /dev/nmdm0B" \
+		"modem > _.modem" \
+		"ioc diagbus > _.diag" \
+		"scsi_tape" \
+		"scsi_disk 0 ${DISK0_IMAGE}" \
+		"scsi_disk 1 ${DISK1_IMAGE}" \
+		"reset" \
+		'console match expect "Boot from (Tn or Dn)  [D0] : "' \
+		'console << ""' \
+		'console match expect "Kernel program (0,1,2) [0] : "' \
+		'console << ""' \
+		'console match expect "File system    (0,1,2) [0] : "' \
+		'console << ""' \
+		'console match expect "User program   (0,1,2) [0] : "' \
+		'console << ""' \
+		'console match expect "Enter option [enter CLI] : "' \
+		'console << "1"' \
+		'console match expect "CLI>"' \
+		'sc launch ioc fiu seq' \
+		'trace +systemc' \
+		'sc trace ".*NOVRAM" on' \
+		'sc trace "TYP.*_8051" 6' \
+		'sc q 30000000' \
+		"dummy_diproc typ val mem0" \
+		'console << "x novram"' \
+		'console match expect "Enter option : "' \
+		'console << "1"' \
+		'console match expect "Enter option : "' \
+		'console << "0"' \
+		'console match expect "CLI>"' \
+		exit
+
+foo:
+		'console << "x expmon"' \
+		'console match expect "EM>"' \
+		'console << "write [xeq typ read_novram 39]"' \
+		'console match expect "EM>"' \
 		
 
 seagate:	r1000sim ${BINFILES}
