@@ -3,6 +3,7 @@
 	TRACER(ioc_instructions, "IOC CPU instruction execution")	\
 	TRACER(ioc_interrupt, "IOC interrupts")				\
 	TRACER(ioc_dma, "IOC DMA")					\
+	TRACER(ioc_io, "IOC IO")					\
 	TRACER(diagbus_bytes, "All bytes on DiagBus")			\
 	TRACER(diagbus_download, "Downloads on DiagBus")		\
 	TRACER(diagbus_upload, "Uploads on DiagBus")			\
