@@ -90,8 +90,11 @@ static const char * const wr_reg[] = {
 
 struct chan {
 	struct elastic		*ep;
+	const char		*name;
 	uint8_t			mode[2];
 	uint8_t			rxhold;
+	uint8_t			txshift[2];
+	int			txshift_valid;
 	int			mrptr;
 	int			sr;
 	int			rxwaitforit;
@@ -100,6 +103,7 @@ struct chan {
 	int			isdiag;
 	struct irq_vector	*rx_irq;
 	struct irq_vector	*tx_irq;
+	int			inflight;
 };
 
 static struct ioc_duart {
@@ -149,6 +153,7 @@ thr_duart_rx(void *priv)
 	while (1) {
 		sz = elastic_get(chp->ep, buf, 1);
 		assert(sz == 1);
+		callout_sleep(chp->inflight);
 		AZ(pthread_mutex_lock(&duart_mtx));
 		while (!(chp->rxon) || (chp->sr & 1) || chp->rxwaitforit)
 			AZ(pthread_cond_wait(&duart_cond, &duart_mtx));
@@ -157,7 +162,6 @@ thr_duart_rx(void *priv)
 		chp->rxwaitforit |= 0x01;
 		irq_raise(chp->rx_irq);
 		AZ(pthread_mutex_unlock(&duart_mtx));
-		usleep(1000);
 	}
 }
 
@@ -170,6 +174,26 @@ io_duart_rx_readh_cb(void *priv)
 	chp->rxwaitforit = 0;
 	AZ(pthread_cond_signal(&duart_cond));
 	AZ(pthread_mutex_unlock(&duart_mtx));
+}
+
+static void
+ioc_duart_tx_callback(void *priv)
+{
+	struct chan *chp = priv;
+
+	if (chp->txshift_valid == 1) {
+		Trace(trace_diagbus_bytes, "%s TX %02x",
+		    chp->name, chp->txshift[0]);
+	} else {
+		Trace(trace_diagbus_bytes, "%s TX %x%02x",
+		    chp->name, chp->txshift[0], chp->txshift[1]);
+	}
+	elastic_put(chp->ep, chp->txshift, chp->txshift_valid);
+	chp->txshift_valid = 0;
+	chp->sr |= 4;
+	chp->sr |= 8;
+	if (chp->txon)
+		irq_raise(chp->tx_irq);
 }
 
 /**********************************************************************/
@@ -227,7 +251,7 @@ io_duart_pre_read(int debug, uint8_t *space, unsigned width, unsigned adr)
 		break;
 	}
 	AZ(pthread_mutex_unlock(&duart_mtx));
-	trace(TRACE_IO, "%s [%x] -> %x\n", rd_reg[adr], adr, space[adr]);
+	Trace(trace_ioc_io, "%s [%x] -> %x", rd_reg[adr], adr, space[adr]);
 }
 
 /**********************************************************************/
@@ -236,12 +260,11 @@ void v_matchproto_(mem_post_write)
 io_duart_post_write(int debug, uint8_t *space, unsigned width, unsigned adr)
 {
 	struct chan *chp;
-	uint8_t diag_txbuf[2];
 
 	if (debug) return;
 	assert (width == 1);
 	assert (adr < 16);
-	trace(TRACE_IO, "%s [%x] <- %x\n", wr_reg[adr], adr, space[adr]);
+	Trace(trace_ioc_io, "%s [%x] <- %x", wr_reg[adr], adr, space[adr]);
 	AZ(pthread_mutex_lock(&duart_mtx));
 	chp = &ioc_duart->chan[adr>>3];
 	switch(adr) {
@@ -276,13 +299,17 @@ io_duart_post_write(int debug, uint8_t *space, unsigned width, unsigned adr)
 			chp->rxon = 0;
 		}
 		if (space[adr] & 4) {
-			chp->txon = 1;
-			chp->sr |= 4;
-			irq_raise(chp->tx_irq);
+			if (!chp->txon) {
+				chp->txon = 1;
+				chp->sr |= 4;
+				chp->sr |= 8;
+				irq_raise(chp->tx_irq);
+			}
 		}
 		if (space[adr] & 8) {
 			chp->txon = 0;
 			chp->sr &= ~4;
+			chp->sr |= 8;
 			irq_lower(chp->tx_irq);
 		}
 		break;
@@ -298,14 +325,18 @@ io_duart_post_write(int debug, uint8_t *space, unsigned width, unsigned adr)
 			chp->sr |= 1;
 		} else {
 			if (adr == REG_W_THRB) {
-				Trace(trace_diagbus_bytes, "i8052.* RX %02x %x",
-				    space[adr], (chp->mode[0] >> 2) & 1);
-				diag_txbuf[0] = (chp->mode[0] >> 2) & 1;
-				diag_txbuf[1] = space[adr];
-				elastic_put(chp->ep, diag_txbuf, 2);
+				chp->txshift[0] = (chp->mode[0] >> 2) & 1;
+				chp->txshift[1] = space[adr];
+				chp->txshift_valid = 2;
 			} else {
-				elastic_put(chp->ep, &space[adr], 1);
+				chp->txshift[0] = space[adr];
+				chp->txshift_valid = 1;
 			}
+			chp->sr &= ~4;
+			chp->sr &= ~8;
+			irq_lower(chp->tx_irq);
+			callout_callback(ioc_duart_tx_callback,
+			    chp, chp->inflight, 0);
 		}
 		break;
 	case REG_W_OPCR:
@@ -393,11 +424,16 @@ ioc_duart_init(void)
 	ioc_duart->chan[0].ep = elastic_new(O_RDWR);
 	ioc_duart->chan[0].rx_irq = &IRQ_MODEM_RXRDY;
 	ioc_duart->chan[0].tx_irq = &IRQ_MODEM_TXRDY;
+	ioc_duart->chan[0].name = "MODEM";
+	ioc_duart->chan[0].inflight = 70400;		// 9600/1200 ?
 
 	ioc_duart->chan[1].ep = elastic_new(O_RDWR);
 	ioc_duart->chan[1].ep->text = 0;
 	ioc_duart->chan[1].rx_irq = &IRQ_DIAG_BUS_RXRDY;
 	ioc_duart->chan[1].tx_irq = &IRQ_DIAG_BUS_TXRDY;
+	ioc_duart->chan[1].name = "DIAGBUS";
+	// 1/10_MHz * (64 * 11_bits) = 70400 nsec
+	ioc_duart->chan[1].inflight = 70400;
 
 	diag_elastic = ioc_duart->chan[1].ep;
 
