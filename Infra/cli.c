@@ -56,7 +56,10 @@ cli_exit(struct cli *cli)
 		return;
 	if (cli->ac == 1)
 		w = atoi(cli->av[0]);
-	cli_printf(cli, "Exit after %ju IOC instructions\n", ioc_nins);
+	cli_printf(cli,
+	    "Exit after %ju IOC instructions and %ju nanoseconds\n",
+	    ioc_nins, simclock
+        );
 	exit(w);
 }
 
