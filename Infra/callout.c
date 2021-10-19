@@ -41,6 +41,11 @@ struct callout {
 	void				*priv;
 };
 
+struct sleeps {
+	VTAILQ_ENTRY(sleeps)		next;
+	pthread_cond_t			cond;
+};
+
 typedef void callout_func_f(const struct callout *);
 
 struct callout_how {
@@ -50,16 +55,16 @@ struct callout_how {
 static pthread_mutex_t callout_mtx = PTHREAD_MUTEX_INITIALIZER;
 
 static VTAILQ_HEAD(,callout) callouts = VTAILQ_HEAD_INITIALIZER(callouts);
+static VTAILQ_HEAD(,sleeps) idle_sleeps = VTAILQ_HEAD_INITIALIZER(idle_sleeps);
 
 static void
-callout_insert(struct callout *co)
+callout_insert_locked(struct callout *co)
 {
 	struct callout *co2;
 
 	AN(co);
 	AN(co->how);
 
-	AZ(pthread_mutex_lock(&callout_mtx));
 	VTAILQ_FOREACH(co2, &callouts, next)
 		if (co2->when > co->when)
 			break;
@@ -67,6 +72,16 @@ callout_insert(struct callout *co)
 		VTAILQ_INSERT_TAIL(&callouts, co, next);
 	else
 		VTAILQ_INSERT_BEFORE(co2, co, next);
+}
+
+static void
+callout_insert(struct callout *co)
+{
+	AN(co);
+	AN(co->how);
+
+	AZ(pthread_mutex_lock(&callout_mtx));
+	callout_insert_locked(co);
 	AZ(pthread_mutex_unlock(&callout_mtx));
 }
 
@@ -154,6 +169,53 @@ callout_callback(callout_callback_f *func,
 	co->priv = psc;
 	co->how = &callout_callback_how;
 	callout_insert(co);
+}
+
+/**********************************************************************/
+
+static void
+callout_func_sleep(const struct callout *co)
+{
+	struct sleeps *slp;
+
+	slp = co->priv;
+	AZ(pthread_cond_signal(&slp->cond));
+}
+
+static const struct callout_how callout_sleep_how = {
+	// .name = "Signal Condvar",
+	.func = callout_func_sleep,
+};
+
+void
+callout_sleep(nanosec duration)
+{
+	struct sleeps *slp;
+	struct callout *co;
+	char *p;
+
+	p = calloc(sizeof *co, 1);
+	AN(p);
+	co = (void*)p;
+
+	AZ(pthread_mutex_lock(&callout_mtx));
+	slp = VTAILQ_FIRST(&idle_sleeps);
+	if (slp != NULL) {
+		VTAILQ_REMOVE(&idle_sleeps, slp, next);
+	} else {
+		AZ(pthread_mutex_unlock(&callout_mtx));
+		slp = calloc(sizeof *slp, 1);
+		AN(slp);
+		AZ(pthread_cond_init(&slp->cond, NULL));
+		AZ(pthread_mutex_lock(&callout_mtx));
+	}
+	co->when = simclock + duration;
+	co->how = &callout_sleep_how;
+	co->priv = slp;
+	callout_insert_locked(co);
+	AZ(pthread_cond_wait(&slp->cond, &callout_mtx));
+	VTAILQ_INSERT_HEAD(&idle_sleeps, slp, next);
+	AZ(pthread_mutex_unlock(&callout_mtx));
 }
 
 /**********************************************************************/
