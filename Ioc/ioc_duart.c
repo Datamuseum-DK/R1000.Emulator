@@ -434,6 +434,7 @@ ioc_duart_init(void)
 	ioc_duart->chan[1].name = "DIAGBUS";
 	// 1/10_MHz * (64 * 11_bits) = 70400 nsec
 	ioc_duart->chan[1].inflight = 70400;
+	ioc_duart->chan[1].inflight /= 2;		// hack
 
 	diag_elastic = ioc_duart->chan[1].ep;
 

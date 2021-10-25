@@ -67,9 +67,14 @@ struct callout;
 
 typedef int64_t			nanosec;
 extern volatile nanosec		simclock;
+extern volatile nanosec		systemc_t_zero;
 extern volatile int		systemc_clock;
 extern unsigned			do_trace;
 extern int			trace_fd;
+
+/* MAIN ***************************************************************/
+
+void finish(int status, const char *why)  __attribute__((__noreturn__));
 
 /* CLI ****************************************************************/
 

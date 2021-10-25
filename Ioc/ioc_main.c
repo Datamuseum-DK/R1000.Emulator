@@ -53,6 +53,7 @@ static pthread_t ioc_cpu;
 
 static uintmax_t ioc_maxins = 0;
 uintmax_t ioc_nins = 0;
+uintmax_t ioc_t_stopped = 0;
 static uintmax_t ioc_cpu_quota = 0;
 static unsigned ioc_cpu_running = 0;
 static pthread_cond_t ioc_cpu_cond_state = PTHREAD_COND_INITIALIZER;
@@ -400,7 +401,12 @@ main_ioc(void *priv)
 			i = m68k_execute(1);
 			mytime += 100ULL * i;
 		}
-		ioc_nins++;
+
+		if (i == 1)
+			ioc_t_stopped += 100ULL;
+		else
+			ioc_nins++;
+
 		if (ioc_maxins && ioc_nins > ioc_maxins) {
 			printf("maxins reached, exiting\n");
 			exit(4);
@@ -411,6 +417,7 @@ main_ioc(void *priv)
 				ns -= simclock;
 				usleep(1 + (ns / 1000));
 				simclock += ns;
+				ioc_t_stopped += ns;
 			}
 		}
 		AZ(pthread_mutex_lock(&ioc_cpu_mtx));

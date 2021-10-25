@@ -59,6 +59,7 @@ void ioc_rtc_init(void);
 void ioc_init(void);
 
 extern uintmax_t ioc_nins;
+extern uintmax_t ioc_t_stopped;
 extern unsigned ioc_pc;
 extern unsigned ioc_fc;
 void dma_write(unsigned segment, unsigned address, void *src, unsigned len);

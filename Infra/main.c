@@ -36,6 +36,10 @@
 #include <string.h>
 #include <unistd.h>
 
+#include <sys/types.h>
+#include <sys/time.h>
+#include <sys/resource.h>
+
 #include "r1000.h"
 #include "ioc.h"
 #include "vsb.h"
@@ -43,8 +47,11 @@
 int optreset;		// Some have it, some not.
 
 volatile nanosec simclock;
+volatile nanosec systemc_t_zero;
 volatile int systemc_clock;
 unsigned do_trace;
+
+static struct timespec t0;
 
 #if !defined(WITH_SYSTEMC)
 void v_matchproto_(cli_func_f)
@@ -79,6 +86,46 @@ hexdump(struct vsb *vsb, const void *ptr, size_t len, unsigned offset)
 	}
 }
 
+void
+finish(int status, const char *why)
+{
+	struct rusage rus;
+	struct timespec tx;
+	double ds, dr, dt;
+
+	printf("Terminating because: %s\n", why);
+
+	ds = simclock * 1e-9;
+	printf("  %15.9f s simulated\n", ds);
+
+	if (systemc_t_zero) {
+		dt = ds - systemc_t_zero * 1e-9;
+		printf("  %15.9f s SystemC simulation\n", dt);
+	}
+
+	AZ(clock_gettime(CLOCK_MONOTONIC, &tx));
+	dr = 1e-9 * tx.tv_nsec;
+	dr -= 1e-9 * t0.tv_nsec;
+	dr += tx.tv_sec - t0.tv_sec;
+	printf("  %12.6f s Wall Clock Time\n", dr);
+
+	dt = 1e-9 * ioc_t_stopped;
+	printf("  %12.6f s IOC stopped\n", dt);
+	printf("  %ju IOC instructions\n", ioc_nins);
+
+	if (dr > ds)
+		printf("  1/%.2f Simulation ratio\n", dr / ds);
+	else
+		printf("  %.2f Simulation ratio\n", ds / dr);
+
+	AZ(getrusage(RUSAGE_SELF, &rus));
+
+	printf("  %5ld.%03ld s User time\n", rus.ru_utime.tv_sec, rus.ru_utime.tv_usec / 1000);
+	printf("  %5ld.%03ld s System time\n", rus.ru_stime.tv_sec, rus.ru_stime.tv_usec / 1000);
+	printf("  %ld Max RSS\n", rus.ru_maxrss);
+	exit (status);
+}
+
 int
 main(int argc, char **argv)
 {
@@ -86,6 +133,7 @@ main(int argc, char **argv)
 	long l;
 	FILE *fi;
 
+	AZ(clock_gettime(CLOCK_MONOTONIC, &t0));
 	setbuf(stdout, NULL);
 	setbuf(stderr, NULL);
 
