@@ -89,7 +89,7 @@ thr_console_rx(void *priv)
 		cons->status |= 0x02;
 		irq_raise(&IRQ_CONSOLE_RXRDY);
 		AZ(pthread_mutex_unlock(&uart_mtx));
-		callout_sleep((1000000000/115200) * 10);
+		callout_sleep((1000000000/38400) * 10);
 	}
 }
 
