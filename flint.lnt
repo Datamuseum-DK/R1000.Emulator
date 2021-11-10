@@ -30,6 +30,7 @@
 -esym(534, VSB_putc)
 -esym(534, printf)
 -esym(534, sprintf)
+-esym(534, strcpy)
 -esym(534, fprintf)
 -esym(534, vsnprintf)
 -esym(534, vfprintf)
