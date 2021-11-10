@@ -20,7 +20,7 @@ FIRMWARE_PATH = _Firmware
 
 VPATH	= Musashi:Musashi/softfloat:Infra:Ioc:Diag
 
-OBJS	= main.o callout.o cli.o memory.o trace.o
+OBJS	= main.o callout.o cli.o context.o memory.o trace.o
 OBJS	+= elastic.o elastic_fd.o elastic_tcp.o elastic_match.o
 OBJS	+= rpn.o
 OBJS	+= vav.o
@@ -259,6 +259,7 @@ clean:
 
 callout.o:		Infra/r1000.h Infra/callout.c
 cli.o:			Infra/r1000.h Infra/vav.h Infra/cli.c Ioc/ioc.h
+context.o:		Infra/r1000.h Infra/context.c Infra/context.h
 elastic.o:		Infra/r1000.h Infra/elastic.h Infra/elastic.c
 elastic_fd.o:		Infra/r1000.h Infra/elastic.h Infra/elastic_fd.c
 elastic_match.o:	Infra/r1000.h Infra/elastic.h Infra/elastic_match.c
