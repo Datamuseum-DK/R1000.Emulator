@@ -54,7 +54,7 @@ ctx_init(void)
 
 	context_fd = open(context_filename, O_RDWR | O_CREAT | O_TRUNC, 0644);
 	assert(context_fd > 0);
-	context_size = 4 << 20;
+	context_size = 16 << 20;
 
 	memset(buf, 0, sizeof buf);
 	for (szl = 0; szl < context_size; ) {
