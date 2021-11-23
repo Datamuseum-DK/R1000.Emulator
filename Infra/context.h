@@ -38,9 +38,10 @@ struct ctx {
 	uint32_t	magic;
 #define CTX_MAGIC	0x6e706c8e
 	uint32_t	length;
-	char		kind[8];
-	char		ident[104];
 	uint64_t	activations;
+	uint32_t	do_trace;
+	char		kind[16];
+	char		ident[92];
 };
 
 void *CTX_Get(const char *kind, const char *ident, uint32_t length);

@@ -17,26 +17,41 @@ class Context():
         buf = file.read(128)
         if len(buf) != 128:
             raise EOFError
-        hdr = struct.unpack("<LL8s104sQ", buf)
+        hdr = struct.unpack("<LLQL16s92s", buf)
         if not hdr[0]:
             raise EOFError
         if hdr[0] != 0x6e706c8e:
             raise ValueError
         self.length = hdr[1]
-        self.kind = hdr[2].rstrip(b'\x00').decode("utf-8")
-        self.ident = hdr[3].rstrip(b'\x00').decode("utf-8")
-        self.activations = hdr[4]
+        self.activations = hdr[2]
+        self.kind = hdr[4].rstrip(b'\x00').decode("utf-8")
+        self.ident = hdr[5].rstrip(b'\x00').decode("utf-8")
         self.body = file.read(self.length - 128)
         return self
 
     def __repr__(self):
         return "<" + self.kind + "::" + self.ident + "/%d" % self.activations + ">"
 
+def contexts(filename):
+    with open(filename, "rb") as file:
+        while True:
+            try:
+                ctx = Context(file)
+            except EOFError:
+                return
+            yield ctx
+
 def main():
+    for ctx in contexts(CONTEXT_FILE):
+        if ctx.activations > 1e6:
+            print(ctx.activations, ctx)
+
+    return
     with open(CONTEXT_FILE, "rb") as file:
         while True:
             ctx = Context(file)
-            print(ctx)
+            print(ctx.activations, ctx)
+            continue
             prof = struct.unpack("<8192Q", ctx.body)
             nins = 0
             for n, i in enumerate(prof):
