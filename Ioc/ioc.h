@@ -31,10 +31,10 @@
 
 typedef int ioc_bpt_f(void *priv, uint32_t adr);
 
+void v_matchproto_(cli_func_f) cli_diag(struct cli *cli);
 void v_matchproto_(cli_func_f) cli_ioc(struct cli *cli);
 void v_matchproto_(cli_func_f) cli_ioc_breakpoint(struct cli *cli);
 void v_matchproto_(cli_func_f) cli_ioc_console(struct cli *cli);
-void v_matchproto_(cli_func_f) cli_ioc_diag(struct cli *cli);
 void v_matchproto_(cli_func_f) cli_ioc_dump(struct cli *cli);
 void v_matchproto_(cli_func_f) cli_ioc_maxins(struct cli *cli);
 void v_matchproto_(cli_func_f) cli_ioc_memtrace(struct cli *cli);
@@ -102,6 +102,8 @@ void Ioc_HotFix_Resha(void);
 	IRQ_VECTOR(DIAG_BUS_TXRDY,	1,	0x48,	0x148) \
 	IRQ_VECTOR(CONSOLE_TXRDY,	1,	0x49,	0x1149) \
 	IRQ_VECTOR(MODEM_TXRDY,		L67,	0x4b,	0x646) \
+	IRQ_VECTOR(INT_MODEM1,		1,	0x47,	0x646) \
+	IRQ_VECTOR(INT_MODEM2,		L67,	0x4c,	0x646) \
 	IRQ_VECTOR(PIT,			1,	0x4f,	0x14f) \
 	IRQ_VECTOR(SCSI_D,		2,	0x91,	0x691) \
 	IRQ_VECTOR(SCSI_T,		3,	0x92,	0x692)

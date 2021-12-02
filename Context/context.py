@@ -43,8 +43,7 @@ def contexts(filename):
 
 def main():
     for ctx in contexts(CONTEXT_FILE):
-        if ctx.activations > 1e6:
-            print(ctx.activations, ctx)
+        print(ctx.activations, ctx)
 
     return
     with open(CONTEXT_FILE, "rb") as file:

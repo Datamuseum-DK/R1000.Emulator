@@ -39,8 +39,8 @@ def main():
 
     ioc += Range("io_duart", 0xffffa000, 0xf, bidir = False, pre_read = 1, post_write = 1)
 
-    # EXT MODEM
-    ioc += Range("fb000", 0xffffb000, 0xf)
+    # INT MODEM
+    ioc += Range("io_mosart", 0xffffb000, 0xf, pre_read = True, post_write = True)
 
     # IO_CLR_RUN (reset IOC RUNNING LED)
     ioc += Range("f000", 0xfffff000, 0x3)

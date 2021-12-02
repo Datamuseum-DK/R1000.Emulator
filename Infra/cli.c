@@ -155,6 +155,7 @@ static const struct cli_cmds cli_cmds[] = {
 	{ "exit",		cli_exit },
 	{ "?",			cli_help },
 	{ "console",		cli_ioc_console },
+	{ "diag",		cli_diag },
 	{ "dummy_diproc",	cli_dummy_diproc },
 	{ "modem",		cli_ioc_modem },
 	{ "ioc",		cli_ioc },

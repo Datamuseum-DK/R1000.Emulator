@@ -16,8 +16,6 @@
 #include "elastic.h"
 #include "memspace.h"
 
-struct elastic *diag_elastic;
-
 static const char * const rd_reg[] = {
 	"MODEM R MR1A_2A",
 	"MODEM R SRA",
@@ -390,28 +388,6 @@ cli_ioc_modem(struct cli *cli)
 			cli->av += 1;
 			continue;
 		}
-		cli_unknown(cli);
-		break;
-	}
-}
-
-void v_matchproto_(cli_func_f)
-cli_ioc_diag(struct cli *cli)
-{
-	struct chan *chp = &ioc_duart->chan[1];
-
-	if (cli->help) {
-		cli_io_help(cli, "IOC diagbus", 0, 1);
-		(void)cli_elastic(chp->ep, cli);
-		return;
-	}
-
-	cli->ac--;
-	cli->av++;
-
-	while (cli->ac && !cli->status) {
-		if (cli_elastic(chp->ep, cli))
-			continue;
 		cli_unknown(cli);
 		break;
 	}

@@ -179,9 +179,9 @@ cli_dummy_diproc(struct cli *cli)
 		else if (!strcmp(cli->av[i], "val"))
 			i8052_start(0x7, "i8052.VAL.7");
 		else if (!strcmp(cli->av[i], "mem0"))
-			i8052_start(0xc, "i8052.MEM0.c");
+			i8052_start(0xc, "i8052.MEM0.e");
 		else if (!strcmp(cli->av[i], "mem2"))
-			i8052_start(0xe, "i8052.MEM2.e");
+			i8052_start(0xe, "i8052.MEM2.c");
 		else
 			cli_printf(cli,
 			    "Usage: dummy_diproc "
