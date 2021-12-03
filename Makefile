@@ -47,6 +47,7 @@ OBJS	+= ioc_syscall.o
 
 OBJS	+= i8052.o
 OBJS	+= diagbus.o
+OBJS	+= experiment.o
 
 CFLAGSMINUSI += -I. -IInfra -IMusashi -IIoc -IDiag
 CFLAGSMINUSD += -DMUSASHI_CNF='"musashi_conf.h"'
@@ -123,40 +124,16 @@ test:	r1000sim ${BINFILES}
 	(cd SystemC && make)
 	./r1000sim \
 		-T ${TRACE_FILE} \
-		-t 0x0 \
-		"trace -diagbus_bytes" \
-		"trace -ioc_interrupt" \
-		"trace -ioc_dma" \
-		"trace +ioc_io" \
-		"trace -ioc_instructions" \
-		"ioc memtrace add -lo 0x00000 -hi 0x00000" \
-		"ioc syscall" \
-		"console > _.console" \
-		"console telnet localhost:1400" \
-		"modem > _.modem" \
+		"trace +diagbus_bytes" \
 		"diag > _.diag" \
-		"scsi_tape" \
-		"scsi_disk 0 ${DISK0_IMAGE}" \
-		"scsi_disk 1 ${DISK1_IMAGE}" \
-		"dummy_diproc seq fiu ioc typ val mem0" \
-		"reset" \
-		'console match expect "Boot from (Tn or Dn)  [D0] : "' \
-		'console << ""' \
-		'console match expect "Kernel program (0,1,2) [0] : "' \
-		'console << ""' \
-		'console match expect "File system    (0,1,2) [0] : "' \
-		'console << ""' \
-		'console match expect "User program   (0,1,2) [0] : "' \
-		'console << ""' \
-		'console match expect "Enter option [enter CLI] : "' \
-		'console << "1"' \
-		'console match expect "CLI>"' \
-		'console << "x novram"' \
-		'console match expect "Enter option : "' \
-		'console << "1"' \
-		'console match expect "Enter option : "' \
-		'console << "0"' \
-		'console match expect "CLI>"'
+		'sc launch ioc' \
+		"dummy_diproc fiu seq val typ mem0 mem2" \
+		'trace +systemc' \
+		'sc trace "DI*PROC" 6' \
+		'sc trace "DFREG" 1' \
+		'sc q exit' \
+		'sc q 1' \
+		"diag ioc experiment /critter/R1K/Old/hack/X/TEST_UIR_SCAN.IOC"
 		
 
 novram:	r1000sim ${BINFILES}
@@ -349,6 +326,7 @@ ioc_uart.o:		${CLI_INCL} Ioc/ioc.h Ioc/ioc_uart.c
 
 i8052.o:		${CLI_INCL} Diag/i8052.c
 diagbus.o:		${CLI_INCL} Diag/diagbus.c
+experiment.o:		${CLI_INCL} Diag/experiment.c
 
 sc.o:			${CLI_INCL} SystemC/sc.c
 

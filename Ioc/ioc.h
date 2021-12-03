@@ -31,7 +31,6 @@
 
 typedef int ioc_bpt_f(void *priv, uint32_t adr);
 
-void v_matchproto_(cli_func_f) cli_diag(struct cli *cli);
 void v_matchproto_(cli_func_f) cli_ioc(struct cli *cli);
 void v_matchproto_(cli_func_f) cli_ioc_breakpoint(struct cli *cli);
 void v_matchproto_(cli_func_f) cli_ioc_console(struct cli *cli);
