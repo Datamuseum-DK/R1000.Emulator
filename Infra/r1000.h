@@ -189,14 +189,9 @@ nanosec callout_poll(void);
 
 /* DIAG *************************************************************/
 
-extern struct elastic *diag_elastic;
-
 cli_func_f cli_dummy_diproc;
 cli_func_f cli_diag;
 cli_func_f cli_diag_experiment;
-
-struct experiment;
-struct experiment *Load_Experiment_File(struct cli *, const char *filename);
 
 
 /* MEMORY *************************************************************/

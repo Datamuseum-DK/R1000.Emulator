@@ -15,6 +15,7 @@
 #include "ioc.h"
 #include "elastic.h"
 #include "memspace.h"
+#include "Diag/diag.h"
 
 static const char * const rd_reg[] = {
 	"MODEM R MR1A_2A",

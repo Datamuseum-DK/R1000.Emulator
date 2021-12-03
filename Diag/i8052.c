@@ -36,6 +36,7 @@
 #include "r1000.h"
 #include "vqueue.h"
 #include "vsb.h"
+#include "Diag/diag.h"
 
 #include "elastic.h"
 

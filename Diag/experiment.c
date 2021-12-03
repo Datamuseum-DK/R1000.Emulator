@@ -10,6 +10,7 @@
 #include "r1000.h"
 #include "elastic.h"
 #include "vqueue.h"
+#include "Diag/diag.h"
 
 struct exp_param {
 	VTAILQ_ENTRY(exp_param)		list;
@@ -59,29 +60,17 @@ Load_Experiment_File(struct cli *cli, const char *filename)
 }
 
 static void
-DiagBus_Send(unsigned u)
-{
-	printf("diagbus TX %02x\n", u);
-	Trace(trace_diagbus_bytes, "DIAGBUS TX %03x", u);
-	uint8_t buf[2];
-	buf[0] = u >> 8;
-	buf[1] = u & 0xff;
-	elastic_put(diag_elastic, buf, 2);
-	usleep(100000);
-}
-
-static void
 Send_Experiment(int addr, const struct experiment *ex)
 {
 	unsigned u;
 
 	assert(addr >= 0 && addr <= 15);
-	DiagBus_Send(0x1a0 | addr);
-	DiagBus_Send(ex->length + 1);
+	DiagBus_Send(&diprocs[addr], 0x1a0 | addr);
+	DiagBus_Send(&diprocs[addr], ex->length + 1);
 	for (u = 0; u < ex->length; u++)
-		DiagBus_Send(ex->octets[u]);
-	DiagBus_Send(0);
-	DiagBus_Send((ex->length + 1 + ex->sum) & 0xff);
+		DiagBus_Send(&diprocs[addr], ex->octets[u]);
+	DiagBus_Send(&diprocs[addr], 0);
+	DiagBus_Send(&diprocs[addr], (ex->length + 1 + ex->sum) & 0xff);
 }
 
 void v_matchproto_(cli_func_f)

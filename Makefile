@@ -120,6 +120,8 @@ cli:	r1000sim ${BINFILES}
 		'console << "1"' \
 		'console match expect "CLI>"'
 
+EXP_PATH=/critter/R1K/Old/hack/X/
+
 test:	r1000sim ${BINFILES}
 	(cd SystemC && make)
 	./r1000sim \
@@ -133,7 +135,9 @@ test:	r1000sim ${BINFILES}
 		'sc trace "DFREG" 1' \
 		'sc q exit' \
 		'sc q 1' \
-		"diag ioc experiment /critter/R1K/Old/hack/X/TEST_UIR_SCAN.IOC"
+		"diag ioc experiment ${EXP_PATH}/TEST_UIR_SCAN.IOC" \
+		"diag ioc wait" \
+		"exit"
 		
 
 novram:	r1000sim ${BINFILES}
