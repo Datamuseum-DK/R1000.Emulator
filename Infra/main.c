@@ -137,6 +137,7 @@ main(int argc, char **argv)
 	setbuf(stdout, NULL);
 	setbuf(stderr, NULL);
 
+	diagbus_init();
 	mem_init();
 	ioc_init();
 

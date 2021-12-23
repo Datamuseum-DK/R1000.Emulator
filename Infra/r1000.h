@@ -191,8 +191,7 @@ nanosec callout_poll(void);
 
 cli_func_f cli_dummy_diproc;
 cli_func_f cli_diag;
-cli_func_f cli_diag_experiment;
-
+void diagbus_init(void);
 
 /* MEMORY *************************************************************/
 

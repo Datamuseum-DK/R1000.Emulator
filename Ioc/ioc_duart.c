@@ -149,6 +149,7 @@ thr_duart_rx(void *priv)
 	ssize_t sz;
 
 	(void)priv;
+	ioc_wait_cpu_running();		// Dont hog diagbus until IOC owns it
 	while (1) {
 		sz = elastic_get(chp->ep, buf, 1);
 		assert(sz == 1);
@@ -404,7 +405,8 @@ ioc_duart_init(void)
 	ioc_duart->chan[0].name = "MODEM";
 	ioc_duart->chan[0].inflight = 70400;		// 9600/1200 ?
 
-	ioc_duart->chan[1].ep = elastic_new(O_RDWR);
+	AN(diag_elastic);
+	ioc_duart->chan[1].ep = diag_elastic;
 	ioc_duart->chan[1].ep->text = 0;
 	ioc_duart->chan[1].rx_irq = &IRQ_DIAG_BUS_RXRDY;
 	ioc_duart->chan[1].tx_irq = &IRQ_DIAG_BUS_TXRDY;
@@ -412,8 +414,6 @@ ioc_duart_init(void)
 	// 1/10_MHz * (64 * 11_bits) = 70400 nsec
 	ioc_duart->chan[1].inflight = 70400;
 	ioc_duart->chan[1].inflight /= 2;		// hack
-
-	diag_elastic = ioc_duart->chan[1].ep;
 
 	ioc_duart->chan[1].isdiag = 1;
 	callout_callback(ioc_duart_pit_callback, NULL, 0, 25600);

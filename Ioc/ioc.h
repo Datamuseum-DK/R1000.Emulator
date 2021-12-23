@@ -63,6 +63,7 @@ extern unsigned ioc_pc;
 extern unsigned ioc_fc;
 void dma_write(unsigned segment, unsigned address, void *src, unsigned len);
 void dma_read(unsigned segment, unsigned address, void *src, unsigned len);
+void ioc_wait_cpu_running(void);
 
 /**********************************************************************/
 

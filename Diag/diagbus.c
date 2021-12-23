@@ -2,6 +2,7 @@
  * The DIAG BUS
  */
 
+#include <fcntl.h>
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
@@ -41,6 +42,28 @@ DiagBus_Send(struct diproc *dp, unsigned u)
 		usleep(1000);
 }
 
+static void
+diagbus_tx(struct diproc *dp, struct cli *cli)
+{
+	unsigned nonet;
+	unsigned sum = 0;
+
+	while (cli->ac > 1) {
+		cli->ac--;
+		cli->av++;
+		if (!strcmp(cli->av[0], "{")) {
+			sum = 0;
+		} else if (!strcmp(cli->av[0], "}")) {
+			DiagBus_Send(dp, sum & 0xff);
+		} else {
+			nonet = strtoul(cli->av[0], NULL, 0);
+			sum += nonet;
+			assert(nonet < 0x200);
+			DiagBus_Send(dp, nonet);
+		}
+	}
+}
+
 void v_matchproto_(cli_func_f)
 cli_diag(struct cli *cli)
 {
@@ -77,9 +100,16 @@ BOARD_TABLE
 	cli->ac--;
 	cli->av++;
 
+	while (!diprocs[cli->priv].status)
+		usleep(10000);
+
 	while (cli->ac && !cli->status) {
 		if (!strcmp(cli->av[0], "experiment")) {
 			cli_diag_experiment(cli);
+			return;
+		}
+		if (!strcmp(cli->av[0], "check")) {
+			cli_diag_check(cli);
 			return;
 		}
 		if (!strcmp(cli->av[0], "wait")) {
@@ -93,10 +123,23 @@ BOARD_TABLE
 					break;
 				usleep(100000);
 			}
+			if (want_state != state)
+				cli_printf(cli, "State is 0x%02x\n", state);
+			return;
+		}
+		if (!strcmp(cli->av[0], "tx")) {
+			diagbus_tx(&diprocs[cli->priv], cli);
 			return;
 		}
 		cli_printf(cli, "<<%s>>\n", cli->av[0]);
 		cli_unknown(cli);
 		break;
 	}
+}
+
+void
+diagbus_init(void)
+{
+	diag_elastic = elastic_new(O_RDWR);
+	AN(diag_elastic);
 }

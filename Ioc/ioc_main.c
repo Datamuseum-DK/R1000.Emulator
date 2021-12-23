@@ -75,6 +75,15 @@ ioc_stop_cpu(void)
 	AZ(pthread_mutex_unlock(&ioc_cpu_mtx));
 }
 
+void
+ioc_wait_cpu_running(void)
+{
+	AZ(pthread_mutex_lock(&ioc_cpu_mtx));
+	while (!ioc_cpu_running)
+		AZ(pthread_cond_wait(&ioc_cpu_cond_state, &ioc_cpu_mtx));
+	AZ(pthread_mutex_unlock(&ioc_cpu_mtx));
+}
+
 static void
 ioc_wait_cpu_stopped(void)
 {
@@ -362,6 +371,7 @@ main_ioc(void *priv)
 {
 	unsigned last_irq_level = 0;
 	int i;
+	unsigned u;
 	nanosec ns;
 	nanosec mytime = simclock;
 
@@ -378,7 +388,10 @@ main_ioc(void *priv)
 			ioc_cpu_running = 0;
 			AZ(pthread_cond_wait(&ioc_cpu_cond, &ioc_cpu_mtx));
 		}
+		u = ioc_cpu_running;
 		ioc_cpu_running = 1;
+		if (!u)
+			AZ(pthread_cond_broadcast(&ioc_cpu_cond_state));
 		AZ(pthread_mutex_unlock(&ioc_cpu_mtx));
 
 		if (irq_level != last_irq_level) {
@@ -430,6 +443,7 @@ main_ioc(void *priv)
 void
 ioc_init(void)
 {
+
 	m68k_init();
 	m68k_set_cpu_type(IOC_CPU_TYPE);
 
