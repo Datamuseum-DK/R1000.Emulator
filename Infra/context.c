@@ -96,6 +96,5 @@ CTX_Get(const char *kind, const char *ident, uint32_t length)
 	ctx->length = length;
 	strcpy(ctx->kind, kind);
 	strcpy(ctx->ident, ident);
-fprintf(stderr, "CTX {%s} {%s} #%u @%p\n", kind, ident, length, ctx);
 	return (ctx);
 }
