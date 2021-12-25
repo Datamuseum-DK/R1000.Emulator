@@ -211,13 +211,13 @@ static struct sc_def sc_defs[] = {
 	    "sp+2 String , "
 	    "sp+0 @L @L .L"
 	},
-	{ 0x10364, "FSC_10364",
-	    "sp+8 @L .L sp+8 @L sp+6 @L ascii , "
+	{ 0x10364, "MovStringTail",
+	    "sp+8 @L .L , sp+8 @L sp+6 @L ascii , "
 	    "sp+6 @L .L , "
 	    "sp+4 @L .L , "
 	    "sp+2 @L .L "
 	    ,
-	    "sp+6 @L .L sp+6 @L sp+4 @L ascii , "
+	    "sp+6 @L .L , sp+6 @L sp+4 @L ascii , "
 	    "sp+4 @L .L , "
 	    "sp+2 @L .L , "
 	    "sp+0 @L .L"
