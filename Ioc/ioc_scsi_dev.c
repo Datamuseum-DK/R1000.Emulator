@@ -100,6 +100,15 @@ scsi_03_request_sense(struct scsi_dev *dev, uint8_t *cdb)
 }
 
 static int v_matchproto_(scsi_func_f)
+scsi_04_format_unit(struct scsi_dev *dev, uint8_t *cdb)
+{
+
+	(void)cdb;
+	trace_scsi_dev(dev, "FORMAT_UNIT");
+	return (IOC_SCSI_OK);
+}
+
+static int v_matchproto_(scsi_func_f)
 scsi_08_read_6_disk(struct scsi_dev *dev, uint8_t *cdb)
 {
 	size_t lba;
@@ -217,11 +226,29 @@ static int v_matchproto_(scsi_func_f)
 scsi_11_space(struct scsi_dev *dev, uint8_t *cdb)
 {
 
+	trace_scsi_dev(dev, "SPACE");
 	assert(cdb[0x01] == 0x1);
 	assert(cdb[0x02] == 0xff);
 	assert(cdb[0x03] == 0xff);
 	assert(cdb[0x04] == 0xff);
 	dev->tape_head -= 4;
+	dev->req_sense[2] = 0;
+	return (IOC_SCSI_OK);
+}
+
+static int v_matchproto_(scsi_func_f)
+scsi_15_mode_select_6(struct scsi_dev *dev, uint8_t *cdb)
+{
+
+	uint8_t buf[BUFSIZ];
+
+	trace_scsi_dev(dev, "MODE_SELECT_6");
+	assert(cdb[0x01] == 0x11);
+	assert(cdb[0x02] == 0x00);
+	assert(cdb[0x03] == 0x00);
+
+	scsi_to_target(dev, buf, cdb[0x04]);
+
 	dev->req_sense[2] = 0;
 	return (IOC_SCSI_OK);
 }
@@ -264,16 +291,30 @@ scsi_28_read_10(struct scsi_dev *dev, uint8_t *cdb)
 	return (IOC_SCSI_OK);
 }
 
+static int v_matchproto_(scsi_func_f)
+scsi_37_read_defect_data_10(struct scsi_dev *dev, uint8_t *cdb)
+{
+
+	(void)cdb;
+	trace_scsi_dev(dev, "READ_DEFECT_DATA_10");
+
+	// scsi_fm_target(dev, dev->map + (lba<<10), nsect<<10);
+	return (IOC_SCSI_OK);
+}
+
 /**********************************************************************/
 
 static scsi_func_f * const scsi_disk_funcs[256] = {
 	[SCSI_TEST_UNIT_READY] = scsi_00_test_unit_ready,
+	[SCSI_FORMAT_UNIT] = scsi_04_format_unit,
 	[SCSI_READ_6] = scsi_08_read_6_disk,
 	[SCSI_WRITE_6] = scsi_0a_write_6,
 	[SCSI_SEEK] = scsi_0b_seek,
 	[0x0d] = scsi_0d_vendor,
 	[SCSI_MODE_SENSE_6] = scsi_1a_sense,
 	[SCSI_READ_10] = scsi_28_read_10,
+	[SCSI_MODE_SELECT_6] = scsi_15_mode_select_6,
+	[SCSI_READ_DEFECT_DATA_10] = scsi_37_read_defect_data_10,
 };
 
 /**********************************************************************/
