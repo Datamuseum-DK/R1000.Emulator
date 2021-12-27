@@ -13,6 +13,9 @@ class Context():
         if file:
             self.from_file(file)
 
+    def __lt__(self, other):
+        return self.ident < other.ident
+
     def from_file(self, file):
         buf = file.read(128)
         if len(buf) != 128:
@@ -42,26 +45,20 @@ def contexts(filename):
             yield ctx
 
 def main():
+    nact = 0
+    l = []
     for ctx in contexts(CONTEXT_FILE):
-        print(ctx.activations, ctx)
-
-    return
-    with open(CONTEXT_FILE, "rb") as file:
-        while True:
-            ctx = Context(file)
-            print(ctx.activations, ctx)
-            continue
-            prof = struct.unpack("<8192Q", ctx.body)
-            nins = 0
-            for n, i in enumerate(prof):
-                if not i:
-                     continue
-                print("%04x" % n, "%6d" % i, "%6.2f" % (i*1200 / ctx.activations))
-                nins += i
-            print("====", "%6d" % nins, "%6.2f" % (nins*1200 / ctx.activations))
-   
-
-
+        i = ctx.activations
+        nact += i
+        l.append((i, ctx))
+        
+    for i, ctx in sorted(l):
+        print(
+            "%12d" % i,
+            "%7.3f" % (i / nact),
+            ctx
+        )
+    print("%12d" % nact, "%7.3f" % (nact / nact), "Total")
 
 if __name__ == "__main__":
     main()
