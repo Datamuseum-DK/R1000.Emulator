@@ -71,6 +71,8 @@ extern volatile nanosec		systemc_t_zero;
 extern volatile int		systemc_clock;
 extern int			trace_fd;
 
+double sc_when(void);
+
 /* MAIN ***************************************************************/
 
 void finish(int status, const char *why)  __attribute__((__noreturn__));

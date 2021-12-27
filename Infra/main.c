@@ -90,17 +90,9 @@ finish(int status, const char *why)
 {
 	struct rusage rus;
 	struct timespec tx;
-	double ds, dr, dt;
+	double ds, dr, dt = 0;
 
 	printf("Terminating because: %s\n", why);
-
-	ds = simclock * 1e-9;
-	printf("  %15.9f s simulated\n", ds);
-
-	if (systemc_t_zero) {
-		dt = ds - systemc_t_zero * 1e-9;
-		printf("  %15.9f s SystemC simulation\n", dt);
-	}
 
 	AZ(clock_gettime(CLOCK_MONOTONIC, &tx));
 	dr = 1e-9 * tx.tv_nsec;
@@ -108,14 +100,21 @@ finish(int status, const char *why)
 	dr += tx.tv_sec - t0.tv_sec;
 	printf("  %12.6f s Wall Clock Time\n", dr);
 
+	if (systemc_t_zero) {
+		dt = sc_when();
+		printf("  %15.9f s SystemC simulation\n", dt);
+		if (dr > dt)
+			printf("  1/%.2f SystemC Simulation ratio\n", dr / dt);
+		else
+			printf("  %.2f SystemC Simulation ratio\n", dt / dr);
+	}
+
+	ds = simclock * 1e-9;
+	printf("  %15.9f s IOC simulation\n", ds);
+
 	dt = 1e-9 * ioc_t_stopped;
 	printf("  %12.6f s IOC stopped\n", dt);
 	printf("  %ju IOC instructions\n", ioc_nins);
-
-	if (dr > ds)
-		printf("  1/%.2f Simulation ratio\n", dr / ds);
-	else
-		printf("  %.2f Simulation ratio\n", ds / dr);
 
 	AZ(getrusage(RUSAGE_SELF, &rus));
 

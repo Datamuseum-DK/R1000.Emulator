@@ -266,6 +266,7 @@ expmon:	all ${BINFILES}
 		'console match expect "EM>"' \
 		'console << "${EXPERIMENT}"' \
 		'console match expect "EM>"' \
+		'sc rate' \
 		exit
 
 $DIAG="TEST IOA"
@@ -311,6 +312,7 @@ rdiag:	r1000sim ${BINFILES}
 		'console match expect "DIAG>"' \
 		'console << "${DIAG}"' \
 		'console match expect "EM>"' \
+		'sc rate' \
 		exit
 		
 
