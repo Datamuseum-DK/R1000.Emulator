@@ -125,7 +125,7 @@ scsi_08_read_6_disk(struct scsi_dev *dev, uint8_t *cdb)
 	    dev->scsi_id, lba, lba << 10);
 
 	scsi_fm_target(dev, dev->map + (lba<<10), nsect<<10);
-	trace(TRACE_SCSI, "SCSI_D READ6 %zx (%08zx)\n", lba, lba << 10);
+	Trace(trace_scsi_data, "SCSI_D READ6 %zx (%08zx)", lba, lba << 10);
 	return (IOC_SCSI_OK);
 }
 
@@ -171,7 +171,7 @@ scsi_08_read_6_tape(struct scsi_dev *dev, uint8_t *cdb)
 	assert(tape_length == vle32dec(dev->map + dev->tape_head));
 	dev->tape_head += 4;
 
-	trace(TRACE_SCSI, "SCSI_T READ6 recno=%x head=%zx tape=%x xfer=%x\n",
+	Trace(trace_scsi_data, "SCSI_T READ6 recno=%x head=%zx tape=%x xfer=%x",
 	    dev->tape_recno, dev->tape_head, tape_length, xfer_length);
 
 	dev->tape_recno++;
@@ -199,7 +199,7 @@ scsi_0a_write_6(struct scsi_dev *dev, uint8_t *cdb)
 	    "WRITE DISK ID=%d LBA=%08zx (@0x%08zx)\n",
 	    dev->scsi_id, lba, lba << 10);
 
-	trace(TRACE_SCSI, "SCSI_D WRITE6 %zx\n", lba);
+	Trace(trace_scsi_data, "SCSI_D WRITE6 %zx", lba);
 	return (IOC_SCSI_OK);
 }
 
@@ -267,7 +267,7 @@ scsi_1a_sense(struct scsi_dev *dev, uint8_t *cdb)
 		scsi_fm_target(dev, dev->sense_4, sizeof dev->sense_4);
 		break;
 	default:
-		trace(TRACE_SCSI, "MODE_SENSE page 0x%d unknown\n", cdb[0x02]);
+		Trace(trace_scsi_data, "MODE_SENSE page 0x%d unknown", cdb[0x02]);
 		return (IOC_SCSI_ERROR);
 	}
 	return (IOC_SCSI_OK);
@@ -287,7 +287,7 @@ scsi_28_read_10(struct scsi_dev *dev, uint8_t *cdb)
 	nsect |= cdb[0x08];
 
 	scsi_fm_target(dev, dev->map + (lba<<10), nsect<<10);
-	trace(TRACE_SCSI, "SCSI_D READ10 %zx\n", lba);
+	Trace(trace_scsi_data, "SCSI_D READ10 %zx", lba);
 	return (IOC_SCSI_OK);
 }
 

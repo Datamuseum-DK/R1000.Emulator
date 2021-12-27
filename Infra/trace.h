@@ -11,4 +11,5 @@
 	TRACER(disk_data, "Data to/from disk(s)")			\
 	TRACER(tape_data, "Data to/from tape(s)")			\
 	TRACER(scsi_cmd, "SCSI commands, both busses")			\
+	TRACER(scsi_data, "SCSI data, both busses")			\
 	TRACER(systemc, "SystemC model")

@@ -60,12 +60,12 @@ static void
 trace_scsi_ctl(struct scsi *sp, const char *cmt)
 {
 
-	trace(
-	    TRACE_SCSI,
+	Trace(
+	    trace_scsi_cmd,
 	    "%s CMD=%02x ID=%x"
 	    " CDB=[%02x %02x %02x %02x %02x %02x|%02x %02x %02x %02x]"
 	    " LEN=[%02x %02x %02x]"
-	    " %s\n",
+	    " %s",
 	    sp->name,
 	    sp->regs[0x18],
 	    sp->regs[0x15] & 7,
@@ -101,7 +101,7 @@ scsi_to_target(struct scsi_dev *sd, void *ptr, unsigned len)
 	xlen = vbe32dec(sd->ctl->regs + 0x11) & 0xffffff;
 	assert(len <= xlen);
 	dma_read(sd->ctl->dma_seg, sd->ctl->dma_adr, ptr, len);
-	trace(TRACE_SCSI, "%s T %p <- R [%x]\n", sd->ctl->name, ptr, len);
+	Trace(trace_scsi_cmd, "%s T %p <- R [%x]", sd->ctl->name, ptr, len);
 }
 
 void
@@ -113,7 +113,7 @@ scsi_fm_target(struct scsi_dev *sd, void *ptr, unsigned len)
 	xlen = vbe32dec(sd->ctl->regs + 0x11) & 0xffffff;
 	assert(len <= xlen);
 	dma_write(sd->ctl->dma_seg, sd->ctl->dma_adr, ptr, len);
-	trace(TRACE_SCSI, "%s T %p -> R [%x]\n", sd->ctl->name, ptr, len);
+	Trace(trace_scsi_cmd, "%s T %p -> R [%x]", sd->ctl->name, ptr, len);
 }
 
 static void *
@@ -206,14 +206,14 @@ scsi_ctrl_post_write(struct scsi *sp, uint8_t *space, unsigned adr)
 	AZ(pthread_mutex_lock(&sp->mtx));
 	sp->regs[adr] = space[adr];
 	if (adr == 0x18) {
-		trace(TRACE_SCSI, "%s REGS"
+		Trace(trace_scsi_cmd, "%s REGS"
 		    " %02x %02x %02x"
 		    " [%02x %02x %02x %02x"
 		    " %02x %02x %02x %02x"
 		    " %02x %02x %02x %02x]"
 		    " %02x %02x %02x"
 		    " [%02x %02x %02x]"
-		    " %02x %02x %02x %02x %02x %02x\n",
+		    " %02x %02x %02x %02x %02x %02x",
 		    sp->name, sp->regs[0x00], sp->regs[0x01], sp->regs[0x02],
 		    sp->regs[0x03], sp->regs[0x04], sp->regs[0x05],
 		    sp->regs[0x06], sp->regs[0x07], sp->regs[0x08],
