@@ -166,7 +166,6 @@ cli_func_f cli_trace;
 // Trace bits
 
 #define TRACE_68K	(1<<0)		// Trace instructions
-#define TRACE_IO	(1<<1)		// General I/O tracing
 #define TRACE_SYSCALL	(1<<5)		// PIT timer tracing
 #define TRACE_DIAG	(1<<6)		// DIAG bus
 

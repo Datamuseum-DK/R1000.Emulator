@@ -201,7 +201,7 @@ scsi_ctrl_post_write(struct scsi *sp, uint8_t *space, unsigned adr)
 {
 	assert (adr < 32);
 
-	trace(TRACE_IO, "%s W %s [%x] <- %x\n",
+	Trace(trace_ioc_io, "%s W %s [%x] <- %x",
 	    sp->name, scsi_reg[adr], adr, space[adr]);
 	AZ(pthread_mutex_lock(&sp->mtx));
 	sp->regs[adr] = space[adr];
@@ -241,7 +241,7 @@ scsi_ctrl_pre_read(struct scsi *sp, uint8_t *space, unsigned adr)
 	}
 	space[adr] = sp->regs[adr];
 	AZ(pthread_mutex_unlock(&sp->mtx));
-	trace(TRACE_IO, "%s R %s [%x] -> %x\n",
+	Trace(trace_ioc_io, "%s R %s [%x] -> %x",
 	    sp->name, scsi_reg[adr], adr, space[adr]);
 }
 
@@ -333,7 +333,7 @@ scsi_dma_post_write(int debug, uint8_t *space, unsigned width, unsigned adr)
 	assert(width == 2);
 
 	u = vbe16dec(space + adr);
-	trace(TRACE_IO, "SCSI_DMA W [%x] <- %x/%d\n", adr, u, width);
+	Trace(trace_ioc_io, "SCSI_DMA W [%x] <- %x/%d", adr, u, width);
 	switch (adr) {
 	case 0x0: scsi_d->dma_adr = u; break;
 	case 0x4: scsi_t->dma_adr = u; break;
@@ -351,7 +351,7 @@ scsi_ctl_post_write(int debug, uint8_t *space, unsigned width, unsigned adr)
 	if (debug) return;
 	assert(width == 2);
 
-	trace(TRACE_IO, "SCSI_CTL W [%x] <- %x/%d\n",
+	Trace(trace_ioc_io, "SCSI_CTL W [%x] <- %x/%d",
 	    adr, vbe16dec(space+adr), width);
 
 	if (adr == 0) {
@@ -387,6 +387,6 @@ scsi_ctl_pre_read(int debug, uint8_t *space, unsigned width, unsigned adr)
 	space[1] &= 0x8f;
 	space[1] |= space[9] & 0x70;
 
-	trace(TRACE_IO, "SCSI_CTL R [%x] -> %x/%d\n",
+	Trace(trace_ioc_io, "SCSI_CTL R [%x] -> %x/%d",
 	    adr, vbe16dec(space+adr), width);
 }

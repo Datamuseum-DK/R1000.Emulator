@@ -154,7 +154,7 @@ io_rtc_pre_read(int debug, uint8_t *space, unsigned width, unsigned adr)
 	AZ(pthread_mutex_lock(&rtc_mtx));
 	space[adr] = rtcregs[adr];
 	AZ(pthread_mutex_unlock(&rtc_mtx));
-	trace(TRACE_IO, "RTC R [%x] -> %x\n", adr, space[adr]);
+	Trace(trace_ioc_io, "RTC R [%x] -> %x", adr, space[adr]);
 	if (adr == 0x0e)
 		space[0x0e] = 0;
 }
@@ -166,7 +166,7 @@ io_rtc_post_write(int debug, uint8_t *space, unsigned width, unsigned adr)
 	if (debug) return;
 	assert (width == 1);
 	assert (adr < 32);
-	trace(TRACE_IO, "RTC W [%x] <- %x\n", adr, space[adr]);
+	Trace(trace_ioc_io, "RTC W [%x] <- %x", adr, space[adr]);
 	AZ(pthread_mutex_lock(&rtc_mtx));
 	rtcregs[adr] = space[adr];
 	AZ(pthread_mutex_unlock(&rtc_mtx));
