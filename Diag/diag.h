@@ -16,7 +16,6 @@ struct diproc {
 	const char		*upper;
 	const char		*lower;
 	int			address;
-	volatile uint8_t	rxbusy;
 	volatile uint8_t	status;
 	struct experiment	*experiment;
 };

@@ -20,7 +20,6 @@ struct diproc diprocs[16] = {
 		.lower = #l,\
 		.address = a,\
 		.status = 0,\
-		.rxbusy = 0,\
 	 },
 BOARD_TABLE
 #undef BOARD
@@ -37,9 +36,6 @@ DiagBus_Send(struct diproc *dp, unsigned u)
 	buf[0] = u >> 8;
 	buf[1] = u & 0xff;
 	elastic_put(diag_elastic, buf, 2);
-	dp->rxbusy = 11;
-	while(dp->rxbusy)
-		usleep(1000);
 }
 
 static void
@@ -64,10 +60,39 @@ diagbus_tx(struct diproc *dp, struct cli *cli)
 	}
 }
 
+static void
+diagbus_wait(struct cli *cli)
+{
+	int state, want_state = -6;
+	uint8_t buf[1];
+	size_t sz;
+	struct diproc *dp;
+
+	if (cli->ac > 1)
+		want_state = strtoul(cli->av[1], NULL, 0);
+	dp = &diprocs[cli->priv];
+	/*
+	 * Do first poll via diagbus, to make sure download is complete
+	 */
+	DiagBus_Send(dp, 0x100 + cli->priv);
+	sz = elastic_get(diag_elastic, buf, sizeof buf);
+	state = buf[0] & 0xf;
+	while (1) {
+		if (want_state == state)
+			break;
+		if (want_state < 0 && -want_state != state)
+			break;
+		usleep(100000);
+		state = dp->status;
+	}
+	if (want_state != state)
+		cli_printf(cli, "State is 0x%02x\n", state);
+	return;
+}
+
 void v_matchproto_(cli_func_f)
 cli_diag(struct cli *cli)
 {
-	int state, want_state = -6;
 
 	if (cli->help || cli->ac == 1) {
 		cli_io_help(cli, "diag", 0, 1);
@@ -113,18 +138,7 @@ BOARD_TABLE
 			return;
 		}
 		if (!strcmp(cli->av[0], "wait")) {
-			if (cli->ac > 1)
-				want_state = strtoul(cli->av[1], NULL, 0);
-			while (1) {
-				state = diprocs[cli->priv].status;
-				if (want_state == state)
-					break;
-				if (want_state < 0 && -want_state != state)
-					break;
-				usleep(100000);
-			}
-			if (want_state != state)
-				cli_printf(cli, "State is 0x%02x\n", state);
+			diagbus_wait(cli);
 			return;
 		}
 		if (!strcmp(cli->av[0], "tx")) {

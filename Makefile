@@ -225,7 +225,7 @@ EXPERIMENT=write [xeq ioc TEST_WCS_ADDRESSING]
 EXPERIMENT=write [xeq ioc TEST_COUNTER_DATA]
 EXPERIMENT=TEST_IOC
 
-expmon:	r1000sim ${BINFILES}
+expmon:	all ${BINFILES}
 	(cd SystemC && make)
 	./r1000sim \
 		-T ${TRACE_FILE} \
@@ -234,6 +234,7 @@ expmon:	r1000sim ${BINFILES}
 		"trace -ioc_dma" \
 		"trace -ioc_pit" \
 		"trace -ioc_instructions" \
+		"ioc syscall internal" \
 		"ioc memtrace add -lo 0x00000 -hi 0x00000" \
 		"console > _.console" \
 		"console telnet localhost:1400" \
