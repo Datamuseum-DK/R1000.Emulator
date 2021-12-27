@@ -80,7 +80,9 @@ CLI_INCL = \
 	Infra/trace.h \
 	Infra/elastic.h
 
-all:	r1000sim
+all:
+	cd SystemC && make
+	make r1000sim
 
 #######################################################################
 # To include SystemC simulator, download more firmware with:
