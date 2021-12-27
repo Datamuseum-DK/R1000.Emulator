@@ -403,7 +403,7 @@ main_ioc(void *priv)
 			io_sreg8_space[3] &= ~7;
 			io_sreg8_space[3] |= (~irq_level) & 7;
 		}
-		if (!systemc_clock) {
+		if (1 || !systemc_clock) {
 			i = m68k_execute(1);
 			simclock += 100ULL * i;
 			mytime = simclock;
@@ -426,7 +426,7 @@ main_ioc(void *priv)
 			exit(4);
 		}
 		ns = callout_poll();
-		if (!systemc_clock) {
+		if (1 || !systemc_clock) {
 			if (i == 1) {
 				ns -= simclock;
 				usleep(1 + (ns / 1000));
