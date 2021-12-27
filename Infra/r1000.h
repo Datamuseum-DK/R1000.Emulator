@@ -178,6 +178,10 @@ void diagbus_init(void);
 
 void mem_init(void);
 
+/* SYSTEMC ************************************************************/
+
+void pit_clock(void);
+
 /* UTILITIES **********************************************************/
 
 void hexdump(struct vsb *vsb, const void *ptr, size_t len, unsigned offset);

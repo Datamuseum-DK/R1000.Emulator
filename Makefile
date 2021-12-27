@@ -233,7 +233,6 @@ expmon:	r1000sim ${BINFILES}
 		"trace -ioc_pit" \
 		"trace -ioc_instructions" \
 		"ioc memtrace add -lo 0x00000 -hi 0x00000" \
-		"ioc syscall" \
 		"console > _.console" \
 		"console telnet localhost:1400" \
 		"console serial /dev/nmdm0B" \

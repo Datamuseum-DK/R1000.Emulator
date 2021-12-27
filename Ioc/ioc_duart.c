@@ -120,9 +120,8 @@ static pthread_t diag_rx;
 /**********************************************************************/
 
 static void
-ioc_duart_pit_callback(void *priv)
+ioc_duart_pit_tick(void)
 {
-	(void)priv;
 	AZ(pthread_mutex_lock(&duart_mtx));
 	if (ioc_duart->pit_running == 1) {
 		ioc_duart->pit_running = 2;
@@ -137,6 +136,20 @@ ioc_duart_pit_callback(void *priv)
 		}
 	}
 	AZ(pthread_mutex_unlock(&duart_mtx));
+}
+
+static void
+ioc_duart_pit_callback(void *priv)
+{
+	(void)priv;
+	if (!systemc_clock)
+		ioc_duart_pit_tick();
+}
+
+void
+pit_clock(void)
+{
+	ioc_duart_pit_tick();
 }
 
 /**********************************************************************/
