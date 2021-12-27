@@ -80,6 +80,8 @@ CLI_INCL = \
 	Infra/trace.h \
 	Infra/elastic.h
 
+all:	r1000sim
+
 #######################################################################
 # To include SystemC simulator, download more firmware with:
 #	make setup_systemc
@@ -90,14 +92,14 @@ include SystemC/Makefile.inc
 cli:	r1000sim ${BINFILES}
 	./r1000sim \
 		-T ${TRACE_FILE} \
-		-t 0x0 \
 		"trace -diagbus_bytes" \
-		"trace +ioc_interrupt" \
+		"trace -ioc_interrupt" \
 		"trace -ioc_dma" \
-		"trace +ioc_io" \
-		"trace +ioc_instructions" \
+		"trace -ioc_io" \
+		"trace -ioc_pit" \
+		"trace -scsi_data" \
+		"trace -ioc_instructions" \
 		"ioc memtrace add -lo 0xfc00 -hi 0xfc03" \
-		"ioc syscall" \
 		"console > _.console" \
 		"console telnet localhost:1400" \
 		"console serial /dev/nmdm0B" \
@@ -121,8 +123,39 @@ cli:	r1000sim ${BINFILES}
 		'console match expect "CLI>"'
 
 EXP_PATH=/critter/R1K/Old/hack/X/
+EXP=TRIGGER_SCOPE.IOC
+EXP=TEST_PAREG_SCAN.IOC
+EXP=TEST_MICRO_EVENT_EXIT.IOC
+EXP=TEST_RDR_SCAN.IOC
 
 test:	r1000sim ${BINFILES}
+	(cd SystemC && make)
+	./r1000sim \
+		-T ${TRACE_FILE} \
+		"trace +diagbus_bytes" \
+		"diag > _.diag" \
+		'sc launch ioc' \
+		"dummy_diproc fiu seq val typ mem0 mem2" \
+		'trace +systemc' \
+		'sc trace "DI*PROC" 4' \
+		'sc trace "DFREG" 0' \
+		'sc trace "DGDEC" 0' \
+		'sc trace "TACNT" 0' \
+		'sc trace "TRAM" 0' \
+		'sc trace "TDDRV" 0' \
+		'sc trace "MISCRG" 0' \
+		'sc trace "UACTR" 0' \
+		'sc trace "UADRV" 0' \
+		'sc trace "RTCTR" 0' \
+		'sc q exit' \
+		'sc q 7' \
+		"diag ioc experiment ${EXP_PATH}/${EXP}" \
+		"diag ioc wait" \
+		"diag ioc check" \
+		"exit"
+		
+
+hack:	r1000sim ${BINFILES}
 	(cd SystemC && make)
 	./r1000sim \
 		-T ${TRACE_FILE} \
@@ -135,16 +168,15 @@ test:	r1000sim ${BINFILES}
 		'sc trace "DFREG" 1' \
 		'sc q exit' \
 		'sc q 1' \
-		"diag ioc experiment ${EXP_PATH}/TEST_UIR_SCAN.IOC" \
+		"diag ioc tx 0x1a5 { 20 0x1b 0 0 0 0 0 0 0 0x1b 0 10 0x86 0x1a 0x51 0 0 0x19 0x23 0x18 0x60 }"  \
 		"diag ioc wait" \
-		"exit"
-		
+		"diag ioc tx 0x1a5 { 2 0x01 0x15 }"  \
+
 
 novram:	r1000sim ${BINFILES}
 	(cd SystemC && make)
 	./r1000sim \
 		-T ${TRACE_FILE} \
-		-t 0x0 \
 		"trace +diagbus_bytes" \
 		"trace -ioc_interrupt" \
 		"trace -ioc_dma" \
@@ -188,19 +220,20 @@ novram:	r1000sim ${BINFILES}
 		exit
 
 EXPERIMENT=write [xeq ioc TEST_WCS_ADDRESSING]
+EXPERIMENT=write [xeq ioc TEST_COUNTER_DATA]
+EXPERIMENT=TEST_IOC
 
 expmon:	r1000sim ${BINFILES}
 	(cd SystemC && make)
 	./r1000sim \
 		-T ${TRACE_FILE} \
-		-t 0x0 \
-		"trace +diagbus_bytes" \
+		"trace -diagbus_bytes" \
 		"trace -ioc_interrupt" \
 		"trace -ioc_dma" \
-		"trace -ioc_io" \
+		"trace -ioc_pit" \
 		"trace -ioc_instructions" \
 		"ioc memtrace add -lo 0x00000 -hi 0x00000" \
-		"ioc syscall internal" \
+		"ioc syscall" \
 		"console > _.console" \
 		"console telnet localhost:1400" \
 		"console serial /dev/nmdm0B" \
@@ -221,24 +254,60 @@ expmon:	r1000sim ${BINFILES}
 		'console match expect "Enter option [enter CLI] : "' \
 		'console << "1"' \
 		'console match expect "CLI>"' \
-		'sc launch ioc' \
-		"dummy_diproc fiu seq val typ mem0 mem2" \
+		'sc launch ioc ' \
+		"dummy_diproc seq fiu val typ mem0 mem2" \
 		'trace +systemc' \
-		'sc trace "MRQFF0" 0' \
-		'sc trace "WEGATE" 0' \
-		'sc trace "MNAN1" 0' \
 		'sc trace "DI*PROC" 4' \
-		'sc trace "IOXCV" 1' \
-		'sc trace "DELAY" 0' \
-		'sc trace "SRAM" 0' \
-		'sc trace "UIRSC" 0' \
-		'sc trace "CSDRV" 0' \
-		'sc trace "DFREG" 0' \
 		'sc q exit' \
-		'sc q 30' \
+		'sc q 300' \
 		'console << "x expmon"' \
 		'console match expect "EM>"' \
 		'console << "${EXPERIMENT}"' \
+		'console match expect "EM>"' \
+		exit
+
+$DIAG="TEST IOA"
+
+rdiag:	r1000sim ${BINFILES}
+	(cd SystemC && make)
+	./r1000sim \
+		-T ${TRACE_FILE} \
+		"trace -diagbus_bytes" \
+		"trace -ioc_interrupt" \
+		"trace -ioc_dma" \
+		"trace -ioc_io" \
+		"trace -ioc_instructions" \
+		"ioc memtrace add -lo 0x00000 -hi 0x00000" \
+		"ioc syscall" \
+		"console > _.console" \
+		"console telnet localhost:1400" \
+		"console serial /dev/nmdm0B" \
+		"modem > _.modem" \
+		"diag > _.diag" \
+		"scsi_tape" \
+		"scsi_disk 0 ${DISK0_IMAGE}" \
+		"scsi_disk 1 ${DISK1_IMAGE}" \
+		"reset" \
+		'console match expect "Boot from (Tn or Dn)  [D0] : "' \
+		'console << ""' \
+		'console match expect "Kernel program (0,1,2) [0] : "' \
+		'console << ""' \
+		'console match expect "File system    (0,1,2) [0] : "' \
+		'console << ""' \
+		'console match expect "User program   (0,1,2) [0] : "' \
+		'console << ""' \
+		'console match expect "Enter option [enter CLI] : "' \
+		'console << "1"' \
+		'console match expect "CLI>"' \
+		'sc launch ioc ' \
+		"dummy_diproc seq fiu val typ mem0 mem2" \
+		'trace +systemc' \
+		'sc trace "DI*PROC" 4' \
+		'sc q exit' \
+		'sc q 300' \
+		'console << "x rdiag"' \
+		'console match expect "DIAG>"' \
+		'console << "${DIAG}"' \
 		'console match expect "EM>"' \
 		exit
 		
@@ -246,7 +315,6 @@ expmon:	r1000sim ${BINFILES}
 seagate:	r1000sim ${BINFILES}
 	./r1000sim \
 		-T ${TRACE_FILE} \
-		-t 254 \
 		"console > _.console" \
 		"console telnet :1400" \
 		"diag > _.diag" \
@@ -263,19 +331,24 @@ seagate:	r1000sim ${BINFILES}
 		'console << ""' 
 
 tape:	r1000sim ${BINFILES}
+	truncate -s 1143936000 /critter/_r1000.d0
+	truncate -s 1143936000 /critter/_r1000.d1
 	./r1000sim \
 		-T ${TRACE_FILE} \
-		-t 0x0 \
 		"ioc syscall" \
 		"scsi_tape ${DFS_TAPE}" \
-		"scsi_disk 0 ${DISK0_IMAGE}" \
-		"scsi_disk 1 ${DISK1_IMAGE}" \
+		"scsi_disk 0 /critter/_r1000.d0" \
+		"scsi_disk 1 /critter/_r1000.d1" \
 		"console telnet :1400" \
+		"console serial /dev/nmdm0B" \
 		"console > _.console" \
 		"reset" \
 		'console match expect "Boot from (Tn or Dn)  [D0] : "' \
 		'console << "T0"' \
 		'console match expect "Select files to boot [D=DEFAULT, O=OPERATOR_SUPPLIED] : [D]"' \
+
+
+foo:
 		'console << "D"' \
 		'console match expect "Enable line printer for console output [N] ? "' \
 		'console << "N"' \

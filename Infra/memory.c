@@ -59,7 +59,7 @@ void
 mem_fail(const char *what, unsigned width,
     unsigned address, unsigned data)
 {
-	trace(TRACE_ALL, "Memory Failure: %s(%u) 0x%08x (= %x)\n",
+	Trace(1, "Memory Failure: %s(%u) 0x%08x (= %x)",
 	    what, width, address, data);
 	printf("Memory Failure: %s(%u) 0x%08x (= %x)\n",
 	    what, width, address, data);

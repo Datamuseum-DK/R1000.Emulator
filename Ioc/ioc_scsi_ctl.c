@@ -357,7 +357,7 @@ scsi_ctl_post_write(int debug, uint8_t *space, unsigned width, unsigned adr)
 	if (adr == 0) {
 		sp = scsi_d;
 		if (sp->reset && !(space[adr + 1] & 0x1)) {
-			trace(2, "SCSI_CTL %s RESET\n", sp->name);
+			Trace(trace_scsi_cmd, "SCSI_CTL %s RESET", sp->name);
 			irq_lower(sp->irq_vector);
 			callout_callback(scsi_ctrl_reset, sp, 5000, 0);
 		}
@@ -366,7 +366,7 @@ scsi_ctl_post_write(int debug, uint8_t *space, unsigned width, unsigned adr)
 	if (adr == 8) {
 		sp = scsi_t;
 		if (sp->reset && !(space[adr + 1] & 0x10)) {
-			trace(2, "SCSI_CTL %s RESET\n", sp->name);
+			Trace(trace_scsi_cmd, "SCSI_CTL %s RESET", sp->name);
 			irq_lower(sp->irq_vector);
 			callout_callback(scsi_ctrl_reset, sp, 5000, 0);
 		}

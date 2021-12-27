@@ -95,7 +95,7 @@ ioc_rtc_thread(void *priv)
 	callout_signal_cond(&rtc_cond, &rtc_mtx, 1000000, 1000000);
 	while (1) {
 		AZ(pthread_cond_wait(&rtc_cond, &rtc_mtx));
-		trace(2, "RTC tick\n");
+		Trace(trace_ioc_io, "RTC tick");
 
 		rtcregs[0x0e] |= 0x01;
 

@@ -49,7 +49,6 @@ int optreset;		// Some have it, some not.
 volatile nanosec simclock;
 volatile nanosec systemc_t_zero;
 volatile int systemc_clock;
-unsigned do_trace;
 
 static struct timespec t0;
 
@@ -130,7 +129,6 @@ int
 main(int argc, char **argv)
 {
 	int ch, i;
-	long l;
 	FILE *fi;
 
 	AZ(clock_gettime(CLOCK_MONOTONIC, &t0));
@@ -141,19 +139,10 @@ main(int argc, char **argv)
 	mem_init();
 	ioc_init();
 
-	while ((ch = getopt(argc, argv, "f:ht:T:")) != -1) {
+	while ((ch = getopt(argc, argv, "f:hT:")) != -1) {
 		switch (ch) {
 		case 'f':
 			// handled in second pass
-			break;
-		case 't':
-			l = strtoul(optarg, NULL, 0);
-			if (l == 0)
-				do_trace = 0;
-			else if (l < 0)
-				do_trace &= ~((unsigned long)(-l));
-			else
-				do_trace |= l;
 			break;
 		case 'T':
 			trace_fd =

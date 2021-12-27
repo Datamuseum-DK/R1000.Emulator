@@ -69,7 +69,6 @@ typedef int64_t			nanosec;
 extern volatile nanosec		simclock;
 extern volatile nanosec		systemc_t_zero;
 extern volatile int		systemc_clock;
-extern unsigned			do_trace;
 extern int			trace_fd;
 
 /* MAIN ***************************************************************/
@@ -150,26 +149,12 @@ void Trace(int flag, const char *fmt, ...) __printflike(2, 3);
 void TraceDump(int flag, const void *ptr, size_t len,
     const char *fmt, ...) __printflike(4, 5);
 
-#define trace(level, ...) \
-	Trace(do_trace & level, __VA_ARGS__)
-
-#define trace_dump(level, ptr, len, ...) \
-	Trace(do_trace & level, ptr, len, __VA_ARGS__)
-
 #include "trace.h"
 #define TRACER(name, unused) extern int trace_##name;
 TRACERS
 #undef TRACER
 
 cli_func_f cli_trace;
-
-// Trace bits
-
-#define TRACE_68K	(1<<0)		// Trace instructions
-#define TRACE_SYSCALL	(1<<5)		// PIT timer tracing
-#define TRACE_DIAG	(1<<6)		// DIAG bus
-
-#define TRACE_ALL	((1LU<<32U)-1)	// Hvergang Perikles, Hvergang...
 
 /* CALLOUTS ***********************************************************/
 

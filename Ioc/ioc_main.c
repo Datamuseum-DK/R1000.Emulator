@@ -276,7 +276,8 @@ irq_vector_pre_read(int debug, uint8_t *space, unsigned width, unsigned adr)
 			vbe16enc(space + adr, v);
 		else
 			vbe32enc(space + adr, v);
-		trace(TRACE_68K, "IRQ_VECTOR %x/%x (%x))\n", v, width, adr);
+		Trace(trace_ioc_interrupt,
+		    "IRQ_VECTOR %x/%x (%x))", v, width, adr);
 	}
 }
 
