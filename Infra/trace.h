@@ -4,6 +4,7 @@
 	TRACER(ioc_interrupt, "IOC interrupts")				\
 	TRACER(ioc_dma, "IOC DMA")					\
 	TRACER(ioc_io, "IOC IO")					\
+	TRACER(ioc_pit, "IOC PIT timer")				\
 	TRACER(diagbus_bytes, "All bytes on DiagBus")			\
 	TRACER(diagbus_download, "Downloads on DiagBus")		\
 	TRACER(diagbus_upload, "Uploads on DiagBus")			\

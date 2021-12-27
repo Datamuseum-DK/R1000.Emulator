@@ -169,7 +169,6 @@ cli_func_f cli_trace;
 #define TRACE_IO	(1<<1)		// General I/O tracing
 #define TRACE_SCSI	(1<<2)		// Trace SCSI-CDBs
 #define TRACE_SCSI_DATA	(1<<3)		// Trace SCSI-CDBs
-#define TRACE_PIT	(1<<4)		// PIT timer tracing
 #define TRACE_SYSCALL	(1<<5)		// PIT timer tracing
 #define TRACE_DIAG	(1<<6)		// DIAG bus
 
