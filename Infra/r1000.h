@@ -148,6 +148,7 @@ cli_func_f cli_sc;
 /* Tracing & Debugging ************************************************/
 
 void Trace(int flag, const char *fmt, ...) __printflike(2, 3);
+void Tracev(int flag, const char *pfx, const char *fmt, va_list);
 void TraceDump(int flag, const void *ptr, size_t len,
     const char *fmt, ...) __printflike(4, 5);
 

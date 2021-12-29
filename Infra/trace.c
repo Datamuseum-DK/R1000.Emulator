@@ -173,3 +173,23 @@ TraceDump(int flag, const void *ptr, size_t len, const char *fmt, ...)
 	VSB_tofile(trace_vsb, trace_fd);
 	AZ(pthread_mutex_unlock(&trace_mtx));
 }
+
+void
+Tracev(int flag, const char *pfx, const char *fmt, va_list ap)
+{
+
+	if (!flag || trace_fd < 0)
+		return;
+
+	AZ(pthread_mutex_lock(&trace_mtx));
+	trace_init();
+
+	VSB_printf(trace_vsb, "%12jd ", simclock);
+	if (pfx != NULL)
+		VSB_cat(trace_vsb, pfx);
+	VSB_vprintf(trace_vsb, fmt, ap);
+	VSB_putc(trace_vsb, '\n');
+	AZ(VSB_finish(trace_vsb));
+	(void)VSB_tofile(trace_vsb, trace_fd);
+	AZ(pthread_mutex_unlock(&trace_mtx));
+}
