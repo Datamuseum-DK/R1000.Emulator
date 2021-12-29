@@ -138,7 +138,10 @@ cli_diag_check(struct cli *cli)
 	for (z = 0; z < 2 + want; z += sz)
 		sz = elastic_get(diag_elastic, buf + z, sizeof buf - z);
 
-	cli_printf(cli, "Status: %02x\nMemory:\n", buf[0]);
+	cli_printf(cli, "Status: %02x (%s)\nMemory:\n",
+	    buf[0],
+	    (buf[0] & 2) ? "GOOD" : "BAD"
+	);
 	for (sz = 1; sz < want + 1; sz++) {
 		if (sz % 16 == 1)
 			cli_printf(cli, "  %02zx: ", sz - 1);
