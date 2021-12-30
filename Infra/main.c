@@ -100,14 +100,12 @@ finish(int status, const char *why)
 	dr += tx.tv_sec - t0.tv_sec;
 	printf("  %12.6f s Wall Clock Time\n", dr);
 
-	if (systemc_t_zero) {
-		dt = sc_when();
-		printf("  %15.9f s SystemC simulation\n", dt);
-		if (dr > dt)
-			printf("  1/%.2f SystemC Simulation ratio\n", dr / dt);
-		else
-			printf("  %.2f SystemC Simulation ratio\n", dt / dr);
-	}
+	dt = sc_when();
+	printf("  %15.9f s SystemC simulation\n", dt);
+	if (dr > dt)
+		printf("  1/%.2f SystemC Simulation ratio\n", dr / dt);
+	else
+		printf("  %.2f SystemC Simulation ratio\n", dt / dr);
 
 	ds = simclock * 1e-9;
 	printf("  %15.9f s IOC simulation\n", ds);
