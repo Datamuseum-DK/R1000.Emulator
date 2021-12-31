@@ -122,3 +122,59 @@ Interrupts/vectors in hardware:
 
 	p24: IPL[012]~ -> FFFFF?03::D[29-31]
 
+Fri Dec 31 06:01:09 UTC 2021
+============================
+
+	CLI command "snapshot"
+		snapshot auto [-t <seconds>] <filename>
+		snapshot suspend <filename>
+		snapshot resume <filename>
+		snapshot reset
+		snapshot stop
+		snapshot continue
+
+	snapshot file is sequence of (gzip'ed):
+		[header][ident][bytes]
+
+		header = lengths + who
+		ident = owned by `who`
+		bytes = payload
+
+	`who` can for instance be SCSI disk which writes modified
+	sectors relative to reference image.
+
+	who'ers register a struct with name + function pointers,
+	get back global state flag.
+
+	to `stop`:
+		sn_state = SN_STOP
+		all who'ers notice this (eventually) call
+			sn_check_in(SN_STOP)
+		wait for everybody to check in
+
+	to `continue`
+		sn_status = SN_CONTINUE
+		sn_check_in()'s return
+
+	to `suspend`:
+		{stop}
+		sn_status = SN_SUSPEND
+		sn_check_in()'s return
+		who'ers call
+			sn_record(ptr, len, fmt, ...)
+		as needed, then
+			sn_check_in(SN_SUSPEND)
+
+	to `reset`:
+		{stop}
+		sn_status = SN_RESET
+		sn_check_in()'s return
+		who'ers clean their state
+		who'ers call
+			sn_check_in(SN_RESET)
+
+	to `resume`:
+		{reset}
+		for all records:
+			call whoer->receive(ident, ptr, len)
+		{continue}
