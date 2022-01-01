@@ -47,10 +47,18 @@ def contexts(filename):
 def main():
     nact = 0
     l = []
+    p = {}
     for ctx in contexts(CONTEXT_FILE):
         i = ctx.activations
         nact += i
-        l.append((i, ctx))
+        pg = ctx.ident.split(".")[1]
+        if pg not in p:
+            p[pg] = 0
+        p[pg] += i
+        l.append((i, str(ctx)))
+
+    for i, j in p.items():
+        l.append((j, i))
         
     for i, ctx in sorted(l):
         print(
