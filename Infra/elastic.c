@@ -259,18 +259,19 @@ cli_elastic(struct elastic *ep, struct cli *cli)
 
 	AN(cli);
 	if (cli->help) {
-		cli_printf(cli, "<elastic> [arguments]\n");
+		cli_printf(cli, "\t(elastic buffer arguments:)\n");
 		cli_printf(cli, "\ttext\n");
 		cli_printf(cli, "\t\tSet text mode\n");
 		cli_printf(cli, "\tbinary\n");
 		cli_printf(cli, "\t\tSet binary mode\n");
-		cli_printf(cli, "\t\tElastic buffer arguments\n");
 		cli_printf(cli, "\tcps <characters_per_second>\n");
 		cli_printf(cli, "\t\tOutput bandwidth\n");
 		cli_printf(cli, "\tbaud <baud_rate>\n");
 		cli_printf(cli, "\t\tOutput bandwidth\n");
 		cli_printf(cli, "\t<< <string>\n");
 		cli_printf(cli, "\t\tInput <string> + CR into buffer\n");
+		cli_printf(cli, "\thex\n");
+		cli_printf(cli, "\t\thex string into buffer\n");
 		(void)cli_elastic_fd(NULL, cli);
 		(void)cli_elastic_tcp(NULL, cli);
 		(void)cli_elastic_match(NULL, cli);

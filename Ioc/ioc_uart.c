@@ -49,7 +49,8 @@ cli_ioc_console(struct cli *cli)
 {
 
 	if (cli->help) {
-		cli_io_help(cli, "IOC console", 0, 1);
+		cli_io_help(cli, "IOC console", 0, 0);
+		cli_elastic(cons->ep, cli);
 		return;
 	}
 

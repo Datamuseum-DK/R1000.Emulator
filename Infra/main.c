@@ -98,29 +98,32 @@ finish(int status, const char *why)
 	dr = 1e-9 * tx.tv_nsec;
 	dr -= 1e-9 * t0.tv_nsec;
 	dr += tx.tv_sec - t0.tv_sec;
-	printf("  %12.6f s Wall Clock Time\n", dr);
+	printf("  %12.6f s\tWall Clock Time\n", dr);
 
 	dt = sc_when();
-	printf("  %15.9f s SystemC simulation\n", dt);
-	if (dr > dt)
-		printf("  1/%.2f SystemC Simulation ratio\n", dr / dt);
-	else
-		printf("  %.2f SystemC Simulation ratio\n", dt / dr);
+	printf("  %15.9f s\tSystemC simulation\n", dt);
+	if (dt > 0 && dr > dt)
+		printf("  1/%.1f\t\tSystemC Simulation ratio\n", dr / dt);
+	else if (dt > 0)
+		printf("  %.1f\t\tSystemC Simulation ratio\n", dt / dr);
 
 	ds = simclock * 1e-9;
-	printf("  %15.9f s IOC simulation\n", ds);
+	printf("  %15.9f s\tIOC simulation\n", ds);
 
 	dt = 1e-9 * ioc_t_stopped;
-	printf("  %12.6f s IOC stopped\n", dt);
-	printf("  %ju IOC instructions\n", ioc_nins);
+	printf("  %12.6f s\tIOC stopped\n", dt);
+	printf("%7ju\t\t\tIOC instructions\n", ioc_nins);
 
 	AZ(getrusage(RUSAGE_SELF, &rus));
 
-	printf("  %5ld.%03ld s User time\n", rus.ru_utime.tv_sec, rus.ru_utime.tv_usec / 1000);
-	printf("  %5ld.%03ld s System time\n", rus.ru_stime.tv_sec, rus.ru_stime.tv_usec / 1000);
-	printf("  %ld Max RSS\n", rus.ru_maxrss);
+	printf("  %5ld.%03ld s\t\tUser time\n", rus.ru_utime.tv_sec, rus.ru_utime.tv_usec / 1000);
+	printf("  %5ld.%03ld s\t\tSystem time\n", rus.ru_stime.tv_sec, rus.ru_stime.tv_usec / 1000);
+	printf("%7ld\t\t\tMax RSS\n", rus.ru_maxrss);
+	printf("   0x%02x\t\t\tExit status\n", status);
 	exit (status);
 }
+
+#define ARG_SPEC "f:T:"
 
 int
 main(int argc, char **argv)
@@ -136,7 +139,9 @@ main(int argc, char **argv)
 	mem_init();
 	ioc_init();
 
-	while ((ch = getopt(argc, argv, "f:hT:")) != -1) {
+	printf("ARGC %d\n", argc);
+
+	while ((ch = getopt(argc, argv, ARG_SPEC)) != -1) {
 		switch (ch) {
 		case 'f':
 			// handled in second pass
@@ -156,9 +161,10 @@ main(int argc, char **argv)
 		}
 	}
 
+	printf("ARGC %d\n", argc);
 	optind = 1;
 	optreset = 1;
-	while ((ch = getopt(argc, argv, "f:ht:T:")) != -1) {
+	while ((ch = getopt(argc, argv, ARG_SPEC)) != -1) {
 		switch(ch) {
 		case 'f':
 			fi = fopen(optarg, "r");
@@ -179,6 +185,7 @@ main(int argc, char **argv)
 	argc -= optind;
 	argv += optind;
 
+	printf("ARGC %d\n", argc);
 	for (i = 0; i < argc; i++) {
 		printf("CLI <%s>\n", argv[i]);
 		if (cli_exec(argv[i]))
