@@ -35,7 +35,7 @@ def main():
 
     ioc += Range("io_rtc", 0xffff8000, 0x1f, pre_read = 1, post_write = 1)
 
-    ioc += Range("io_uart", 0xffff9000, 0x3, bidir = False, pre_read = 1, post_write = 1)
+    ioc += Range("io_uart", 0xffff9000, 0x7, bidir = False, pre_read = 1, post_write = 1)
 
     ioc += Range("io_duart", 0xffffa000, 0xf, bidir = False, pre_read = 1, post_write = 1)
 

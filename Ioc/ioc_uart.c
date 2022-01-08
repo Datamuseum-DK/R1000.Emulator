@@ -4,6 +4,9 @@
  *
  * Chip Select: 0xffff9xxx
  *
+ * We implement 8 bytes because the DFS kernel does a 32bit read
+ * at 0xffff9001.
+ *
  */
 
 #include <fcntl.h>
@@ -139,7 +142,7 @@ io_uart_pre_read(int debug, uint8_t *space, unsigned width, unsigned adr)
 {
 	if (debug) return;
 	assert (width == 1);
-	assert (adr < 4);
+	assert (adr < 8);
 	AZ(pthread_mutex_lock(&uart_mtx));
 	switch(adr) {
 	case REG_R_DATA:
@@ -172,7 +175,7 @@ io_uart_post_write(int debug, uint8_t *space, unsigned width, unsigned adr)
 
 	if (debug) return;
 	assert (width == 1);
-	assert (adr < 4);
+	assert (adr < 8);
 	AZ(pthread_mutex_lock(&uart_mtx));
 	switch (adr) {
 	case REG_W_DATA:
