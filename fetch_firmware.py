@@ -45,6 +45,7 @@ def getone(nbr):
     ''' Fetch one artifact from the Bitstore '''
 
     dst = FWPATH + "/%d.bin" % nbr
+    print(dst)
     try:
         inode = os.stat(dst)
         if inode.st_nlink == 2:
@@ -75,7 +76,7 @@ def firmwarelist():
         yield from range(30002508, 30002518)
         yield from range(30002520, 30002616)
         yield from range(30002631, 30002641)
-        yield from range(30003101, 30003106)
+        yield from range(30003101, 30003107)
 
 try:
     os.mkdir(FWPATH)
