@@ -92,7 +92,7 @@ finish(int status, const char *why)
 	struct timespec tx;
 	double ds, dr, dt = 0;
 
-	printf("Terminating because: %s\n", why);
+	printf("Begin statistics\n");
 
 	AZ(clock_gettime(CLOCK_MONOTONIC, &tx));
 	dr = 1e-9 * tx.tv_nsec;
@@ -119,7 +119,13 @@ finish(int status, const char *why)
 	printf("  %5ld.%03ld s\t\tUser time\n", rus.ru_utime.tv_sec, rus.ru_utime.tv_usec / 1000);
 	printf("  %5ld.%03ld s\t\tSystem time\n", rus.ru_stime.tv_sec, rus.ru_stime.tv_usec / 1000);
 	printf("%7ld\t\t\tMax RSS\n", rus.ru_maxrss);
-	printf("   0x%02x\t\t\tExit status\n", status);
+
+	printf("End statistics\n");
+
+	printf("Terminating because: %s\n", why);
+
+	printf("Exit status 0x%x\n", status);
+
 	exit (status);
 }
 
