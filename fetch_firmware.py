@@ -76,6 +76,7 @@ def firmwarelist():
         yield from range(30002508, 30002518)
         yield from range(30002520, 30002616)
         yield from range(30002631, 30002641)
+        yield from range(30003041, 30003042)
         yield from range(30003101, 30003107)
 
 try:
