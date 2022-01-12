@@ -112,14 +112,14 @@ cli_diag(struct cli *cli)
 	if (cli->ac == 0)
 		return;
 
-	cli->priv = -1;
+	cli->priv = 255;
 #define BOARD(upper, lower, address) \
 	if (!strcasecmp(cli->av[0], upper)) \
 		cli->priv = address;
 BOARD_TABLE
 #undef BOARD
-	if (cli->priv < 0) {
-		cli_error(cli, "Unknown board\n");
+	if (cli->priv > 0xf) {
+		cli_error(cli, "Unknown board (0x%jx)\n", cli->priv);
 		return;
 	}
 	cli->ac--;

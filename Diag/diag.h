@@ -5,8 +5,8 @@
 	BOARD("IOC", "ioc", 4) \
 	BOARD("TYP", "typ", 6) \
 	BOARD("VAL", "val", 7) \
-	BOARD("MEM0", "mem0", 14) \
-	BOARD("MEM2", "mem0", 12)
+	BOARD("MEM0", "mem0", 12) \
+	BOARD("MEM2", "mem2", 14)
 
 struct elastic;
 struct experiment;
