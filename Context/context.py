@@ -33,7 +33,7 @@ class Context():
         return self
 
     def __repr__(self):
-        return "<" + self.kind + "::" + self.ident + "/%d" % self.activations + ">"
+        return self.kind + "::" + self.ident
 
 def contexts(filename):
     with open(filename, "rb") as file:
