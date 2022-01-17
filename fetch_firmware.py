@@ -78,6 +78,8 @@ def firmwarelist():
         yield from range(30002631, 30002641)
         yield from range(30003041, 30003042)
         yield from range(30003101, 30003107)
+        yield from range(30002889, 30002896)	# MEM32 GAL
+        yield from range(30002896, 30002903)	# MEM32 DFSM
 
 try:
     os.mkdir(FWPATH)
