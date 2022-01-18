@@ -7,6 +7,7 @@ class Summarize():
         name = test.split("/")[-1]
         self.test = name[1:].replace(".log", "")
         self.test = self.test.replace("mem32_0_0", "mem32")
+        self.test = self.test.replace("expmon_novram", "novram")
 
         print("=" * 72)
         print(self.test.upper())

@@ -10,7 +10,7 @@ fi
 ./r1000sim \
 	-T /critter/_r1000 \
 	-f Tests/cli_prompt.cli \
-	"console > Tests/_expmon_${EXPMON_TEST_NAME}.console" \
+	"console > Tests/_${EXPMON_TEST_NAME}.console" \
 	'trace +systemc' \
 	"sc launch ${EXPMON_LAUNCH}"\
 	"dummy_diproc mem2" \
@@ -27,12 +27,12 @@ fi
 	'console match expect "CLI>"' \
 	'sc rate' \
 	'exit' \
-	2>&1 | tee Tests/_expmon_${EXPMON_TEST_NAME}.log
+	2>&1 | tee Tests/_${EXPMON_TEST_NAME}.log
 
 (
 	cd Context && python3 context.py \
-		> ../Tests/_expmon_${EXPMON_TEST_NAME}.context
+		> ../Tests/_${EXPMON_TEST_NAME}.context
 )
 
 grep 'DI*PROC Exec' /critter/_r1000 | tail -10 \
-	> Tests/_expmon_${EXPMON_TEST_NAME}.diproc
+	> Tests/_${EXPMON_TEST_NAME}.diproc
