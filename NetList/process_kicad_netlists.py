@@ -434,7 +434,7 @@ class Board():
 		|struct mod_planes;
 		|struct mod_lll;
 		|
-		|struct mod_lll *make_mod_lll(sc_module_name name, mod_planes planes, const char *how);
+		|struct mod_lll *make_mod_lll(sc_module_name name, mod_planes &planes, const char *how);
 		|'''))
         commit_file(dfn)
 
