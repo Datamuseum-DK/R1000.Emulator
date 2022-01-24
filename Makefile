@@ -592,6 +592,6 @@ flint:
 		diagbus.c
 		_memcfg.c
 
-setup:	${BINFILES}
+setup:
 	git clone https://github.com/Datamuseum-DK/Musashi
 	python3 -u fetch_firmware.py all

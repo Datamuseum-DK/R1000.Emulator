@@ -178,3 +178,72 @@ Fri Dec 31 06:01:09 UTC 2021
 		for all records:
 			call whoer->receive(ident, ptr, len)
 		{continue}
+
+TODO
+====
+
+	regression test scripts
+	CLI control of diagproc "turbo" mode
+	Experiment flag fields, see: TEST_EXTRACT_MERGE.FIU
+
+SOURCE STRUCTURE
+================
+
+	Ioc
+		SystemC
+			[branches]
+				Makefile
+				ioc_*.{cc|hh}
+				lib_r1000_ioc.so.1
+					exposes
+		ioc_cli.c
+	Fiu
+		SystemC
+			[branches]
+				[...]
+		fiu_cli.c
+	Seq
+		SystemC
+			[branches]
+	Val
+		SystemC
+			[branches]
+	Typ
+		SystemC
+			[branches]
+	Mem32
+		SystemC
+			[branches]
+	(Resha)
+		SystemC
+			[branches]
+	Planes
+		planes.pub.hh
+		planes.hh
+		planes.cc
+		planes_cli.c
+
+	Infra
+	Musashi
+	I8052
+
+CLI
+===
+
+	In sequence:
+
+		boards {ioc|fiu|typ|val|seq|mem0|mem2} ...
+
+		<board> branch <name>
+		<board> feature [+|-]<name> ...
+
+		disk {0|1|2|3} {type <type>|image <image>}
+
+		power
+
+	Any time:
+		operator <elastic>
+		console <elastic>
+		key {interactive|automatic|protected|enabled}
+		tape <tap_file>
+		<tracing/debugging>

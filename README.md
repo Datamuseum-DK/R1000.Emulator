@@ -91,6 +91,54 @@ https://datamuseum.dk/wiki/Rational/R1000s400
 8. CTRL-C the emulator, and try instead `make test_ioc` This will launch a single
    "experiment" on the IOC's DIPROC.
 
+# OVERALL STRUCTURE
+
+The R1000 Emulator is a bit of an agglomerate, or if you will, a Frankenstein monster.
+
+The `r1000sim` program consists of:
+
+* Musashi 68K20 emulator
+* IOC memory and peripherals for the 68K20 (UARTs, RTC, SCSI, disks, tape)
+* CLI interface
+* Configurable trace facility
+* 68K20 spelunking, tracing and debugging facility
+* Small RPN interpreter for above.
+* i8052 emulator
+* DIPROC "adapter" between SystemC model of i8052 and i8052 emulator
+* Stand alone DIPROC `experiment` excution
+* Generic "elastic buffer" facility for byte-channels (TCP/nullmodem/files/send-expect)
+
+The SystemC emulation of the actual hardware is "bolted on" via the following
+shared libraries:
+
+## libcomponents
+
+Contains SystemC objects for chips used in R1000.
+
+These are, in principle hand-written.
+
+## libplanes
+
+The front- and back-planes of the computer.
+
+This holds the `sc_main` function, and SystemC modules which
+drive the `RESET`, `POWER_FAIL` and similar signals.
+
+We also drive the back-plane clocks from here, instead of
+from the IOC, in order to not waste effort to simulate
+the 20 MHz components on the IOC.
+
+## lib{fiu|ioc|mem32|seq|typ|val}
+
+Each board, one shlib.
+
+The `NetList/process_kicad_netlists.py` script reads KiCad
+netlists and produces C++/SystemC source files to build
+these shlibs and their source-files are not checked in.
+
+
+# Useful stuff:
+
 Disassembly of the IOC EEPROM: http://datamuseum.dk/aa/r1k_dfs/be/bed92cf60.html
 
 Disassembly of the RESHA EEPROM: http://datamuseum.dk/aa/r1k_dfs/f3/f3d8d4065.html
