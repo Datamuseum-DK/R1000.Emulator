@@ -1,3 +1,5 @@
+SC_BRANCH = main
+R1000HW_PROJ =/critter/R1K/R1000.HwDoc/${SC_BRANCH}
 
 # Set this to where you want the ~1GB trace output file
 TRACE_FILE = "/critter/_r1000"
@@ -48,8 +50,10 @@ OBJS	+= ioc_syscall.o
 OBJS	+= i8052.o
 OBJS	+= diagbus.o
 OBJS	+= experiment.o
+OBJS	+= diagproc.o
+OBJS	+= i8052_emul.o
 
-CFLAGSMINUSI += -I. -IInfra -IMusashi -IIoc -IDiag
+CFLAGSMINUSI += -I. -IInfra -IMusashi -IIoc -IDiag -IPlanes
 CFLAGSMINUSD += -DMUSASHI_CNF='"musashi_conf.h"'
 CFLAGSMINUSD += -DFIRMWARE_PATH='"${FIRMWARE_PATH}"'
 
@@ -81,14 +85,18 @@ CLI_INCL = \
 	Infra/elastic.h
 
 all:
-	cd SystemC && make
+	python3 -u NetList/process_kicad_netlists.py ${SC_BRANCH} ${R1000HW_PROJ}/Schematics/*/*.net
+	for i in Fiu Ioc Mem32 Seq Typ Val ; do (cd $$i/${SC_BRANCH}/ && make -j 3) ; done
+	cd Components && make -j 3
+	cd Planes && make -j 3
+	# cd SystemC && make -j 3
 	make r1000sim
 
 #######################################################################
 # To include SystemC simulator, download more firmware with:
 #	make setup_systemc
 # and uncomment this `include` line:
-include SystemC/Makefile.inc
+# include SystemC/Makefile.inc
 #######################################################################
 
 cli:	r1000sim ${BINFILES}
@@ -99,9 +107,9 @@ cli:	r1000sim ${BINFILES}
 		"trace -ioc_dma" \
 		"trace -ioc_io" \
 		"trace -ioc_pit" \
-		"trace -scsi_data" \
+		"trace +scsi_cmd" \
 		"trace -ioc_instructions" \
-		"ioc memtrace add -lo 0xfc00 -hi 0xfc03" \
+		"ioc syscall internal" \
 		"console > _.console" \
 		"console telnet localhost:1400" \
 		"console serial /dev/nmdm0B" \
@@ -125,37 +133,173 @@ cli:	r1000sim ${BINFILES}
 		'console match expect "CLI>"'
 
 EXP_PATH=/critter/R1K/Old/hack/X/
-EXP=TRIGGER_SCOPE.IOC
-EXP=TEST_PAREG_SCAN.IOC
-EXP=TEST_MICRO_EVENT_EXIT.IOC
-EXP=TEST_RDR_SCAN.IOC
 
-test:	r1000sim ${BINFILES}
-	(cd SystemC && make)
+IOC_TEST=TEST_MACRO_EVENT_DELAY.IOC
+IOC_TEST=TEST_MACRO_EVENT_SLICE.IOC
+IOC_TEST=TEST_COUNTER_DATA.IOC
+
+test_ioc:	all ${BINFILES}
+	# (cd SystemC && nice make -j8)
 	./r1000sim \
 		-T ${TRACE_FILE} \
 		"trace +diagbus_bytes" \
 		"diag > _.diag" \
-		'sc launch ioc' \
-		"dummy_diproc fiu seq val typ mem0 mem2" \
 		'trace +systemc' \
-		'sc trace "DI*PROC" 4' \
-		'sc trace "DFREG" 0' \
-		'sc trace "DGDEC" 0' \
-		'sc trace "TACNT" 0' \
-		'sc trace "TRAM" 0' \
-		'sc trace "TDDRV" 0' \
-		'sc trace "MISCRG" 0' \
-		'sc trace "UACTR" 0' \
-		'sc trace "UADRV" 0' \
+		'sc launch ioc ' \
+		'sc trace "DI*PROC" 6' \
+		'sc trace "DFREG" 1' \
+		'sc trace "RAND[0-3]" 0' \
+		'sc trace "DPROM" 0' \
+		'sc trace "DUMSC" 0' \
+		'sc trace "TXCVO" 0' \
 		'sc trace "RTCTR" 0' \
 		'sc q exit' \
-		'sc q 7' \
-		"diag ioc experiment ${EXP_PATH}/${EXP}" \
+		'sc q 1' \
+		"diag ioc experiment ${EXP_PATH}/${IOC_TEST}" \
 		"diag ioc wait" \
 		"diag ioc check" \
 		"exit"
+
+FIU_TEST=WCS_ADDRESS_TEST.FIU
+
+FIU_TEST=PHK.FIU
+FIU_TEST=TEST_EXTRACT_MERGE.FIU
+FIU_TEST=TEST_WCS.FIU
+FIU_TEST=TEST_OREG_PARITY.FIU
+FIU_TEST=TEST_CSA_OOR.FIU
+FIU_TEST=TEST_MAR_DRIVER.FIU
+FIU_TEST=TEST_ABUS_PARITY.FIU
+FIU_TEST=TEST_INC_MAR.FIU
+FIU_TEST=TEST_SIGN_EXTRACT.FIU
+FIU_TEST=TEST_CSA_OOR.FIU
+
+test_fiu:	r1000sim ${BINFILES}
+	(cd SystemC && nice make -j8)
+	./r1000sim \
+		-T ${TRACE_FILE} \
+		"trace +diagbus_bytes" \
+		"diag > _.diag" \
+		'trace +systemc' \
+		'sc launch fiu' \
+		'sc trace "DI*PROC" 4' \
+		'sc trace "DUIRG[1-6]" 0' \
+		'sc q exit' \
+		'sc q 7' \
+		"diag fiu experiment ${EXP_PATH}/${FIU_TEST}" \
+		"diag fiu wait" \
+		"diag fiu check" \
+		"exit"
+
+TYP_TEST=TEST_RESET.TYP
+TYP_TEST=PHK.TYP
+TYP_TEST=TEST_UIR.TYP
+TYP_TEST=TEST_WCS_DATA.TYP
+TYP_TEST=TEST_SCAN_CSA_REG.TYP
+TYP_TEST=TEST_WCS_PARITY.TYP
+TYP_TEST=TEST_SCAN_PAREG.TYP
+TYP_TEST=TEST_RF_DATA_LINES.TYP
+# Good:
+TYP_TEST=TEST_LOAD_WDR.TYP
+# Bad:
+TYP_TEST=TEST_FIU_BUS.TYP
+TYP_TEST=TEST_LOAD_LOOP_COUNTER.TYP
+TYP_TEST=TEST_COUNT_LOOP_COUNTER.TYP
+TYP_TEST=TEST_RF_DATA_LINES.TYP
+TYP_TEST=TEST_READ_GP_ADR.TYP
+TYP_TEST=TEST_RD_CSA_BOT_ADR.TYP
+TYP_TEST=TEST_NOT_B_OP.TYP
+TYP_TEST=TEST_LOAD_TOP.TYP
 		
+test_typ:	r1000sim ${BINFILES}
+	(cd SystemC && nice make -j8)
+	./r1000sim \
+		-T ${TRACE_FILE} \
+		"trace +diagbus_bytes" \
+		"diag > _.diag" \
+		'trace +systemc' \
+		'sc launch typ' \
+		'sc trace "DI*PROC" 6' \
+		'sc trace "DUIRG[1-6]" 1' \
+		'sc trace "DIDEC0" 1' \
+		'sc q exit' \
+		'sc q .01' \
+		"diag typ experiment ${EXP_PATH}/${TYP_TEST}" \
+		"diag typ wait" \
+		"diag typ check" \
+		"exit"
+		
+
+VAL_TEST=TEST_FIU_BUS.VAL
+VAL_TEST=POUND_WCS_DESCENDING.VAL
+VAL_TEST=POUND_WCS_ASCENDING.VAL
+VAL_TEST=INIT_RF.VAL
+VAL_TEST=TEST_LOAD_WDR.VAL
+
+test_val:	r1000sim ${BINFILES}
+	(cd SystemC && nice make -j8)
+	./r1000sim \
+		-T ${TRACE_FILE} \
+		"trace +diagbus_bytes" \
+		"diag > _.diag" \
+		'trace +systemc' \
+		'sc launch val' \
+		'sc trace "DI*PROC" 6' \
+		'sc trace "DUIRG[1-6]" 0' \
+		'sc q exit' \
+		'sc q 5' \
+		"diag val experiment ${EXP_PATH}/${VAL_TEST}" \
+		"diag val wait" \
+		"diag val check" \
+		"exit"
+		
+
+SEQ_TEST=SIMPLE_DFSM_FRU.SEQ
+SEQ_TEST=DEC_SCAN_CHAIN_FRU.SEQ
+SEQ_TEST=TEST_UIR.SEQ
+SEQ_TEST=IBUFF_FRU.SEQ
+		
+test_seq:	r1000sim ${BINFILES}
+	(cd SystemC && nice make -j8)
+	./r1000sim \
+		-T ${TRACE_FILE} \
+		"trace +diagbus_bytes" \
+		"diag > _.diag" \
+		'trace +systemc' \
+		'sc launch seq' \
+		'sc trace "DI*PROC" 6' \
+		'sc trace "DUIRG[1-6]" 0' \
+		'sc trace "WCS" 1' \
+		'sc q exit' \
+		'sc q 7' \
+		"diag seq experiment ${EXP_PATH}/${SEQ_TEST}" \
+		"diag seq wait" \
+		"diag seq check" \
+		"exit"
+		
+
+MEM_TEST=TEST_LAR.M32
+MEM_TEST=TEST_EXT_FLAG.M32
+MEM_TEST=TEST_PARALLEL_SERIAL.M32
+
+test_mem:	r1000sim ${BINFILES}
+	(cd SystemC && nice make -j8)
+	./r1000sim \
+		-T ${TRACE_FILE} \
+		"trace +diagbus_bytes" \
+		"diag > _.diag" \
+		'trace +systemc' \
+		'sc launch mem0' \
+		'sc trace "DI*PROC" 6' \
+		'sc trace 'PAL' 0' \
+		'sc trace 'DFSM' 1' \
+		'sc q exit' \
+		'sc q .1' \
+		"diag mem0 experiment ${EXP_PATH}/${MEM_TEST}" \
+		"diag mem0 wait" \
+		"diag mem0 check" \
+		"exit"
+		
+
 
 hack:	r1000sim ${BINFILES}
 	(cd SystemC && make)
@@ -206,11 +350,11 @@ novram:	r1000sim ${BINFILES}
 		'console match expect "Enter option [enter CLI] : "' \
 		'console << "1"' \
 		'console match expect "CLI>"' \
-		'sc launch ioc typ val seq fiu' \
-		"dummy_diproc mem0 mem2" \
 		'trace +systemc' \
+		'sc launch ioc fiu val typ seq mem0 mem2' \
 		'sc trace "NOVRAM" on' \
-		'sc trace "DIPROC" 6' \
+		'sc trace "DI*PROC" 6' \
+		'sc trace "IDNTDRV" 1' \
 		'sc q exit' \
 		'sc q 3' \
 		'console << "x novram"' \
@@ -223,7 +367,9 @@ novram:	r1000sim ${BINFILES}
 
 EXPERIMENT=write [xeq ioc TEST_WCS_ADDRESSING]
 EXPERIMENT=write [xeq ioc TEST_COUNTER_DATA]
-EXPERIMENT=TEST_IOC
+EXPERIMENT=write [xeq fiu READ_NOVRAM 00]
+EXPERIMENT=TEST_FIU
+EXPERIMENT=write [xeq ioc TEST_RESET]
 
 expmon:	all ${BINFILES}
 	(cd SystemC && make)
@@ -256,13 +402,15 @@ expmon:	all ${BINFILES}
 		'console match expect "Enter option [enter CLI] : "' \
 		'console << "1"' \
 		'console match expect "CLI>"' \
-		'sc launch ioc ' \
-		"dummy_diproc seq fiu val typ mem0 mem2" \
 		'trace +systemc' \
+		'sc launch ioc fiu' \
+		"dummy_diproc seq val typ mem0 mem2" \
 		'sc trace "DI*PROC" 4' \
 		'sc q exit' \
-		'sc q 300' \
+		'sc q 1' \
 		'console << "x expmon"' \
+		'console match expect "EM>"' \
+		'console << "[set FIRST_PASS true]"' \
 		'console match expect "EM>"' \
 		'console << "${EXPERIMENT}"' \
 		'console match expect "EM>"' \
@@ -365,7 +513,15 @@ foo:
 		
 
 r1000sim:	${OBJS}
-	${CC} -o r1000sim ${CFLAGS} ${LDFLAGS} ${OBJS} ${SIMLDFLAGS}
+	${CC} -o r1000sim ${CFLAGS} ${LDFLAGS} ${OBJS} \
+		-L Fiu/${SC_BRANCH} -Wl,--rpath=Fiu/${SC_BRANCH} -lfiu \
+		-L Ioc/${SC_BRANCH} -Wl,--rpath=Ioc/${SC_BRANCH} -lioc \
+		-L Seq/${SC_BRANCH} -Wl,--rpath=Seq/${SC_BRANCH} -lseq \
+		-L Typ/${SC_BRANCH} -Wl,--rpath=Typ/${SC_BRANCH} -ltyp \
+		-L Val/${SC_BRANCH} -Wl,--rpath=Val/${SC_BRANCH} -lval \
+		-L Mem32/${SC_BRANCH} -Wl,--rpath=Mem32/${SC_BRANCH} -lmem32 \
+		-L Planes/ -Wl,--rpath=Planes -lplanes \
+		-L Components/ -Wl,--rpath=Components -lcomponents
 	rm -f *.tmp
 
 clean:
@@ -407,7 +563,8 @@ ioc_uart.o:		${CLI_INCL} Ioc/ioc.h Ioc/ioc_uart.c
 
 i8052.o:		${CLI_INCL} Diag/i8052.c
 diagbus.o:		${CLI_INCL} Diag/diagbus.c
-experiment.o:		${CLI_INCL} Diag/experiment.c
+diagproc.o:		${CLI_INCL} Diag/diagproc.c
+i8052_emul.o:		${CLI_INCL} Diag/i8052_emul.c
 
 sc.o:			${CLI_INCL} SystemC/sc.c
 
