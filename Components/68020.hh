@@ -1,0 +1,115 @@
+#ifndef R1000_68020
+#define R1000_68020
+
+struct scm_68020_state;
+
+SC_MODULE(SCM_68020)
+{
+	sc_in <sc_logic>	pinA1;	// BGACK_ (input)
+	sc_out <sc_logic>	pinA2;	// A01 (output)
+	sc_out <sc_logic>	pinA3;	// A31 (output)
+	sc_out <sc_logic>	pinA4;	// A28 (output)
+	sc_out <sc_logic>	pinA5;	// A26 (output)
+	sc_out <sc_logic>	pinA6;	// A23 (output)
+	sc_out <sc_logic>	pinA7;	// A22 (output)
+	sc_out <sc_logic>	pinA8;	// A19 (output)
+	sc_out <sc_logic>	pinA12;	// A11 (output)
+	sc_out <sc_logic>	pinA13;	// A08 (output)
+	sc_out <sc_logic>	pinA19;	// A14 (output)
+	sc_out <sc_logic>	pinB2;	// BG_ (output)
+	sc_in <sc_logic>	pinB3;	// BR_ (input)
+	sc_out <sc_logic>	pinB4;	// A30 (output)
+	sc_out <sc_logic>	pinB5;	// A27 (output)
+	sc_out <sc_logic>	pinB6;	// A24 (output)
+	sc_out <sc_logic>	pinB7;	// A20 (output)
+	sc_out <sc_logic>	pinB8;	// A18 (output)
+	sc_out <sc_logic>	pinB10;	// A15 (output)
+	sc_out <sc_logic>	pinB11;	// A13 (output)
+	sc_out <sc_logic>	pinB12;	// A10 (output)
+	sc_out <sc_logic>	pinB13;	// A06 (output)
+	sc_in <sc_logic>	pinC1;	// RESET_ (input)
+	sc_in <sc_logic>	pinC2;	// CLK (input)
+	sc_out <sc_logic>	pinC4;	// A00 (output)
+	sc_out <sc_logic>	pinC5;	// A29 (output)
+	sc_out <sc_logic>	pinC6;	// A25 (output)
+	sc_out <sc_logic>	pinC7;	// A21 (output)
+	sc_out <sc_logic>	pinC8;	// A17 (output)
+	sc_out <sc_logic>	pinC9;	// A16 (output)
+	sc_out <sc_logic>	pinC10;	// A12 (output)
+	sc_out <sc_logic>	pinC11;	// A09 (output)
+	sc_out <sc_logic>	pinC12;	// A07 (output)
+	sc_out <sc_logic>	pinC13;	// A05 (output)
+	sc_out <sc_logic>	pinD12;	// A04 (output)
+	sc_out <sc_logic>	pinD13;	// A03 (output)
+	sc_out <sc_logic>	pinE1;	// FC0 (output)
+	sc_out <sc_logic>	pinE2;	// RMC_ (output)
+	sc_out <sc_logic>	pinE12;	// A02 (output)
+	sc_out <sc_logic>	pinE13;	// OCS_ (output)
+	sc_out <sc_logic>	pinF1;	// SIZ0 (output)
+	sc_out <sc_logic>	pinF2;	// FC2 (output)
+	sc_out <sc_logic>	pinF3;	// FC1 (output)
+	sc_out <sc_logic>	pinF13;	// IPEND_ (output)
+	sc_out <sc_logic>	pinG1;	// ECS_ (output)
+	sc_out <sc_logic>	pinG2;	// SIZ1 (output)
+	sc_out <sc_logic>	pinG3;	// DBEN_ (output)
+	sc_in <sc_logic>	pinH1;	// CDIS_ (input)
+	sc_in <sc_logic>	pinH2;	// AVEC_ (input)
+	sc_in <sc_logic>	pinH3;	// DSACK0_ (input)
+	sc_in <sc_logic>	pinH12;	// IPL2_ (input)
+	sc_in <sc_logic>	pinJ1;	// DSACK1_ (input)
+	sc_in <sc_logic>	pinJ2;	// BERR_ (input)
+	sc_in <sc_logic>	pinJ12;	// IPL0_ (input)
+	sc_in <sc_logic>	pinJ13;	// IPL1_ (input)
+	sc_in <sc_logic>	pinK2;	// HALT_ (input)
+	sc_in <sc_logic>	pinK12;	// D01 (input)
+	sc_in <sc_logic>	pinK13;	// D00 (input)
+	sc_out <sc_logic>	pinL1;	// AS_ (output)
+	sc_out <sc_logic>	pinL2;	// WR_ (output)
+	sc_in <sc_logic>	pinL3;	// D30 (input)
+	sc_in <sc_logic>	pinL4;	// D27 (input)
+	sc_in <sc_logic>	pinL5;	// D23 (input)
+	sc_in <sc_logic>	pinL6;	// D19 (input)
+	sc_in <sc_logic>	pinL8;	// D15 (input)
+	sc_in <sc_logic>	pinL9;	// D11 (input)
+	sc_in <sc_logic>	pinL10;	// D07 (input)
+	sc_in <sc_logic>	pinL12;	// D03 (input)
+	sc_in <sc_logic>	pinL13;	// D02 (input)
+	sc_out <sc_logic>	pinM1;	// DS_ (output)
+	sc_in <sc_logic>	pinM2;	// D29 (input)
+	sc_in <sc_logic>	pinM3;	// D26 (input)
+	sc_in <sc_logic>	pinM4;	// D24 (input)
+	sc_in <sc_logic>	pinM5;	// D21 (input)
+	sc_in <sc_logic>	pinM6;	// D18 (input)
+	sc_in <sc_logic>	pinM7;	// D16 (input)
+	sc_in <sc_logic>	pinM9;	// D13 (input)
+	sc_in <sc_logic>	pinM10;	// D10 (input)
+	sc_in <sc_logic>	pinM11;	// D06 (input)
+	sc_in <sc_logic>	pinM12;	// D05 (input)
+	sc_in <sc_logic>	pinM13;	// D04 (input)
+	sc_in <sc_logic>	pinN1;	// D31 (input)
+	sc_in <sc_logic>	pinN2;	// D28 (input)
+	sc_in <sc_logic>	pinN3;	// D25 (input)
+	sc_in <sc_logic>	pinN4;	// D22 (input)
+	sc_in <sc_logic>	pinN5;	// D20 (input)
+	sc_in <sc_logic>	pinN6;	// D17 (input)
+	sc_in <sc_logic>	pinN9;	// D14 (input)
+	sc_in <sc_logic>	pinN10;	// D12 (input)
+	sc_in <sc_logic>	pinN11;	// D09 (input)
+	sc_in <sc_logic>	pinN12;	// D08 (input)
+
+	SC_HAS_PROCESS(SCM_68020);
+
+	SCM_68020(sc_module_name nm, const char *arg) : sc_module(nm)
+	{
+		cout << "MISSING SCM_68020 IMPLEMENTATION\n";
+		SC_METHOD(doit);
+		loadit(arg);
+	}
+
+	private:
+	struct scm_68020_state *state;
+	void loadit(const char *arg);
+	void doit(void);
+};
+
+#endif /* R1000_68020 */
