@@ -594,9 +594,4 @@ flint:
 
 setup:	${BINFILES}
 	git clone https://github.com/Datamuseum-DK/Musashi
-
-setup_systemc:
 	python3 -u fetch_firmware.py all
-
-${BINFILES}:
-	python3 -u fetch_firmware.py

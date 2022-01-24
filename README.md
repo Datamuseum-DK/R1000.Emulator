@@ -4,17 +4,22 @@ This is the beginnings of an emulator for the Rational R1000/400 computer.
 
 https://datamuseum.dk/wiki/Rational/R1000s400
 
-1. Run `make setup`, this clones the Musashi 68k emulator and downloads the EEPROM images.
+0. Right now, this probably only runs under FreeBSD.  You need systemc and python38 installed too.
+
+1. Run `make setup`, this clones the Musashi 68k emulator and downloads the firmware images.
 
 2. Manually download https://datamuseum.dk/bits/30000551 somewhere, it needs a gigabyte.
 
-3. Edit `TRACE_FILE` and `DISK0_IMAGE` at the top of `Makefile`
+3. Get hold of KiCad net-list files for the schematics.  They are not checked in yet,
+   they change massively.  Send phk@freebsd.org an email.
 
-4. In a separate window: `tail -F _.console`
+4. Edit `TRACE_FILE` and `DISK0_IMAGE` at the top of `Makefile` to something suitable.
 
-5. `make`
+5. `make all`  This takes a fair bit of time.
 
-6. Wait for 3 million simulated instructions and get:
+6. In a separate window: `cu -l /dev/nmdm0A`  (You may need: `sudo kldload nmdm`)
+
+7. `make cli`, in the other window you should see:
 
 ```
      R1000-400 IOC SELFTEST 1.3.2
@@ -79,37 +84,12 @@ https://datamuseum.dk/wiki/Rational/R1000s400
       5 => Boot EEDB configuration
       6 => Boot STANDARD configuration
     Enter option [enter CLI] : 1
-    CLI> x novram
-    
-    Options are:
-        0 => Exit.
-        1 => Display novram contents.
-        2 => Modify  novram contents.
-        3 => Change TCP/IP board serial number.
-    Enter option : 1
-            Part   Serial  Artwork    ECO     Date of
-    Board  Number  Number  Revision  Level  Manufacture
-    IOC     49      10295    3        13     10-JUL-92
-    VAL     0       0        0        0      ??-???-??
-    TYP     0       0        0        0      ??-???-??
-    SEQ     0       0        0        0      ??-???-??
-    FIU     0       0        0        0      ??-???-??
-    MEM0    0       0        0        0      ??-???-??
-    RESHA   41      10272    3        13     24-JUN-92
-    TCP/IP (CMC) board serial number is 1671
-    
-    Options are:
-        0 => Exit.
-        1 => Display novram contents.
-        2 => Modify  novram contents.
-        3 => Change TCP/IP board serial number.
-    Enter option : 0
-    CLI> 
+    CLI>
 
 ```
 
-At this point you can "telnet localhost 1400" and interact with
-the DFS CLI interface.  `HELP` is a valid command :-)
+8. CTRL-C the emulator, and try instead `make test_ioc` This will launch a single
+   "experiment" on the IOC's DIPROC.
 
 Disassembly of the IOC EEPROM: http://datamuseum.dk/aa/r1k_dfs/be/bed92cf60.html
 

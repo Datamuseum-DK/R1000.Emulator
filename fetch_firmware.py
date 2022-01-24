@@ -45,7 +45,6 @@ def getone(nbr):
     ''' Fetch one artifact from the Bitstore '''
 
     dst = FWPATH + "/%d.bin" % nbr
-    print(dst)
     try:
         inode = os.stat(dst)
         if inode.st_nlink == 2:
