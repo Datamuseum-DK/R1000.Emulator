@@ -1,5 +1,10 @@
 _*
 *.o
+*.pico
+*.so
+*.so.1
+*.so.1.debug
+*.so.1.full
 
 m68kmake
 m68kops.c
