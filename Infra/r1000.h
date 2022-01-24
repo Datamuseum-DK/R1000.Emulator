@@ -35,9 +35,7 @@
 #include <pthread.h>
 #include <sys/types.h>
 
-#ifndef FIRMWARE_PATH
-#  define FIRMWARE_PATH "_FirmwareXXX"
-#endif
+#define FIRMWARE_PATH "_Firmware"
 
 #include "vqueue.h"
 
