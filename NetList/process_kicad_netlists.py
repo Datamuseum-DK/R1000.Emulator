@@ -205,7 +205,7 @@ class LibPart():
         ''' Return include statement for this libpart '''
         if self.is_virtual:
             return ""
-        return '#include "../SystemC/r1000/%s.hh"' % self.partname
+        return '#include "%s.hh"' % self.partname
 
 class Sheet():
     ''' A `sheet` from the netlist file '''
@@ -550,6 +550,7 @@ class Board():
             file.write("MAN =\n")
             file.write("CXXFLAGS += -I/usr/local/include\n")
             file.write("CXXFLAGS += -I../../Planes\n")
+            file.write("CXXFLAGS += -I../../Components\n")
             file.write("CXXFLAGS += -Wall\n")
             file.write("LDFLAGS += -L/usr/local/lib\n")
             file.write("LDFLAGS += -lsystemc\n")
@@ -583,16 +584,18 @@ def main():
         sys.stderr.write("Must run %s from root of R1000.Emulator project\n" % ME)
         sys.exit(2)
 
+    if len(sys.argv) == 2 and sys.argv[1] == "planes":
+        os.makedirs("Planes", exist_ok=True)
+        dfn = "Planes/plane_tbl.h"
+        transit.make_transit_h(open(dfn + "_", "w"))
+        commit_file(dfn)
+        sys.exit(0)
+
     if len(sys.argv) < 3:
         sys.stderr.write("Usage:\n\t%s <branch> <KiCad netlist-file> ...\n" % ME)
         sys.exit(2)
 
     branch = sys.argv[1]
-
-    os.makedirs("Planes", exist_ok=True)
-    dfn = "Planes/plane_tbl.h"
-    transit.make_transit_h(open(dfn + "_", "w"))
-    commit_file(dfn)
 
     for filename in sys.argv[2:]:
         t_new = max(os.stat(filename).st_mtime, os.stat(__file__).st_mtime)
