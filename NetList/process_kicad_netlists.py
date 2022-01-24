@@ -549,7 +549,7 @@ class Board():
             file.write("WARNS ?= 3\n")
             file.write("MAN =\n")
             file.write("CXXFLAGS += -I/usr/local/include\n")
-            file.write("CXXFLAGS += -I../Planes\n")
+            file.write("CXXFLAGS += -I../../Planes\n")
             file.write("CXXFLAGS += -Wall\n")
             file.write("LDFLAGS += -L/usr/local/lib\n")
             file.write("LDFLAGS += -lsystemc\n")
@@ -595,7 +595,7 @@ def main():
     commit_file(dfn)
 
     for filename in sys.argv[2:]:
-        t_new = os.stat(filename).st_mtime
+        t_new = max(os.stat(filename).st_mtime, os.stat(__file__).st_mtime)
         basename = os.path.basename(filename).split(".", 1)[0]
         speculative_name = basename.capitalize() + "/" + branch
         try:
