@@ -1,5 +1,5 @@
 SC_BRANCH = main
-R1000HW_PROJ =/critter/R1K/R1000.HwDoc/${SC_BRANCH}
+NETLISTS =/critter/R1K/R1000.HwDoc/${SC_BRANCH}/Schematics/*/*.net
 
 # Set this to where you want the ~1GB trace output file
 TRACE_FILE = "/critter/_r1000"
@@ -85,19 +85,11 @@ CLI_INCL = \
 	Infra/elastic.h
 
 all:
-	python3 -u NetList/process_kicad_netlists.py ${SC_BRANCH} ${R1000HW_PROJ}/Schematics/*/*.net
+	python3 -u NetList/process_kicad_netlists.py ${SC_BRANCH} ${NETLISTS}
 	for i in Fiu Ioc Mem32 Seq Typ Val ; do (cd $$i/${SC_BRANCH}/ && make -j 3) ; done
 	cd Components && make -j 3
 	cd Planes && make -j 3
-	# cd SystemC && make -j 3
 	make r1000sim
-
-#######################################################################
-# To include SystemC simulator, download more firmware with:
-#	make setup_systemc
-# and uncomment this `include` line:
-# include SystemC/Makefile.inc
-#######################################################################
 
 cli:	r1000sim ${BINFILES}
 	./r1000sim \
@@ -139,7 +131,6 @@ IOC_TEST=TEST_MACRO_EVENT_SLICE.IOC
 IOC_TEST=TEST_COUNTER_DATA.IOC
 
 test_ioc:	all ${BINFILES}
-	# (cd SystemC && nice make -j8)
 	./r1000sim \
 		-T ${TRACE_FILE} \
 		"trace +diagbus_bytes" \
@@ -174,7 +165,6 @@ FIU_TEST=TEST_SIGN_EXTRACT.FIU
 FIU_TEST=TEST_CSA_OOR.FIU
 
 test_fiu:	r1000sim ${BINFILES}
-	(cd SystemC && nice make -j8)
 	./r1000sim \
 		-T ${TRACE_FILE} \
 		"trace +diagbus_bytes" \
@@ -211,7 +201,6 @@ TYP_TEST=TEST_NOT_B_OP.TYP
 TYP_TEST=TEST_LOAD_TOP.TYP
 		
 test_typ:	r1000sim ${BINFILES}
-	(cd SystemC && nice make -j8)
 	./r1000sim \
 		-T ${TRACE_FILE} \
 		"trace +diagbus_bytes" \
@@ -236,7 +225,6 @@ VAL_TEST=INIT_RF.VAL
 VAL_TEST=TEST_LOAD_WDR.VAL
 
 test_val:	r1000sim ${BINFILES}
-	(cd SystemC && nice make -j8)
 	./r1000sim \
 		-T ${TRACE_FILE} \
 		"trace +diagbus_bytes" \
@@ -259,7 +247,6 @@ SEQ_TEST=TEST_UIR.SEQ
 SEQ_TEST=IBUFF_FRU.SEQ
 		
 test_seq:	r1000sim ${BINFILES}
-	(cd SystemC && nice make -j8)
 	./r1000sim \
 		-T ${TRACE_FILE} \
 		"trace +diagbus_bytes" \
@@ -282,7 +269,6 @@ MEM_TEST=TEST_EXT_FLAG.M32
 MEM_TEST=TEST_PARALLEL_SERIAL.M32
 
 test_mem:	r1000sim ${BINFILES}
-	(cd SystemC && nice make -j8)
 	./r1000sim \
 		-T ${TRACE_FILE} \
 		"trace +diagbus_bytes" \
@@ -302,7 +288,6 @@ test_mem:	r1000sim ${BINFILES}
 
 
 hack:	r1000sim ${BINFILES}
-	(cd SystemC && make)
 	./r1000sim \
 		-T ${TRACE_FILE} \
 		"trace +diagbus_bytes" \
@@ -320,7 +305,6 @@ hack:	r1000sim ${BINFILES}
 
 
 novram:	r1000sim ${BINFILES}
-	(cd SystemC && make)
 	./r1000sim \
 		-T ${TRACE_FILE} \
 		"trace +diagbus_bytes" \
@@ -372,7 +356,6 @@ EXPERIMENT=TEST_FIU
 EXPERIMENT=write [xeq ioc TEST_RESET]
 
 expmon:	all ${BINFILES}
-	(cd SystemC && make)
 	./r1000sim \
 		-T ${TRACE_FILE} \
 		"trace -diagbus_bytes" \
@@ -420,7 +403,6 @@ expmon:	all ${BINFILES}
 $DIAG="TEST IOA"
 
 rdiag:	r1000sim ${BINFILES}
-	(cd SystemC && make)
 	./r1000sim \
 		-T ${TRACE_FILE} \
 		"trace -diagbus_bytes" \
@@ -565,8 +547,6 @@ i8052.o:		${CLI_INCL} Diag/i8052.c
 diagbus.o:		${CLI_INCL} Diag/diagbus.c
 diagproc.o:		${CLI_INCL} Diag/diagproc.c
 i8052_emul.o:		${CLI_INCL} Diag/i8052_emul.c
-
-sc.o:			${CLI_INCL} SystemC/sc.c
 
 m68kops.o:		Musashi/m68kcpu.h m68kops.h m68kops.c
 m68kops.h m68kops.c:	m68kmake Ioc/musashi_conf.h Musashi/m68k_in.c
