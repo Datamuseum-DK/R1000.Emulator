@@ -141,7 +141,7 @@ PLANE_SIZE = alloc_transit()
 
 def do_transit(board, src):
     ''' Transit one pin for one board '''
-    for i in ('*', board):
+    for i in ('*', board.lower()):
         tbl = TRANSIT.get(i, {})
         dst = tbl.get(src)
         if dst:

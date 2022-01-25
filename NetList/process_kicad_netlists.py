@@ -131,6 +131,7 @@ class Component():
         self.is_plane = self.partname in ("GF", "GB")
         if self.is_plane:
             self.ref = self.ref[:2] + "%03d" % int(self.ref[2:], 10)
+            self.ref = transit.do_transit(self.board.name, self.ref)
         self.part = self.board.libparts[self.partname]
         self.is_virtual = self.part.is_virtual
         self.connections = {}
