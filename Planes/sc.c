@@ -177,7 +177,7 @@ cli_sc_launch(struct cli *cli)
 		cli_printf(cli, "Usage:\n\t[boardname|all]...\n");
 		return;
 	}
-	sc_boards |= R1K_BOARD_IOC;
+
 	for (i = 1; i < cli->ac; i++) {
 		if (!strcmp(cli->av[i], "all")) {
 			sc_boards |= R1K_BOARD_ALL;

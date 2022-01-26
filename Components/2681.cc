@@ -48,5 +48,4 @@ SCM_2681 :: doit(void)
 	    <<pin38
 	    <<pin39
 	);
-	pit_clock();
 }

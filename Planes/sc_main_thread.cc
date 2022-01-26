@@ -22,12 +22,21 @@ int debug_flag = 0;
 #include "../Val/main/val.pub.hh"
 #include "../Mem32/main/mem32.pub.hh"
 
+char Fiu_how[] = "++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++";
+char Ioc_how[] = "++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++";
+char Mem32_how[] = "+++++++++++++++++++++++++++++++++++++++++++++++";
+char Seq_how[] = "+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++";
+char Typ_how[] = "++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++";
+char Val_how[] = "+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++";
+
+
 SC_MODULE(BackPlaneClocks)
 {
 	sc_out <sc_logic> gb288;	// BP.CLK.2X~
 	sc_out <sc_logic> gb294;	// BP.CLK.2X
 	sc_out <sc_logic> gb295;	// BP.PHASE.2X
 	sc_out <sc_logic> gb296;	// CLOCK_DISABLE~
+	unsigned pit = 0;
 
 	SC_CTOR(BackPlaneClocks)
 	{
@@ -48,6 +57,10 @@ SC_MODULE(BackPlaneClocks)
 			wait(50, SC_NS);
 			gb294 = sc_logic_0; gb288 = sc_logic_1;
 			wait(50, SC_NS);
+			if (++pit == 128) {
+				pit_clock();
+				pit = 0;
+			}
 		}
 	}
 };
@@ -104,22 +117,22 @@ sc_main(int argc, char *argv[])
 
 	// Order as seen from front L…R
 	if (sc_boards & R1K_BOARD_MEM32_2)
-		mem32_2 = make_mod_mem32("MEM2", planes, NULL);
+		mem32_2 = make_mod_mem32("MEM2", planes, Mem32_how);
 	if (sc_boards & R1K_BOARD_MEM32_0)
-		mem32_0 = make_mod_mem32("MEM0", planes, NULL);
+		mem32_0 = make_mod_mem32("MEM0", planes, Mem32_how);
 	if (sc_boards & R1K_BOARD_SEQ)
-		seq = make_mod_seq("SEQ", planes, NULL);
+		seq = make_mod_seq("SEQ", planes, Seq_how);
 	if (sc_boards & R1K_BOARD_TYP)
-		typ = make_mod_typ("TYP", planes, NULL);
+		typ = make_mod_typ("TYP", planes, Typ_how);
 	if (sc_boards & R1K_BOARD_VAL)
-		val = make_mod_val("VAL", planes, NULL);
+		val = make_mod_val("VAL", planes, Val_how);
 	if (sc_boards & R1K_BOARD_FIU)
-		fiu = make_mod_fiu("FIU", planes, NULL);
+		fiu = make_mod_fiu("FIU", planes, Fiu_how);
 	if (sc_boards & R1K_BOARD_IOC)
-		ioc = make_mod_ioc("IOC", planes, NULL);
+		ioc = make_mod_ioc("IOC", planes, Ioc_how);
 
 	planes.GB319 = sc_logic_0;	// B_SLOT0
-	planes.GB320 = sc_logic_0;	// B_SLOT0
+	planes.GB320 = sc_logic_0;	// B_SLOT1
 
 	PowerSequencer powseq("UNCLAMP");
 	powseq.gb313(planes.GB313);
