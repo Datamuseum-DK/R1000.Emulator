@@ -5,6 +5,12 @@ extern "C" {
 
 struct diagproc_priv;
 
+struct diagproc_context {
+	uint64_t profile[8192];
+	uint64_t instructions;
+	uint64_t executions;
+};
+
 struct diagproc_ctrl {
 
 	/* Actions to complete current instruction */
@@ -32,7 +38,7 @@ struct diagproc_ctrl {
 };
 
 struct diagproc_ctrl *DiagProcCreate(const char *name, uint32_t *do_trace);
-void DiagProcStep(struct diagproc_ctrl *, uint64_t *);
+void DiagProcStep(struct diagproc_ctrl *, struct diagproc_context *);
 
 #ifdef __cplusplus
 }

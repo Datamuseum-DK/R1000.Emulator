@@ -260,7 +260,7 @@ diagproc_busrx(void *priv, const void *ptr, size_t len)
 }
 
 static uint16_t
-diagproc_istep(struct diagproc_ctrl *dc)
+diagproc_istep(struct diagproc_ctrl *dc, struct diagproc_context *dctx)
 {
 	struct diagproc_priv *dp;
 	uint16_t opc, npc;
@@ -280,6 +280,7 @@ diagproc_istep(struct diagproc_ctrl *dc)
 	dp->mcs51->do_trace = *dp->do_trace;
 	opc = dp->mcs51->pc;
 	npc = MCS51_SingleStep(dp->mcs51);
+	dctx->instructions++;
 
 	flags = dp->flags[npc];
 	if (flags & FLAG_DOWNLOAD)
@@ -304,6 +305,7 @@ diagproc_istep(struct diagproc_ctrl *dc)
 		    dp->mcs51->tracebuf, npc, dp->idle
 		);
 	if (dp->flags[npc] & FLAG_DUMP_MEM) {
+		dctx->executions++;
 		p = buf;
 		for (ptr = 0x10; ptr < dp->pc0 + 8; ptr++) {
 			if (!(ptr & 3))
@@ -343,7 +345,7 @@ diagproc_istep(struct diagproc_ctrl *dc)
 }
 
 void
-DiagProcStep(struct diagproc_ctrl *dc, uint64_t *profile)
+DiagProcStep(struct diagproc_ctrl *dc, struct diagproc_context *dctx)
 {
 	struct diagproc_priv *dp;
 	uint16_t retval;
@@ -351,6 +353,7 @@ DiagProcStep(struct diagproc_ctrl *dc, uint64_t *profile)
 	int i;
 
 	assert(dc != NULL);
+	assert(dctx != NULL);
 	assert(dc->priv != NULL);
 	dp = dc->priv;
 
@@ -359,8 +362,8 @@ DiagProcStep(struct diagproc_ctrl *dc, uint64_t *profile)
 		if ((dc->p3val & 0x08) && (flags & FLAG_WAIT_DFSM))
 			return;
 		assert(pthread_mutex_lock(&dp->mtx) == 0);
-		retval = diagproc_istep(dc);
-		profile[retval]++;
+		retval = diagproc_istep(dc, dctx);
+		dctx->profile[retval]++;
 		assert(pthread_mutex_unlock(&dp->mtx) == 0);
 		flags = dp->flags[retval];
 		if (dp->version == 2 && retval >= 0x1000)

@@ -7,7 +7,7 @@
 
 struct scm_8051_state {
 	struct ctx ctx;
-	uint64_t profile[8192];
+	struct diagproc_context dctx;
 };
 
 #define PORT0(DOMACRO, ARG) \
@@ -143,7 +143,7 @@ SCM_8051 :: doit(void)
 			PORT3(READPORT, 0);
 			// TRACE(<< "Need P3 " << std::hex << diag_ctrl->p3val);
 		}
-		DiagProcStep(diag_ctrl, state->profile);
+		DiagProcStep(diag_ctrl, &state->dctx);
 		if (diag_ctrl->p1mask) {
 			TRACE(
 			    << "Set P1 "
