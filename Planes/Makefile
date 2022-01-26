@@ -12,4 +12,5 @@ LDFLAGS += -lsystemc
 SRCS += sc.c
 SRCS += planes.cc
 SRCS += sc_main_thread.cc
+SRCS += sc_watchdog.c
 .include <bsd.lib.mk>
