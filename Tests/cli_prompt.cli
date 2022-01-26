@@ -1,4 +1,4 @@
-sc watchdog 60
+sc watchdog 120
 trace +diagbus_bytes
 console > _.console
 console telnet localhost:1400
