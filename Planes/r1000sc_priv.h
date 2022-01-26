@@ -25,6 +25,10 @@ double sc_when(void);
 
 extern int sc_boards;
 
+#ifndef __cplusplus
+cli_func_f cli_sc_watchdog;
+#endif
+
 #ifdef __cplusplus
 }
 #endif

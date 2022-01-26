@@ -331,6 +331,7 @@ static const struct cli_cmds cli_sc_cmds[] = {
 	{ "rate",		cli_sc_rate },
 	{ "trace",		cli_sc_trace },
 	{ "wait",		cli_sc_wait },
+	{ "watchdog",		cli_sc_watchdog },
 	{ NULL,			NULL },
 };
 
@@ -343,4 +344,3 @@ cli_sc(struct cli *cli)
 		cli_dispatch(cli, cli_sc_cmds);
 	}
 }
-
