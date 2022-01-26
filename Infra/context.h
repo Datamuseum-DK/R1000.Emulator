@@ -46,6 +46,8 @@ struct ctx {
 
 void *CTX_Get(const char *kind, const char *ident, uint32_t length);
 
+const struct ctx *CTX_Iter(void **priv);
+
 #ifdef __cplusplus
 }
 #endif

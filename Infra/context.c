@@ -42,6 +42,7 @@ static const char *context_filename = "/critter/_ctx";
 static ssize_t context_size = 0;
 
 static int context_fd = -1;
+static uint8_t *context_start = NULL;
 static uint8_t *context_ptr = NULL;
 static const uint8_t *context_end = NULL;
 
@@ -68,6 +69,7 @@ ctx_init(void)
 	ptr = mmap(NULL, context_size, PROT_READ|PROT_WRITE,
 	    MAP_SHARED | MAP_NOSYNC, context_fd, 0);
 	assert(ptr != MAP_FAILED);
+	context_start = ptr;
 	context_ptr = ptr;
 	context_end = context_ptr + context_size;
 }
@@ -97,4 +99,22 @@ CTX_Get(const char *kind, const char *ident, uint32_t length)
 	strcpy(ctx->kind, kind);
 	strcpy(ctx->ident, ident);
 	return (ctx);
+}
+
+const struct ctx *
+CTX_Iter(void **priv)
+{
+	struct ctx *retval;
+	uint8_t **next = (uint8_t **)priv;
+
+	if (*next == NULL)
+		*next = context_start;
+	if ((*next) >= context_ptr)
+		retval = NULL;
+	else {
+		retval = (struct ctx *)(void*)(*next);
+		assert(retval->length >= sizeof(*retval));
+		*next += retval->length;
+	}
+	return (retval);
 }
