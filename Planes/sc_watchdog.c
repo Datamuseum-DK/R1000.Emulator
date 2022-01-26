@@ -22,14 +22,14 @@ fido(void *priv)
 	const struct ctx *cp;
 	void *ctx_iter_priv;
 	const struct diagproc_context *dctx;
-	uint64_t last_exec = 0, last_instr = 0;
-	uint64_t this_exec, this_instr;
+	uint64_t last_exec = 0, last_instr = 0, last_act = 0;
+	uint64_t this_exec, this_instr, this_act;
 
 	(void)priv;
 	sleep(fido_patience);
 	while (1) {
 		sleep(fido_patience);
-		this_exec = this_instr = 0;
+		this_exec = this_instr = this_act = 0;
 		ctx_iter_priv = NULL;
 		while(1) {
 			cp = CTX_Iter(&ctx_iter_priv);
@@ -38,31 +38,35 @@ fido(void *priv)
 			if (strstr(cp->ident, "PROC") == NULL)
 				continue;
 			dctx = (const void*)(cp+1);
-			printf("FIDO barks: %s %s act %ju (%.2f/s) exec %ju (%.2f/s) instr %ju (%.2f/s)\n",
+			printf("FIDO barks: %s %s act %ju mcs51 %ju exp %ju\n",
 			    cp->kind, cp->ident,
 			    (uintmax_t)cp->activations,
-			    (double)cp->activations / (double)fido_patience,
-			    (uintmax_t)dctx->executions,
-			    (double)dctx->executions / (double)fido_patience,
 			    (uintmax_t)dctx->instructions,
-			    (double)dctx->instructions / (double)fido_patience
+			    (uintmax_t)dctx->executions
 			);
+			this_act += cp->activations;
 			this_exec += dctx->executions;
 			this_instr += dctx->instructions;
 		}
+		printf("FIDO rate: act %.2f mcs51 %.2f exp %.2f (/s)\n",
+		    (double)(this_act - last_act) / (double)fido_patience,
+		    (double)(this_instr - last_instr) / (double)fido_patience,
+		    (double)(this_exec - last_exec) / (double)fido_patience
+		);
 		if (this_exec > last_exec && this_instr > last_instr) {
+			last_act = this_act;
 			last_exec = this_exec;
 			last_instr = this_instr;
-			continue;
+		} else if (last_instr == 0) {
+			finish(9, "SC Watchdog have seen no mcs51 activity");
+		} else if (last_exec == 0) {
+			finish(9, "SC Watchdog have seen no exp activity");
+		} else if (this_instr == last_instr) {
+			finish(8, "SC Watchdog sees DIPROC mcs51 stalled");
+		} else {
+			assert (this_exec == last_exec);
+			finish(8, "SC Watchdog sees DIPROC exp stalled");
 		}
-		if (last_instr == 0)
-			finish(9, "SC Watchdog sees no instructions");
-		if (last_exec == 0)
-			finish(9, "SC Watchdog sees no exections");
-		if (this_instr == last_instr)
-			finish(8, "SC Watchdog sees instructions stalled");
-		assert (this_exec == last_instr);
-		finish(8, "SC Watchdog sees executions stalled");
 	}
 }
 
