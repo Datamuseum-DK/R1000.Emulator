@@ -1,7 +1,7 @@
-// Generated from on ../_Firmware/MARGAL-02.BIN
+// Generated from ../_Firmware/MARGAL-02.BIN by gal16v8.py
 #include <systemc.h>
-#include "r1000sc.h"
-#include "context.h"
+#include "Chassis/r1000sc.h"
+#include "Infra/context.h"
 #include "MARPAL.hh"
 
 struct scm_marpal_state {

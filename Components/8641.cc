@@ -1,6 +1,6 @@
 #include <systemc.h>
-#include "r1000sc.h"
-#include "context.h"
+#include "Chassis/r1000sc.h"
+#include "Infra/context.h"
 #include "8641.hh"
 
 // DS8641 Quad Unified Bus Tranceiver

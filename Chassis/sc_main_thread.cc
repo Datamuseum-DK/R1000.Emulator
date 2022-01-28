@@ -1,8 +1,8 @@
 #include <stdio.h>
 #include <systemc.h>
 
-#include "r1000sc.h"
-#include "r1000sc_priv.h"
+#include "Chassis/r1000sc.h"
+#include "Chassis/r1000sc_priv.h"
 
 
 double
@@ -13,14 +13,14 @@ sc_now(void)
 
 int debug_flag = 0;
 
-#include "../Planes/planes.hh"
+#include "Chassis/planes.hh"
 
-#include "../Ioc/main/ioc.pub.hh"
-#include "../Seq/main/seq.pub.hh"
-#include "../Fiu/main/fiu.pub.hh"
-#include "../Typ/main/typ.pub.hh"
-#include "../Val/main/val.pub.hh"
-#include "../Mem32/main/mem32.pub.hh"
+#include "fiu_board_pub.hh"
+#include "ioc_board_pub.hh"
+#include "mem32_board_pub.hh"
+#include "seq_board_pub.hh"
+#include "typ_board_pub.hh"
+#include "val_board_pub.hh"
 
 char Fiu_how[] = "++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++";
 char Ioc_how[] = "++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++";

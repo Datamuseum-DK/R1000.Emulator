@@ -1,7 +1,7 @@
-// Generated from on ../_Firmware/DIBRGAL-02.BIN
+// Generated from ../_Firmware/DIBRGAL-02.BIN by gal16v8.py
 #include <systemc.h>
-#include "r1000sc.h"
-#include "context.h"
+#include "Chassis/r1000sc.h"
+#include "Infra/context.h"
 #include "DIBRPAL.hh"
 
 struct scm_dibrpal_state {

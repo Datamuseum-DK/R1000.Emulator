@@ -7,6 +7,9 @@
 extern "C" {
 #endif
 
+void load_programmable(const char *who,
+    void *dst, size_t size, const char *spec);
+
 void should_i_trace(const char *me, uint32_t *);
 
 void sysc_trace(const char *me, const char *fmt);

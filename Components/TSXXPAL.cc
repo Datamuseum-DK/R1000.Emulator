@@ -1,7 +1,7 @@
-// Generated from on ../_Firmware/TSXXGAL-01.BIN
+// Generated from ../_Firmware/TSXXGAL-01.BIN by gal16v8.py
 #include <systemc.h>
-#include "r1000sc.h"
-#include "context.h"
+#include "Chassis/r1000sc.h"
+#include "Infra/context.h"
 #include "TSXXPAL.hh"
 
 struct scm_tsxxpal_state {

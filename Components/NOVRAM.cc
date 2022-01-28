@@ -1,9 +1,8 @@
 
 #include <systemc.h>
-#include "context.h"
+#include "Infra/context.h"
 
-#include "r1000sc.h"
-#include "r1000sc_priv.h"
+#include "Chassis/r1000sc.h"
 #include "NOVRAM.hh"
 
 struct scm_novram_state {

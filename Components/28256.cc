@@ -1,6 +1,6 @@
 #include <systemc.h>
-#include "r1000sc.h"
-#include "context.h"
+#include "Chassis/r1000sc.h"
+#include "Infra/context.h"
 #include "28256.hh"
 
 struct scm_28256_state {

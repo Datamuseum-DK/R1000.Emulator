@@ -18,8 +18,6 @@ extern "C" {
 void *sc_main_thread(void *priv);
 
 double sc_main_get_quota(void);
-void load_programmable(const char *who,
-    void *dst, size_t size, const char *spec);
 
 double sc_when(void);
 

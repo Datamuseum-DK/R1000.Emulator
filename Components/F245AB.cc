@@ -1,6 +1,6 @@
 #include <systemc.h>
-#include "r1000sc.h"
-#include "context.h"
+#include "Chassis/r1000sc.h"
+#include "Infra/context.h"
 #include "F245AB.hh"
 
 // Octal Bidirectional Transceiver with 3-STATE Outputs

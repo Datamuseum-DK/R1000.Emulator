@@ -42,11 +42,11 @@
 #include <unistd.h>
 #include <sys/time.h>
 
-#include "r1000.h"
-#include "vqueue.h"
+#include "Infra/r1000.h"
+#include "Infra/vqueue.h"
 
-#include "r1000sc.h"
-#include "r1000sc_priv.h"
+#include "Chassis/r1000sc.h"
+#include "Chassis/r1000sc_priv.h"
 
 struct component {
 	VTAILQ_ENTRY(component)	list;

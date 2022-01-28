@@ -1,6 +1,6 @@
 #include <systemc.h>
-#include "r1000sc.h"
-#include "context.h"
+#include "Chassis/r1000sc.h"
+#include "Infra/context.h"
 #include "F189.hh"
 
 // 64-Bit Random Access Memory with 3-STATE Outputs

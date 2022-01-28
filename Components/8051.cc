@@ -1,9 +1,9 @@
 #include <systemc.h>
-#include "r1000sc.h"
-#include "context.h"
+#include "Chassis/r1000sc.h"
+#include "Infra/context.h"
 #include "8051.hh"
 
-#include "diagproc.h"
+#include "Diag/diagproc.h"
 
 struct scm_8051_state {
 	struct ctx ctx;

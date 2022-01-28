@@ -1,7 +1,7 @@
-// Generated from on ../_Firmware/TAGAGAL-01.BIN
+// Generated from ../_Firmware/TAGAGAL-01.BIN by gal16v8.py
 #include <systemc.h>
-#include "r1000sc.h"
-#include "context.h"
+#include "Chassis/r1000sc.h"
+#include "Infra/context.h"
 #include "TAGAPAL.hh"
 
 struct scm_tagapal_state {

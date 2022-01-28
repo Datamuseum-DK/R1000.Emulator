@@ -1,6 +1,6 @@
 #include <systemc.h>
-#include "r1000sc.h"
-#include "context.h"
+#include "Chassis/r1000sc.h"
+#include "Infra/context.h"
 #include "F258.hh"
 
 // Quad 2-Input Multiplexer with 3-STATE Outputs

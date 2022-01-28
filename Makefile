@@ -47,13 +47,7 @@ OBJS	+= ioc_scsi_ctl.o
 OBJS	+= ioc_scsi_dev.o
 OBJS	+= ioc_syscall.o
 
-OBJS	+= i8052.o
-OBJS	+= diagbus.o
-OBJS	+= experiment.o
-OBJS	+= diagproc.o
-OBJS	+= i8052_emul.o
-
-CFLAGSMINUSI += -I. -IInfra -IMusashi -IIoc -IDiag -IPlanes
+CFLAGSMINUSI += -I. -IInfra -IMusashi -IIoc 
 CFLAGSMINUSD += -DMUSASHI_CNF='"musashi_conf.h"'
 CFLAGSMINUSD += -DFIRMWARE_PATH='"${FIRMWARE_PATH}"'
 
@@ -69,6 +63,9 @@ CFLAGS += ${PARANOIA}
 BINFILES += ${FIRMWARE_PATH}/IOC_EEPROM.bin
 BINFILES += ${FIRMWARE_PATH}/RESHA_EEPROM.bin
 
+SC_CC = ${CXX} ${SC_OPT} ${SC_WARN} -pthread -c
+SC_CC += -I/usr/local/include -I.
+
 M68K_INCL = \
 	_memcfg.h \
 	Musashi/m68kcpu.h \
@@ -83,13 +80,22 @@ CLI_INCL = \
 	Infra/r1000.h \
 	Infra/trace.h \
 	Infra/elastic.h
-
 all:
 	python3 -u NetList/process_kicad_netlists.py ${SC_BRANCH} ${NETLISTS}
-	for i in Fiu Ioc Mem32 Seq Typ Val ; do (cd $$i/${SC_BRANCH}/ && make -j 3) ; done
-	cd Components && make -j 3
-	cd Planes && make -j 3
 	make r1000sim
+
+netlist:
+	python3 -u NetList/process_kicad_netlists.py ${SC_BRANCH} ${NETLISTS}
+
+.include "Diag/Makefile.inc"
+.include "Chassis/Makefile.inc"
+.include "Components/Makefile.inc"
+.include "Fiu/${SC_BRANCH}/Makefile.inc"
+.include "Ioc/${SC_BRANCH}/Makefile.inc"
+.include "Mem32/${SC_BRANCH}/Makefile.inc"
+.include "Seq/${SC_BRANCH}/Makefile.inc"
+.include "Typ/${SC_BRANCH}/Makefile.inc"
+.include "Val/${SC_BRANCH}/Makefile.inc"
 
 cli:	r1000sim ${BINFILES}
 	./r1000sim \
@@ -495,15 +501,8 @@ foo:
 		
 
 r1000sim:	${OBJS}
-	${CC} -o r1000sim ${CFLAGS} ${LDFLAGS} ${OBJS} \
-		-L Fiu/${SC_BRANCH} -Wl,--rpath=Fiu/${SC_BRANCH} -lfiu \
-		-L Ioc/${SC_BRANCH} -Wl,--rpath=Ioc/${SC_BRANCH} -lioc \
-		-L Seq/${SC_BRANCH} -Wl,--rpath=Seq/${SC_BRANCH} -lseq \
-		-L Typ/${SC_BRANCH} -Wl,--rpath=Typ/${SC_BRANCH} -ltyp \
-		-L Val/${SC_BRANCH} -Wl,--rpath=Val/${SC_BRANCH} -lval \
-		-L Mem32/${SC_BRANCH} -Wl,--rpath=Mem32/${SC_BRANCH} -lmem32 \
-		-L Planes/ -Wl,--rpath=Planes -lplanes \
-		-L Components/ -Wl,--rpath=Components -lcomponents
+	${CXX} -o r1000sim ${CFLAGS} ${LDFLAGS} ${OBJS} \
+		-L /usr/local/lib -lsystemc
 	rm -f *.tmp
 
 clean:
@@ -542,11 +541,6 @@ ioc_scsi_ctl.o:		${CLI_INCL} Ioc/ioc.h Ioc/ioc_scsi.h Ioc/ioc_scsi_ctl.c
 ioc_scsi_dev.o:		${CLI_INCL} Ioc/ioc.h Ioc/ioc_scsi.h Ioc/ioc_scsi_dev.c
 ioc_syscall.o:		${CLI_INCL} Ioc/ioc.h Ioc/ioc_syscall.c
 ioc_uart.o:		${CLI_INCL} Ioc/ioc.h Ioc/ioc_uart.c
-
-i8052.o:		${CLI_INCL} Diag/i8052.c
-diagbus.o:		${CLI_INCL} Diag/diagbus.c
-diagproc.o:		${CLI_INCL} Diag/diagproc.c
-i8052_emul.o:		${CLI_INCL} Diag/i8052_emul.c
 
 m68kops.o:		Musashi/m68kcpu.h m68kops.h m68kops.c
 m68kops.h m68kops.c:	m68kmake Ioc/musashi_conf.h Musashi/m68k_in.c

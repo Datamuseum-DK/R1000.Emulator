@@ -1,7 +1,6 @@
 #include <systemc.h>
-#include "r1000sc.h"
-#include "context.h"
-#include "r1000sc_priv.h"
+#include "Chassis/r1000sc.h"
+#include "Infra/context.h"
 #include "PAxxx.hh"
 
 // TBP28SA42 4096 (512 Words by 8 bits) PROM (Open-Collector)

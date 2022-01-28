@@ -1,7 +1,6 @@
 #include <systemc.h>
-#include "r1000sc.h"
-#include "context.h"
-#include "r1000sc_priv.h"
+#include "Chassis/r1000sc.h"
+#include "Infra/context.h"
 #include "PBxxx.hh"
 
 // Signetics 82S123A, product specification, June 6 1985

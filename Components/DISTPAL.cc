@@ -1,7 +1,7 @@
-// Generated from on ../_Firmware/DISTGAL-02.BIN
+// Generated from ../_Firmware/DISTGAL-02.BIN by gal16v8.py
 #include <systemc.h>
-#include "r1000sc.h"
-#include "context.h"
+#include "Chassis/r1000sc.h"
+#include "Infra/context.h"
 #include "DISTPAL.hh"
 
 struct scm_distpal_state {

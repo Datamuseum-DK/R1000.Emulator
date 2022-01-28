@@ -196,8 +196,8 @@ class GAL():
         with open(fname + "_", "w") as file:
             file.write("// Generated from %s by %s\n" % (self.filename, __file__))
             file.write('#include <systemc.h>\n')
-            file.write('#include "r1000sc.h"\n')
-            file.write('#include "context.h"\n')
+            file.write('#include "Chassis/r1000sc.h"\n')
+            file.write('#include "Infra/context.h"\n')
             file.write('#include "%s.hh"\n' % bname)
 
             file.write('\n')

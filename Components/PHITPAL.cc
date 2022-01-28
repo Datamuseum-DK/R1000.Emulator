@@ -1,7 +1,7 @@
-// Generated from on ../_Firmware/PHITGAL-02.BIN
+// Generated from ../_Firmware/PHITGAL-02.BIN by gal16v8.py
 #include <systemc.h>
-#include "r1000sc.h"
-#include "context.h"
+#include "Chassis/r1000sc.h"
+#include "Infra/context.h"
 #include "PHITPAL.hh"
 
 struct scm_phitpal_state {
