@@ -22,7 +22,6 @@ OBJS    += dummy_diproc.o
 dummy_diproc.o: \
     Diag/dummy_diproc.c \
     Infra/r1000.h \
-    Infra/vqueue.h \
     Infra/vsb.h \
     Infra/elastic.h \
     Diag/diag.h

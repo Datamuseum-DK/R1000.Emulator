@@ -80,9 +80,9 @@ CLI_INCL = \
 	Infra/r1000.h \
 	Infra/trace.h \
 	Infra/elastic.h
-all:
-	python3 -u NetList/process_kicad_netlists.py ${SC_BRANCH} ${NETLISTS}
-	make r1000sim
+
+all:	netlist
+	${MAKE} ${MAKEFLAGS} r1000sim
 
 netlist:
 	python3 -u NetList/process_kicad_netlists.py ${SC_BRANCH} ${NETLISTS}
