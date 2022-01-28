@@ -90,12 +90,12 @@ netlist:
 .include "Diag/Makefile.inc"
 .include "Chassis/Makefile.inc"
 .include "Components/Makefile.inc"
-.include "Fiu/${SC_BRANCH}/Makefile.inc"
-.include "Ioc/${SC_BRANCH}/Makefile.inc"
-.include "Mem32/${SC_BRANCH}/Makefile.inc"
-.include "Seq/${SC_BRANCH}/Makefile.inc"
-.include "Typ/${SC_BRANCH}/Makefile.inc"
-.include "Val/${SC_BRANCH}/Makefile.inc"
+.-include "Fiu/${SC_BRANCH}/Makefile.inc"
+.-include "Ioc/${SC_BRANCH}/Makefile.inc"
+.-include "Mem32/${SC_BRANCH}/Makefile.inc"
+.-include "Seq/${SC_BRANCH}/Makefile.inc"
+.-include "Typ/${SC_BRANCH}/Makefile.inc"
+.-include "Val/${SC_BRANCH}/Makefile.inc"
 
 cli:	r1000sim ${BINFILES}
 	./r1000sim \
