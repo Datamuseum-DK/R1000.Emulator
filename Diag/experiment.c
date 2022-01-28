@@ -7,9 +7,9 @@
 #include <stdlib.h>
 #include <unistd.h>
 
-#include "r1000.h"
-#include "elastic.h"
-#include "vqueue.h"
+#include "Infra/r1000.h"
+#include "Infra/elastic.h"
+#include "Infra/vqueue.h"
 #include "Diag/diag.h"
 
 struct exp_param {

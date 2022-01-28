@@ -8,13 +8,13 @@
 #include <string.h>
 #include <unistd.h>
 
-#include "../Infra/r1000.h"
-#include "r1000sc.h"
-#include "r1000sc_priv.h"
-#include "diagproc.h"
-#include "i8052_emul.h"
-#include "../Infra/elastic.h"
-#include "../Diag/diag.h"
+#include "Infra/r1000.h"
+#include "Chassis/r1000sc.h"
+#include "Chassis/r1000sc_priv.h"
+#include "Diag/diagproc.h"
+#include "Diag/i8052_emul.h"
+#include "Infra/elastic.h"
+#include "Diag/diag.h"
 
 #define FLAG_RX_SPIN	(1<<0)
 #define FLAG_DOWNLOAD	(1<<1)

@@ -7,8 +7,8 @@
 #include <string.h>
 #include <unistd.h>
 
-#include "r1000.h"
-#include "elastic.h"
+#include "Infra/r1000.h"
+#include "Infra/elastic.h"
 #include "Diag/diag.h"
 
 struct elastic *diag_elastic;

@@ -1,16 +1,42 @@
 
 
 OBJS    += diagbus.o
-diagbus.o:	${CLI_INCL} Diag/diagbus.c
+diagbus.o: \
+    Diag/diagbus.c \
+    Infra/r1000.h \
+    Infra/elastic.h \
+    Diag/diag.h
 
 OBJS    += diagproc.o
-diagproc.o:	${CLI_INCL} Diag/diagproc.c
+diagproc.o: \
+    Diag/diagproc.c \
+    Infra/r1000.h \
+    Chassis/r1000sc.h \
+    Chassis/r1000sc_priv.h \
+    Diag/diagproc.h \
+    Diag/i8052_emul.h \
+    Infra/elastic.h \
+    Diag/diag.h
+
+OBJS    += dummy_diproc.o
+dummy_diproc.o: \
+    Diag/dummy_diproc.c \
+    Infra/r1000.h \
+    Infra/vqueue.h \
+    Infra/vsb.h \
+    Infra/elastic.h \
+    Diag/diag.h
 
 OBJS    += experiment.o
-experiment.o:	${CLI_INCL} Diag/experiment.c
+experiment.o: \
+    Diag/experiment.c \
+    Infra/r1000.h \
+    Infra/elastic.h \
+    Infra/vqueue.h \
+    Diag/diag.h
 
-OBJS    += i8052.o
-i8052.o:	${CLI_INCL} Diag/i8052.c
 
 OBJS    += i8052_emul.o
-i8052_emul.o:	${CLI_INCL} Diag/i8052_emul.c
+i8052_emul.o: \
+    Diag/i8052_emul.c \
+    Diag/i8052_emul.h

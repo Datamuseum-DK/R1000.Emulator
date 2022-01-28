@@ -87,15 +87,15 @@ all:
 netlist:
 	python3 -u NetList/process_kicad_netlists.py ${SC_BRANCH} ${NETLISTS}
 
-.include "Diag/Makefile.inc"
-.include "Chassis/Makefile.inc"
-.include "Components/Makefile.inc"
-.-include "Fiu/${SC_BRANCH}/Makefile.inc"
-.-include "Ioc/${SC_BRANCH}/Makefile.inc"
-.-include "Mem32/${SC_BRANCH}/Makefile.inc"
-.-include "Seq/${SC_BRANCH}/Makefile.inc"
-.-include "Typ/${SC_BRANCH}/Makefile.inc"
-.-include "Val/${SC_BRANCH}/Makefile.inc"
+include Diag/Makefile.inc
+include Chassis/Makefile.inc
+include Components/Makefile.inc
+-include Fiu/${SC_BRANCH}/Makefile.inc
+-include Ioc/${SC_BRANCH}/Makefile.inc
+-include Mem32/${SC_BRANCH}/Makefile.inc
+-include Seq/${SC_BRANCH}/Makefile.inc
+-include Typ/${SC_BRANCH}/Makefile.inc
+-include Val/${SC_BRANCH}/Makefile.inc
 
 cli:	r1000sim ${BINFILES}
 	./r1000sim \
@@ -500,13 +500,16 @@ foo:
 		'console << "0"'
 		
 
-r1000sim:	${OBJS}
-	${CXX} -o r1000sim ${CFLAGS} ${LDFLAGS} ${OBJS} \
+r1000sim.${SC_BRANCH}:	${OBJS}
+	${CXX} -o r1000sim.${SC_BRANCH} ${CFLAGS} ${LDFLAGS} ${OBJS} \
 		-L /usr/local/lib -lsystemc
 	rm -f *.tmp
 
+r1000sim: r1000sim.${SC_BRANCH}
+	cp r1000sim.${SC_BRANCH} r1000sim
+
 clean:
-	rm -f *.o *.tmp r1000sim m68kops.h m68kops.c m68kmake _memcfg.[ch]
+	rm -f ${OBJS} *.tmp r1000sim m68kops.h m68kops.c m68kmake _memcfg.[ch]
 
 callout.o:		Infra/r1000.h Infra/callout.c
 cli.o:			Infra/r1000.h Infra/vav.h Infra/cli.c Ioc/ioc.h

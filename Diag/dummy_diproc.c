@@ -33,12 +33,11 @@
 #include <string.h>
 #include <unistd.h>
 
-#include "r1000.h"
-#include "vqueue.h"
-#include "vsb.h"
+#include "Infra/r1000.h"
+#include "Infra/vsb.h"
 #include "Diag/diag.h"
 
-#include "elastic.h"
+#include "Infra/elastic.h"
 
 struct i8052 {
 	const char			*name;
