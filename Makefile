@@ -63,8 +63,8 @@ CFLAGS += ${PARANOIA}
 BINFILES += ${FIRMWARE_PATH}/IOC_EEPROM.bin
 BINFILES += ${FIRMWARE_PATH}/RESHA_EEPROM.bin
 
-SC_WARN = -Wall -Werror
 SC_OPT = -O2
+SC_WARN = -Wall -Werror
 SC_CC = ${CXX} ${SC_OPT} ${SC_WARN} -pthread -c
 SC_CC += -I/usr/local/include -I.
 
@@ -551,7 +551,7 @@ m68kops.h m68kops.c:	m68kmake Ioc/musashi_conf.h Musashi/m68k_in.c
 
 Infra/memspace.h:	_memcfg.h
 
-_memcfg.h:		makemem.py makemem_class.py
+_memcfg.h _memcfg.c:	makemem.py makemem_class.py
 			python3 makemem.py
 
 m68kmake:		Musashi/m68kmake.c
