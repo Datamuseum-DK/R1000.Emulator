@@ -35,8 +35,8 @@
 #include <unistd.h>
 #include <sys/mman.h>
 
-#include "r1000.h"
-#include "context.h"
+#include "Infra/r1000.h"
+#include "Infra/context.h"
 
 static const char *context_filename = "/critter/_ctx";
 static ssize_t context_size = 0;

@@ -36,9 +36,9 @@
 #include <string.h>
 #include <unistd.h>
 
-#include "r1000.h"
-#include "vav.h"
-#include "ioc.h"
+#include "Infra/r1000.h"
+#include "Infra/vav.h"
+#include "Ioc/ioc.h"
 
 static void
 cli_exit(struct cli *cli)

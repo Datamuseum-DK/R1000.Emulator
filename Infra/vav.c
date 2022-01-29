@@ -43,8 +43,8 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "r1000.h"
-#include "vav.h"
+#include "Infra/r1000.h"
+#include "Infra/vav.h"
 
 static int
 VAV_BackSlash(const char *s, char *res)

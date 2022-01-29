@@ -31,7 +31,8 @@
 
 #include <stdlib.h>
 #include <pthread.h>
-#include "r1000.h"
+
+#include "Infra/r1000.h"
 
 struct callout {
 	VTAILQ_ENTRY(callout)		next;

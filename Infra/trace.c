@@ -36,8 +36,8 @@
 #include <string.h>
 #include <unistd.h>
 
-#include "r1000.h"
-#include "vsb.h"
+#include "Infra/r1000.h"
+#include "Infra/vsb.h"
 
 int trace_fd = -1;
 static struct vsb *trace_vsb;

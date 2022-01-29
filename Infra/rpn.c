@@ -37,9 +37,8 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "r1000.h"
-#include "vqueue.h"
-#include "vsb.h"
+#include "Infra/r1000.h"
+#include "Infra/vsb.h"
 
 #define VARS \
 	VAR(a) VAR(b) VAR(c) VAR(d) VAR(e) \

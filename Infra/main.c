@@ -40,9 +40,9 @@
 #include <sys/time.h>
 #include <sys/resource.h>
 
-#include "r1000.h"
-#include "ioc.h"
-#include "vsb.h"
+#include "Infra/r1000.h"
+#include "Ioc/ioc.h"
+#include "Infra/vsb.h"
 
 int optreset;		// Some have it, some not.
 

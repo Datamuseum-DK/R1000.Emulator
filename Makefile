@@ -22,12 +22,6 @@ FIRMWARE_PATH = _Firmware
 
 VPATH	= Musashi:Musashi/softfloat:Infra:Ioc:Diag
 
-OBJS	= main.o callout.o cli.o context.o memory.o trace.o
-OBJS	+= elastic.o elastic_fd.o elastic_tcp.o elastic_match.o
-OBJS	+= rpn.o
-OBJS	+= vav.o
-OBJS	+= vsb.o
-
 OBJS	+= m68kcpu.o m68kdasm.o m68kops.o softfloat.o
 
 OBJS	+= _memcfg.o
@@ -68,6 +62,8 @@ SC_WARN = -Wall -Werror
 SC_CC = ${CXX} ${SC_OPT} ${SC_WARN} -pthread -c
 SC_CC += -I/usr/local/include -I.
 
+R1000DEP = Infra/r1000.h Infra/vqueue.h Infra/trace.h
+
 M68K_INCL = \
 	_memcfg.h \
 	Musashi/m68kcpu.h \
@@ -89,6 +85,7 @@ all:	netlist
 netlist:
 	python3 -u NetList/process_kicad_netlists.py ${SC_BRANCH} ${NETLISTS}
 
+include Infra/Makefile.inc
 include Diag/Makefile.inc
 include Chassis/Makefile.inc
 include Components/Makefile.inc
@@ -510,19 +507,6 @@ r1000sim: r1000sim.${SC_BRANCH}
 
 clean:
 	rm -f ${OBJS} *.tmp r1000sim m68kops.h m68kops.c m68kmake _memcfg.[ch]
-
-callout.o:		Infra/r1000.h Infra/callout.c
-cli.o:			Infra/r1000.h Infra/vav.h Infra/cli.c Ioc/ioc.h
-context.o:		Infra/r1000.h Infra/context.c Infra/context.h
-elastic.o:		Infra/r1000.h Infra/elastic.h Infra/elastic.c
-elastic_fd.o:		Infra/r1000.h Infra/elastic.h Infra/elastic_fd.c
-elastic_match.o:	Infra/r1000.h Infra/elastic.h Infra/elastic_match.c
-elastic_tcp.o:		Infra/r1000.h Infra/elastic.h Infra/elastic_tcp.c
-memory.o:		Infra/r1000.h Infra/memspace.h Infra/memory.c
-rpn.o:			Infra/r1000.h Infra/rpn.c
-trace.o:		Infra/r1000.h Infra/trace.h Infra/trace.c
-vav.o:			Infra/r1000.h Infra/vav.c
-vsb.o:			Infra/r1000.h Infra/vsb.c
 
 m68kcpu.o:		${M68K_INCL} Musashi/m68kcpu.c
 m68kdasm.o:		${M68K_INCL} Musashi/m68kdasm.c

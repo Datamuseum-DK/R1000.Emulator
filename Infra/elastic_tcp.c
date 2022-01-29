@@ -39,8 +39,8 @@
 #include <netinet/in.h>
 #include <netdb.h>
 
-#include "r1000.h"
-#include "elastic.h"
+#include "Infra/r1000.h"
+#include "Infra/elastic.h"
 
 struct acceptor_arg {
 	struct elastic			*ep;

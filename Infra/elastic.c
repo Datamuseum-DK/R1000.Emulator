@@ -32,8 +32,9 @@
 #include <fcntl.h>
 #include <stdlib.h>
 #include <string.h>
-#include "r1000.h"
-#include "elastic.h"
+
+#include "Infra/r1000.h"
+#include "Infra/elastic.h"
 
 struct elastic *
 elastic_new(int mode)

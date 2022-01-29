@@ -36,8 +36,8 @@
 #include <unistd.h>
 #include <termios.h>
 
-#include "r1000.h"
-#include "elastic.h"
+#include "Infra/r1000.h"
+#include "Infra/elastic.h"
 
 struct elastic_fd {
 	struct elastic			*ep;

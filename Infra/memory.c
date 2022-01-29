@@ -2,9 +2,9 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#include "r1000.h"
+#include "Infra/r1000.h"
 
-#include "memspace.h"
+#include "Infra/memspace.h"
 
 struct memevent {
 	VTAILQ_ENTRY(memevent)	list;
