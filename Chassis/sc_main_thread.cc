@@ -32,44 +32,90 @@ char Val_how[] = "++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
 SC_MODULE(BackPlaneClocks)
 {
-	sc_out <sc_logic> gb288;	// BP.CLK.2X~
-	sc_out <sc_logic> gb294;	// BP.CLK.2X
-	sc_out <sc_logic> gb295;	// BP.PHASE.2X
-	sc_out <sc_logic> gb296;	// CLOCK_DISABLE~
+	sc_out <sc_logic> bp_clk_2x;
+	sc_out <sc_logic> bp_clk_2x_;
+	sc_out <sc_logic> bp_phase_2x;
+	sc_out <sc_logic> clk_2xe;
+	sc_out <sc_logic> clk_2xe_;
+	sc_out <sc_logic> clk_h1_phd;
+	sc_out <sc_logic> clk_h2_phd;
+	sc_out <sc_logic> clk_h1e;
+	sc_out <sc_logic> clk_h2e;
 	unsigned pit = 0;
+	unsigned now, when = 0;
 
 	SC_CTOR(BackPlaneClocks)
 	{
-		SC_THREAD(thread);
+		SC_METHOD(doit);
 	}
 
-	void thread()
+	void doit()
 	{
-		gb296 = sc_logic_0;
-		while (1) {
-			gb294 = sc_logic_1; gb288 = sc_logic_0;
-			gb295 = sc_logic_0;
-			wait(50, SC_NS);
-			gb294 = sc_logic_0; gb288 = sc_logic_1;
-			wait(50, SC_NS);
-			gb294 = sc_logic_1; gb288 = sc_logic_0;
-			gb295 = sc_logic_1;
-			wait(50, SC_NS);
-			gb294 = sc_logic_0; gb288 = sc_logic_1;
-			wait(50, SC_NS);
-			if (++pit == 128) {
-				pit_clock();
-				pit = 0;
-			}
+		if (++pit == 128) {
+			pit_clock();
+			pit = 0;
 		}
+		now = when;
+		switch (now) {
+		case 0:
+			bp_clk_2x = sc_logic_1; bp_clk_2x_ = sc_logic_0;
+			bp_phase_2x = sc_logic_0;
+			when = 5;
+			break;
+		case 5:
+			clk_2xe = sc_logic_1; clk_2xe_ = sc_logic_0;
+			when = 10;
+			break;
+		case 10:
+			clk_h1e = sc_logic_1; clk_h2e = sc_logic_0;
+			when = 50;
+			break;
+		case 50:
+			bp_clk_2x = sc_logic_0; bp_clk_2x_ = sc_logic_1;
+			when = 55;
+			break;
+		case 55:
+			clk_2xe = sc_logic_0; clk_2xe_ = sc_logic_1;
+			when = 60;
+			break;
+		case 60:
+			clk_h1_phd = sc_logic_1; clk_h2_phd = sc_logic_0;
+			when = 100;
+		case 100:
+			bp_clk_2x = sc_logic_1; bp_clk_2x_ = sc_logic_0;
+			bp_phase_2x = sc_logic_1;
+			when = 105;
+			break;
+		case 105:
+			clk_2xe = sc_logic_1; clk_2xe_ = sc_logic_0;
+			when = 110;
+			break;
+		case 110:
+			clk_h1e = sc_logic_0; clk_h2e = sc_logic_1;
+			when = 150;
+			break;
+		case 150:
+			bp_clk_2x = sc_logic_0; bp_clk_2x_ = sc_logic_1;
+			when = 155;
+			break;
+		case 155:
+			clk_2xe = sc_logic_0; clk_2xe_ = sc_logic_1;
+			when = 160;
+			break;
+		case 160:
+			clk_h1_phd = sc_logic_0; clk_h2_phd = sc_logic_1;
+			when = 200;
+		}
+		next_trigger((when - now) % 200, SC_NS);
+		when = when % 200;
 	}
 };
 
 
 SC_MODULE(PowerSequencer)
 {
-	sc_out <sc_logic> gb313;	// CLAMP
-	sc_out <sc_logic> gb244;	// RESET
+	sc_out <sc_logic> clamp;	// CLAMP
+	sc_out <sc_logic> reset;	// RESET
 	int do_trace = 0;
 
 	SC_CTOR(PowerSequencer)
@@ -79,12 +125,12 @@ SC_MODULE(PowerSequencer)
 
 	void thread()
 	{
-		gb313 = sc_logic_0;
-		gb244 = sc_logic_0;
+		clamp = sc_logic_0;
+		reset = sc_logic_0;
 		wait(100, SC_NS);
-		gb313 = sc_logic_1;
+		clamp = sc_logic_1;
 		wait(200, SC_NS);
-		gb244 = sc_logic_1;
+		reset = sc_logic_1;
 	}
 };
 
@@ -131,18 +177,24 @@ sc_main(int argc, char *argv[])
 	if (sc_boards & R1K_BOARD_IOC)
 		ioc = make_mod_ioc("IOC", planes, Ioc_how);
 
-	planes.GB319 = sc_logic_0;	// B_SLOT0
-	planes.GB320 = sc_logic_0;	// B_SLOT1
+	planes.GB_SLOT0 = sc_logic_0;
+	planes.GB_SLOT1 = sc_logic_0;
+	planes.GB_CLOCK_DISABLE = sc_logic_0;
 
 	PowerSequencer powseq("UNCLAMP");
-	powseq.gb313(planes.GB313);
-	powseq.gb244(planes.GB244);
+	powseq.clamp(planes.GB_CLAMP);	// CLAMP
+	powseq.reset(planes.GB_RESET);
 
 	BackPlaneClocks bpclock("BPCLOCK");
-	bpclock.gb288(planes.GB288);
-	bpclock.gb294(planes.GB294);
-	bpclock.gb295(planes.GB295);
-	bpclock.gb296(planes.GB296);
+	bpclock.bp_clk_2x_(planes.GB_BP_CLK_2X_);
+	bpclock.bp_clk_2x(planes.GB_BP_CLK_2X);
+	bpclock.bp_phase_2x(planes.GB_BP_PHASE2X);
+	bpclock.clk_2xe(planes.GB_CLK_2XE);
+	bpclock.clk_2xe_(planes.GB_CLK_2XE_);
+	bpclock.clk_h1_phd(planes.GB_CLK_H1_PHD);
+	bpclock.clk_h2_phd(planes.GB_CLK_H2_PHD);
+	bpclock.clk_h1e(planes.GB_CLK_H1E);
+	bpclock.clk_h2e(planes.GB_CLK_H2E);
 
 	sc_set_time_resolution(1, SC_NS);
 
