@@ -46,21 +46,21 @@ def contexts(filename):
 
 def main():
     nact = 0
-    l = []
-    p = {}
+    lines = []
+    summ = {}
     for ctx in contexts(CONTEXT_FILE):
         i = ctx.activations
         nact += i
-        pg = ctx.ident.split(".")[1]
-        if pg not in p:
-            p[pg] = 0
-        p[pg] += i
-        l.append((i, str(ctx)))
+        lines.append((i, str(ctx)))
+        j = "page " + ctx.ident.split(".")[1]
+        summ[j] = summ.get(j, 0) + i
+        j = "kind " + ctx.kind
+        summ[j] = summ.get(j, 0) + i
 
-    for i, j in p.items():
-        l.append((j, i))
-        
-    for i, ctx in sorted(l):
+    for i, j in summ.items():
+        lines.append((j, i))
+
+    for i, ctx in sorted(lines):
         print(
             "%12d" % i,
             "%7.3f" % (i / nact),
