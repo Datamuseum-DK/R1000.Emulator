@@ -37,10 +37,18 @@ SC_MODULE(BackPlaneClocks)
 	sc_out <sc_logic> bp_phase_2x;
 	sc_out <sc_logic> clk_2xe;
 	sc_out <sc_logic> clk_2xe_;
+	sc_out <sc_logic> clk_2x;
+	sc_out <sc_logic> clk_2x_;
 	sc_out <sc_logic> clk_h1_phd;
 	sc_out <sc_logic> clk_h2_phd;
 	sc_out <sc_logic> clk_h1e;
 	sc_out <sc_logic> clk_h2e;
+	sc_out <sc_logic> clk_h1;
+	sc_out <sc_logic> clk_h2;
+	sc_out <sc_logic> clk_q1_;
+	sc_out <sc_logic> clk_q2_;
+	sc_out <sc_logic> clk_q3_;
+	sc_out <sc_logic> clk_q4_;
 	unsigned pit = 0;
 	unsigned now, when = 0;
 
@@ -67,7 +75,13 @@ SC_MODULE(BackPlaneClocks)
 			when = 10;
 			break;
 		case 10:
+			clk_2x = sc_logic_1; clk_2x_ = sc_logic_0;
 			clk_h1e = sc_logic_1; clk_h2e = sc_logic_0;
+			clk_q4_ = sc_logic_1; clk_q1_ = sc_logic_0;
+			when = 20;
+			break;
+		case 20:
+			clk_h1 = sc_logic_1; clk_h2 = sc_logic_0;
 			when = 50;
 			break;
 		case 50:
@@ -79,7 +93,9 @@ SC_MODULE(BackPlaneClocks)
 			when = 60;
 			break;
 		case 60:
+			clk_2x = sc_logic_0; clk_2x_ = sc_logic_1;
 			clk_h1_phd = sc_logic_1; clk_h2_phd = sc_logic_0;
+			clk_q1_ = sc_logic_1; clk_q2_ = sc_logic_0;
 			when = 100;
 		case 100:
 			bp_clk_2x = sc_logic_1; bp_clk_2x_ = sc_logic_0;
@@ -91,7 +107,13 @@ SC_MODULE(BackPlaneClocks)
 			when = 110;
 			break;
 		case 110:
+			clk_2x = sc_logic_1; clk_2x_ = sc_logic_0;
 			clk_h1e = sc_logic_0; clk_h2e = sc_logic_1;
+			clk_q2_ = sc_logic_1; clk_q3_ = sc_logic_0;
+			when = 120;
+			break;
+		case 120:
+			clk_h1 = sc_logic_0; clk_h2 = sc_logic_1;
 			when = 150;
 			break;
 		case 150:
@@ -103,7 +125,9 @@ SC_MODULE(BackPlaneClocks)
 			when = 160;
 			break;
 		case 160:
+			clk_2x = sc_logic_0; clk_2x_ = sc_logic_1;
 			clk_h1_phd = sc_logic_0; clk_h2_phd = sc_logic_1;
+			clk_q3_ = sc_logic_1; clk_q4_ = sc_logic_0;
 			when = 200;
 		}
 		next_trigger((when - now) % 200, SC_NS);
@@ -191,10 +215,18 @@ sc_main(int argc, char *argv[])
 	bpclock.bp_phase_2x(planes.GB_BP_PHASE2X);
 	bpclock.clk_2xe(planes.GB_CLK_2XE);
 	bpclock.clk_2xe_(planes.GB_CLK_2XE_);
+	bpclock.clk_2x(planes.GB_CLK_2X);
+	bpclock.clk_2x_(planes.GB_CLK_2X_);
 	bpclock.clk_h1_phd(planes.GB_CLK_H1_PHD);
 	bpclock.clk_h2_phd(planes.GB_CLK_H2_PHD);
 	bpclock.clk_h1e(planes.GB_CLK_H1E);
 	bpclock.clk_h2e(planes.GB_CLK_H2E);
+	bpclock.clk_h1(planes.GB_CLK_H1);
+	bpclock.clk_h2(planes.GB_CLK_H2);
+	bpclock.clk_q1_(planes.GB_CLK_Q1_);
+	bpclock.clk_q2_(planes.GB_CLK_Q2_);
+	bpclock.clk_q3_(planes.GB_CLK_Q3_);
+	bpclock.clk_q4_(planes.GB_CLK_Q4_);
 
 	sc_set_time_resolution(1, SC_NS);
 
