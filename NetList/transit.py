@@ -14,23 +14,54 @@
 
 import sys
 
+GB = {
+    "BP_CLK_2X": "GB294",
+    "BP_CLK_2X_": "GB288",
+    "BP_PHASE2X": "GB295",
+
+    "CLK_2XE": "GB301",
+    "CLK_2XE_": "GB302",
+    "CLK_2X": "GB303",
+    "CLK_2X_": "GB304",
+    "CLK_H1_PHD": "GB305",
+    "CLK_H2_PHD": "GB306",
+    "CLK_H1E": "GB307",
+    "CLK_H2E": "GB308",
+    "CLK_H1": "GB309",
+    "CLK_H2": "GB310",
+    "CLK_Q1": "GB311",
+    "CLK_Q2": "GB312",
+    "CLK_Q3": "GB313",
+    "CLK_Q4": "GB314",
+
+    "RESET": "GB244",
+    "CLOCK_DISABLE": "GB296",
+    "CLAMP": "GB323",
+    "BOARD_HIT0": "GB324",
+    "BOARD_HIT1": "GB325",
+    "BOARD_HIT2": "GB326",
+    "BOARD_HIT3": "GB327",
+    "SLOT0": "GB328",
+    "SLOT1": "GB329",
+}
+
 TRANSIT = {
     "*": {
-         "GB293": "GB294",	# BP.2X.B1 -> BP.2X.B0
-         "GB287": "GB288",	# BP.2X~.B1 -> BP.2X~.B0
+         "GB293": GB["BP_CLK_2X"],
+         "GB287": GB["BP_CLK_2X_"],
     },
     "fiu": {
          "GB268": "*",		# F.PAGE_STATE~0
          "GB271": "*",		# F.PAGE_STATE~1
-         "GB264": "GB315",	# F.BOARD_HIT4
-         "GB265": "GB316",	# F.BOARD_HIT1
-         "GB266": "GB317",	# F.BOARD_HIT2
-         "GB267": "GB318",	# F.BOARD_HIT3
+         "GB264": GB["BOARD_HIT0"],
+         "GB265": GB["BOARD_HIT1"],
+         "GB266": GB["BOARD_HIT2"],
+         "GB267": GB["BOARD_HIT3"],
     },
     "ioc": {
-                                                   "GB004": "*",
+                                                  "GB004": "*",
         "GB005": "*", "GB006": "*", "GB007": "*", "GB008": "*",
-                                     "GB013": "*", "GB014": "*",
+                                    "GB013": "*", "GB014": "*",
         "GB015": "*", "GB016": "*", "GB017": "*", "GB018": "*",
         "GB021": "*",               "GB023": "*", "GB024": "*",
         "GB025": "*", "GB026": "*", "GB027": "*", "GB028": "*",
@@ -44,21 +75,21 @@ TRANSIT = {
         "GB065": "*", "GB066": "*", "GB067": "*", "GB068": "*",
         "GB071": "*", "GB072": "*", "GB073": "*",
         "GB075": "*", "GB076": "*", "GB077": "*", "GB078": "*",
-                                     "GB083": "*", "GB084": "*",
-                                     "GB087": "*", "GB088": "*",
-                       "GB092": "*", "GB093": "*", "GB094": "*",
+                                    "GB083": "*", "GB084": "*",
+                                    "GB087": "*", "GB088": "*",
+                      "GB092": "*", "GB093": "*", "GB094": "*",
 
-                                     "GB107": "*",
-                                     "GB113": "GB313",
+                                    "GB107": "*",
+        "GB113": GB["CLAMP"],
 
-                                     "GB137": "*", "GB138": "*",
-                                                   "GB144": "*",
+                                    "GB137": "*", "GB138": "*",
+                                                  "GB144": "*",
         "GB145": "*", "GB146": "*", "GB147": "*", "GB148": "*",
-                                     "GB153": "*", "GB154": "*",
+                                    "GB153": "*", "GB154": "*",
         "GB155": "*",
-                                     "GB173": "*", "GB174": "*",
+                                    "GB173": "*", "GB174": "*",
         "GB175": "*",               "GB177": "*",
-                                                   "GB184": "*",
+                                                  "GB184": "*",
         "GB185": "*", "GB186": "*", "GB187": "*", "GB188": "*",
         "GB191": "*", "GB192": "*", "GB193": "*", "GB194": "*",
         "GB195": "*", "GB196": "*", "GB197": "*", "GB198": "*",
@@ -111,12 +142,12 @@ TRANSIT = {
         "GB055": "*",
         "GB056": "*",
         "GB058": "*",
-        "GB242": "GB319",
-        "GB243": "GB320",
-        "GB264": "GB315",
-        "GB265": "GB316",
-        "GB266": "GB317",
-        "GB267": "GB318",
+        "GB242": GB["SLOT0"],
+        "GB243": GB["SLOT1"],
+        "GB264": GB["BOARD_HIT0"],
+        "GB265": GB["BOARD_HIT1"],
+        "GB266": GB["BOARD_HIT2"],
+        "GB267": GB["BOARD_HIT3"],
     },
 }
 
@@ -203,7 +234,9 @@ def make_transit_h(file):
             )
         file.write(text + "\n")
 
-
+    file.write("\n")
+    for k,v in sorted(GB.items()):
+        file.write("#define GB_%s %s\n" % (k, v))
 
 if __name__ == "__main__":
     make_transit_h(sys.stdout)
