@@ -5,11 +5,11 @@
 #include <string.h>
 #include <unistd.h>
 
-#include "r1000.h"
-#include "ioc.h"
-#include "memspace.h"
-#include "ioc_scsi.h"
-#include "vend.h"
+#include "Infra/r1000.h"
+#include "Ioc/ioc.h"
+#include "Ioc/memspace.h"
+#include "Ioc/ioc_scsi.h"
+#include "Infra/vend.h"
 
 struct scsi scsi_t[1];
 struct scsi scsi_d[1];

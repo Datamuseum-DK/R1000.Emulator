@@ -11,10 +11,10 @@
 #include <string.h>
 #include <unistd.h>
 
-#include "r1000.h"
-#include "ioc.h"
-#include "elastic.h"
-#include "memspace.h"
+#include "Infra/r1000.h"
+#include "Ioc/ioc.h"
+#include "Infra/elastic.h"
+#include "Ioc/memspace.h"
 #include "Diag/diag.h"
 
 static const char * const rd_reg[] = {

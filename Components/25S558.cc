@@ -7,9 +7,13 @@ struct scm_25s558_state {
 	struct ctx ctx;
 };
 
-void
-SCM_25S558 :: loadit(const char *arg)
+SCM_25S558 :: SCM_25S558(sc_module_name nm, const char *arg) : sc_module(nm)
 {
+	SC_METHOD(doit);
+	sensitive << pin1 << pin2 << pin3 << pin4 << pin6 << pin7
+	    << pin8 << pin12 << pin13 << pin14 << pin15
+	    << pin16 << pin17 << pin18 << pin19;
+
 	state = (struct scm_25s558_state *)
 	    CTX_Get("25s558", this->name(), sizeof *state);
 	should_i_trace(this->name(), &state->ctx.do_trace);

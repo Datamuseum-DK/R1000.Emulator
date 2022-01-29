@@ -230,9 +230,9 @@ class System():
         fo = open(filename + ".c", "w")
         fo.write('#include <stdint.h>\n')
         fo.write('#include <stdio.h>\n')
-        fo.write('#include "vend.h"\n')
-        fo.write('#include "vqueue.h"\n')
-        fo.write('#include "Infra/memspace.h"\n')
+        fo.write('#include "Infra/vend.h"\n')
+        fo.write('#include "Infra/vqueue.h"\n')
+        fo.write('#include "Ioc/memspace.h"\n')
         self.produce_data(fo)
         for i in (1, 2, 4):
             self.produce_read_x_bit("read", i, fo)

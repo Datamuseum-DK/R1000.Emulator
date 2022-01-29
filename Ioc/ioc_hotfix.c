@@ -36,10 +36,11 @@
 
 #include <stdint.h>
 #include <string.h>
-#include "r1000.h"
-#include "ioc.h"
-#include "memspace.h"
-#include "vend.h"
+
+#include "Infra/r1000.h"
+#include "Ioc/ioc.h"
+#include "Ioc/memspace.h"
+#include "Infra/vend.h"
 
 static ioc_bpt_f Ioc_HotFix_Kernel;
 static ioc_bpt_f Ioc_HotFix_Bootloader;

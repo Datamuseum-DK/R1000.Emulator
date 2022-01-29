@@ -24,25 +24,9 @@ VPATH	= Musashi:Musashi/softfloat:Infra:Ioc:Diag
 
 OBJS	+= m68kcpu.o m68kdasm.o m68kops.o softfloat.o
 
-OBJS	+= _memcfg.o
 
-OBJS	+= ioc_uart.o
-OBJS	+= ioc_cli.o
-OBJS	+= ioc_debug.o
-OBJS	+= ioc_duart.o
-OBJS	+= ioc_eeproms.o
-OBJS	+= ioc_interrupt.o
-OBJS	+= ioc_hotfix.o
-OBJS	+= ioc_main.o
-OBJS	+= ioc_memtrace.o
-OBJS	+= ioc_mosart.o
-OBJS	+= ioc_rtc.o
-OBJS	+= ioc_scsi_ctl.o
-OBJS	+= ioc_scsi_dev.o
-OBJS	+= ioc_syscall.o
-
-CFLAGSMINUSI += -I. -IInfra -IMusashi -IIoc 
-CFLAGSMINUSD += -DMUSASHI_CNF='"musashi_conf.h"'
+CFLAGSMINUSI += -I. -IMusashi
+CFLAGSMINUSD += -DMUSASHI_CNF='"Ioc/musashi_conf.h"'
 CFLAGSMINUSD += -DFIRMWARE_PATH='"${FIRMWARE_PATH}"'
 
 CFLAGS	+= -Wall -Werror -pthread -g -O0
@@ -65,16 +49,13 @@ SC_CC += -I/usr/local/include -I.
 R1000DEP = Infra/r1000.h Infra/vqueue.h Infra/trace.h
 
 M68K_INCL = \
-	_memcfg.h \
 	Musashi/m68kcpu.h \
 	Musashi/m68kmmu.h \
 	Musashi/softfloat/softfloat.h \
 	Ioc/musashi_conf.h \
-	Infra/memspace.h \
 	m68kops.h
 
 CLI_INCL = \
-	_memcfg.h \
 	Infra/r1000.h \
 	Infra/trace.h \
 	Infra/elastic.h
@@ -87,6 +68,7 @@ netlist:
 
 include Infra/Makefile.inc
 include Diag/Makefile.inc
+include Ioc/Makefile.inc
 include Chassis/Makefile.inc
 include Components/Makefile.inc
 -include Fiu/${SC_BRANCH}/Makefile.inc
@@ -506,37 +488,15 @@ r1000sim: r1000sim.${SC_BRANCH}
 	cp r1000sim.${SC_BRANCH} r1000sim
 
 clean:
-	rm -f ${OBJS} *.tmp r1000sim m68kops.h m68kops.c m68kmake _memcfg.[ch]
+	rm -f ${OBJS} ${CLEANFILES} *.tmp r1000sim m68kops.h m68kops.c m68kmake
 
 m68kcpu.o:		${M68K_INCL} Musashi/m68kcpu.c
 m68kdasm.o:		${M68K_INCL} Musashi/m68kdasm.c
 softfloat.o:		${M68K_INCL} Musashi/softfloat/softfloat.c \
-			Musashi/softfloat/softfloat-specialize
-
-_memcfg.o:		_memcfg.c _memcfg.h Infra/memspace.h
-
-ioc_cli.o:		${CLI_INCL} Ioc/ioc.h Ioc/ioc_cli.c
-ioc_debug.o:		${CLI_INCL} Ioc/ioc.h Ioc/ioc_debug.c
-ioc_duart.o:		${CLI_INCL} Ioc/ioc.h Ioc/ioc_duart.c
-ioc_eeproms.o:		${CLI_INCL} Ioc/ioc.h Ioc/ioc_eeproms.c
-ioc_hotfix.o:		${M68K_INCL} Ioc/ioc.h Ioc/ioc_hotfix.c
-ioc_interrupt.o:	${CLI_INCL} Ioc/ioc.h Ioc/ioc_interrupt.c
-ioc_main.o:		${M68K_INCL} Ioc/ioc.h Ioc/ioc_main.c
-ioc_memtrace.o:		${CLI_INCL} Ioc/ioc.h Ioc/ioc_memtrace.c
-ioc_rtc.o:		${CLI_INCL} Ioc/ioc.h Ioc/ioc_rtc.c
-ioc_scsi_ctl.o:		${CLI_INCL} Ioc/ioc.h Ioc/ioc_scsi.h Ioc/ioc_scsi_ctl.c
-ioc_scsi_dev.o:		${CLI_INCL} Ioc/ioc.h Ioc/ioc_scsi.h Ioc/ioc_scsi_dev.c
-ioc_syscall.o:		${CLI_INCL} Ioc/ioc.h Ioc/ioc_syscall.c
-ioc_uart.o:		${CLI_INCL} Ioc/ioc.h Ioc/ioc_uart.c
 
 m68kops.o:		Musashi/m68kcpu.h m68kops.h m68kops.c
 m68kops.h m68kops.c:	m68kmake Ioc/musashi_conf.h Musashi/m68k_in.c
 			./m68kmake `pwd` Musashi/m68k_in.c
-
-Infra/memspace.h:	_memcfg.h
-
-_memcfg.h _memcfg.c:	makemem.py makemem_class.py
-			python3 makemem.py
 
 m68kmake:		Musashi/m68kmake.c
 
@@ -551,7 +511,6 @@ flint:
 		Ioc/*.c \
 		SystemC/sc.c \
 		diagbus.c
-		_memcfg.c
 
 setup:
 	git clone https://github.com/Datamuseum-DK/Musashi

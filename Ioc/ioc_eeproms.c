@@ -32,12 +32,10 @@
 #include <stdio.h>
 #include <string.h>
 
-#include "r1000.h"
-#include "ioc.h"
-
-#include "memspace.h"
-
-#include "vend.h"
+#include "Infra/r1000.h"
+#include "Ioc/ioc.h"
+#include "Ioc/memspace.h"
+#include "Infra/vend.h"
 
 static uint8_t resha_eeprom[32768];
 

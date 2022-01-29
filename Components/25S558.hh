@@ -47,14 +47,7 @@ SC_MODULE(SCM_25S558)
 
 	SC_HAS_PROCESS(SCM_25S558);
 
-	SCM_25S558(sc_module_name nm, const char *arg) : sc_module(nm)
-	{
-		SC_METHOD(doit);
-		sensitive << pin1 << pin2 << pin3 << pin4 << pin6 << pin7
-		    << pin8 << pin12 << pin13 << pin14 << pin15
-		    << pin16 << pin17 << pin18 << pin19;
-		loadit(arg);
-	}
+	SCM_25S558(sc_module_name nm, const char *arg);
 
 	private:
 	struct scm_25s558_state *state;

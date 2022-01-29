@@ -59,4 +59,4 @@ unsigned m68k_read_memory_32(unsigned);
 void m68k_debug_write_memory_32(unsigned, unsigned);
 unsigned m68k_debug_read_memory_32(unsigned);
 
-#include "_memcfg.h"
+#include "Ioc/_memcfg.h"

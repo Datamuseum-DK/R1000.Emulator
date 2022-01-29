@@ -9,6 +9,13 @@ struct scm_f04_state {
 	struct ctx ctx;
 };
 
+SCM_F04 :: SCM_F04(sc_module_name nm, const char *arg) : sc_module(nm)
+{
+	SC_THREAD(doit);
+	sensitive << pin1;
+	loadit(arg);
+}
+
 void
 SCM_F04 :: loadit(const char *arg)
 {

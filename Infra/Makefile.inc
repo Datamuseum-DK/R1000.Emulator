@@ -48,12 +48,6 @@ Infra/main.o: \
     Ioc/ioc.h \
     ${R1000DEP}
 
-OBJS += Infra/memory.o
-Infra/memory.o: \
-    Infra/memory.c \
-    Infra/memspace.h \
-    ${R1000DEP}
-
 OBJS += Infra/rpn.o
 Infra/rpn.o: \
     Infra/rpn.c \

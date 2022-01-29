@@ -4,11 +4,11 @@
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
-#include "r1000.h"
-#include "r1000sc_priv.h"
-#include "vqueue.h"
-#include "context.h"
-#include "../Diag/diagproc.h"
+
+#include "Infra/r1000.h"
+#include "Chassis/r1000sc_priv.h"
+#include "Infra/context.h"
+#include "Diag/diagproc.h"
 
 #define WATCHDOG_USAGE "Usage:\n\tpatience\n"
 

@@ -11,10 +11,9 @@
 #include <time.h>
 #include <sys/time.h>
 
-#include "r1000.h"
-#include "ioc.h"
-
-#include "memspace.h"
+#include "Infra/r1000.h"
+#include "Ioc/ioc.h"
+#include "Ioc/memspace.h"
 
 static pthread_mutex_t rtc_mtx = PTHREAD_MUTEX_INITIALIZER;
 static pthread_cond_t rtc_cond = PTHREAD_COND_INITIALIZER;

@@ -32,11 +32,11 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "r1000.h"
+#include "Infra/r1000.h"
 #include "m68k.h"
-#include "memspace.h"
-#include "ioc.h"
-#include "vsb.h"
+#include "Ioc/memspace.h"
+#include "Ioc/ioc.h"
+#include "Infra/vsb.h"
 
 struct sc_def {
 	unsigned		address;
@@ -613,8 +613,8 @@ cli_ioc_syscall(struct cli *cli)
 
 #if 0
 
-#include "memspace.h"
-#include "vend.h"
+#include "XXX/memspace.h"
+#include "XXX/vend.h"
 
 static struct vsb *syscall_vsb;
 

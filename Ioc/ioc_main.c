@@ -38,14 +38,12 @@
 #include <time.h>
 #include <unistd.h>
 
-#include "r1000.h"
-#include "ioc.h"
-
+#include "Infra/r1000.h"
+#include "Ioc/ioc.h"
 #include "m68k.h"
-#include "vsb.h"
-#include "vend.h"
-
-#include "memspace.h"
+#include "Infra/vsb.h"
+#include "Infra/vend.h"
+#include "Ioc/memspace.h"
 
 #define IOC_CPU_TYPE	M68K_CPU_TYPE_68020
 

@@ -12,10 +12,9 @@
 #include <time.h>
 #include <sys/time.h>
 
-#include "r1000.h"
-#include "ioc.h"
-
-#include "memspace.h"
+#include "Infra/r1000.h"
+#include "Ioc/ioc.h"
+#include "Ioc/memspace.h"
 
 static int enough;
 

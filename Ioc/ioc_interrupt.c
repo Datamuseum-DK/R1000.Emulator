@@ -1,9 +1,8 @@
 #include <stdlib.h>
 #include <pthread.h>
 
-#include "r1000.h"
-#include "ioc.h"
-#include "vqueue.h"
+#include "Infra/r1000.h"
+#include "Ioc/ioc.h"
 
 struct irq_vector {
 	const char			*name;

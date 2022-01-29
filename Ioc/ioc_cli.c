@@ -3,8 +3,8 @@
 #include <string.h>
 #include <stdio.h>
 
-#include "r1000.h"
-#include "ioc.h"
+#include "Infra/r1000.h"
+#include "Ioc/ioc.h"
 
 static const struct cli_cmds cli_ioc_cmds[] = {
 	{ "dump",		cli_ioc_dump },

@@ -4,7 +4,7 @@
 
 #include "Infra/r1000.h"
 
-#include "Infra/memspace.h"
+#include "Ioc/memspace.h"
 
 struct memevent {
 	VTAILQ_ENTRY(memevent)	list;

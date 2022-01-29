@@ -33,12 +33,9 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "vqueue.h"
-
-#include "r1000.h"
-#include "ioc.h"
-
-#include "memspace.h"
+#include "Infra/r1000.h"
+#include "Ioc/ioc.h"
+#include "Ioc/memspace.h"
 
 struct memtrace {
 	int			number;

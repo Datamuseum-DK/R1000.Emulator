@@ -3,7 +3,6 @@
 
 // (Hex) Inverter
 
-
 struct scm_f04_state;
 
 SC_MODULE(SCM_F04)
@@ -13,17 +12,11 @@ SC_MODULE(SCM_F04)
 
 	SC_HAS_PROCESS(SCM_F04);
 
-	SCM_F04(sc_module_name nm, const char *arg) : sc_module(nm)
-	{
-		SC_THREAD(doit);
-		sensitive << pin1;
-		loadit(arg);
-	}
+	SCM_F04(sc_module_name nm, const char *arg);
 
 	private:
 	struct scm_f04_state *state;
 	void loadit(const char *arg);
-
 	void doit(void);
 };
 

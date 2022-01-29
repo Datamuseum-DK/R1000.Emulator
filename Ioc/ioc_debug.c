@@ -34,12 +34,11 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "r1000.h"
+#include "Infra/r1000.h"
 #include "m68k.h"
-#include "ioc.h"
-#include "vsb.h"
-#include "vqueue.h"
-#include "memspace.h"
+#include "Ioc/ioc.h"
+#include "Infra/vsb.h"
+#include "Ioc/memspace.h"
 
 static struct vsb *debug_vsb;
 static pthread_mutex_t bpt_mtx = PTHREAD_MUTEX_INITIALIZER;

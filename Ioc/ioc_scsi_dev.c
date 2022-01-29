@@ -9,11 +9,10 @@
 #include <sys/stat.h>
 #include <sys/mman.h>
 
-#include "vend.h"
-
-#include "r1000.h"
-#include "ioc.h"
-#include "ioc_scsi.h"
+#include "Infra/r1000.h"
+#include "Ioc/ioc.h"
+#include "Ioc/ioc_scsi.h"
+#include "Infra/vend.h"
 
 /**********************************************************************/
 

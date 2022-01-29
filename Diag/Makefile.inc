@@ -1,41 +1,40 @@
 
 
-OBJS    += diagbus.o
-diagbus.o: \
+OBJS    += Diag/diagbus.o
+Diag/diagbus.o: \
     Diag/diagbus.c \
-    Infra/r1000.h \
     Infra/elastic.h \
-    Diag/diag.h
+    Diag/diag.h \
+    ${R1000DEP}
 
-OBJS    += diagproc.o
-diagproc.o: \
+OBJS    += Diag/diagproc.o
+Diag/diagproc.o: \
     Diag/diagproc.c \
-    Infra/r1000.h \
     Chassis/r1000sc.h \
     Chassis/r1000sc_priv.h \
     Diag/diagproc.h \
     Diag/i8052_emul.h \
     Infra/elastic.h \
-    Diag/diag.h
+    Diag/diag.h \
+    ${R1000DEP}
 
-OBJS    += dummy_diproc.o
-dummy_diproc.o: \
+OBJS    += Diag/dummy_diproc.o
+Diag/dummy_diproc.o: \
     Diag/dummy_diproc.c \
-    Infra/r1000.h \
     Infra/vsb.h \
     Infra/elastic.h \
-    Diag/diag.h
+    Diag/diag.h \
+    ${R1000DEP}
 
-OBJS    += experiment.o
-experiment.o: \
+OBJS    += Diag/experiment.o
+Diag/experiment.o: \
     Diag/experiment.c \
-    Infra/r1000.h \
     Infra/elastic.h \
     Infra/vqueue.h \
-    Diag/diag.h
+    Diag/diag.h \
+    ${R1000DEP}
 
-
-OBJS    += i8052_emul.o
-i8052_emul.o: \
+OBJS    += Diag/i8052_emul.o
+Diag/i8052_emul.o: \
     Diag/i8052_emul.c \
     Diag/i8052_emul.h
