@@ -63,6 +63,8 @@ CFLAGS += ${PARANOIA}
 BINFILES += ${FIRMWARE_PATH}/IOC_EEPROM.bin
 BINFILES += ${FIRMWARE_PATH}/RESHA_EEPROM.bin
 
+SC_WARN = -Wall -Werror
+SC_OPT = -O2
 SC_CC = ${CXX} ${SC_OPT} ${SC_WARN} -pthread -c
 SC_CC += -I/usr/local/include -I.
 
@@ -133,23 +135,21 @@ cli:	r1000sim ${BINFILES}
 EXP_PATH=/critter/R1K/Old/hack/X/
 
 IOC_TEST=TEST_MACRO_EVENT_DELAY.IOC
-IOC_TEST=TEST_MACRO_EVENT_SLICE.IOC
 IOC_TEST=TEST_COUNTER_DATA.IOC
+IOC_TEST=TEST_MACRO_EVENT_SLICE.IOC
+IOC_TEST=TEST_WCS_ADDRESSING.IOC
 
 test_ioc:	all ${BINFILES}
 	./r1000sim \
 		-T ${TRACE_FILE} \
+		'sc watchdog 10' \
 		"trace +diagbus_bytes" \
 		"diag > _.diag" \
 		'trace +systemc' \
 		'sc launch ioc ' \
 		'sc trace "DI*PROC" 6' \
 		'sc trace "DFREG" 1' \
-		'sc trace "RAND[0-3]" 0' \
-		'sc trace "DPROM" 0' \
-		'sc trace "DUMSC" 0' \
-		'sc trace "TXCVO" 0' \
-		'sc trace "RTCTR" 0' \
+		'sc trace "TXCV00" 1' \
 		'sc q exit' \
 		'sc q 1' \
 		"diag ioc experiment ${EXP_PATH}/${IOC_TEST}" \
