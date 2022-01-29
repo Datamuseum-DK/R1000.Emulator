@@ -23,6 +23,10 @@ SCM_F244 :: loadit(const char *arg, unsigned zdelay)
 void
 SCM_F244 :: doit1(void)
 {
+	pin18 = sc_logic_Z;
+	pin16 = sc_logic_Z;
+	pin14 = sc_logic_Z;
+	pin12 = sc_logic_Z;
 	while (1) {
 		wait();
 		state->ctx.activations++;
@@ -50,6 +54,10 @@ SCM_F244 :: doit1(void)
 void
 SCM_F244 :: doit2(void)
 {
+	pin3 = sc_logic_Z;
+	pin5 = sc_logic_Z;
+	pin7 = sc_logic_Z;
+	pin9 = sc_logic_Z;
 	while (1) {
 		wait();
 		state->ctx.activations++;
