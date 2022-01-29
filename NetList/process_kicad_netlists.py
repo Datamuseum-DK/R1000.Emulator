@@ -38,6 +38,9 @@ class SrcFile():
         for incl in self.includes:
             if isinstance(incl, SrcFile):
                 yield from incl
+            elif incl == "Chassis/planes.hh":
+                yield incl
+                yield "Chassis/plane_tbl.h"
             else:
                 yield incl
 
