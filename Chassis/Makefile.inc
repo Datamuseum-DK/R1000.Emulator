@@ -18,6 +18,7 @@ OBJS += Chassis/sc_main_thread_${SC_BRANCH}.o
 Chassis/sc_main_thread_${SC_BRANCH}.o: \
     Chassis/sc_main_thread.cc \
     Chassis/planes.hh \
+    Chassis/plane_tbl.h \
     Chassis/r1000sc.h \
     Chassis/r1000sc_priv.h \
     Fiu/${SC_BRANCH}/fiu_board_pub.hh \
