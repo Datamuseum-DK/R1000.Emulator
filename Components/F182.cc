@@ -6,13 +6,20 @@
 // Carry Lookahead Generator
 // Fairchild DS009492 April 1988 Revised June 2002
 
+static const uint8_t lut182[512] = {
+#include "F182_tbl.h"
+};
+
 struct scm_f182_state {
 	struct ctx ctx;
 };
 
-void
-SCM_F182 :: loadit(const char *arg)
+SCM_F182 :: SCM_F182(sc_module_name nm, const char *arg) : sc_module(nm)
 {
+	SC_METHOD(doit);
+	sensitive << pin1 << pin2 << pin3 << pin4 << pin5 << pin6
+		  << pin13 << pin14 << pin15;
+
 	state = (struct scm_f182_state *)
 	    CTX_Get("f182", this->name(), sizeof *state);
 	should_i_trace(this->name(), &state->ctx.do_trace);
