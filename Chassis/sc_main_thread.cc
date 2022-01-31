@@ -59,13 +59,13 @@ SC_MODULE(BackPlaneClocks)
 
 	void doit()
 	{
-		if (++pit == 128) {
-			pit_clock();
-			pit = 0;
-		}
 		now = when;
 		switch (now) {
 		case 0:
+			if (++pit == 128) {
+				pit_clock();
+				pit = 0;
+			}
 			bp_clk_2x = sc_logic_1; bp_clk_2x_ = sc_logic_0;
 			bp_phase_2x = sc_logic_0;
 			when = 5;
@@ -200,6 +200,9 @@ sc_main(int argc, char *argv[])
 		fiu = make_mod_fiu("FIU", planes, Fiu_how);
 	if (sc_boards & R1K_BOARD_IOC)
 		ioc = make_mod_ioc("IOC", planes, Ioc_how);
+
+	if (!(sc_boards & R1K_BOARD_IOC))
+		planes.GB_ECC_STOP = sc_logic_0;
 
 	planes.GB_SLOT0 = sc_logic_0;
 	planes.GB_SLOT1 = sc_logic_0;

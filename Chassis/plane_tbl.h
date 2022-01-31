@@ -524,6 +524,7 @@ Expanded plane dimensions:  GF: 385, GB: 469
 #define GB_CLK_Q3_ GB313
 #define GB_CLK_Q4_ GB314
 #define GB_CLOCK_DISABLE GB296
+#define GB_ECC_STOP GB226
 #define GB_RESET GB244
 #define GB_SLOT0 GB328
 #define GB_SLOT1 GB329
