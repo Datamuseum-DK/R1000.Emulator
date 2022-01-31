@@ -38,9 +38,6 @@ PARANOIA != sh cflags.sh "${CC}"
 
 CFLAGS += ${PARANOIA}
 
-BINFILES += ${FIRMWARE_PATH}/IOC_EEPROM.bin
-BINFILES += ${FIRMWARE_PATH}/RESHA_EEPROM.bin
-
 SC_OPT = -O2
 SC_WARN = -Wall -Werror
 SC_CC = ${CXX} ${SC_OPT} ${SC_WARN} -pthread -c
@@ -78,7 +75,7 @@ include Components/Makefile.inc
 -include Typ/${SC_BRANCH}/Makefile.inc
 -include Val/${SC_BRANCH}/Makefile.inc
 
-cli:	r1000sim ${BINFILES}
+cli:	r1000sim
 	./r1000sim \
 		-T ${TRACE_FILE} \
 		"trace -diagbus_bytes" \
@@ -118,7 +115,7 @@ IOC_TEST=TEST_COUNTER_DATA.IOC
 IOC_TEST=TEST_MACRO_EVENT_SLICE.IOC
 IOC_TEST=TEST_WCS_ADDRESSING.IOC
 
-test_ioc:	all ${BINFILES}
+test_ioc:	all
 	./r1000sim \
 		-T ${TRACE_FILE} \
 		'sc watchdog 10' \
@@ -149,7 +146,7 @@ FIU_TEST=TEST_INC_MAR.FIU
 FIU_TEST=TEST_SIGN_EXTRACT.FIU
 FIU_TEST=TEST_CSA_OOR.FIU
 
-test_fiu:	r1000sim ${BINFILES}
+test_fiu:	r1000sim
 	./r1000sim \
 		-T ${TRACE_FILE} \
 		"trace +diagbus_bytes" \
@@ -185,7 +182,7 @@ TYP_TEST=TEST_RD_CSA_BOT_ADR.TYP
 TYP_TEST=TEST_NOT_B_OP.TYP
 TYP_TEST=TEST_LOAD_TOP.TYP
 		
-test_typ:	r1000sim ${BINFILES}
+test_typ:	r1000sim
 	./r1000sim \
 		-T ${TRACE_FILE} \
 		"trace +diagbus_bytes" \
@@ -209,7 +206,7 @@ VAL_TEST=POUND_WCS_ASCENDING.VAL
 VAL_TEST=INIT_RF.VAL
 VAL_TEST=TEST_LOAD_WDR.VAL
 
-test_val:	r1000sim ${BINFILES}
+test_val:	r1000sim
 	./r1000sim \
 		-T ${TRACE_FILE} \
 		"trace +diagbus_bytes" \
@@ -231,7 +228,7 @@ SEQ_TEST=DEC_SCAN_CHAIN_FRU.SEQ
 SEQ_TEST=TEST_UIR.SEQ
 SEQ_TEST=IBUFF_FRU.SEQ
 		
-test_seq:	r1000sim ${BINFILES}
+test_seq:	r1000sim
 	./r1000sim \
 		-T ${TRACE_FILE} \
 		"trace +diagbus_bytes" \
@@ -253,7 +250,7 @@ MEM_TEST=TEST_LAR.M32
 MEM_TEST=TEST_EXT_FLAG.M32
 MEM_TEST=TEST_PARALLEL_SERIAL.M32
 
-test_mem:	r1000sim ${BINFILES}
+test_mem:	r1000sim
 	./r1000sim \
 		-T ${TRACE_FILE} \
 		"trace +diagbus_bytes" \
@@ -272,7 +269,7 @@ test_mem:	r1000sim ${BINFILES}
 		
 
 
-hack:	r1000sim ${BINFILES}
+hack:	r1000sim
 	./r1000sim \
 		-T ${TRACE_FILE} \
 		"trace +diagbus_bytes" \
@@ -289,7 +286,7 @@ hack:	r1000sim ${BINFILES}
 		"diag ioc tx 0x1a5 { 2 0x01 0x15 }"  \
 
 
-novram:	r1000sim ${BINFILES}
+novram:	r1000sim
 	./r1000sim \
 		-T ${TRACE_FILE} \
 		"trace +diagbus_bytes" \
@@ -340,7 +337,7 @@ EXPERIMENT=write [xeq fiu READ_NOVRAM 00]
 EXPERIMENT=TEST_FIU
 EXPERIMENT=write [xeq ioc TEST_RESET]
 
-expmon:	all ${BINFILES}
+expmon:	all
 	./r1000sim \
 		-T ${TRACE_FILE} \
 		"trace -diagbus_bytes" \
@@ -387,7 +384,7 @@ expmon:	all ${BINFILES}
 
 $DIAG="TEST IOA"
 
-rdiag:	r1000sim ${BINFILES}
+rdiag:	r1000sim
 	./r1000sim \
 		-T ${TRACE_FILE} \
 		"trace -diagbus_bytes" \
@@ -431,7 +428,7 @@ rdiag:	r1000sim ${BINFILES}
 		exit
 		
 
-seagate:	r1000sim ${BINFILES}
+seagate:	r1000sim
 	./r1000sim \
 		-T ${TRACE_FILE} \
 		"console > _.console" \
@@ -449,7 +446,7 @@ seagate:	r1000sim ${BINFILES}
 		'console match expect "User program   (0,1,2) [0] : "' \
 		'console << ""' 
 
-tape:	r1000sim ${BINFILES}
+tape:	r1000sim
 	truncate -s 1143936000 /critter/_r1000.d0
 	truncate -s 1143936000 /critter/_r1000.d1
 	./r1000sim \
