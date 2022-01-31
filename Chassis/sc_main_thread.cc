@@ -97,6 +97,7 @@ SC_MODULE(BackPlaneClocks)
 			clk_h1_phd = sc_logic_1; clk_h2_phd = sc_logic_0;
 			clk_q1_ = sc_logic_1; clk_q2_ = sc_logic_0;
 			when = 100;
+			break;
 		case 100:
 			bp_clk_2x = sc_logic_1; bp_clk_2x_ = sc_logic_0;
 			bp_phase_2x = sc_logic_1;
@@ -230,6 +231,26 @@ sc_main(int argc, char *argv[])
 	bpclock.clk_q2_(planes.GB_CLK_Q2_);
 	bpclock.clk_q3_(planes.GB_CLK_Q3_);
 	bpclock.clk_q4_(planes.GB_CLK_Q4_);
+
+	if (0) {
+		sc_trace(planes.tf, planes.GB_BP_CLK_2X_, "GB.BP_CLK_2X~");
+		sc_trace(planes.tf, planes.GB_BP_CLK_2X, "GB.BP_CLK_2X");
+		sc_trace(planes.tf, planes.GB_BP_PHASE2X, "GB.BP_PHASE2X");
+		sc_trace(planes.tf, planes.GB_CLK_2XE_, "GB.CLK_2XE~");
+		sc_trace(planes.tf, planes.GB_CLK_2XE, "GB.CLK_2XE");
+		sc_trace(planes.tf, planes.GB_CLK_2X_, "GB.CLK_2X~");
+		sc_trace(planes.tf, planes.GB_CLK_2X, "GB.CLK_2X");
+		sc_trace(planes.tf, planes.GB_CLK_H1_PHD, "GB.CLK_H1_PHD");
+		sc_trace(planes.tf, planes.GB_CLK_H2_PHD, "GB.CLK_H2_PHD");
+		sc_trace(planes.tf, planes.GB_CLK_H1E, "GB.CLK_H1E");
+		sc_trace(planes.tf, planes.GB_CLK_H2E, "GB.CLK_H2E");
+		sc_trace(planes.tf, planes.GB_CLK_H1, "GB.CLK_H1");
+		sc_trace(planes.tf, planes.GB_CLK_H2, "GB.CLK_H2");
+		sc_trace(planes.tf, planes.GB_CLK_Q1_, "GB.CLK_Q1_");
+		sc_trace(planes.tf, planes.GB_CLK_Q2_, "GB.CLK_Q2_");
+		sc_trace(planes.tf, planes.GB_CLK_Q3_, "GB.CLK_Q3_");
+		sc_trace(planes.tf, planes.GB_CLK_Q4_, "GB.CLK_Q4_");
+	}
 
 	sc_set_time_resolution(1, SC_NS);
 
