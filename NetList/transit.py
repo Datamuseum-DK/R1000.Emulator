@@ -15,6 +15,7 @@
 import sys
 
 GB = {
+    "ECC_STOP": "GB226",
     "BP_CLK_2X": "GB294",
     "BP_CLK_2X_": "GB288",
     "BP_PHASE2X": "GB295",
