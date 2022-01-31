@@ -11,9 +11,12 @@ struct scm_f194_state {
 	bool reg[4];
 };
 
-void
-SCM_F194 :: loadit(const char *arg)
+SCM_F194 :: SCM_F194(sc_module_name nm, const char *arg) : sc_module(nm)
 {
+	(void)arg;
+	SC_THREAD(doit);
+	sensitive << pin1 << pin11.pos();
+
 	state = (struct scm_f194_state *)
 	    CTX_Get("f194", this->name(), sizeof *state);
 	should_i_trace(this->name(), &state->ctx.do_trace);
