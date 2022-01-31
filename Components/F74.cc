@@ -48,13 +48,13 @@ SCM_F74 :: doit(void)
 			what = " CLK ";
 		}
 		wait(5, SC_NS);
-		if (memcmp(oldreg, state->dreg, sizeof oldreg)) {
+		if (memcmp(oldreg, state->dreg, sizeof oldreg) || (state->ctx.do_trace & 2)) {
 			TRACE(
 			    << what
-			    << pin1
-			    << pin2
-			    << pin3
-			    << pin4
+			    << " clr " << pin1
+			    << " set " << pin4
+			    << " data " << pin2
+			    << " clk " << pin3
 			    << "|"
 			    << state->dreg[0]
 			    << state->dreg[1]
