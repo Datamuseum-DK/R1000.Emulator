@@ -26,16 +26,10 @@ SC_MODULE(SCM_F169)
 
 	SC_HAS_PROCESS(SCM_F169);
 
-	SCM_F169(sc_module_name nm, const char *arg) : sc_module(nm)
-	{
-		SC_METHOD(doit);
-		sensitive << pin2.pos() << pin10 << pin1;
-		loadit(arg);
-	}
+	SCM_F169(sc_module_name nm, const char *arg);
 
 	private:
 	struct scm_f169_state *state;
-	void loadit(const char *arg);
 	void doit(void);
 };
 

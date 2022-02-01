@@ -11,9 +11,11 @@ struct scm_f169_state {
 	unsigned count;
 };
 
-void
-SCM_F169 :: loadit(const char *arg)
+SCM_F169 :: SCM_F169(sc_module_name nm, const char *arg) : sc_module(nm)
 {
+	SC_METHOD(doit);
+	sensitive << pin2.pos() << pin10 << pin1;
+
 	state = (struct scm_f169_state *)
 	    CTX_Get("f169", this->name(), sizeof *state);
 	should_i_trace(this->name(), &state->ctx.do_trace);
@@ -59,7 +61,7 @@ SCM_F169 :: doit(void)
 		    << what
 		    << " ud " << pin1
 		    << " clk " << pin2
-		    << " abcd " << pin3 << pin4 << pin5 << pin6
+		    << " abcd " << pin6 << pin5 << pin4 << pin3
 		    << " enp " << pin7
 		    << " load " << pin9
 		    << " ent " << pin10
