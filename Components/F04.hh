@@ -16,7 +16,6 @@ SC_MODULE(SCM_F04)
 
 	private:
 	struct scm_f04_state *state;
-	void loadit(const char *arg);
 	void doit(void);
 };
 

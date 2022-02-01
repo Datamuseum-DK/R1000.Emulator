@@ -9,9 +9,11 @@ struct scm_f10_state {
 	struct ctx ctx;
 };
 
-void
-SCM_F10 :: loadit(const char *arg)
+SCM_F10 :: SCM_F10(sc_module_name nm, const char *arg) : sc_module(nm)
 {
+	SC_METHOD(doit);
+	sensitive << pin1 << pin2 << pin3;
+
 	state = (struct scm_f10_state *)
 	    CTX_Get("f10", this->name(), sizeof *state);
 	should_i_trace(this->name(), &state->ctx.do_trace);

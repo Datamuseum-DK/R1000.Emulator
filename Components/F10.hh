@@ -14,18 +14,11 @@ SC_MODULE(SCM_F10)
 	sc_out <sc_logic>	pin4;	// Q (output)
 
 	SC_HAS_PROCESS(SCM_F10);
-
-	SCM_F10(sc_module_name nm, const char *arg) : sc_module(nm)
-	{
-		SC_METHOD(doit);
-		sensitive << pin1 << pin2 << pin3;
-		loadit(arg);
-	}
+	SCM_F10(sc_module_name nm, const char *arg);
 
 	private:
 	struct scm_f10_state *state;
 	bool ostate;
-	void loadit(const char *arg);
 	void doit(void);
 };
 
