@@ -11,9 +11,12 @@ struct scm_f373_state {
 	bool reg[8];
 };
 
-void
-SCM_F373 :: loadit(const char *arg)
+SCM_F373 :: SCM_F373(sc_module_name nm, const char *arg) : sc_module(nm)
 {
+	SC_METHOD(doit);
+	sensitive << pin1 << pin3 << pin4 << pin7 << pin8
+		  << pin11 << pin13 << pin14 << pin17 << pin18;
+
 	state = (struct scm_f373_state *)
 	    CTX_Get("f373", this->name(), sizeof *state);
 	should_i_trace(this->name(), &state->ctx.do_trace);
@@ -64,7 +67,7 @@ SCM_F373 :: doit(void)
 		TRACE(
 		    << " oe " << pin1
 		    << " le " << pin11
-		    << "|"
+		    << " | "
 		    << state->reg[0]
 		    << state->reg[1]
 		    << state->reg[2]

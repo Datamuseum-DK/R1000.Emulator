@@ -30,18 +30,12 @@ SC_MODULE(SCM_F373)
 
 	SC_HAS_PROCESS(SCM_F373);
 
-	SCM_F373(sc_module_name nm, const char *arg) : sc_module(nm)
-	{
-		SC_METHOD(doit);
-		sensitive << pin1 << pin3 << pin4 << pin7 << pin8
-			  << pin11 << pin13 << pin14 << pin17 << pin18;
-		loadit(arg);
-	}
+	SCM_F373(sc_module_name nm, const char *arg);
+
 
 	private:
 	struct scm_f373_state *state;
 	bool oreg[8];
-	void loadit(const char *arg);
 	void doit(void);
 };
 
