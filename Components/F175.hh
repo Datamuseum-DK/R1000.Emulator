@@ -26,18 +26,11 @@ SC_MODULE(SCM_F175)
 
 	SC_HAS_PROCESS(SCM_F175);
 
-	SCM_F175(sc_module_name nm, const char *arg) : sc_module(nm)
-	{
-		SC_THREAD(doit);
-		sensitive << pin1 << pin9.pos();
-		loadit(arg);
-	}
+	SCM_F175(sc_module_name nm, const char *arg);
 
 	private:
 	struct scm_f175_state *state;
-	void loadit(const char *arg);
 	bool old_state[4];
-
 	void doit(void);
 };
 

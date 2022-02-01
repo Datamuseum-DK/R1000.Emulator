@@ -11,9 +11,11 @@ struct scm_f175_state {
 	bool dreg[4];
 };
 
-void
-SCM_F175 :: loadit(const char *arg)
+SCM_F175 :: SCM_F175(sc_module_name nm, const char *arg) : sc_module(nm)
 {
+	SC_THREAD(doit);
+	sensitive << pin1 << pin9.pos() << pin4 << pin5 << pin12 << pin13;
+
 	state = (struct scm_f175_state *)
 	    CTX_Get("f175", this->name(), sizeof *state);
 	should_i_trace(this->name(), &state->ctx.do_trace);
@@ -37,7 +39,7 @@ SCM_F175 :: doit(void)
 			state->dreg[3] = IS_H(pin13);
 			wait(5, SC_NS);
 		}
-		if (memcmp(state->dreg, old_state, sizeof state->dreg)) {
+		if (memcmp(state->dreg, old_state, sizeof state->dreg) || (state->ctx.do_trace & 2)) {
 			TRACE(
 			    << " clr_ " << pin1
 			    << " clk " << pin9
