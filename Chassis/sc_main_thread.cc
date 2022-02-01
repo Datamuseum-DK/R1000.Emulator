@@ -62,7 +62,7 @@ SC_MODULE(BackPlaneClocks)
 		now = when;
 		switch (now) {
 		case 0:
-			if (++pit == 128) {
+			if (++pit == 32) {
 				pit_clock();
 				pit = 0;
 			}
