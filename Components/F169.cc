@@ -30,7 +30,7 @@ SCM_F169 :: doit(void)
 	state->ctx.activations++;
 	if (pin2.posedge()) {
 		if (IS_L(pin9)) {
-			what = " CLR ";
+			what = " ld ";
 			state->count = 0;
 			if (IS_H(pin3)) state->count |= 1;
 			if (IS_H(pin4)) state->count |= 2;
