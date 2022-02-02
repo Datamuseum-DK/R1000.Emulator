@@ -8,31 +8,38 @@
 
 struct scm_f244_state {
 	struct ctx ctx;
-	unsigned zdelay;
 };
 
-void
-SCM_F244 :: loadit(const char *arg, unsigned zdelay)
+SCM_F244 :: SCM_F244(sc_module_name nm, const char *arg) : sc_module(nm)
 {
+	SC_THREAD(doit1);
+	sensitive << pin1 << pin2 << pin4 << pin6 << pin8;
+	SC_THREAD(doit2);
+	sensitive << pin19 << pin11 << pin13 << pin15 << pin17;
+
 	state = (struct scm_f244_state *)
 	    CTX_Get("f244", this->name(), sizeof *state);
-	state->zdelay = zdelay;
 	should_i_trace(this->name(), &state->ctx.do_trace);
 }
 
 void
 SCM_F244 :: doit1(void)
 {
+	/*
+	 * IOC Pg 40 (TXCV) has F244 in bidirectional mode, and if both
+	 * OE's are initially low, they will battle each other and the
+	 * simulation will never get started.
+	 * Refusing to participate the first nanosecond works around that.
+	 */
 	pin18 = sc_logic_Z;
 	pin16 = sc_logic_Z;
 	pin14 = sc_logic_Z;
 	pin12 = sc_logic_Z;
+	wait(1, SC_NS);
 	while (1) {
 		wait();
 		state->ctx.activations++;
 		if (IS_H(pin1)) {
-			if (state->zdelay)
-				wait(state->zdelay, SC_NS);
 			pin18 = sc_logic_Z;
 			pin16 = sc_logic_Z;
 			pin14 = sc_logic_Z;
@@ -58,12 +65,11 @@ SCM_F244 :: doit2(void)
 	pin5 = sc_logic_Z;
 	pin7 = sc_logic_Z;
 	pin9 = sc_logic_Z;
+	wait(1, SC_NS);
 	while (1) {
 		wait();
 		state->ctx.activations++;
 		if (IS_H(pin19)) {
-			if (state->zdelay)
-				wait(state->zdelay, SC_NS);
 			pin3 = sc_logic_Z;
 			pin5 = sc_logic_Z;
 			pin7 = sc_logic_Z;
