@@ -17,8 +17,7 @@ SC_MODULE(SCM_F37)
 
 	private:
 	struct scm_f37_state *state;
-	void doit_t(void);
-	void doit_m(void);
+	void doit(void);
 };
 
 #endif /* R1000_F37 */

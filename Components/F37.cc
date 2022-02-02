@@ -21,49 +21,20 @@ SCM_F37 :: SCM_F37(sc_module_name nm, const char *arg) : sc_module(nm)
 	state->task = 2;
 	state->dly = 5;
 
-	if (strstr(this->name(), "ECNAN4B") != NULL) {
-		SC_THREAD(doit_t);
-	} else if (strstr(this->name(), "RDNAN0A") != NULL) {
-		SC_METHOD(doit_m);
+	if (strstr(this->name(), "IOC.ioc_54.RDNAN0A") != NULL) {
+		// TEST_MACRO_EVENT_SLICE.IOC @ optimized
 		state->dly = 10;
-	} else if (strstr(this->name(), "RDNAN0B") != NULL) {
-		SC_METHOD(doit_m);
-		state->dly = 10;
-	} else {
-		SC_METHOD(doit_m);
 	}
+	if (strstr(this->name(), "IOC.ioc_54.RDNAN0B") != NULL) {
+		// TEST_MACRO_EVENT_DELAY.IOC @ optimized
+		state->dly = 10;
+	}
+
+	SC_METHOD(doit);
 }
 
 void
-SCM_F37 :: doit_t(void)
-{
-	while (1) {
-		pin3 = AS(1);
-		TRACE( << pin1 << pin2 << " 1" );
-		if (IS_L(pin1)) {
-			wait(pin1.posedge_event());
-			state->ctx.activations++;
-		}
-		if (IS_L(pin2)) {
-			wait(pin2.posedge_event());
-			state->ctx.activations++;
-		}
-		if (IS_H(pin1) && IS_H(pin2)) {
-			wait(state->dly, SC_NS);
-			state->ctx.activations++;
-			TRACE( << pin1 << pin2 << " 0" );
-			pin3 = AS(0);
-		}
-		if (IS_H(pin1) && IS_H(pin2)) {
-			wait(pin1.negedge_event() | pin2.negedge_event());
-			state->ctx.activations++;
-			wait(state->dly, SC_NS);
-		}
-	}
-}
-
-void
-SCM_F37 :: doit_m(void)
+SCM_F37 :: doit(void)
 {
 
 	state->ctx.activations++;
@@ -81,19 +52,25 @@ SCM_F37 :: doit_m(void)
 		if (state->out) {
 			state->out = false;
 			state->task = 1;
+			if (state->ctx.do_trace & 2)
+				TRACE( << "dv");
 			next_trigger(state->dly, SC_NS);
 		} else {
+			if (state->ctx.do_trace & 2)
+				TRACE( << "wv");
 			next_trigger(pin1.negedge_event() | pin2.negedge_event());
 		}
 	} else {
 		if (!state->out) {
 			state->out = true;
 			state->task = 1;
+			if (state->ctx.do_trace & 2)
+				TRACE( << "d^");
 			next_trigger(state->dly, SC_NS);
-		} else if(IS_L(pin1)) {
-			next_trigger(pin1.posedge_event());
 		} else {
-			next_trigger(pin2.posedge_event());
+			if (state->ctx.do_trace & 2)
+				TRACE( << "w^");
+			next_trigger(pin2.posedge_event() | pin1.posedge_event());
 		}
 	}
 }
