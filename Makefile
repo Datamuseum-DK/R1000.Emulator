@@ -1,17 +1,19 @@
-SC_BRANCH = main
-NETLISTS =/critter/R1K/R1000.HwDoc/${SC_BRANCH}/Schematics/*/*.net
+SC_BRANCH ?= main
+NETLISTS ?= /critter/R1K/R1000.HwDoc/${SC_BRANCH}/Schematics/*/*.net
+
+EXP_PATH ?= /critter/R1K/Old/hack/X/
 
 # Set this to where you want the ~1GB trace output file
-TRACE_FILE = "/critter/_r1000"
+TRACE_FILE ?= "/critter/_r1000"
 
 # Set this to copy of https://datamuseum.dk/bits/30000551 (also ~1GB)
-DISK0_IMAGE = "/critter/R1K/DiskImages/PE_R1K_Disk0.dd"
+DISK0_IMAGE ?= "/critter/R1K/DiskImages/PE_R1K_Disk0.dd"
 
 # Set this to copy of https://datamuseum.dk/bits/30000552 (also ~1GB)
-DISK1_IMAGE = "/critter/R1K/DiskImages/PE_R1K_Disk1.dd"
+DISK1_IMAGE ?= "/critter/R1K/DiskImages/PE_R1K_Disk1.dd"
 
 # DFS tape copy of https://datamuseum.dk/bits/30000528 (20 MB)
-DFS_TAPE = "/critter/BitStoreCache/30000750.bin"
+DFS_TAPE ?= "/critter/BitStoreCache/30000750.bin"
 
 # These are alternate images, phk@ has them (~1GB each)
 DISK0B_IMAGE = "/critter/DDHF/R1000/R1K_Seagate/R1K_Seagate0.BIN"
@@ -75,8 +77,8 @@ include Components/Makefile.inc
 -include Typ/${SC_BRANCH}/Makefile.inc
 -include Val/${SC_BRANCH}/Makefile.inc
 
-cli:	r1000sim
-	./r1000sim \
+cli:	r1000sim.${SC_BRANCH}
+	./r1000sim.${SC_BRANCH} \
 		-T ${TRACE_FILE} \
 		"trace -diagbus_bytes" \
 		"trace -ioc_interrupt" \
@@ -108,82 +110,48 @@ cli:	r1000sim
 		'console << "1"' \
 		'console match expect "CLI>"'
 
-EXP_PATH=/critter/R1K/Old/hack/X/
-
 IOC_TEST=TEST_MACRO_EVENT_DELAY.IOC
-IOC_TEST=TEST_COUNTER_DATA.IOC
-IOC_TEST=TEST_MACRO_EVENT_SLICE.IOC
-IOC_TEST=TEST_WCS_ADDRESSING.IOC
 
-test_ioc:	all
-	./r1000sim \
+test_ioc:	r1000sim.${SC_BRANCH}
+	./r1000sim.${SC_BRANCH} \
 		-T ${TRACE_FILE} \
 		'sc watchdog 10' \
 		"trace +diagbus_bytes" \
 		"diag > _.diag" \
 		'trace +systemc' \
 		'sc launch ioc ' \
+		'sc trace "." 0' \
 		'sc trace "DI*PROC" 6' \
 		'sc trace "DFREG" 1' \
-		'sc trace "TXCV00" 1' \
 		'sc q exit' \
-		'sc q 1' \
+		'sc q 5' \
 		"diag ioc experiment ${EXP_PATH}/${IOC_TEST}" \
 		"diag ioc wait" \
 		"diag ioc check" \
 		"exit"
 
-FIU_TEST=WCS_ADDRESS_TEST.FIU
-
-FIU_TEST=PHK.FIU
-FIU_TEST=TEST_EXTRACT_MERGE.FIU
-FIU_TEST=TEST_WCS.FIU
 FIU_TEST=TEST_OREG_PARITY.FIU
-FIU_TEST=TEST_CSA_OOR.FIU
-FIU_TEST=TEST_MAR_DRIVER.FIU
-FIU_TEST=TEST_ABUS_PARITY.FIU
-FIU_TEST=TEST_INC_MAR.FIU
-FIU_TEST=TEST_SIGN_EXTRACT.FIU
-FIU_TEST=TEST_CSA_OOR.FIU
 
-test_fiu:	r1000sim
-	./r1000sim \
+test_fiu:	r1000sim.${SC_BRANCH}
+	./r1000sim.${SC_BRANCH} \
 		-T ${TRACE_FILE} \
 		"trace +diagbus_bytes" \
 		"diag > _.diag" \
 		'trace +systemc' \
 		'sc launch fiu' \
-		'sc trace "DI*PROC" 4' \
-		'sc trace "DUIRG[1-6]" 0' \
+		'sc trace "DI*PROC" 6' \
+		'sc trace "DUIRG[1-6]" 1' \
 		'sc q exit' \
-		'sc q 7' \
+		'sc q 5' \
 		"diag fiu experiment ${EXP_PATH}/${FIU_TEST}" \
 		"diag fiu wait" \
 		"diag fiu check" \
 		"exit"
 
-TYP_TEST=TEST_RESET.TYP
-TYP_TEST=PHK.TYP
-TYP_TEST=TEST_UIR.TYP
-TYP_TEST=TEST_WCS_DATA.TYP
-TYP_TEST=TEST_SCAN_CSA_REG.TYP
-TYP_TEST=TEST_WCS_PARITY.TYP
-TYP_TEST=TEST_SCAN_PAREG.TYP
-TYP_TEST=TEST_RF_DATA_LINES.TYP
-# Good:
-TYP_TEST=TEST_LOAD_WDR.TYP
-# Bad:
-TYP_TEST=TEST_FIU_BUS.TYP
-TYP_TEST=TEST_LOAD_LOOP_COUNTER.TYP
-TYP_TEST=TEST_COUNT_LOOP_COUNTER.TYP
-TYP_TEST=TEST_RF_DATA_LINES.TYP
-TYP_TEST=TEST_READ_GP_ADR.TYP
-TYP_TEST=TEST_RD_CSA_BOT_ADR.TYP
-TYP_TEST=TEST_NOT_B_OP.TYP
-TYP_TEST=TEST_LOAD_TOP.TYP
+TYP_TEST=TEST_WCS_ADDRESS.TYP
 		
-test_typ:	r1000sim
-	./r1000sim \
+test_typ:	r1000sim.${SC_BRANCH}
+	./r1000sim.${SC_BRANCH} \
 		-T ${TRACE_FILE} \
 		"trace +diagbus_bytes" \
 		"diag > _.diag" \
@@ -191,30 +159,25 @@ test_typ:	r1000sim
 		'sc launch typ' \
 		'sc trace "DI*PROC" 6' \
 		'sc trace "DUIRG[1-6]" 1' \
-		'sc trace "DIDEC0" 1' \
 		'sc q exit' \
-		'sc q .01' \
+		'sc q 5' \
 		"diag typ experiment ${EXP_PATH}/${TYP_TEST}" \
 		"diag typ wait" \
 		"diag typ check" \
 		"exit"
 		
 
-VAL_TEST=TEST_FIU_BUS.VAL
-VAL_TEST=POUND_WCS_DESCENDING.VAL
-VAL_TEST=POUND_WCS_ASCENDING.VAL
-VAL_TEST=INIT_RF.VAL
-VAL_TEST=TEST_LOAD_WDR.VAL
+VAL_TEST=TEST_WCS_ADDRESS.VAL
 
-test_val:	r1000sim
-	./r1000sim \
+test_val:	r1000sim.${SC_BRANCH}
+	./r1000sim.${SC_BRANCH} \
 		-T ${TRACE_FILE} \
 		"trace +diagbus_bytes" \
 		"diag > _.diag" \
 		'trace +systemc' \
 		'sc launch val' \
 		'sc trace "DI*PROC" 6' \
-		'sc trace "DUIRG[1-6]" 0' \
+		'sc trace "DUIRG[0-6]" 1' \
 		'sc q exit' \
 		'sc q 5' \
 		"diag val experiment ${EXP_PATH}/${VAL_TEST}" \
@@ -223,45 +186,38 @@ test_val:	r1000sim
 		"exit"
 		
 
-SEQ_TEST=SIMPLE_DFSM_FRU.SEQ
-SEQ_TEST=DEC_SCAN_CHAIN_FRU.SEQ
-SEQ_TEST=TEST_UIR.SEQ
-SEQ_TEST=IBUFF_FRU.SEQ
+SEQ_TEST=LATCHED_STACK_BIT_1_FRU.SEQ
 		
-test_seq:	r1000sim
-	./r1000sim \
+test_seq:	r1000sim.${SC_BRANCH}
+	./r1000sim.${SC_BRANCH} \
 		-T ${TRACE_FILE} \
 		"trace +diagbus_bytes" \
 		"diag > _.diag" \
 		'trace +systemc' \
 		'sc launch seq' \
 		'sc trace "DI*PROC" 6' \
-		'sc trace "DUIRG[1-6]" 0' \
-		'sc trace "WCS" 1' \
+		'sc trace "DUIRG[1-6]" 1' \
 		'sc q exit' \
-		'sc q 7' \
+		'sc q 5' \
 		"diag seq experiment ${EXP_PATH}/${SEQ_TEST}" \
 		"diag seq wait" \
 		"diag seq check" \
 		"exit"
 		
 
-MEM_TEST=TEST_LAR.M32
-MEM_TEST=TEST_EXT_FLAG.M32
 MEM_TEST=TEST_PARALLEL_SERIAL.M32
 
-test_mem:	r1000sim
-	./r1000sim \
+test_mem:	r1000sim.${SC_BRANCH}
+	./r1000sim.${SC_BRANCH} \
 		-T ${TRACE_FILE} \
 		"trace +diagbus_bytes" \
 		"diag > _.diag" \
 		'trace +systemc' \
 		'sc launch mem0' \
 		'sc trace "DI*PROC" 6' \
-		'sc trace 'PAL' 0' \
 		'sc trace 'DFSM' 1' \
 		'sc q exit' \
-		'sc q .1' \
+		'sc q 5' \
 		"diag mem0 experiment ${EXP_PATH}/${MEM_TEST}" \
 		"diag mem0 wait" \
 		"diag mem0 check" \
@@ -269,8 +225,8 @@ test_mem:	r1000sim
 		
 
 
-hack:	r1000sim
-	./r1000sim \
+hack:	r1000sim.${SC_BRANCH}
+	./r1000sim.${SC_BRANCH} \
 		-T ${TRACE_FILE} \
 		"trace +diagbus_bytes" \
 		"diag > _.diag" \
@@ -286,13 +242,14 @@ hack:	r1000sim
 		"diag ioc tx 0x1a5 { 2 0x01 0x15 }"  \
 
 
-novram:	r1000sim
-	./r1000sim \
+novram:	r1000sim.${SC_BRANCH}
+	./r1000sim.${SC_BRANCH} \
 		-T ${TRACE_FILE} \
 		"trace +diagbus_bytes" \
 		"trace -ioc_interrupt" \
 		"trace -ioc_dma" \
 		"trace -ioc_io" \
+		"trace +ioc_pit" \
 		"trace -ioc_instructions" \
 		"ioc memtrace add -lo 0x00000 -hi 0x00000" \
 		"ioc syscall internal" \
@@ -317,10 +274,9 @@ novram:	r1000sim
 		'console << "1"' \
 		'console match expect "CLI>"' \
 		'trace +systemc' \
-		'sc launch ioc fiu val typ seq mem0 mem2' \
+		'sc launch ioc fiu val typ seq mem0' \
 		'sc trace "NOVRAM" on' \
 		'sc trace "DI*PROC" 6' \
-		'sc trace "IDNTDRV" 1' \
 		'sc q exit' \
 		'sc q 3' \
 		'console << "x novram"' \
@@ -338,7 +294,7 @@ EXPERIMENT=TEST_FIU
 EXPERIMENT=write [xeq ioc TEST_RESET]
 
 expmon:	all
-	./r1000sim \
+	./r1000sim.${SC_BRANCH} \
 		-T ${TRACE_FILE} \
 		"trace -diagbus_bytes" \
 		"trace -ioc_interrupt" \
@@ -384,8 +340,8 @@ expmon:	all
 
 $DIAG="TEST IOA"
 
-rdiag:	r1000sim
-	./r1000sim \
+rdiag:	r1000sim.${SC_BRANCH}
+	./r1000sim.${SC_BRANCH} \
 		-T ${TRACE_FILE} \
 		"trace -diagbus_bytes" \
 		"trace -ioc_interrupt" \
@@ -428,8 +384,8 @@ rdiag:	r1000sim
 		exit
 		
 
-seagate:	r1000sim
-	./r1000sim \
+seagate:	r1000sim.${SC_BRANCH}
+	./r1000sim.${SC_BRANCH} \
 		-T ${TRACE_FILE} \
 		"console > _.console" \
 		"console telnet :1400" \
@@ -446,10 +402,10 @@ seagate:	r1000sim
 		'console match expect "User program   (0,1,2) [0] : "' \
 		'console << ""' 
 
-tape:	r1000sim
+tape:	r1000sim.${SC_BRANCH}
 	truncate -s 1143936000 /critter/_r1000.d0
 	truncate -s 1143936000 /critter/_r1000.d1
-	./r1000sim \
+	./r1000sim.${SC_BRANCH} \
 		-T ${TRACE_FILE} \
 		"ioc syscall" \
 		"scsi_tape ${DFS_TAPE}" \
@@ -485,7 +441,7 @@ r1000sim: r1000sim.${SC_BRANCH}
 	cp r1000sim.${SC_BRANCH} r1000sim
 
 clean:
-	rm -f ${OBJS} ${CLEANFILES} *.tmp r1000sim m68kops.h m68kops.c m68kmake
+	rm -f ${OBJS} ${CLEANFILES} *.tmp r1000sim* m68kops.h m68kops.c m68kmake
 
 m68kcpu.o:		${M68K_INCL} Musashi/m68kcpu.c
 m68kdasm.o:		${M68K_INCL} Musashi/m68kdasm.c
