@@ -30,18 +30,10 @@ SC_MODULE(SCM_F240)
 
 	SC_HAS_PROCESS(SCM_F240);
 
-	SCM_F240(sc_module_name nm, const char *arg, unsigned zdelay=0) : sc_module(nm)
-	{
-		SC_THREAD(doit1);
-		sensitive << pin1 << pin2 << pin4 << pin6 << pin8;
-		SC_THREAD(doit2);
-		sensitive << pin19 << pin11 << pin13 << pin15 << pin17;
-		loadit(arg, zdelay);
-	}
+	SCM_F240(sc_module_name nm, const char *arg);
 
 	private:
 	struct scm_f240_state *state;
-	void loadit(const char *arg, unsigned zdelay);
 
 	void doit1(void);
 	void doit2(void);

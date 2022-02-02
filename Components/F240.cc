@@ -8,28 +8,33 @@
 
 struct scm_f240_state {
 	struct ctx ctx;
-	unsigned zdelay;
 };
 
-void
-SCM_F240 :: loadit(const char *arg, unsigned zdelay)
+SCM_F240 :: SCM_F240(sc_module_name nm, const char *arg) : sc_module(nm)
 {
+	SC_THREAD(doit1);
+	sensitive << pin1 << pin2 << pin4 << pin6 << pin8;
+	SC_THREAD(doit2);
+	sensitive << pin19 << pin11 << pin13 << pin15 << pin17;
+
 	state = (struct scm_f240_state *)
 	    CTX_Get("f240", this->name(), sizeof *state);
-	state->zdelay = zdelay;
 	should_i_trace(this->name(), &state->ctx.do_trace);
 }
 
 void
 SCM_F240 :: doit1(void)
 {
-	wait(100, SC_NS);
+	pin18 = sc_logic_Z;
+	pin16 = sc_logic_Z;
+	pin14 = sc_logic_Z;
+	pin12 = sc_logic_Z;
+	wait(1, SC_NS);
 	while (1) {
 		wait();
 		state->ctx.activations++;
+		wait(5, SC_NS);
 		if (IS_H(pin1)) {
-			if (state->zdelay)
-				wait(state->zdelay, SC_NS);
 			pin18 = sc_logic_Z;
 			pin16 = sc_logic_Z;
 			pin14 = sc_logic_Z;
@@ -51,13 +56,16 @@ SCM_F240 :: doit1(void)
 void
 SCM_F240 :: doit2(void)
 {
-	wait(100, SC_NS);
+	pin3 = sc_logic_Z;
+	pin5 = sc_logic_Z;
+	pin7 = sc_logic_Z;
+	pin9 = sc_logic_Z;
+	wait(1, SC_NS);
 	while (1) {
 		wait();
 		state->ctx.activations++;
+		wait(5, SC_NS);
 		if (IS_H(pin19)) {
-			if (state->zdelay)
-				wait(state->zdelay, SC_NS);
 			pin3 = sc_logic_Z;
 			pin5 = sc_logic_Z;
 			pin7 = sc_logic_Z;
