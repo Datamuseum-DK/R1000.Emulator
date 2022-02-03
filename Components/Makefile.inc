@@ -569,6 +569,13 @@ Components/PAxxx.o: Components/PAxxx.cc \
     Chassis/r1000sc.h
 	${SC_CC} -o Components/PAxxx.o Components/PAxxx.cc
 
+OBJS += Components/PAxxxL.o
+Components/PAxxxL.o: Components/PAxxxL.cc \
+    Components/PAxxxL.hh \
+    Infra/context.h \
+    Chassis/r1000sc.h
+	${SC_CC} -o Components/PAxxxL.o Components/PAxxxL.cc
+
 OBJS += Components/PBxxx.o
 Components/PBxxx.o: Components/PBxxx.cc \
     Components/PBxxx.hh \
@@ -631,3 +638,38 @@ Components/TSXXPAL.o: Components/TSXXPAL.cc \
     Infra/context.h \
     Chassis/r1000sc.h
 	${SC_CC} -o Components/TSXXPAL.o Components/TSXXPAL.cc
+
+OBJS += Components/XBUF64.o
+Components/XBUF64.o: Components/XBUF64.cc \
+    Components/XBUF64.hh \
+    Infra/context.h \
+    Chassis/r1000sc.h
+	${SC_CC} -o Components/XBUF64.o Components/XBUF64.cc
+
+OBJS += Components/XBUFI64.o
+Components/XBUFI64.o: Components/XBUFI64.cc \
+    Components/XBUFI64.hh \
+    Infra/context.h \
+    Chassis/r1000sc.h
+	${SC_CC} -o Components/XBUFI64.o Components/XBUFI64.cc
+
+OBJS += Components/XREG64.o
+Components/XREG64.o: Components/XREG64.cc \
+    Components/XREG64.hh \
+    Infra/context.h \
+    Chassis/r1000sc.h
+	${SC_CC} -o Components/XREG64.o Components/XREG64.cc
+
+OBJS += Components/XRFRAM.o
+Components/XRFRAM.o: Components/XRFRAM.cc \
+    Components/XRFRAM.hh \
+    Infra/context.h \
+    Chassis/r1000sc.h
+	${SC_CC} -o Components/XRFRAM.o Components/XRFRAM.cc
+
+OBJS += Components/XWCSRAM.o
+Components/XWCSRAM.o: Components/XWCSRAM.cc \
+    Components/XWCSRAM.hh \
+    Infra/context.h \
+    Chassis/r1000sc.h
+	${SC_CC} -o Components/XWCSRAM.o Components/XWCSRAM.cc
