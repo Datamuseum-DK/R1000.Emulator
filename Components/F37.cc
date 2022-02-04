@@ -67,6 +67,14 @@ SCM_F37 :: doit(void)
 			if (state->ctx.do_trace & 2)
 				TRACE( << "d^");
 			next_trigger(state->dly, SC_NS);
+		} else if (pin1 != sc_logic_1) {
+			if (state->ctx.do_trace & 2)
+				TRACE( << "w^1");
+			next_trigger(pin1.posedge_event());
+		} else if (pin2 != sc_logic_1) {
+			if (state->ctx.do_trace & 2)
+				TRACE( << "w^2");
+			next_trigger(pin2.posedge_event());
 		} else {
 			if (state->ctx.do_trace & 2)
 				TRACE( << "w^");
