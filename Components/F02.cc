@@ -31,4 +31,8 @@ SCM_F02 :: doit(void)
 	    << s
 	);
 	pin3 = AS(s);
+	if (IS_H(pin1))
+		next_trigger(pin1.negedge_event());
+	else if (IS_H(pin2))
+		next_trigger(pin2.negedge_event());
 }

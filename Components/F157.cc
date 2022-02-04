@@ -10,9 +10,12 @@ struct scm_f157_state {
 	struct ctx ctx;
 };
 
-void
-SCM_F157 :: loadit(const char *arg)
+SCM_F157 :: SCM_F157(sc_module_name nm, const char *arg) : sc_module(nm)
 {
+	SC_METHOD(doit);
+	sensitive << pin1 << pin2 << pin3 << pin5 << pin6
+		  << pin10 << pin11 << pin13 << pin14 << pin15;
+
 	state = (struct scm_f157_state *)
 	    CTX_Get("f157", this->name(), sizeof *state);
 	should_i_trace(this->name(), &state->ctx.do_trace);
@@ -24,12 +27,13 @@ SCM_F157 :: doit(void)
 	bool output[4];
 
 	state->ctx.activations++;
-	if (!IS_L(pin15)) {
+	if (IS_H(pin15)) {
 		output[0] = false;
 		output[1] = false;
 		output[2] = false;
 		output[3] = false;
-		pin12 = sc_logic_1;
+		//pin12 = sc_logic_1;
+		next_trigger(pin15.negedge_event());
 	} else if (IS_H(pin1)) {
 		output[0] = IS_H(pin3);
 		output[1] = IS_H(pin6);

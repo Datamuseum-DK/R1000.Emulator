@@ -10,9 +10,12 @@ struct scm_f158_state {
 	struct ctx ctx;
 };
 
-void
-SCM_F158 :: loadit(const char *arg)
+SCM_F158 :: SCM_F158(sc_module_name nm, const char *arg) : sc_module(nm)
 {
+	SC_METHOD(doit);
+	sensitive << pin1 << pin2 << pin3 << pin5 << pin6
+		  << pin10 << pin11 << pin13 << pin14 << pin15;
+
 	state = (struct scm_f158_state *)
 	    CTX_Get("f158", this->name(), sizeof *state);
 	should_i_trace(this->name(), &state->ctx.do_trace);
@@ -29,6 +32,7 @@ SCM_F158 :: doit(void)
 		output[1] = true;
 		output[2] = true;
 		output[3] = true;
+		next_trigger(pin15.negedge_event());
 	} else if (IS_H(pin1)) {
 		output[0] = IS_L(pin3);
 		output[1] = IS_L(pin6);

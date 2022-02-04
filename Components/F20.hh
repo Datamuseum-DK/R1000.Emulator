@@ -17,17 +17,10 @@ SC_MODULE(SCM_F20)
 
 	SC_HAS_PROCESS(SCM_F20);
 
-	SCM_F20(sc_module_name nm, const char *arg) : sc_module(nm)
-	{
-		SC_METHOD(doit);
-		sensitive << pin1 << pin2 << pin4 << pin5;
-		loadit(arg);
-	}
+	SCM_F20(sc_module_name nm, const char *arg);
 
 	private:
 	struct scm_f20_state *state;
-	void loadit(const char *arg);
-
 	void doit(void);
 };
 

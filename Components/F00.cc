@@ -9,9 +9,11 @@ struct scm_f00_state {
 	struct ctx ctx;
 };
 
-void
-SCM_F00 :: loadit(const char *arg)
+SCM_F00 :: SCM_F00(sc_module_name nm, const char *arg) : sc_module(nm)
 {
+	SC_METHOD(doit);
+	sensitive << pin1 << pin2;
+
 	state = (struct scm_f00_state *)
 	    CTX_Get("f00", this->name(), sizeof *state);
 	should_i_trace(this->name(), &state->ctx.do_trace);
@@ -30,4 +32,8 @@ SCM_F00 :: doit(void)
 	    << s
 	);
 	pin3 = AS(s);
+	if (pin1 != sc_logic_1)
+		next_trigger(pin1.posedge_event());
+	else if (pin2 != sc_logic_1)
+		next_trigger(pin2.posedge_event());
 }

@@ -7,32 +7,37 @@
 
 struct scm_f04_state {
 	struct ctx ctx;
+	bool out;
+	int task;
 };
 
 SCM_F04 :: SCM_F04(sc_module_name nm, const char *arg) : sc_module(nm)
 {
-	SC_THREAD(doit);
+	SC_METHOD(doit);
 	sensitive << pin1;
 
 	state = (struct scm_f04_state *)
 	    CTX_Get("f04", this->name(), sizeof *state);
 	should_i_trace(this->name(), &state->ctx.do_trace);
+	state->task = 2;
 }
 
 void
 SCM_F04 :: doit(void)
 {
-	while (1) {
-		bool s = IS_L(pin1);
-		wait(5, SC_NS);
-		TRACE(
-		    << pin1
-		    << "|"
-		    << s
-		);
-		pin2 = AS(s);
-		if (IS_L(pin1) == s)
-			wait();
-		state->ctx.activations++;
+	state->ctx.activations++;
+
+
+	if (state->task == 2)
+		state->out = IS_L(pin1);
+	TRACE(<< pin1 << " " << state->task << " | " << state->out);
+	if (state->task >= 1) {
+		pin2 = AS(state->out);
+		state->task = 0;
+	}
+	if (IS_L(pin1) ^ state->out) {
+		state->out = IS_L(pin1);
+		state->task = 1;
+		next_trigger(5, SC_NS);
 	}
 }
