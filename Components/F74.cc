@@ -28,7 +28,7 @@ SCM_F74 :: SCM_F74(sc_module_name nm, const char *arg) : sc_module(nm)
 void
 SCM_F74 :: doit(void)
 {
-	bool oldreg[2];
+	bool oldreg[2], now;
 	const char *what = " ? ";
 
 	if (state->job) {
@@ -39,24 +39,35 @@ SCM_F74 :: doit(void)
 	state->ctx.activations++;
 	memcpy(oldreg, state->dreg, sizeof oldreg);
 	if (IS_L(pin1) && IS_L(pin4)) {
-		state->dreg[0] = state->dreg[1] = true;
-		state->job = 1;
-		what = " 2L ";
+		if (!state->dreg[0] || !state->dreg[1]) {
+			state->dreg[0] = state->dreg[1] = true;
+			state->job = 1;
+			what = " 2L ";
+		}
 	} else if (IS_L(pin1)) {
-		state->dreg[0] = false;
-		state->dreg[1] = true;
-		state->job = 1;
+		if (state->dreg[0]) {
+			state->dreg[0] = false;
+			state->dreg[1] = true;
+			state->job = 1;
+		}
 		what = " CLR ";
 	} else if (IS_L(pin4)) {
-		state->dreg[0] = true;
-		state->dreg[1] = false;
-		state->job = 1;
+		if (!state->dreg[0]) {
+			state->dreg[0] = true;
+			state->dreg[1] = false;
+			state->job = 1;
+		}
 		what = " SET ";
 	} else if (pin3.posedge()) {
-		state->dreg[0] = IS_H(pin2);
-		state->dreg[1] = !state->dreg[0];
-		state->job = 1;
-		what = " CLK ";
+		now = IS_H(pin2);
+		if (state->dreg[0] != now) {
+			state->dreg[0] = now;
+			state->dreg[1] = !now;
+			state->job = 1;
+			what = " CHG ";
+		} else {
+			what = " CLK ";
+		}
 	}
 	if (memcmp(oldreg, state->dreg, sizeof oldreg) || (state->ctx.do_trace & 2)) {
 		TRACE(
@@ -65,6 +76,7 @@ SCM_F74 :: doit(void)
 		    << " set " << pin4
 		    << " data " << pin2
 		    << " clk " << pin3
+		    << " job " << state->job
 		    << " | "
 		    << state->dreg[0]
 		    << state->dreg[1]
