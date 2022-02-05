@@ -32,6 +32,7 @@ void
 SCM_F194 :: doit(void)
 {
 	const char *what = NULL;
+	bool now[4];
 
 	state->ctx.activations++;
 	if (state->job) {
@@ -41,38 +42,39 @@ SCM_F194 :: doit(void)
 		pin12 = AS(state->reg[3]);
 		state->job = 0;
 	}
+	now[0] = state->reg[0];
+	now[1] = state->reg[1];
+	now[2] = state->reg[2];
+	now[3] = state->reg[3];
 	if (IS_L(pin1)) {
 		what = " clr ";
 		if (state->reg[0] || state->reg[1] || state->reg[2] || state->reg[3]) {
-			state->reg[0] = false;
-			state->reg[1] = false;
-			state->reg[2] = false;
-			state->reg[3] = false;
-			state->job = 1;
+			now[0] = false;
+			now[1] = false;
+			now[2] = false;
+			now[3] = false;
+		} else {
+			next_trigger(pin1.posedge_event());
 		}
-		next_trigger(pin1.posedge_event());
 	} else if (pin11.posedge()) {
 		if (IS_H(pin10) && IS_H(pin9)) {
 			what = " load ";
-			state->reg[0] = IS_H(pin3);
-			state->reg[1] = IS_H(pin4);
-			state->reg[2] = IS_H(pin5);
-			state->reg[3] = IS_H(pin6);
-			state->job = 1;
+			now[0] = IS_H(pin3);
+			now[1] = IS_H(pin4);
+			now[2] = IS_H(pin5);
+			now[3] = IS_H(pin6);
 		} else if (IS_L(pin10) && IS_H(pin9)) {
 			what = " right ";
-			state->reg[3] = state->reg[2];
-			state->reg[2] = state->reg[1];
-			state->reg[1] = state->reg[0];
-			state->reg[0] = IS_H(pin2);
-			state->job = 1;
+			now[3] = state->reg[2];
+			now[2] = state->reg[1];
+			now[1] = state->reg[0];
+			now[0] = IS_H(pin2);
 		} else if (IS_H(pin10) && IS_L(pin9)) {
 			what = " left ";
-			state->reg[0] = state->reg[1];
-			state->reg[1] = state->reg[2];
-			state->reg[2] = state->reg[3];
-			state->reg[3] = IS_H(pin7);
-			state->job = 1;
+			now[0] = state->reg[1];
+			now[1] = state->reg[2];
+			now[2] = state->reg[3];
+			now[3] = IS_H(pin7);
 		}
 	}
 	if ((state->ctx.do_trace & 2) && what == NULL)
@@ -94,6 +96,15 @@ SCM_F194 :: doit(void)
 		    << state->reg[0] << state->reg[1] << state->reg[2] << state->reg[3]
 		);
 	}
-	if (state->job)
+	if (now[0] != state->reg[0] ||
+	    now[1] != state->reg[1] ||
+	    now[2] != state->reg[2] ||
+	    now[3] != state->reg[3]) {
+		state->reg[0] = now[0];
+		state->reg[1] = now[1];
+		state->reg[2] = now[2];
+		state->reg[3] = now[3];
+		state->job = 1;
 		next_trigger(1, SC_NS);
+	}
 }
