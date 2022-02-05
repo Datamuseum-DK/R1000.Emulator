@@ -36,12 +36,14 @@ SCM_F20 :: doit(void)
 	    << s
 	);
 	pin6 = AS(s);
-        if (pin1 != sc_logic_1)
-                next_trigger(pin1.posedge_event());
-        else if (pin2 != sc_logic_1)
-                next_trigger(pin2.posedge_event());
-        else if (pin4 != sc_logic_1)
-                next_trigger(pin4.posedge_event());
-        else if (pin5 != sc_logic_1)
-                next_trigger(pin5.posedge_event());
+#if 1
+	if (pin1 != sc_logic_1)
+		next_trigger(pin1.posedge_event());
+	else if (pin2 != sc_logic_1)
+		next_trigger(pin2.posedge_event());
+	else if (pin4 != sc_logic_1)
+		next_trigger(pin4.posedge_event());
+	else if (pin5 != sc_logic_1)
+		next_trigger(pin5.posedge_event());
+#endif
 }

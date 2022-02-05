@@ -19,18 +19,10 @@ SC_MODULE(SCM_F51)
 
 	SC_HAS_PROCESS(SCM_F51);
 
-	SCM_F51(sc_module_name nm, const char *arg) : sc_module(nm)
-	{
-		SC_METHOD(doit);
-		sensitive << pin1 << pin2 << pin3
-			  << pin4 << pin5 << pin6;
-		loadit(arg);
-	}
+	SCM_F51(sc_module_name nm, const char *arg);
 
 	private:
 	struct scm_f51_state *state;
-	void loadit(const char *arg);
-
 	void doit(void);
 };
 

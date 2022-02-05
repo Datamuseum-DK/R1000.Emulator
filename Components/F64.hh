@@ -24,18 +24,10 @@ SC_MODULE(SCM_F64)
 
 	SC_HAS_PROCESS(SCM_F64);
 
-	SCM_F64(sc_module_name nm, const char *arg) : sc_module(nm)
-	{
-		SC_METHOD(doit);
-		sensitive << pin1 << pin2 << pin3 << pin4 << pin5 << pin6
-			  << pin9 << pin10 << pin11 << pin12 << pin13;
-		loadit(arg);
-	}
+	SCM_F64(sc_module_name nm, const char *arg);
 
 	private:
 	struct scm_f64_state *state;
-	void loadit(const char *arg);
-
 	void doit(void);
 };
 
