@@ -646,12 +646,26 @@ Components/XBUF64.o: Components/XBUF64.cc \
     Chassis/r1000sc.h
 	${SC_CC} -o Components/XBUF64.o Components/XBUF64.cc
 
+OBJS += Components/XBUFI32.o
+Components/XBUFI32.o: Components/XBUFI32.cc \
+    Components/XBUFI32.hh \
+    Infra/context.h \
+    Chassis/r1000sc.h
+	${SC_CC} -o Components/XBUFI32.o Components/XBUFI32.cc
+
 OBJS += Components/XBUFI64.o
 Components/XBUFI64.o: Components/XBUFI64.cc \
     Components/XBUFI64.hh \
     Infra/context.h \
     Chassis/r1000sc.h
 	${SC_CC} -o Components/XBUFI64.o Components/XBUFI64.cc
+
+OBJS += Components/XIOCRAM.o
+Components/XIOCRAM.o: Components/XIOCRAM.cc \
+    Components/XIOCRAM.hh \
+    Infra/context.h \
+    Chassis/r1000sc.h
+	${SC_CC} -o Components/XIOCRAM.o Components/XIOCRAM.cc
 
 OBJS += Components/XREG64.o
 Components/XREG64.o: Components/XREG64.cc \
