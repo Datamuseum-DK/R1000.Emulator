@@ -30,7 +30,6 @@ SC_MODULE(SCM_F175)
 
 	private:
 	struct scm_f175_state *state;
-	bool old_state[4];
 	void doit(void);
 };
 
