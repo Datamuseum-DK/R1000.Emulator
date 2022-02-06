@@ -167,6 +167,7 @@ diagproc_bitfunc(struct mcs51 *mcs51, uint8_t bit_adr, int what)
 		break;
 	case 0xb3:	// P3.3
 	case 0xb4:	// P3.4
+	case 0xb7:	// P3.7
 		if (what < 0) {
 			retval = (dc->p3val >> (bit_adr & 7)) & 1;
 		} else {
