@@ -18,16 +18,10 @@ SC_MODULE(SCM_F113)
 
 	SC_HAS_PROCESS(SCM_F113);
 
-	SCM_F113(sc_module_name nm, const char *arg) : sc_module(nm)
-	{
-		SC_THREAD(doit);
-		sensitive << pin4 << pin1.neg() << pin2 << pin3;
-		loadit(arg);
-	}
+	SCM_F113(sc_module_name nm, const char *arg);
 
 	private:
 	struct scm_f113_state *state;
-	void loadit(const char *arg);
 	void doit(void);
 };
 
