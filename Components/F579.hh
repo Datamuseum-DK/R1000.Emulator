@@ -30,16 +30,10 @@ SC_MODULE(SCM_F579)
 
 	SC_HAS_PROCESS(SCM_F579);
 
-	SCM_F579(sc_module_name nm, const char *arg) : sc_module(nm)
-	{
-		SC_METHOD(doit);
-		sensitive << pin1.pos() << pin20 << pin11 << pin12 << pin13 << pin17 << pin18;
-		loadit(arg);
-	}
+	SCM_F579(sc_module_name nm, const char *arg);
 
 	private:
 	struct scm_f579_state *state;
-	void loadit(const char *arg);
 	void doit(void);
 };
 

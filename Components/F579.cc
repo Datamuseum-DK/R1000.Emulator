@@ -12,9 +12,11 @@ struct scm_f579_state {
 	bool z;
 };
 
-void
-SCM_F579 :: loadit(const char *arg)
+SCM_F579 :: SCM_F579(sc_module_name nm, const char *arg) : sc_module(nm)
 {
+	SC_METHOD(doit);
+	sensitive << pin1.pos() << pin20 << pin11 << pin12 << pin13 << pin17 << pin18;
+
 	state = (struct scm_f579_state *)
 	    CTX_Get("f579", this->name(), sizeof *state);
 	should_i_trace(this->name(), &state->ctx.do_trace);
@@ -41,14 +43,14 @@ SCM_F579 :: doit(void)
 	if (IS_L(pin20)) {
 		// Async reset
 		state->reg = 0;
-		what = " mr ";
+		what = "mr ";
 	}
 
 	if (pin1.posedge()) {
 		if (IS_L(pin19)) {
 			// Sync reset
 			state->reg = 0;
-			what = " sr ";
+			what = "sr ";
 		} else if (IS_L(pin12) && IS_L(pin13)) {
 			// Parallel Load
 			state->reg = 0;
@@ -60,17 +62,17 @@ SCM_F579 :: doit(void)
 			if (IS_H(pin8)) state->reg |= (1<<5);
 			if (IS_H(pin9)) state->reg |= (1<<6);
 			if (IS_H(pin10)) state->reg |= (1<<7);
-			what = " pl ";
+			what = "pl ";
 		} else if (IS_H(pin18) || IS_H(pin17)) {
 			// Hold
 		} else if (IS_H(pin14)) {
 			// Count Up
 			state->reg += 1;
-			what = " up ";
+			what = "up ";
 		} else {
 			// Count Down
 			state->reg += 255;
-			what = " dn ";
+			what = "dn ";
 		}
 		state->reg &= 0xff;
 	}
@@ -92,7 +94,7 @@ SCM_F579 :: doit(void)
 		pin9 = AS(state->reg & (1<<6));
 		pin10 = AS(state->reg & (1<<7));
 		if (state->z && what == NULL)
-		    what = " out ";
+		    what = "out ";
 		state->z = false;
 	} else {
 		pin2 = sc_logic_Z;
@@ -104,12 +106,12 @@ SCM_F579 :: doit(void)
 		pin9 = sc_logic_Z;
 		pin10 = sc_logic_Z;
 		if (!state->z && what == NULL)
-		    what = " Z ";
+		    what = "Z ";
 		state->z = true;
 	}
 
-	if (what == 0 && (state->ctx.do_trace & 2))
-		what = " - ";
+	if (what == NULL && (state->ctx.do_trace & 2))
+		what = "- ";
 	if (what != NULL) {
 		TRACE(
 		    << what
