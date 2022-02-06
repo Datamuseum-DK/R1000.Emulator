@@ -1,4 +1,4 @@
-// Generated from ../_Firmware/CNTRGAL-01.BIN by gal16v8.py
+// Generated from ../_Firmware/CNTRGAL-01.BIN by gal_to_systemc.py
 #include <systemc.h>
 #include "Chassis/r1000sc.h"
 #include "Infra/context.h"
@@ -16,9 +16,11 @@ struct scm_cntrpal_state {
 	bool p22;
 };
 
-void
-SCM_CNTRPAL :: loadit(const char *arg)
+SCM_CNTRPAL :: SCM_CNTRPAL(sc_module_name nm, const char *arg)
 {
+	SC_METHOD(doit);
+	sensitive << pin1.pos() << pin10 << pin11 << pin13 << pin2 << pin7 << pin8 << pin9;
+
 	state = (struct scm_cntrpal_state *)
 	    CTX_Get("cntrpal", this->name(), sizeof *state);
 	should_i_trace(this->name(), &state->ctx.do_trace);

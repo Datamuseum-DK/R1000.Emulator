@@ -1,4 +1,4 @@
-// Generated from ../_Firmware/TRACGAL-01.BIN by gal16v8.py
+// Generated from ../_Firmware/TRACGAL-01.BIN by gal_to_systemc.py
 #include <systemc.h>
 #include "Chassis/r1000sc.h"
 #include "Infra/context.h"
@@ -8,9 +8,11 @@ struct scm_tracpal_state {
 	struct ctx ctx;
 };
 
-void
-SCM_TRACPAL :: loadit(const char *arg)
+SCM_TRACPAL :: SCM_TRACPAL(sc_module_name nm, const char *arg)
 {
+	SC_METHOD(doit);
+	sensitive << pin2 << pin3 << pin4 << pin5 << pin6 << pin7;
+
 	state = (struct scm_tracpal_state *)
 	    CTX_Get("tracpal", this->name(), sizeof *state);
 	should_i_trace(this->name(), &state->ctx.do_trace);

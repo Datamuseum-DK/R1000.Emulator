@@ -1,4 +1,4 @@
-// Generated from ../_Firmware/CMDGAL-02.BIN by gal16v8.py
+// Generated from ../_Firmware/CMDGAL-02.BIN by gal_to_systemc.py
 #include <systemc.h>
 #include "Chassis/r1000sc.h"
 #include "Infra/context.h"
@@ -8,9 +8,11 @@ struct scm_cmdpal_state {
 	struct ctx ctx;
 };
 
-void
-SCM_CMDPAL :: loadit(const char *arg)
+SCM_CMDPAL :: SCM_CMDPAL(sc_module_name nm, const char *arg)
 {
+	SC_METHOD(doit);
+	sensitive << pin1 << pin11 << pin2 << pin3 << pin4 << pin5 << pin6 << pin7 << pin8 << pin9;
+
 	state = (struct scm_cmdpal_state *)
 	    CTX_Get("cmdpal", this->name(), sizeof *state);
 	should_i_trace(this->name(), &state->ctx.do_trace);

@@ -144,6 +144,7 @@ class OLMC():
     def __init__(self, up, pin, regd, rows):
         self.up = up
         self.pin = pin
+        pin.olmc = self
         pin.output = self
         self.regd = regd
         self.rows = rows
@@ -179,6 +180,10 @@ class GAL():
     ''' Generic Logic Array '''
     def __init__(self, filename):
         self.filename = filename
+        bname = basename(self.filename)
+        self.bname = bname.replace("GAL", "PAL")
+        self.uname = self.bname.upper()
+        self.lname = self.bname.lower()
         self.bits = open(filename, "rb").read()
         checksum(self.filename, self.bits)
         self.pins = {}
@@ -188,6 +193,7 @@ class GAL():
         self.sig = []
         self.syn = None
         self.ac0 = None
+        self.sensitive = set()
         self.parse()
 
         self.inputs = set()
@@ -203,18 +209,68 @@ class GAL():
 
     def write_code(self):
         ''' Write code for this GAL '''
-        bname = basename(self.filename)
-        bname = bname.replace("GAL", "PAL")
-        fname = bname + ".cc"
+        self.write_code_c()
+        self.write_code_h()
+
+    def write_code_h(self):
+        fname = self.uname + ".hh"
+        with open(fname + "_", "w") as file:
+            file.write("// Generated from %s by %s\n" % (self.filename, __file__))
+            file.write("#ifndef R1000_%s\n" % self.uname)
+            file.write("#define R1000_%s\n" % self.uname)
+            file.write("\n")
+            file.write("struct scm_%s_state;\n" % self.lname)
+            file.write("\n")
+            file.write("SC_MODULE(SCM_%s)\n" % self.uname)
+            file.write("{\n")
+            for i in sorted(set(self.pins.values()) - self.outputs):
+                file.write('\tsc_in <sc_logic>\t%s;\n' % i.pin)
+            file.write("\n")
+            for i in sorted(self.outputs):
+                file.write('\tsc_out <sc_logic>\t%s;\n' % i.pin)
+            file.write("\n")
+            file.write("\tSC_HAS_PROCESS(SCM_%s);\n" % self.uname)
+            file.write("\n")
+            file.write("\tSCM_%s(sc_module_name nm, const char *arg);\n" % self.uname)
+            file.write("\n")
+            file.write("\tprivate:\n")
+            file.write("\tstruct scm_%s_state *state;\n" % self.lname)
+            file.write("\tvoid doit(void);\n")
+            file.write("};\n")
+            file.write("\n")
+            file.write("#endif /* R1000_%s */\n" % self.uname)
+        try:
+            if open(fname).read() != open(fname + "_").read():
+                os.rename(fname + "_", fname)
+            else:
+                os.remove(fname + "_")
+        except FileNotFoundError:
+            os.rename(fname + "_", fname)
+        
+    def write_code_c(self):
+        ''' Write .CC file for this GAL '''
+
+        for i in self.outputs:
+            if not i.olmc:
+                continue
+            if i.olmc.regd:
+                self.sensitive.add("pin1.pos()")
+            else:
+                for j in i.olmc.inputs:
+                    if not j.output:
+                        self.sensitive.add(j.pin)
+        print("SS", self.sensitive)
+
+        fname = self.bname + ".cc"
         with open(fname + "_", "w") as file:
             file.write("// Generated from %s by %s\n" % (self.filename, __file__))
             file.write('#include <systemc.h>\n')
             file.write('#include "Chassis/r1000sc.h"\n')
             file.write('#include "Infra/context.h"\n')
-            file.write('#include "%s.hh"\n' % bname)
+            file.write('#include "%s.hh"\n' % self.bname)
 
             file.write('\n')
-            state = "scm_%s_state" % bname.lower()
+            state = "scm_%s_state" % self.bname.lower()
             file.write('struct %s {\n' % state)
             file.write('\tstruct ctx ctx;\n')
             for out in sorted(self.olmc):
@@ -223,17 +279,21 @@ class GAL():
             file.write('};\n')
 
             file.write('\n')
-            file.write('void\n')
-            file.write('SCM_%s :: loadit(const char *arg)\n' % bname)
+            file.write('SCM_%s :: SCM_%s(sc_module_name nm, const char *arg)\n' % (self.bname, self.bname))
             file.write('{\n')
+            file.write('\tSC_METHOD(doit);\n')
+            file.write('\tsensitive')
+            for i in sorted(self.sensitive):
+                file.write(' << ' + i)
+            file.write(';\n\n')
             file.write('\tstate = (struct %s *)\n' % state)
-            file.write('\t    CTX_Get("%s", this->name(), sizeof *state);\n' % bname.lower())
+            file.write('\t    CTX_Get("%s", this->name(), sizeof *state);\n' % self.bname.lower())
             file.write('\tshould_i_trace(this->name(), &state->ctx.do_trace);\n')
             file.write('}\n')
 
             file.write('\n')
             file.write('void\n')
-            file.write('SCM_%s :: doit(void)\n' % bname)
+            file.write('SCM_%s :: doit(void)\n' % self.bname)
             file.write('{\n')
             file.write('\n')
             file.write('\tstate->ctx.activations++;\n')

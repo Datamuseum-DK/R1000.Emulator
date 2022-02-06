@@ -1,4 +1,4 @@
-// Generated from ../_Firmware/MUXLGAL-02.BIN by gal16v8.py
+// Generated from ../_Firmware/MUXLGAL-02.BIN by gal_to_systemc.py
 #include <systemc.h>
 #include "Chassis/r1000sc.h"
 #include "Infra/context.h"
@@ -14,9 +14,11 @@ struct scm_muxlpal_state {
 	bool p19;
 };
 
-void
-SCM_MUXLPAL :: loadit(const char *arg)
+SCM_MUXLPAL :: SCM_MUXLPAL(sc_module_name nm, const char *arg)
 {
+	SC_METHOD(doit);
+	sensitive << pin1.pos();
+
 	state = (struct scm_muxlpal_state *)
 	    CTX_Get("muxlpal", this->name(), sizeof *state);
 	should_i_trace(this->name(), &state->ctx.do_trace);

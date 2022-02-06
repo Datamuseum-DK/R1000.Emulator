@@ -1,4 +1,4 @@
-// Generated from ../_Firmware/MARGAL-02.BIN by gal16v8.py
+// Generated from ../_Firmware/MARGAL-02.BIN by gal_to_systemc.py
 #include <systemc.h>
 #include "Chassis/r1000sc.h"
 #include "Infra/context.h"
@@ -16,9 +16,11 @@ struct scm_marpal_state {
 	bool p19;
 };
 
-void
-SCM_MARPAL :: loadit(const char *arg)
+SCM_MARPAL :: SCM_MARPAL(sc_module_name nm, const char *arg)
 {
+	SC_METHOD(doit);
+	sensitive << pin1.pos();
+
 	state = (struct scm_marpal_state *)
 	    CTX_Get("marpal", this->name(), sizeof *state);
 	should_i_trace(this->name(), &state->ctx.do_trace);

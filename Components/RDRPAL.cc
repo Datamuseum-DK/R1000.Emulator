@@ -1,4 +1,4 @@
-// Generated from ../_Firmware/RDRGAL-02.BIN by gal16v8.py
+// Generated from ../_Firmware/RDRGAL-02.BIN by gal_to_systemc.py
 #include <systemc.h>
 #include "Chassis/r1000sc.h"
 #include "Infra/context.h"
@@ -12,9 +12,11 @@ struct scm_rdrpal_state {
 	bool p19;
 };
 
-void
-SCM_RDRPAL :: loadit(const char *arg)
+SCM_RDRPAL :: SCM_RDRPAL(sc_module_name nm, const char *arg)
 {
+	SC_METHOD(doit);
+	sensitive << pin1.pos();
+
 	state = (struct scm_rdrpal_state *)
 	    CTX_Get("rdrpal", this->name(), sizeof *state);
 	should_i_trace(this->name(), &state->ctx.do_trace);

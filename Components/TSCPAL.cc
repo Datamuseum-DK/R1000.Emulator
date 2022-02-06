@@ -1,4 +1,4 @@
-// Generated from ../_Firmware/TSCGAL-01.BIN by gal16v8.py
+// Generated from ../_Firmware/TSCGAL-01.BIN by gal_to_systemc.py
 #include <systemc.h>
 #include "Chassis/r1000sc.h"
 #include "Infra/context.h"
@@ -17,9 +17,11 @@ struct scm_tscpal_state {
 	bool p23;
 };
 
-void
-SCM_TSCPAL :: loadit(const char *arg)
+SCM_TSCPAL :: SCM_TSCPAL(sc_module_name nm, const char *arg)
 {
+	SC_METHOD(doit);
+	sensitive << pin1.pos();
+
 	state = (struct scm_tscpal_state *)
 	    CTX_Get("tscpal", this->name(), sizeof *state);
 	should_i_trace(this->name(), &state->ctx.do_trace);
