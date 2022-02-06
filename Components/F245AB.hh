@@ -30,19 +30,10 @@ SC_MODULE(SCM_F245AB)
 
 	SC_HAS_PROCESS(SCM_F245AB);
 
-	SCM_F245AB(sc_module_name nm, const char *arg) : sc_module(nm)
-	{
-		SC_METHOD(doit);
-		sensitive << pin1 << pin2 << pin3 << pin4 << pin5 << pin6
-			  << pin7 << pin8 << pin9 << pin11 << pin12 << pin13
-			  << pin14 << pin15 << pin16 << pin17 << pin18 << pin19;
-		loadit(arg);
-	}
+	SCM_F245AB(sc_module_name nm, const char *arg);
 
 	private:
 	struct scm_f245ab_state *state;
-	void loadit(const char *arg);
-
 	void doit(void);
 };
 

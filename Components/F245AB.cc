@@ -10,9 +10,13 @@ struct scm_f245ab_state {
 	struct ctx ctx;
 };
 
-void
-SCM_F245AB :: loadit(const char *arg)
+SCM_F245AB :: SCM_F245AB(sc_module_name nm, const char *arg) : sc_module(nm)
 {
+	SC_METHOD(doit);
+	sensitive << pin1 << pin2 << pin3 << pin4 << pin5 << pin6
+		  << pin7 << pin8 << pin9 << pin11 << pin12 << pin13
+		  << pin14 << pin15 << pin16 << pin17 << pin18 << pin19;
+
 	state = (struct scm_f245ab_state *)
 	    CTX_Get("f245ab", this->name(), sizeof *state);
 	should_i_trace(this->name(), &state->ctx.do_trace);
@@ -59,6 +63,7 @@ SCM_F245AB :: doit(void)
 		pin16 = sc_logic_Z;
 		pin17 = sc_logic_Z;
 		pin18 = sc_logic_Z;
+		next_trigger(pin19.negedge_event());
 	} else if (IS_L(pin1)) {
 		pin11 = sc_logic_Z;
 		pin12 = sc_logic_Z;

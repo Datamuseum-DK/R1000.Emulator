@@ -26,15 +26,10 @@ SC_MODULE(SCM_F245BA)
 
 	SC_HAS_PROCESS(SCM_F245BA);
 
-	SCM_F245BA(sc_module_name nm, const char *arg) : sc_module(nm)
-	{
-		SC_METHOD(doit);
-		loadit(arg);
-	}
+	SCM_F245BA(sc_module_name nm, const char *arg);
 
 	private:
 	struct scm_f245ba_state *state;
-	void loadit(const char *arg);
 	void doit(void);
 };
 
