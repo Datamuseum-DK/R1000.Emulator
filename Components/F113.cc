@@ -14,7 +14,7 @@ struct scm_f113_state {
 
 SCM_F113 :: SCM_F113(sc_module_name nm, const char *arg) : sc_module(nm)
 {
-	SC_THREAD(doit);
+	SC_METHOD(doit);
 	sensitive << pin4 << pin1.neg() << pin2 << pin3;
 
 	state = (struct scm_f113_state *)
@@ -63,6 +63,7 @@ SCM_F113 :: doit(void)
 	}
 	if (nxt != state->dreg) {
 		state->job = 1;
+		state->dreg = nxt;
 		next_trigger(5, SC_NS);
 	}
 }
