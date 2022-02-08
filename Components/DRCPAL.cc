@@ -6,17 +6,20 @@
 
 struct scm_drcpal_state {
 	struct ctx ctx;
-	bool p14;
-	bool p15;
-	bool p16;
-	bool p17;
-	bool p18;
-	bool p19;
-	bool p20;
-	bool p21;
-	bool p22;
-	bool p23;
+	int job;
+	int p14;
+	int p15;
+	int p16;
+	int p17;
+	int p18;
+	int p19;
+	int p20;
+	int p21;
+	int p22;
+	int p23;
 };
+static const sc_logic outs[4] = {sc_logic_Z, sc_logic_Z, sc_logic_0, sc_logic_1};
+static const char traces[5] = "ZZ01";
 
 SCM_DRCPAL :: SCM_DRCPAL(sc_module_name nm, const char *arg)
 {
@@ -34,77 +37,27 @@ SCM_DRCPAL :: doit(void)
 
 	state->ctx.activations++;
 
-	bool p02 = IS_H(pin2);
-	bool p03 = IS_H(pin3);
-	bool p04 = IS_H(pin4);
-	bool p05 = IS_H(pin5);
-	bool p06 = IS_H(pin6);
-	bool p07 = IS_H(pin7);
-	bool p08 = IS_H(pin8);
-	bool p09 = IS_H(pin9);
-	bool p10 = IS_H(pin10);
-	bool p11 = IS_H(pin11);
-	bool p13 = IS_H(pin13);
-	bool p16 = state->p16;
-	bool dotrace = false;
-	if (pin1.posedge()) {
-		dotrace = true;
-		state->p23 =
-		    (p02 && (!p03) && p05 && (!p07)) ||
-		    (p02 && p03 && p06 && (!p08)) ||
-		    (p02 && (!p03) && p05 && p06 && (!p08)) ||
-		    (p02 && p03 && (!p07));
-		state->p22 =
-		    (p02 && (!p03) && p05 && (!p07)) ||
-		    (p02 && p03 && p06 && (!p08)) ||
-		    (p02 && (!p03) && p05 && p06 && (!p08)) ||
-		    (p02 && p03 && (!p07));
-		state->p21 =
-		    (p02 && p03 && (!p05) && (!p06) && (!p07)) ||
-		    (p02 && p03 && p05 && p06 && (!p08) && (!p09) && (!p11));
-		state->p20 =
-		    (p02 && p03 && (!p05) && (!p06) && (!p07)) ||
-		    (p02 && p03 && p05 && p06 && (!p08) && (!p10) && (!p11));
-		state->p19 =
-		    (p02 && p03 && p05 && p06 && (!p08));
-		state->p18 =
-		    (p02 && p03 && p05 && p06 && (!p08));
-		state->p17 =
-		    !(((!p02) && (!p03) && p04 && p05));
-		state->p16 =
-		    (p02 && p03 && (!p04) && (!p06) && (!p07) && p08) ||
-		    ((!p02) && p03 && p04 && p05 && (!p06) && (!p07) && p08) ||
-		    ((!p02) && (!p03) && p04 && (!p05) && (!p06) && (!p07) && p08) ||
-		    (p06 && p16);
-		state->p15 =
-		    !(((!p06) && p07 && (!p13)));
-		state->p14 =
-		    !((p06 && (!p13)) ||
-		    ((!p07) && (!p13)));
-	}
-
-	char out23 = state->p23 ? '1' : '0';
-	pin23 = AS(state->p23);
-	char out22 = state->p22 ? '1' : '0';
-	pin22 = AS(state->p22);
-	char out21 = state->p21 ? '1' : '0';
-	pin21 = AS(state->p21);
-	char out20 = state->p20 ? '1' : '0';
-	pin20 = AS(state->p20);
-	char out19 = state->p19 ? '1' : '0';
-	pin19 = AS(state->p19);
-	char out18 = state->p18 ? '1' : '0';
-	pin18 = AS(state->p18);
-	char out17 = state->p17 ? '1' : '0';
-	pin17 = AS(state->p17);
-	char out16 = state->p16 ? '1' : '0';
-	pin16 = AS(state->p16);
-	char out15 = state->p15 ? '1' : '0';
-	pin15 = AS(state->p15);
-	char out14 = state->p14 ? '1' : '0';
-	pin14 = AS(state->p14);
-
-	if (dotrace) {
+	assert(0 <= state->p14);
+	assert(3 >= state->p14);
+	assert(0 <= state->p15);
+	assert(3 >= state->p15);
+	assert(0 <= state->p16);
+	assert(3 >= state->p16);
+	assert(0 <= state->p17);
+	assert(3 >= state->p17);
+	assert(0 <= state->p18);
+	assert(3 >= state->p18);
+	assert(0 <= state->p19);
+	assert(3 >= state->p19);
+	assert(0 <= state->p20);
+	assert(3 >= state->p20);
+	assert(0 <= state->p21);
+	assert(3 >= state->p21);
+	assert(0 <= state->p22);
+	assert(3 >= state->p22);
+	assert(0 <= state->p23);
+	assert(3 >= state->p23);
+	if (state->job) {
 		TRACE(
 		    <<pin2
 		    <<pin3
@@ -118,16 +71,129 @@ SCM_DRCPAL :: doit(void)
 		    <<pin11
 		    <<pin13
 		    << " | "
-		    <<out14
-		    <<out15
-		    <<out16
-		    <<out17
-		    <<out18
-		    <<out19
-		    <<out20
-		    <<out21
-		    <<out22
-		    <<out23
+		    <<traces[state->p14]
+		    <<traces[state->p15]
+		    <<traces[state->p16]
+		    <<traces[state->p17]
+		    <<traces[state->p18]
+		    <<traces[state->p19]
+		    <<traces[state->p20]
+		    <<traces[state->p21]
+		    <<traces[state->p22]
+		    <<traces[state->p23]
 		);
+		pin14 = outs[state->p14];
+		pin15 = outs[state->p15];
+		pin16 = outs[state->p16];
+		pin17 = outs[state->p17];
+		pin18 = outs[state->p18];
+		pin19 = outs[state->p19];
+		pin20 = outs[state->p20];
+		pin21 = outs[state->p21];
+		pin22 = outs[state->p22];
+		pin23 = outs[state->p23];
+		state->job = 0;
+	}
+	bool p02 = IS_H(pin2);
+	bool p03 = IS_H(pin3);
+	bool p04 = IS_H(pin4);
+	bool p05 = IS_H(pin5);
+	bool p06 = IS_H(pin6);
+	bool p07 = IS_H(pin7);
+	bool p08 = IS_H(pin8);
+	bool p09 = IS_H(pin9);
+	bool p10 = IS_H(pin10);
+	bool p11 = IS_H(pin11);
+	bool p13 = IS_H(pin13);
+	bool p16 = state->p16 % 2;
+	int out23 = state->p23 & 1;
+	int out22 = state->p22 & 1;
+	int out21 = state->p21 & 1;
+	int out20 = state->p20 & 1;
+	int out19 = state->p19 & 1;
+	int out18 = state->p18 & 1;
+	int out17 = state->p17 & 1;
+	int out16 = state->p16 & 1;
+	int out15 = state->p15 & 1;
+	int out14 = state->p14 & 1;
+	if (pin1.posedge()) {
+		out23 =
+		    (p02 && (!p03) && p05 && (!p07)) ||
+		    (p02 && p03 && p06 && (!p08)) ||
+		    (p02 && (!p03) && p05 && p06 && (!p08)) ||
+		    (p02 && p03 && (!p07));
+		out22 =
+		    (p02 && (!p03) && p05 && (!p07)) ||
+		    (p02 && p03 && p06 && (!p08)) ||
+		    (p02 && (!p03) && p05 && p06 && (!p08)) ||
+		    (p02 && p03 && (!p07));
+		out21 =
+		    (p02 && p03 && (!p05) && (!p06) && (!p07)) ||
+		    (p02 && p03 && p05 && p06 && (!p08) && (!p09) && (!p11));
+		out20 =
+		    (p02 && p03 && (!p05) && (!p06) && (!p07)) ||
+		    (p02 && p03 && p05 && p06 && (!p08) && (!p10) && (!p11));
+		out19 =
+		    (p02 && p03 && p05 && p06 && (!p08));
+		out18 =
+		    (p02 && p03 && p05 && p06 && (!p08));
+		out17 =
+		    !(((!p02) && (!p03) && p04 && p05));
+		out16 =
+		    (p02 && p03 && (!p04) && (!p06) && (!p07) && p08) ||
+		    ((!p02) && p03 && p04 && p05 && (!p06) && (!p07) && p08) ||
+		    ((!p02) && (!p03) && p04 && (!p05) && (!p06) && (!p07) && p08) ||
+		    (p06 && p16);
+		out15 =
+		    !(((!p06) && p07 && (!p13)));
+		out14 =
+		    !((p06 && (!p13)) ||
+		    ((!p07) && (!p13)));
+	}
+
+	assert(0 <= out23 && out23 <= 1);
+	out23 += 2;
+	assert(0 <= out22 && out22 <= 1);
+	out22 += 2;
+	assert(0 <= out21 && out21 <= 1);
+	out21 += 2;
+	assert(0 <= out20 && out20 <= 1);
+	out20 += 2;
+	assert(0 <= out19 && out19 <= 1);
+	out19 += 2;
+	assert(0 <= out18 && out18 <= 1);
+	out18 += 2;
+	assert(0 <= out17 && out17 <= 1);
+	out17 += 2;
+	assert(0 <= out16 && out16 <= 1);
+	out16 += 2;
+	assert(0 <= out15 && out15 <= 1);
+	out15 += 2;
+	assert(0 <= out14 && out14 <= 1);
+	out14 += 2;
+
+	if (
+	    (out23 != state->p23) ||
+	    (out22 != state->p22) ||
+	    (out21 != state->p21) ||
+	    (out20 != state->p20) ||
+	    (out19 != state->p19) ||
+	    (out18 != state->p18) ||
+	    (out17 != state->p17) ||
+	    (out16 != state->p16) ||
+	    (out15 != state->p15) ||
+	    (out14 != state->p14)) {
+		state->p23 = out23;
+		state->p22 = out22;
+		state->p21 = out21;
+		state->p20 = out20;
+		state->p19 = out19;
+		state->p18 = out18;
+		state->p17 = out17;
+		state->p16 = out16;
+		state->p15 = out15;
+		state->p14 = out14;
+		state->job = 1;
+		next_trigger(5, SC_NS);
 	}
 }

@@ -174,7 +174,7 @@ class OLMC():
         if not self.regd:
             file.write("\tbool %s = IS_H(%s);\n" % (self.pin.var, self.pin.pin))
         else:
-            file.write("\tbool %s = state->%s;\n" % (self.pin.var, self.pin.var))
+            file.write("\tbool %s = state->%s %% 2;\n" % (self.pin.var, self.pin.var))
 
 class GAL():
     ''' Generic Logic Array '''
@@ -259,7 +259,6 @@ class GAL():
                 for j in i.olmc.inputs:
                     if not j.output:
                         self.sensitive.add(j.pin)
-        print("SS", self.sensitive)
 
         fname = self.bname + ".cc"
         with open(fname + "_", "w") as file:
@@ -273,10 +272,14 @@ class GAL():
             state = "scm_%s_state" % self.bname.lower()
             file.write('struct %s {\n' % state)
             file.write('\tstruct ctx ctx;\n')
+            file.write('\tint job;\n')
             for out in sorted(self.olmc):
-                if out.regd and not out.disabled:
-                    file.write("\tbool %s;\n" % out.pin.var)
+                if not out.disabled:
+                    file.write("\tint %s;\n" % out.pin.var)
             file.write('};\n')
+
+            file.write('static const sc_logic outs[4] = {sc_logic_Z, sc_logic_Z, sc_logic_0, sc_logic_1};\n')
+            file.write('static const char traces[5] = "ZZ01";\n')
 
             file.write('\n')
             file.write('SCM_%s :: SCM_%s(sc_module_name nm, const char *arg)\n' % (self.bname, self.bname))
@@ -299,20 +302,41 @@ class GAL():
             file.write('\tstate->ctx.activations++;\n')
             file.write('\n')
 
+            for i in sorted(self.outputs):
+                file.write("\tassert(0 <= state->%s);\n" % i.var)
+                file.write("\tassert(3 >= state->%s);\n" % i.var)
+            file.write('\tif (state->job) {\n')
+            file.write('\t\tTRACE(\n')
+            for i in sorted(self.inputs - self.outputs):
+                file.write("\t\t    <<%s\n" % i.pin)
+            file.write('\t\t    << " | "\n')
+            for i in sorted(self.outputs):
+                file.write("\t\t    <<traces[state->%s]\n" % i.var)
+            file.write('\t\t);\n')
+            for i in sorted(self.outputs):
+                file.write("\t\t%s = outs[state->%s];\n" % (i.pin, i.var))
+            file.write('\t\tstate->job = 0;\n')
+            file.write('\t}\n')
+
+
             for i in sorted(self.inputs):
                 if i.output is None:
                     file.write("\tbool %s = IS_H(%s);\n" % (i.var, i.pin))
                 else:
                     i.output.feedback(file)
+            for out in self.olmc:
+                if out.disabled:
+                    continue
+                if out.regd:
+                    file.write("\tint %s = state->%s & 1;\n" % (out.pin.out, out.pin.var))
+                else:
+                    file.write("\tint %s;\n" % out.pin.out)
 
-            file.write("\tbool dotrace = false;\n")
             for out in self.olmc:
                 if not out.regd:
-                    file.write("\tdotrace = true;\n")
                     out.write_code(file)
             if max(out.regd for out in self.olmc):
                 file.write("\tif (pin1.posedge()) {\n")
-                file.write("\t\tdotrace = true;\n")
                 for out in self.olmc:
                     if out.regd:
                         out.write_code(file)
@@ -322,34 +346,27 @@ class GAL():
             for out in self.olmc:
                 if out.disabled:
                     continue
-                if out.regd:
-                    src = "state->%s" % out.pin.var
-                else:
-                    src = out.pin.var
+                file.write("\tassert(0 <= %s && %s <= 1);\n" % (out.pin.out, out.pin.out))
                 if out.output_enable == "true":
-                    file.write("\tchar %s = %s ? '1' : '0';\n" % (out.pin.out, src))
-                    file.write("\t%s = AS(%s);\n" % (out.pin.pin, src))
+                    file.write("\t%s += 2;\n" % out.pin.out)
                 else:
-                    file.write("\tchar %s;\n" % (out.pin.out))
-                    file.write("\tif(%s) {\n" % out.output_enable)
-                    file.write("\t\t%s = %s ? '1' : '0';\n" % (out.pin.out, src))
-                    file.write("\t\t%s = AS(%s);\n" % (out.pin.pin, src))
-                    file.write("\t} else {\n")
-                    file.write("\t\t%s = 'Z';\n" % out.pin.out)
-                    file.write("\t\t%s = sc_logic_Z;\n" % out.pin.pin)
-                    file.write("\t}\n")
+                    file.write("\tif(%s)\n" % out.output_enable)
+                    file.write("\t\t%s += 2;\n" % out.pin.out)
 
             file.write('\n')
-            file.write('\tif (dotrace) {\n')
-            file.write('\t\tTRACE(\n')
-            for i in sorted(self.inputs - self.outputs):
-                file.write("\t\t    <<%s\n" % i.pin)
-            file.write('\t\t    << " | "\n')
-            for i in sorted(self.outputs):
-                file.write("\t\t    <<%s\n" % i.out)
-            file.write('\t\t);\n')
+            i = []
+            j = []
+            for out in self.olmc:
+                if out.disabled:
+                    continue
+                i.append("(" + out.pin.out + " != state->" + out.pin.var + ")")
+                j.append("\t\tstate->%s = %s;" % (out.pin.var, out.pin.out))
+            file.write('\tif (\n\t    %s) {\n' % (" ||\n\t    ".join(i)))
+            file.write("\n".join(j) + "\n")
+            file.write("\t\tstate->job = 1;\n")
+            file.write("\t\tnext_trigger(5, SC_NS);\n")
             file.write('\t}\n')
-
+         
             #for out in sorted(self.outputs):
             #    file.write("\t%s = %s;\n" % (out.pin, out.out))
             file.write('}\n')
@@ -415,13 +432,13 @@ class OLMC16(OLMC):
     def write_code_regd_ac01(self, file):
         ''' Write code for registered mode '''
         assert not self.ac1
-        file.write("\t\tstate->%s =\n\t\t    " % self.pin.var)
+        file.write("\t%s =\n\t    " % self.pin.out)
         file.write(self.cond("\t") + ";\n")
 
     def write_code_comb_ac01(self, file):
         ''' Write code for combinatorial mode '''
         assert self.ac1
-        file.write("\tbool %s =\n\t    " % self.pin.var)
+        file.write("\t%s =\n\t    " % self.pin.out)
         file.write(self.cond() + ";\n")
 
     def write_code(self, file):
@@ -501,11 +518,11 @@ class OLMC22(OLMC):
         if self.disabled:
             return
         if self.regd:
-            dst = "state->" + self.pin.var
+            # dst = "state->" + self.pin.var
             esp = "\t"
         else:
-            dst = "bool " + self.pin.var
             esp = ""
+        dst = self.pin.out
 
         file.write("\t" + esp + dst + " =\n\t" + esp + "    ")
         file.write(self.cond(esp) + ";\n")

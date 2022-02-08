@@ -6,7 +6,17 @@
 
 struct scm_cmdpal_state {
 	struct ctx ctx;
+	int job;
+	int p12;
+	int p14;
+	int p15;
+	int p16;
+	int p17;
+	int p18;
+	int p19;
 };
+static const sc_logic outs[4] = {sc_logic_Z, sc_logic_Z, sc_logic_0, sc_logic_1};
+static const char traces[5] = "ZZ01";
 
 SCM_CMDPAL :: SCM_CMDPAL(sc_module_name nm, const char *arg)
 {
@@ -24,79 +34,21 @@ SCM_CMDPAL :: doit(void)
 
 	state->ctx.activations++;
 
-	bool p01 = IS_H(pin1);
-	bool p02 = IS_H(pin2);
-	bool p03 = IS_H(pin3);
-	bool p04 = IS_H(pin4);
-	bool p05 = IS_H(pin5);
-	bool p06 = IS_H(pin6);
-	bool p07 = IS_H(pin7);
-	bool p08 = IS_H(pin8);
-	bool p09 = IS_H(pin9);
-	bool p11 = IS_H(pin11);
-	bool p13 = IS_H(pin13);
-	bool dotrace = false;
-	dotrace = true;
-	bool p19 =
-	    !(((!p01) && p07 && p13 && p09) ||
-	    (p01 && p07 && p13 && p11) ||
-	    (p02 && p13));
-	dotrace = true;
-	bool p18 =
-	    !(((!p13)) ||
-	    (p01 && p07 && p11) ||
-	    ((!p01) && p07 && p09) ||
-	    (p04 && p13));
-	dotrace = true;
-	bool p17 =
-	    !(((!p01) && p07 && p13 && p09) ||
-	    (p01 && p07 && p13 && p11) ||
-	    (p05 && p13));
-	dotrace = true;
-	bool p16 =
-	    !(((!p02) && (!p01) && (!p07) && p13 && p09) ||
-	    ((!p01) && (!p03) && (!p07) && p13 && p09) ||
-	    ((!p01) && (!p04) && (!p07) && p13 && p09) ||
-	    ((!p01) && (!p05) && (!p07) && p13 && p09) ||
-	    ((!p01) && (!p13) && p09) ||
-	    ((!p06) && (!p07) && (!p09)) ||
-	    (p01 && (!p09)));
-	dotrace = true;
-	bool p15 =
-	    !(((!p02) && (!p01) && (!p07) && p13 && p09) ||
-	    ((!p01) && (!p03) && (!p07) && p13 && p09) ||
-	    ((!p01) && (!p04) && (!p07) && p13 && p09) ||
-	    ((!p01) && (!p05) && (!p07) && p13 && p09) ||
-	    ((!p01) && (!p13) && p09) ||
-	    (p01 && (!p08)));
-	dotrace = true;
-	bool p14 =
-	    !(((!p01) && (!p09)) ||
-	    (p01 && (!p11)));
-	dotrace = true;
-	dotrace = true;
-	bool p12 =
-	    !(((!p13)) ||
-	    (p01 && p07 && p11) ||
-	    ((!p01) && p07 && p09) ||
-	    (p03 && p13));
-
-	char out19 = p19 ? '1' : '0';
-	pin19 = AS(p19);
-	char out18 = p18 ? '1' : '0';
-	pin18 = AS(p18);
-	char out17 = p17 ? '1' : '0';
-	pin17 = AS(p17);
-	char out16 = p16 ? '1' : '0';
-	pin16 = AS(p16);
-	char out15 = p15 ? '1' : '0';
-	pin15 = AS(p15);
-	char out14 = p14 ? '1' : '0';
-	pin14 = AS(p14);
-	char out12 = p12 ? '1' : '0';
-	pin12 = AS(p12);
-
-	if (dotrace) {
+	assert(0 <= state->p12);
+	assert(3 >= state->p12);
+	assert(0 <= state->p14);
+	assert(3 >= state->p14);
+	assert(0 <= state->p15);
+	assert(3 >= state->p15);
+	assert(0 <= state->p16);
+	assert(3 >= state->p16);
+	assert(0 <= state->p17);
+	assert(3 >= state->p17);
+	assert(0 <= state->p18);
+	assert(3 >= state->p18);
+	assert(0 <= state->p19);
+	assert(3 >= state->p19);
+	if (state->job) {
 		TRACE(
 		    <<pin1
 		    <<pin2
@@ -110,13 +62,109 @@ SCM_CMDPAL :: doit(void)
 		    <<pin11
 		    <<pin13
 		    << " | "
-		    <<out12
-		    <<out14
-		    <<out15
-		    <<out16
-		    <<out17
-		    <<out18
-		    <<out19
+		    <<traces[state->p12]
+		    <<traces[state->p14]
+		    <<traces[state->p15]
+		    <<traces[state->p16]
+		    <<traces[state->p17]
+		    <<traces[state->p18]
+		    <<traces[state->p19]
 		);
+		pin12 = outs[state->p12];
+		pin14 = outs[state->p14];
+		pin15 = outs[state->p15];
+		pin16 = outs[state->p16];
+		pin17 = outs[state->p17];
+		pin18 = outs[state->p18];
+		pin19 = outs[state->p19];
+		state->job = 0;
+	}
+	bool p01 = IS_H(pin1);
+	bool p02 = IS_H(pin2);
+	bool p03 = IS_H(pin3);
+	bool p04 = IS_H(pin4);
+	bool p05 = IS_H(pin5);
+	bool p06 = IS_H(pin6);
+	bool p07 = IS_H(pin7);
+	bool p08 = IS_H(pin8);
+	bool p09 = IS_H(pin9);
+	bool p11 = IS_H(pin11);
+	bool p13 = IS_H(pin13);
+	int out19;
+	int out18;
+	int out17;
+	int out16;
+	int out15;
+	int out14;
+	int out12;
+	out19 =
+	    !(((!p01) && p07 && p13 && p09) ||
+	    (p01 && p07 && p13 && p11) ||
+	    (p02 && p13));
+	out18 =
+	    !(((!p13)) ||
+	    (p01 && p07 && p11) ||
+	    ((!p01) && p07 && p09) ||
+	    (p04 && p13));
+	out17 =
+	    !(((!p01) && p07 && p13 && p09) ||
+	    (p01 && p07 && p13 && p11) ||
+	    (p05 && p13));
+	out16 =
+	    !(((!p02) && (!p01) && (!p07) && p13 && p09) ||
+	    ((!p01) && (!p03) && (!p07) && p13 && p09) ||
+	    ((!p01) && (!p04) && (!p07) && p13 && p09) ||
+	    ((!p01) && (!p05) && (!p07) && p13 && p09) ||
+	    ((!p01) && (!p13) && p09) ||
+	    ((!p06) && (!p07) && (!p09)) ||
+	    (p01 && (!p09)));
+	out15 =
+	    !(((!p02) && (!p01) && (!p07) && p13 && p09) ||
+	    ((!p01) && (!p03) && (!p07) && p13 && p09) ||
+	    ((!p01) && (!p04) && (!p07) && p13 && p09) ||
+	    ((!p01) && (!p05) && (!p07) && p13 && p09) ||
+	    ((!p01) && (!p13) && p09) ||
+	    (p01 && (!p08)));
+	out14 =
+	    !(((!p01) && (!p09)) ||
+	    (p01 && (!p11)));
+	out12 =
+	    !(((!p13)) ||
+	    (p01 && p07 && p11) ||
+	    ((!p01) && p07 && p09) ||
+	    (p03 && p13));
+
+	assert(0 <= out19 && out19 <= 1);
+	out19 += 2;
+	assert(0 <= out18 && out18 <= 1);
+	out18 += 2;
+	assert(0 <= out17 && out17 <= 1);
+	out17 += 2;
+	assert(0 <= out16 && out16 <= 1);
+	out16 += 2;
+	assert(0 <= out15 && out15 <= 1);
+	out15 += 2;
+	assert(0 <= out14 && out14 <= 1);
+	out14 += 2;
+	assert(0 <= out12 && out12 <= 1);
+	out12 += 2;
+
+	if (
+	    (out19 != state->p19) ||
+	    (out18 != state->p18) ||
+	    (out17 != state->p17) ||
+	    (out16 != state->p16) ||
+	    (out15 != state->p15) ||
+	    (out14 != state->p14) ||
+	    (out12 != state->p12)) {
+		state->p19 = out19;
+		state->p18 = out18;
+		state->p17 = out17;
+		state->p16 = out16;
+		state->p15 = out15;
+		state->p14 = out14;
+		state->p12 = out12;
+		state->job = 1;
+		next_trigger(5, SC_NS);
 	}
 }
