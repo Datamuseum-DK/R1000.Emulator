@@ -711,8 +711,8 @@ MCS51_SingleStep(struct mcs51 *mcs51)
 		arg = mcs51->progmem[mcs51->npc++];
 		arg2 = mcs51->progmem[mcs51->npc++];
 		mcs51_trace(mcs51, "MOV\t0x%02x,0x%02x", arg, arg2);
-		warg = mcs51_direct_address(mcs51, arg2, -1);
-		(void)mcs51_direct_address(mcs51, arg, warg);
+		warg = mcs51_direct_address(mcs51, arg, -1);
+		(void)mcs51_direct_address(mcs51, arg2, warg);
 		break;
 	case 0x86: // MOV direct,@Rn
 	case 0x87: // MOV direct,@Rn
