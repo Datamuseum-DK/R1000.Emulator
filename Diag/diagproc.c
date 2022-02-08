@@ -151,9 +151,14 @@ diagproc_bitfunc(struct mcs51 *mcs51, uint8_t bit_adr, int what)
 		dp->did_io = 1;
 		return (mcs51_bitfunc_default(mcs51, bit_adr, what));
 		break;
+	case 0x90:	// P1.0
+	case 0x91:	// P1.1
 	case 0x92:	// P1.2
 	case 0x93:	// P1.3
 	case 0x94:	// P1.4
+	case 0x95:	// P1.5
+	case 0x96:	// P1.6
+	case 0x97:	// P1.7
 		if (what < 0) {
 			retval = (dc->p1val >> (bit_adr & 7)) & 1;
 		} else {
@@ -165,8 +170,13 @@ diagproc_bitfunc(struct mcs51 *mcs51, uint8_t bit_adr, int what)
 			retval = 0;
 		}
 		break;
+	case 0xb0:	// P3.0
+	case 0xb1:	// P3.1
+	case 0xb2:	// P3.2
 	case 0xb3:	// P3.3
 	case 0xb4:	// P3.4
+	case 0xb5:	// P3.5
+	case 0xb6:	// P3.6
 	case 0xb7:	// P3.7
 		if (what < 0) {
 			retval = (dc->p3val >> (bit_adr & 7)) & 1;
