@@ -1142,6 +1142,22 @@ MCS51_REG(struct mcs51 *mcs51, int reg)
 
 /*---------------------------------------------------------------------*/
 
+void
+MCS51_TimerTick(struct mcs51 *mcs51)
+{
+	if (!(mcs51->sfr[SFR_TCON] & 0x10))
+		return;
+	mcs51->sfr[SFR_TL0]++;
+	if (mcs51->sfr[SFR_TL0])
+		return;
+	mcs51->sfr[SFR_TH0]++;
+	if (mcs51->sfr[SFR_TH0])
+		return;
+	mcs51->sfr[SFR_TCON] |= 0x20;
+}
+
+/*---------------------------------------------------------------------*/
+
 static void
 MCS51_Reset(struct mcs51 *mcs51)
 {

@@ -89,5 +89,6 @@ void MCS51_SetSFRBits(struct mcs51 *mcs51, uint8_t adr, bitfunc_f *,
     const char *b7, const char *b6, const char *b5, const char *b4,
     const char *b3, const char *b2, const char *b1, const char *b0);
 unsigned mcs51_bitfunc_default(struct mcs51 *mcs51, uint8_t bit_adr, int what);
+void MCS51_TimerTick(struct mcs51 *mcs51);
 
 void MCS51_Rx(struct mcs51 *mcs51, uint8_t byte, uint8_t ninth);
