@@ -58,8 +58,11 @@ SCM_DIBRPAL :: doit(void)
 		    <<traces[state->p19]
 		);
 		pin12 = outs[state->p12];
-		pin17 = outs[state->p17];
-		pin18 = outs[state->p18];
+		// NB: Workaround for SystemC issue/bug
+		if (state->p17 > state->p18)
+			pin17 = outs[state->p17];
+		else
+			pin17 = outs[state->p18];
 		pin19 = outs[state->p19];
 		state->job = 0;
 	}
