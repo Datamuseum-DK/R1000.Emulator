@@ -77,7 +77,7 @@ diagproc_sfrfunc(struct mcs51 *mcs51, uint8_t sfr_adr, int what)
 	dp->did_io = 1;
 
 	switch (sfr_adr) {
-	case SFR_P1:	// P1
+	case SFR_P1:
 		if (what < 0) {
 			retval = dc->p1val;
 		} else {
@@ -86,7 +86,7 @@ diagproc_sfrfunc(struct mcs51 *mcs51, uint8_t sfr_adr, int what)
 			retval = what;
 		}
 		break;
-	case SFR_SBUF:	// SBUF
+	case SFR_SBUF:
 		if (what >= 0) {
 			if (*dp->do_trace & 4)
 				sc_tracef(dp->name, "DIAGBUS TX %02x", what);
@@ -101,7 +101,7 @@ diagproc_sfrfunc(struct mcs51 *mcs51, uint8_t sfr_adr, int what)
 				sc_tracef(dp->name, "RX %02x", retval);
 		}
 		break;
-	case SFR_P2:	// P2
+	case SFR_P2:
 		if (what < 0) {
 			retval = dc->p2val;
 		} else {
@@ -139,26 +139,12 @@ diagproc_bitfunc(struct mcs51 *mcs51, uint8_t bit_adr, int what)
 	assert(dp->mcs51 == mcs51);
 	dp->did_io = 1;
 
-	switch (bit_adr) {
-	case 0x88:	// TCON
-	case 0x89:
-	case 0x8a:
-	case 0x8b:
-	case 0x8c:
-	case 0x8d:
-	case 0x8e:
-	case 0x8f:
+	switch (bit_adr & ~7) {
+	case SFR_TCON:
 		dp->did_io = 1;
 		return (mcs51_bitfunc_default(mcs51, bit_adr, what));
 		break;
-	case 0x90:	// P1.0
-	case 0x91:	// P1.1
-	case 0x92:	// P1.2
-	case 0x93:	// P1.3
-	case 0x94:	// P1.4
-	case 0x95:	// P1.5
-	case 0x96:	// P1.6
-	case 0x97:	// P1.7
+	case SFR_P1:
 		if (what < 0) {
 			retval = (dc->p1val >> (bit_adr & 7)) & 1;
 		} else {
@@ -170,14 +156,7 @@ diagproc_bitfunc(struct mcs51 *mcs51, uint8_t bit_adr, int what)
 			retval = 0;
 		}
 		break;
-	case 0xb0:	// P3.0
-	case 0xb1:	// P3.1
-	case 0xb2:	// P3.2
-	case 0xb3:	// P3.3
-	case 0xb4:	// P3.4
-	case 0xb5:	// P3.5
-	case 0xb6:	// P3.6
-	case 0xb7:	// P3.7
+	case SFR_P3:
 		if (what < 0) {
 			retval = (dc->p3val >> (bit_adr & 7)) & 1;
 		} else {
@@ -368,6 +347,8 @@ DiagProcStep(struct diagproc_ctrl *dc, struct diagproc_context *dctx)
 	assert(dc->priv != NULL);
 	dp = dc->priv;
 
+	MCS51_TimerTick(dp->mcs51);
+
 	do {
 		flags = dp->flags[dp->mcs51->pc];
 		if ((dc->p3val & 0x08) && (flags & FLAG_WAIT_DFSM))
@@ -435,7 +416,6 @@ DiagProcCreate(const char *name, uint32_t *do_trace)
 	MCS51_SetSFRBits(dp->mcs51, SFR_P3, diagproc_bitfunc,
 	    NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL);
 
-	MCS51_SetSFR(dp->mcs51, SFR_TCON, diagproc_sfrfunc, "TCON");
 	MCS51_SetSFRBits(dp->mcs51, SFR_TCON, diagproc_bitfunc,
 	    "TF1", "TR1", "TF0", "TR0", "IE1", "IT1", "IE0", "IT0");
 
