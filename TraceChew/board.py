@@ -103,23 +103,32 @@ class Board():
             self.signals[signal] = state
 
     def explain_bits(self, val, bits):
-        text = []
-        for i in range(8):
+        text = {}
+        for i, lbl in enumerate(bits):
+            lbl = bits[i]
             mask = 0x80 >> i
             if val & mask:
                 j = 1
             else:
                 j = 0
-            if bits[i][0] == '+':
+            if lbl[-2] == '.':
+                b = int(lbl[-1])
+                k = text.setdefault(lbl[:-2], list())
+                while len(k) <= b:
+                    k.append(0)
+                k[b] = j
+                continue
+            if lbl[0] == '+':
                 if not val & mask:
-                    text.append(bits[i][1:] + "=0")
-            elif bits[i][0] == '-':
+                    text[lbl[1:]] = "0"
+            elif lbl[0] == '-':
                 if val & mask:
-                    text.append(bits[i][1:] + "=1")
+                    text[lbl[1:]] = "1"
             else:
-                text.append(bits[i] + "=%d" % j)
+                text[lbl] = str(j)
 
-        return ", ".join(text)
+        
+        return ", ".join(x + "=" + str(y) for x, y in sorted(text.items()))
 
     def just_bits(self, val, bits):
         if len(val) < 8:
