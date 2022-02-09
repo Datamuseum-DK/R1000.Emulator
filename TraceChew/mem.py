@@ -93,6 +93,7 @@ class MEM_Board(Board):
             ):
                 print("    ", j)
             return True
+
         if self.mem[adr+1] == 0x02 and self.mem[adr + 3] == 0x83:
             p = self.mem[adr+2]
             print("    MAR => @%02x " % p)
@@ -100,6 +101,21 @@ class MEM_Board(Board):
                 if ".MAR" in i[1]:
                     print("    ", i)
             return True
+
+        if self.mem[adr+1] == 0x20 and self.mem[adr + 3] == 0x05:
+            p = self.mem[adr+2]
+            l = ["%02x" % self.mem[x] for x in range(p, p + 8)]
+            print("    DREG(V?) <= @%02x: " % p + " ".join(l))
+            regs = {}
+            for i in lines:
+                if ".DREG" in i[1]:
+                    regs[i[1]] = i
+            for i, j in sorted(
+                regs.items(),
+            ):
+                print("    ", j)
+            return True
+
 
     def DFSM0(self, line):
         self.explines.append(line[:2] + [self.just_bits(line[-1], self.DFSM0_BITS)])
