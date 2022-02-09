@@ -5,11 +5,15 @@
 
 struct scm_DLY_35_state {
 	struct ctx ctx;
+	int next;
+	bool state;
 };
 
-void
-SCM_DLY_35 :: loadit(const char *arg)
+SCM_DLY_35 :: SCM_DLY_35(sc_module_name nm, const char *arg) : sc_module(nm)
 {
+	SC_METHOD(doit);
+	sensitive << pin1;
+
 	state = (struct scm_DLY_35_state *)CTX_Get("DLY_35", this->name(), sizeof *state);
 	should_i_trace(this->name(), &state->ctx.do_trace);
 }
@@ -18,7 +22,14 @@ void
 SCM_DLY_35 :: doit(void)
 {
 	state->ctx.activations++;
-	TRACE(
-	    <<pin1
-	);
+	if (state->next >= 0) {
+		state->state = state->next;
+		pin8 = AS(state->state);
+		state->next = -1;
+	}
+	TRACE( << pin1 );
+	if (IS_H(pin1) != state->state) {
+		state->next = IS_H(pin1);
+		next_trigger(35, SC_NS);
+	}
 }

@@ -14,16 +14,10 @@ SC_MODULE(SCM_DLY_35)
 
 	SC_HAS_PROCESS(SCM_DLY_35);
 
-	SCM_DLY_35(sc_module_name nm, const char *arg) : sc_module(nm)
-	{
-		cout << "MISSING SCM_DLY_35 IMPLEMENTATION\n";
-		SC_METHOD(doit);
-		loadit(arg);
-	}
+	SCM_DLY_35(sc_module_name nm, const char *arg);
 
 	private:
 	struct scm_DLY_35_state *state;
-	void loadit(const char *arg);
 	void doit(void);
 };
 
