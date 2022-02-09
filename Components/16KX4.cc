@@ -18,7 +18,7 @@ SCM_16KX4 :: SCM_16KX4(sc_module_name nm, const char *arg) : sc_module(nm)
 	state = (struct scm_16kx4_state *)
 	    CTX_Get("16kx4", this->name(), sizeof *state);
 	should_i_trace(this->name(), &state->ctx.do_trace);
-	memset(state->ram, 0x9, sizeof state->ram);
+	memset(state->ram, 0xff, sizeof state->ram);
 }
 
 void
