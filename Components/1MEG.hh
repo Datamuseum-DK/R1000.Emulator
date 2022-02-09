@@ -19,20 +19,14 @@ SC_MODULE(SCM_1MEG)
 	sc_in <sc_logic>	pin14;	// A2 (input)
 	sc_in <sc_logic>	pin15;	// A1 (input)
 	sc_in <sc_logic>	pin16;	// CAS_ (input)
-	sc_inout_resolved	pin17;	// Q (tri_state)
+	sc_out <sc_logic>	pin17;	// Q (tri_state)
 
 	SC_HAS_PROCESS(SCM_1MEG);
 
-	SCM_1MEG(sc_module_name nm, const char *arg) : sc_module(nm)
-	{
-		cout << "MISSING SCM_1MEG IMPLEMENTATION\n";
-		SC_METHOD(doit);
-		loadit(arg);
-	}
+	SCM_1MEG(sc_module_name nm, const char *arg);
 
 	private:
 	struct scm_1MEG_state *state;
-	void loadit(const char *arg);
 	void doit(void);
 };
 
