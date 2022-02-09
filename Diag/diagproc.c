@@ -142,6 +142,11 @@ diagproc_bitfunc(struct mcs51 *mcs51, uint8_t bit_adr, int what)
 	switch (bit_adr & ~7) {
 	case SFR_TCON:
 		dp->did_io = 1;
+
+		// XXX: Disable DELAY
+		if ((bit_adr & 7) == 5 && what == -1)
+			return (1);
+
 		return (mcs51_bitfunc_default(mcs51, bit_adr, what));
 		break;
 	case SFR_P1:
@@ -358,8 +363,6 @@ DiagProcStep(struct diagproc_ctrl *dc, struct diagproc_context *dctx)
 		dctx->profile[retval]++;
 		assert(pthread_mutex_unlock(&dp->mtx) == 0);
 		flags = dp->flags[retval];
-		if (dp->version == 2 && retval >= 0x1000)
-			break;
 	} while(!(flags & (FLAG_IDLE | FLAG_RX_SPIN)) && !dp->did_io);
 
 	i = dp->mcs51->iram[3];
@@ -455,6 +458,9 @@ DiagProcCreate(const char *name, uint32_t *do_trace)
 		dp->flags[0x19d] |= FLAG_IDLE;
 		dp->flags[0x19f] |= FLAG_IDLE;
 		dp->flags[0x56f] |= FLAG_DUMP_MEM;
+		dp->flags[0x10a9] |= FLAG_WAIT_DFSM;
+		dp->flags[0x10d8] |= FLAG_WAIT_DFSM;
+		dp->flags[0x1109] |= FLAG_WAIT_DFSM;
 		for (u = 0x11c9; u <= sizeof dp->flags; u++)
 			dp->flags[u] |= FLAG_NOT_CODE;
 	}
