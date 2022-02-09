@@ -39,7 +39,7 @@
 #include "Infra/context.h"
 
 static const char *context_filename = "/critter/_ctx";
-static ssize_t context_size = 0;
+static ssize_t context_size = 40<<20;
 
 static int context_fd = -1;
 static uint8_t *context_start = NULL;
@@ -55,7 +55,6 @@ ctx_init(void)
 
 	context_fd = open(context_filename, O_RDWR | O_CREAT | O_TRUNC, 0644);
 	assert(context_fd > 0);
-	context_size = 16 << 20;
 
 	memset(buf, 0, sizeof buf);
 	for (szl = 0; szl < context_size; ) {
@@ -80,7 +79,7 @@ CTX_Get(const char *kind, const char *ident, uint32_t length)
 
 	struct ctx *ctx;
 
-	if (!context_size)
+	if (context_fd < 0)
 		ctx_init();
 
 	assert(sizeof *ctx == 128);
