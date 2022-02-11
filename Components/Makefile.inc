@@ -647,21 +647,21 @@ Components/TSXXPAL.o: Components/TSXXPAL.cc \
 	${SC_CC} -o Components/TSXXPAL.o Components/TSXXPAL.cc
 
 OBJS += Components/XBUF64.o
-Components/XBUF64.o: Components/XBUF64.cc \
+Components/XBUF64.o: Components/XBUF64.cc Components/xbuf_doit.h \
     Components/XBUF64.hh \
     Infra/context.h \
     Chassis/r1000sc.h
 	${SC_CC} -o Components/XBUF64.o Components/XBUF64.cc
 
 OBJS += Components/XBUFI32.o
-Components/XBUFI32.o: Components/XBUFI32.cc \
+Components/XBUFI32.o: Components/XBUFI32.cc Components/xbuf_doit.h \
     Components/XBUFI32.hh \
     Infra/context.h \
     Chassis/r1000sc.h
 	${SC_CC} -o Components/XBUFI32.o Components/XBUFI32.cc
 
 OBJS += Components/XBUFI64.o
-Components/XBUFI64.o: Components/XBUFI64.cc \
+Components/XBUFI64.o: Components/XBUFI64.cc Components/xbuf_doit.h \
     Components/XBUFI64.hh \
     Infra/context.h \
     Chassis/r1000sc.h
