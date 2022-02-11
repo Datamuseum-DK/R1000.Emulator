@@ -432,12 +432,13 @@ foo:
 		'console << "0"'
 		
 
-r1000sim.${SC_BRANCH}:	${OBJS}
+r1000sim.${SC_BRANCH}:	netlist ${OBJS}
 	${CXX} -o r1000sim.${SC_BRANCH} ${CFLAGS} ${LDFLAGS} ${OBJS} \
 		-L /usr/local/lib -lsystemc
 	rm -f *.tmp
 
-r1000sim: r1000sim.${SC_BRANCH}
+r1000sim:
+	${MAKE} ${MAKEFLAGS} r1000sim.${SC_BRANCH}
 	cp r1000sim.${SC_BRANCH} r1000sim
 
 clean:
