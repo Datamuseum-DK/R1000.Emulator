@@ -23,18 +23,10 @@ SC_MODULE(SCM_F280)
 
 	SC_HAS_PROCESS(SCM_F280);
 
-	SCM_F280(sc_module_name nm, const char *arg) : sc_module(nm)
-	{
-		SC_METHOD(doit);
-		sensitive << pin1 << pin2 << pin4 << pin8
-			  << pin9 << pin10 << pin11 << pin12 << pin13;
-		loadit(arg);
-	}
+	SCM_F280(sc_module_name nm, const char *arg);
 
 	private:
 	struct scm_f280_state *state;
-	void loadit(const char *arg);
-
 	void doit(void);
 };
 

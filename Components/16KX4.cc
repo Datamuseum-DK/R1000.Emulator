@@ -13,7 +13,7 @@ SCM_16KX4 :: SCM_16KX4(sc_module_name nm, const char *arg) : sc_module(nm)
 	SC_METHOD(doit);
 	sensitive << pin1 << pin2 << pin3 << pin4 << pin5 << pin6 << pin7
 	    << pin8 << pin9 << pin17 << pin18 << pin19 << pin20 << pin21
-            << pin10 << pin12;
+	    << pin10 << pin12;
 
 	state = (struct scm_16kx4_state *)
 	    CTX_Get("16kx4", this->name(), sizeof *state);
