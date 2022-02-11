@@ -141,6 +141,13 @@ Components/CNTRPAL.o: Components/CNTRPAL.cc \
     Chassis/r1000sc.h
 	${SC_CC} -o Components/CNTRPAL.o Components/CNTRPAL.cc
 
+OBJS += Components/DELAY.o
+Components/DELAY.o: Components/DELAY.cc \
+    Components/DELAY.hh \
+    Infra/context.h \
+    Chassis/r1000sc.h
+	${SC_CC} -o Components/DELAY.o Components/DELAY.cc
+
 OBJS += Components/DIBRPAL.o
 Components/DIBRPAL.o: Components/DIBRPAL.cc \
     Components/DIBRPAL.hh \
