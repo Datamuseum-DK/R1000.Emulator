@@ -3,58 +3,60 @@
 #include "Infra/context.h"
 #include "XBUF64.hh"
 
-struct scm_XBUF64_state {
+struct scm_xbuf64_state {
 	struct ctx ctx;
-	bool out;
-	unsigned startup;
+	int job;
+	bool out[64];
 };
 
 SCM_XBUF64 :: SCM_XBUF64(sc_module_name nm, const char *arg) : sc_module(nm)
 {
 	SC_METHOD(doit);
 
-	#define PIN(bit, pin_in, pin_out) \
-	<< pin_in
+	#define PIN(bit, pin_in, pin_out) << pin_in
 	sensitive << pin1 XBUF64_PINS();
 	#undef PIN
 
-	state = (struct scm_XBUF64_state *)CTX_Get("XBUF64", this->name(), sizeof *state);
+	state = (struct scm_xbuf64_state *)CTX_Get("XBUF64", this->name(), sizeof *state);
 	should_i_trace(this->name(), &state->ctx.do_trace);
-	state->startup = 1;
 }
 
 void
 SCM_XBUF64 :: doit(void)
 {
 	state->ctx.activations++;
-	bool z = IS_H(pin1);
 
-	if (state->startup) {
-		next_trigger(5, SC_NS);
-		state->startup = 0;
-		return;
-	}
 
 	#define PIN(bit,pin_in,pin_out) << pin_in
-	if ((state->ctx.do_trace & 2) || !z || state->out)
-		TRACE(<< " e " << pin1 << " d " XBUF64_PINS());
+	if (state->job || (state->ctx.do_trace & 2)) {
+		TRACE(<< "job " << state->job << " e " << pin1
+		    << " d " XBUF64_PINS());
+	}
 	#undef PIN
+	if (state->job) {
+		#define PIN(bit,pin_in,pin_out) pin_out = AS(state->out[bit]);
+		XBUF64_PINS()
+		#undef PIN
+		state->job = 0;
+	}
 
-	if (z) {
-
+	if (IS_H(pin1)) {
 		#define PIN(bit,pin_in,pin_out) \
 		pin_out = sc_logic_Z;
 		XBUF64_PINS()
 		#undef PIN
-		state->out = false;
-
+		next_trigger(pin1.negedge_event());
 	} else {
-
+		bool tmp;
 		#define PIN(bit,pin_in,pin_out) \
-		pin_out = AS(IS_H(pin_in));
+		tmp = IS_H(pin_in); \
+		if (tmp != state->out[bit]) { \
+			state->job = 1; \
+			state->out[bit] = tmp; \
+		}
 		XBUF64_PINS()
 		#undef PIN
-		state->out = true;
-
+		if (state->job)
+			next_trigger(5, SC_NS);
 	}
 }

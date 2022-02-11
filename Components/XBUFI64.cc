@@ -3,7 +3,7 @@
 #include "Infra/context.h"
 #include "XBUFI64.hh"
 
-struct scm_XBUFI64_state {
+struct scm_xbufi64_state {
 	struct ctx ctx;
 	int job;
 	bool out[64];
@@ -17,7 +17,7 @@ SCM_XBUFI64 :: SCM_XBUFI64(sc_module_name nm, const char *arg) : sc_module(nm)
 	sensitive << pin1 XBUFI64_PINS();
 	#undef PIN
 
-	state = (struct scm_XBUFI64_state *)CTX_Get("XBUFI64", this->name(), sizeof *state);
+	state = (struct scm_xbufi64_state *)CTX_Get("XBUFI64", this->name(), sizeof *state);
 	should_i_trace(this->name(), &state->ctx.do_trace);
 }
 

@@ -1,7 +1,7 @@
 #ifndef R1000_XREG64
 #define R1000_XREG64
 
-struct scm_XREG64_state;
+struct scm_xreg64_state;
 
 #define XREG64_PINS() \
 	PIN(0, pin3, pin67) PIN(1, pin4, pin68) PIN(2, pin5, pin69) \
@@ -48,7 +48,7 @@ SC_MODULE(SCM_XREG64)
 	SCM_XREG64(sc_module_name nm, const char *arg);
 
 	private:
-	struct scm_XREG64_state *state;
+	struct scm_xreg64_state *state;
 	void doit(void);
 };
 

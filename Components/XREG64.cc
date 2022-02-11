@@ -3,7 +3,7 @@
 #include "Infra/context.h"
 #include "XREG64.hh"
 
-struct scm_XREG64_state {
+struct scm_xreg64_state {
 	struct ctx ctx;
 	bool reg[64];
 	int job;
@@ -14,7 +14,7 @@ SCM_XREG64 :: SCM_XREG64(sc_module_name nm, const char *arg) : sc_module(nm)
 	SC_METHOD(doit);
 	sensitive << pin1.pos() << pin2;
 
-	state = (struct scm_XREG64_state *)CTX_Get("XREG64", this->name(), sizeof *state);
+	state = (struct scm_xreg64_state *)CTX_Get("XREG64", this->name(), sizeof *state);
 	should_i_trace(this->name(), &state->ctx.do_trace);
 }
 

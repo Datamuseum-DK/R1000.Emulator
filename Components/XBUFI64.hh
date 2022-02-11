@@ -1,7 +1,7 @@
 #ifndef R1000_XBUFI64
 #define R1000_XBUFI64
 
-struct scm_XBUFI64_state;
+struct scm_xbufi64_state;
 
 #define XBUFI64_PINS() \
 	PIN(0, pin2, pin66) PIN(1, pin3, pin67) PIN(2, pin4, pin68) \
@@ -47,7 +47,7 @@ SC_MODULE(SCM_XBUFI64)
 	SCM_XBUFI64(sc_module_name nm, const char *arg);
 
 	private:
-	struct scm_XBUFI64_state *state;
+	struct scm_xbufi64_state *state;
 	void doit(void);
 };
 

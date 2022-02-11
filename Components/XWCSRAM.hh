@@ -1,7 +1,7 @@
 #ifndef R1000_XWCSRAM
 #define R1000_XWCSRAM
 
-struct scm_XWCSRAM_state;
+struct scm_xwcsram_state;
 
 SC_MODULE(SCM_XWCSRAM)
 {
@@ -42,7 +42,7 @@ SC_MODULE(SCM_XWCSRAM)
 	SCM_XWCSRAM(sc_module_name nm, const char *arg);
 
 	private:
-	struct scm_XWCSRAM_state *state;
+	struct scm_xwcsram_state *state;
 	void doit(void);
 };
 

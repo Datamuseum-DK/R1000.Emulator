@@ -3,7 +3,7 @@
 #include "Infra/context.h"
 #include "Components/XWCSRAM.hh"
 
-struct scm_XWCSRAM_state {
+struct scm_xwcsram_state {
 	struct ctx ctx;
 	uint8_t ram[16384];
 };
@@ -18,7 +18,7 @@ SCM_XWCSRAM :: SCM_XWCSRAM(sc_module_name nm, const char *arg) : sc_module(nm)
 	    << pin23 << pin24 << pin25 << pin26 << pin27 << pin28
 	    << pin29 << pin30 << pin31;
 
-	state = (struct scm_XWCSRAM_state *)CTX_Get("XWCSRAM", this->name(), sizeof *state);
+	state = (struct scm_xwcsram_state *)CTX_Get("XWCSRAM", this->name(), sizeof *state);
 	should_i_trace(this->name(), &state->ctx.do_trace);
 }
 
