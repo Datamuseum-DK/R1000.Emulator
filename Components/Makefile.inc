@@ -667,6 +667,13 @@ Components/XBUFI64.o: Components/XBUFI64.cc Components/xbuf_doit.h \
     Chassis/r1000sc.h
 	${SC_CC} -o Components/XBUFI64.o Components/XBUFI64.cc
 
+OBJS += Components/XDRAM.o
+Components/XDRAM.o: Components/XDRAM.cc \
+    Components/XDRAM.hh \
+    Infra/context.h \
+    Chassis/r1000sc.h
+	${SC_CC} -o Components/XDRAM.o Components/XDRAM.cc
+
 OBJS += Components/XIOCRAM.o
 Components/XIOCRAM.o: Components/XIOCRAM.cc \
     Components/XIOCRAM.hh \
