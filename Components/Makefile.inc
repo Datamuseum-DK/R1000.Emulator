@@ -681,6 +681,13 @@ Components/XIOCRAM.o: Components/XIOCRAM.cc \
     Chassis/r1000sc.h
 	${SC_CC} -o Components/XIOCRAM.o Components/XIOCRAM.cc
 
+OBJS += Components/XLAT64.o
+Components/XLAT64.o: Components/XLAT64.cc \
+    Components/XLAT64.hh \
+    Infra/context.h \
+    Chassis/r1000sc.h
+	${SC_CC} -o Components/XLAT64.o Components/XLAT64.cc
+
 OBJS += Components/XREG64.o
 Components/XREG64.o: Components/XREG64.cc \
     Components/XREG64.hh \
