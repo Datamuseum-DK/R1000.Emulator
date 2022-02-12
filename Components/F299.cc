@@ -11,9 +11,11 @@ struct scm_f299_state {
 	bool reg[8];
 };
 
-void
-SCM_F299 :: loadit(const char *arg)
+SCM_F299 :: SCM_F299(sc_module_name nm, const char *arg) : sc_module(nm)
 {
+	SC_METHOD(doit);
+	sensitive << pin2 << pin3 << pin9 << pin12.pos();
+
 	state = (struct scm_f299_state *)
 	    CTX_Get("f299", this->name(), sizeof *state);
 	should_i_trace(this->name(), &state->ctx.do_trace);
@@ -36,6 +38,7 @@ SCM_F299 :: doit(void)
 		state->reg[6] = false;
 		state->reg[7] = false;
 		what = " clr ";
+		next_trigger(pin9.posedge_event());
 	} else if (pin12.posedge()) {
 		if (IS_H(pin19) && IS_H(pin1)) {
 			what = " load ";
@@ -69,7 +72,7 @@ SCM_F299 :: doit(void)
 			state->reg[7] = IS_H(pin18);
 		}
 	}
-	if ((IS_H(pin19) && IS_H(pin1)) || IS_H(pin2) || IS_H(pin3)) {
+	if ((IS_H(pin2) || IS_H(pin3)) || (IS_H(pin19) && IS_H(pin1))) {
 		if (what == NULL && (state->ctx.do_trace & 2))
 			what = " Z ";
 		pin7 = sc_logic_Z;
