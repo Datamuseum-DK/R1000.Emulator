@@ -8,6 +8,7 @@
 
 struct scm_f194_state {
 	struct ctx ctx;
+	unsigned out;
 	bool reg[4];
 	int job;
 };
@@ -21,10 +22,7 @@ SCM_F194 :: SCM_F194(sc_module_name nm, const char *arg) : sc_module(nm)
 	state = (struct scm_f194_state *)
 	    CTX_Get("f194", this->name(), sizeof *state);
 	should_i_trace(this->name(), &state->ctx.do_trace);
-	state->reg[0] = true;
-	state->reg[1] = true;
-	state->reg[2] = true;
-	state->reg[3] = true;
+	state->out = 0xf;
 	state->job = 1;
 }
 
@@ -32,49 +30,40 @@ void
 SCM_F194 :: doit(void)
 {
 	const char *what = NULL;
-	bool now[4];
+	unsigned nxt;
 
 	state->ctx.activations++;
 	if (state->job) {
-		pin15 = AS(state->reg[0]);
-		pin14 = AS(state->reg[1]);
-		pin13 = AS(state->reg[2]);
-		pin12 = AS(state->reg[3]);
+		pin15 = AS(state->out & (1<<3));
+		pin14 = AS(state->out & (1<<2));
+		pin13 = AS(state->out & (1<<1));
+		pin12 = AS(state->out & (1<<0));
 		state->job = 0;
 	}
-	now[0] = state->reg[0];
-	now[1] = state->reg[1];
-	now[2] = state->reg[2];
-	now[3] = state->reg[3];
+	nxt = state->out;
 	if (IS_L(pin1)) {
 		what = " clr ";
-		if (state->reg[0] || state->reg[1] || state->reg[2] || state->reg[3]) {
-			now[0] = false;
-			now[1] = false;
-			now[2] = false;
-			now[3] = false;
-		} else {
+		if (nxt)
+			nxt = 0;
+		else
 			next_trigger(pin1.posedge_event());
-		}
 	} else if (pin11.posedge()) {
 		if (IS_H(pin10) && IS_H(pin9)) {
 			what = " load ";
-			now[0] = IS_H(pin3);
-			now[1] = IS_H(pin4);
-			now[2] = IS_H(pin5);
-			now[3] = IS_H(pin6);
+			nxt = 0;
+			if (IS_H(pin3)) nxt |= (1<<3);
+			if (IS_H(pin4)) nxt |= (1<<2);
+			if (IS_H(pin5)) nxt |= (1<<1);
+			if (IS_H(pin6)) nxt |= (1<<0);
 		} else if (IS_L(pin10) && IS_H(pin9)) {
 			what = " right ";
-			now[3] = state->reg[2];
-			now[2] = state->reg[1];
-			now[1] = state->reg[0];
-			now[0] = IS_H(pin2);
+			nxt >>= 1;
+			if (IS_H(pin2)) nxt |= (1<<3);
 		} else if (IS_H(pin10) && IS_L(pin9)) {
 			what = " left ";
-			now[0] = state->reg[1];
-			now[1] = state->reg[2];
-			now[2] = state->reg[3];
-			now[3] = IS_H(pin7);
+			nxt <<= 1;
+			nxt &= 0xf;
+			if (IS_H(pin7)) nxt |= (1<<0);
 		}
 	}
 	if ((state->ctx.do_trace & 2) && what == NULL)
@@ -93,17 +82,13 @@ SCM_F194 :: doit(void)
 		    << " s " << pin9 << pin10
 		    << " cp " << pin11 // CP
 		    << " r "
-		    << state->reg[0] << state->reg[1] << state->reg[2] << state->reg[3]
+		    << std::hex << state->out
+		    << " nxt "
+		    << std::hex << nxt
 		);
 	}
-	if (now[0] != state->reg[0] ||
-	    now[1] != state->reg[1] ||
-	    now[2] != state->reg[2] ||
-	    now[3] != state->reg[3]) {
-		state->reg[0] = now[0];
-		state->reg[1] = now[1];
-		state->reg[2] = now[2];
-		state->reg[3] = now[3];
+	if (nxt != state->out) {
+		state->out = nxt;
 		state->job = 1;
 		next_trigger(1, SC_NS);
 	}

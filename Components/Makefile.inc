@@ -695,6 +695,13 @@ Components/XRFRAM.o: Components/XRFRAM.cc \
     Chassis/r1000sc.h
 	${SC_CC} -o Components/XRFRAM.o Components/XRFRAM.cc
 
+OBJS += Components/XSR8.o
+Components/XSR8.o: Components/XSR8.cc \
+    Components/XSR8.hh \
+    Infra/context.h \
+    Chassis/r1000sc.h
+	${SC_CC} -o Components/XSR8.o Components/XSR8.cc
+
 OBJS += Components/XWCSRAM.o
 Components/XWCSRAM.o: Components/XWCSRAM.cc \
     Components/XWCSRAM.hh \
