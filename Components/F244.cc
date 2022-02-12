@@ -9,7 +9,7 @@
 struct scm_f244_state {
 	struct ctx ctx;
 	int job1, job2;
-	bool out1[4], out2[4];
+	bool out[8];
 };
 
 SCM_F244 :: SCM_F244(sc_module_name nm, const char *arg) : sc_module(nm)
@@ -26,116 +26,34 @@ SCM_F244 :: SCM_F244(sc_module_name nm, const char *arg) : sc_module(nm)
 	state->job2 = -1;
 }
 
-void
-SCM_F244 :: doit1(void)
-{
-	bool next[4];
-	const char *nxt;
+#define XBUF_CLASS SCM_F244
+#define XBUF_SENSE IS_H
 
-	state->ctx.activations++;
-	if (state->job1 > 0) {
-		pin18 = AS(state->out1[0]);
-		pin16 = AS(state->out1[1]);
-		pin14 = AS(state->out1[2]);
-		pin12 = AS(state->out1[3]);
-		state->job1 = 0;
-	} else if (state->job1 < 0) {
-		pin18 = sc_logic_Z;
-		pin16 = sc_logic_Z;
-		pin14 = sc_logic_Z;
-		pin12 = sc_logic_Z;
-	}
+#define XBUF_DOIT doit1
+#define XBUF_OE pin1
+#define XBUF_JOB job1
 
-	if (IS_H(pin1) && state->job1 >= 0) {
-		state->job1 = -1;
-		next_trigger(5, SC_NS);
-		nxt = " ^Z ";
-	} else if (IS_H(pin1)) {
-		next_trigger(pin1.negedge_event());
-		nxt = " =Z ";
-	} else {
-		next[0] = IS_H(pin2);
-		next[1] = IS_H(pin4);
-		next[2] = IS_H(pin6);
-		next[3] = IS_H(pin8);
-		if (state->job1 < 0 ||
-		    next[0] != state->out1[0] ||
-		    next[1] != state->out1[1] ||
-		    next[2] != state->out1[2] ||
-		    next[3] != state->out1[3]) {
-			state->out1[0] = next[0];
-			state->out1[1] = next[1];
-			state->out1[2] = next[2];
-			state->out1[3] = next[3];
-			state->job1 = 1;
-			next_trigger(5, SC_NS);
-			nxt = " != ";
-		} else {
-			nxt = " ? ";
-		}
-	}
-	TRACE(
-	    << nxt
-	    << " OE0_ " << pin1
-	    << " D "
-	    << pin2 << pin4 << pin6 << pin8
-	    << " j " << state->job1
-	);
-}
+#define XBUF_PINS() \
+	PIN(0, pin2, pin18) \
+	PIN(1, pin4, pin16) \
+	PIN(2, pin6, pin14) \
+	PIN(3, pin8, pin12)
 
-void
-SCM_F244 :: doit2(void)
-{
-	bool next[4];
-	const char *nxt;
+#include "Components/xbuf_doit.h"
 
-	state->ctx.activations++;
-	if (state->job2 > 0) {
-		pin3 = AS(state->out2[0]);
-		pin5 = AS(state->out2[1]);
-		pin7 = AS(state->out2[2]);
-		pin9 = AS(state->out2[3]);
-		state->job2 = 0;
-	} else if (state->job2 < 0) {
-		pin3 = sc_logic_Z;
-		pin5 = sc_logic_Z;
-		pin7 = sc_logic_Z;
-		pin9 = sc_logic_Z;
-	}
+#undef XBUF_DOIT
+#undef XBUF_OE
+#undef XBUF_JOB
+#undef XBUF_PINS
 
-	if (IS_H(pin19) && state->job2 >= 0) {
-		state->job2 = -1;
-		next_trigger(5, SC_NS);
-		nxt = " ^Z ";
-	} else if (IS_H(pin19)) {
-		next_trigger(pin19.negedge_event());
-		nxt = " =Z ";
-	} else {
-		next[0] = IS_H(pin17);
-		next[1] = IS_H(pin15);
-		next[2] = IS_H(pin13);
-		next[3] = IS_H(pin11);
-		if (state->job2 < 0 ||
-		    next[0] != state->out2[0] ||
-		    next[1] != state->out2[1] ||
-		    next[2] != state->out2[2] ||
-		    next[3] != state->out2[3]) {
-			state->out2[0] = next[0];
-			state->out2[1] = next[1];
-			state->out2[2] = next[2];
-			state->out2[3] = next[3];
-			state->job2 = 1;
-			next_trigger(5, SC_NS);
-			nxt = " != ";
-		} else {
-			nxt = " ? ";
-		}
-	}
-	TRACE(
-	    << nxt
-	    << " OE1_ " << pin19
-	    << " D "
-	    << pin17 << pin15 << pin13 << pin11
-	    << " j " << state->job2
-	);
-}
+#define XBUF_DOIT doit2
+#define XBUF_OE pin19
+#define XBUF_JOB job2
+
+#define XBUF_PINS() \
+	PIN(4, pin17, pin3) \
+	PIN(5, pin15, pin5) \
+	PIN(6, pin13, pin7) \
+	PIN(7, pin11, pin9)
+
+#include "Components/xbuf_doit.h"

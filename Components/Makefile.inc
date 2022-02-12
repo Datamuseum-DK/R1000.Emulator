@@ -346,14 +346,14 @@ Components/F20.o: Components/F20.cc \
 	${SC_CC} -o Components/F20.o Components/F20.cc
 
 OBJS += Components/F240.o
-Components/F240.o: Components/F240.cc \
+Components/F240.o: Components/F240.cc Components/xbuf_doit.h \
     Components/F240.hh \
     Infra/context.h \
     Chassis/r1000sc.h
 	${SC_CC} -o Components/F240.o Components/F240.cc
 
 OBJS += Components/F244.o
-Components/F244.o: Components/F244.cc \
+Components/F244.o: Components/F244.cc Components/xbuf_doit.h \
     Components/F244.hh \
     Infra/context.h \
     Chassis/r1000sc.h
