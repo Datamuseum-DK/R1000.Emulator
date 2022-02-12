@@ -39,7 +39,7 @@
 #include "Infra/context.h"
 
 static const char *context_filename = "/critter/_ctx";
-static ssize_t context_size = 40<<20;
+static ssize_t context_size = 70<<20;
 
 static int context_fd = -1;
 static uint8_t *context_start = NULL;
