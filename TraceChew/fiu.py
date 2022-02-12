@@ -8,7 +8,7 @@ class FIU_Board(Board):
     CHAINS = {
         #0x60: ("F.MAR", 9, 0x18, [".MARN", ".MAR0",]),
         0x70: ("F.MDREG", 8, 0x10, [".MDREG",]),
-        0x80: ("F.UIR", 6, 0x13, []),
+        0x80: ("F.UIR", 6, 0x13, [".UIR"]),
     }
 
     UIR = {
