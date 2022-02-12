@@ -60,7 +60,7 @@ CLI_INCL = \
 	Infra/elastic.h
 
 all:	netlist
-	${MAKE} ${MAKEFLAGS} r1000sim
+	${MAKE} r1000sim
 
 netlist:
 	python3 -u NetList/process_kicad_netlists.py ${SC_BRANCH} ${NETLISTS}
@@ -433,12 +433,13 @@ foo:
 		
 
 r1000sim.${SC_BRANCH}:	netlist ${OBJS}
-	${CXX} -o r1000sim.${SC_BRANCH} ${CFLAGS} ${LDFLAGS} ${OBJS} \
+	@${CXX} -o r1000sim.${SC_BRANCH} ${CFLAGS} ${LDFLAGS} ${OBJS} \
 		-L /usr/local/lib -lsystemc
-	rm -f *.tmp
+
+.PHONY: r1000sim
 
 r1000sim:
-	${MAKE} ${MAKEFLAGS} r1000sim.${SC_BRANCH}
+	${MAKE} r1000sim.${SC_BRANCH}
 	cp r1000sim.${SC_BRANCH} r1000sim
 
 clean:
