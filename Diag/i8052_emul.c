@@ -1134,6 +1134,31 @@ mcs51_sfrfunc_default(struct mcs51 *mcs51, uint8_t sfr_adr, int what)
 
 /*---------------------------------------------------------------------*/
 
+static unsigned
+mcs51_bitfunc_psw_p(struct mcs51 *mcs51, uint8_t bit_adr, int what)
+{
+	unsigned acc, par;
+
+	(void)bit_adr;
+	if (what == -1) {
+		acc = mcs51->sfr[SFR_ACC];
+		par = acc;
+		par ^= (acc >> 1);
+		par ^= (acc >> 2);
+		par ^= (acc >> 3);
+		par ^= (acc >> 4);
+		par ^= (acc >> 5);
+		par ^= (acc >> 6);
+		par ^= (acc >> 7);
+		par &= 1;
+		mcs51_trace(mcs51, "Parity (0x%02x) = %x", mcs51->sfr[SFR_ACC], par);
+		return (par);
+	}
+	return (0);
+}
+
+/*---------------------------------------------------------------------*/
+
 uint8_t
 MCS51_REG(struct mcs51 *mcs51, int reg)
 {
@@ -1357,6 +1382,7 @@ MCS51_SFRS
 	MCS51_SetSFR(mcs51, SFR_PSW, mcs51_sfrfunc_default, "PSW");
 	MCS51_SetSFRBits(mcs51, SFR_PSW, mcs51_bitfunc_default,
 	    "CY", "AC", "F0", "RS1", "RS0", "OV", NULL, "P");
+	MCS51_SetBit(mcs51, SFR_PSW + 0, mcs51_bitfunc_psw_p, "PSW.p");
 
 	MCS51_SetSFR(mcs51, SFR_SP, mcs51_sfrfunc_default, "SP");
 
