@@ -285,14 +285,14 @@ hotfix_kernel_4_2_18(void)
 	 * 00005d24 20 1f                      MOVE.L  (A7)+,D0
 	 * 00005d26 4e 75                      RTS
 	 */
-	ioc_breakpoint_rpn(0x00005d1c, "D0 0xa min !D0");
+	ioc_breakpoint_rpn(0x00005d1c, "D0 0x20 min !D0");
 
 	/*
 	 * 000066d0 20 3c 00 23 7c 4d     MOVE.L  #0x00237c4d,D0
 	 * 000066d6 53 80                 SUBQ.L  #0x1,D0
 	 * 000066d8 66 fc                 BNE     0x66d6
 	 */
-	ioc_breakpoint_rpn(0x000066d6, "D0 0xa min !D0");
+	ioc_breakpoint_rpn(0x000066d6, "D0 0x20 min !D0");
 
 	/*
 	 * 00009818 20 3c 00 03 ff ff          MOVE.L  #0x0003ffff,D0
@@ -307,7 +307,7 @@ hotfix_kernel_4_2_18(void)
 	 * 00009afc 33 fc 00 30 93 03 e0 08    MOVE.W  #0x0030,IO_RESHA_RES_CTL
 	 * 00009b04 4e b9 00 00 97 f4          JSR     0x97f4
 	 */
-	ioc_breakpoint_rpn(0x00009afc, "D0 0xa min !D0");
+	ioc_breakpoint_rpn(0x00009afc, "D0 0x20 min !D0");
 
 	/*
 	 * 00009b56 30 3c 7f ff                MOVE.W  #0x7fff,D0
@@ -317,7 +317,7 @@ hotfix_kernel_4_2_18(void)
 	 * 00009b62 4e b9 00 00 97 d0          JSR     0x97d0
 	 * 00009b68 0c 00 00 42                CMPI.B  #0x42,D0
 	 */
-	ioc_breakpoint_rpn(0x00009b5a, "D0 0xa min !D0");
+	ioc_breakpoint_rpn(0x00009b5a, "D0 0x20 min !D0");
 }
 
 static int v_matchproto_(ioc_bpt_f)
