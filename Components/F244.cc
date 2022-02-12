@@ -32,6 +32,7 @@ SCM_F244 :: SCM_F244(sc_module_name nm, const char *arg) : sc_module(nm)
 #define XBUF_DOIT doit1
 #define XBUF_OE pin1
 #define XBUF_JOB job1
+#define XBUF_TRACE << " top "
 
 #define XBUF_PINS() \
 	PIN(0, pin2, pin18) \
@@ -45,15 +46,17 @@ SCM_F244 :: SCM_F244(sc_module_name nm, const char *arg) : sc_module(nm)
 #undef XBUF_OE
 #undef XBUF_JOB
 #undef XBUF_PINS
+#undef XBUF_TRACE
 
 #define XBUF_DOIT doit2
 #define XBUF_OE pin19
 #define XBUF_JOB job2
+#define XBUF_TRACE << " bot "
 
 #define XBUF_PINS() \
-	PIN(4, pin17, pin3) \
-	PIN(5, pin15, pin5) \
-	PIN(6, pin13, pin7) \
-	PIN(7, pin11, pin9)
+	PIN(4, pin11, pin9) \
+	PIN(5, pin13, pin7) \
+	PIN(6, pin15, pin5) \
+	PIN(7, pin17, pin3)
 
 #include "Components/xbuf_doit.h"
