@@ -3,7 +3,7 @@ from board import Board
 class TYP_Board(Board):
 
     CHAINS = {
-        0x30: ("WDR", 8, 0x38, [".WDR0"]),
+        0x30: ("WDR", 9, 0x38, [".WDR0", ".WDRP"]),
         0x50: ("UIR", 6, 0x3b, [".URSR"]),
     }
 

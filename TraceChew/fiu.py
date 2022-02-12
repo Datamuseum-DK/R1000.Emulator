@@ -6,7 +6,7 @@ from r1k_fiu_ucode import fiu_ucode
 class FIU_Board(Board):
 
     CHAINS = {
-        0x60: ("F.MAR", 8, 0x18, [".MARN", ".MAR0",]),
+        #0x60: ("F.MAR", 9, 0x18, [".MARN", ".MAR0",]),
         0x70: ("F.MDREG", 8, 0x10, [".MDREG",]),
         0x80: ("F.UIR", 6, 0x13, []),
     }
@@ -40,8 +40,8 @@ class FIU_Board(Board):
        "-DIAG_MEMHOLD~",
        "+DIAG_MCTL.EN~",
        "+DIAG_ADR.SEL",
-       "-MAR.SEL0",
-       "-MAR.SEL1",
+       "MAR.SEL.0",
+       "MAR.SEL.1",
        "+SCAN_MAR~",
        "-EVNT_CLKSTP.EN",
     )
@@ -49,8 +49,8 @@ class FIU_Board(Board):
     DUIRG3_BITS = (
         "-DIAG_FPAR",
         "-DIAG.APAR",
-        "-MDR.SEL1",
-        "-MDR.SEL0",
+        "MDR.SEL.1",
+        "MDR.SEL.0",
         "+SCAN_MDR~",
         "UIR.MODE~1",
         "+SCAN_UIR~",
@@ -80,8 +80,8 @@ class FIU_Board(Board):
     )
 
     DUIRG6_BITS = (
-        "+PAREG.SEL0",
-        "-PAREG.SEL1",
+        "PAREG.SEL.0",
+        "PAREG.SEL.1",
         "+SCOPE_SYNC",
         "UIRCLK.EN~",
         "-MY_FREEZE.EN~",
