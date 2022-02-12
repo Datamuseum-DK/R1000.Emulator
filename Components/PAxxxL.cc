@@ -28,7 +28,7 @@ SCM_PAXXXL :: doit(void)
 {
 
 	unsigned adr = 0;
-	//wait();
+
 	state->ctx.activations++;
 
 	if (IS_H(pin1)) adr |= 1 << 0;
@@ -41,7 +41,7 @@ SCM_PAXXXL :: doit(void)
 	if (IS_H(pin18)) adr |= 1 << 7;
 	if (IS_H(pin19)) adr |= 1 << 8;
 	unsigned data = prom[adr];
-	// wait(1, SC_NS);
+
 	if (data != state->olddata) {
 		TRACE(
 		    << " a "
@@ -58,14 +58,14 @@ SCM_PAXXXL :: doit(void)
 		    << AS(data & 0x01)
 		);
 		state->olddata = data;
-	}
 
-	pin14 = AS(data & 0x80);
-	pin13 = AS(data & 0x40);
-	pin12 = AS(data & 0x20);
-	pin11 = AS(data & 0x10);
-	pin9 = AS(data & 0x08);
-	pin8 = AS(data & 0x04);
-	pin7 = AS(data & 0x02);
-	pin6 = AS(data & 0x01);
+		pin14 = AS(data & 0x80);
+		pin13 = AS(data & 0x40);
+		pin12 = AS(data & 0x20);
+		pin11 = AS(data & 0x10);
+		pin9 = AS(data & 0x08);
+		pin8 = AS(data & 0x04);
+		pin7 = AS(data & 0x02);
+		pin6 = AS(data & 0x01);
+	}
 }
