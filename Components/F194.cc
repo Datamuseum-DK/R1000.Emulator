@@ -64,6 +64,12 @@ SCM_F194 :: doit(void)
 			nxt <<= 1;
 			nxt &= 0xf;
 			if (IS_H(pin7)) nxt |= (1<<0);
+		} else {
+			next_trigger(
+			    pin1.negedge_event() |
+			    pin10.posedge_event() |
+			    pin9.posedge_event()
+			);
 		}
 	}
 	if ((state->ctx.do_trace & 2) && what == NULL)
