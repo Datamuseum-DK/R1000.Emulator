@@ -646,6 +646,13 @@ Components/TSXXPAL.o: Components/TSXXPAL.cc \
     Chassis/r1000sc.h
 	${SC_CC} -o Components/TSXXPAL.o Components/TSXXPAL.cc
 
+OBJS += Components/XADD16.o
+Components/XADD16.o: Components/XADD16.cc Components/xbuf_doit.h \
+    Components/XADD16.hh \
+    Infra/context.h \
+    Chassis/r1000sc.h
+	${SC_CC} -o Components/XADD16.o Components/XADD16.cc
+
 OBJS += Components/XBUF64.o
 Components/XBUF64.o: Components/XBUF64.cc Components/xbuf_doit.h \
     Components/XBUF64.hh \
