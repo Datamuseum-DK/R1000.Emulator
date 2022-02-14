@@ -10,9 +10,12 @@ struct scm_f148_state {
 	struct ctx ctx;
 };
 
-void
-SCM_F148 :: loadit(const char *arg)
+SCM_F148 :: SCM_F148(sc_module_name nm, const char *arg) : sc_module(nm)
 {
+	SC_METHOD(doit);
+	sensitive << pin1 << pin2 << pin3 << pin4 << pin5 << pin10
+		  << pin11 << pin12 << pin13;
+
 	state = (struct scm_f148_state *)
 	    CTX_Get("f148", this->name(), sizeof *state);
 	should_i_trace(this->name(), &state->ctx.do_trace);
@@ -44,16 +47,16 @@ SCM_F148 :: doit(void)
 	if (IS_H(pin5))
 		s = 16;
 	TRACE(
-	    << pin1
-	    << pin2
-	    << pin3
 	    << pin4
-	    << pin5
-	    << pin10
-	    << pin11
-	    << pin12
+	    << pin3
+	    << pin2
+	    << pin1
 	    << pin13
-	    << "|"
+	    << pin12
+	    << pin11
+	    << pin10
+	    << " e1 " << pin5
+	    << " | "
 	    << std::hex << s
 	);
 	pin9 = AS(!(s & 1));

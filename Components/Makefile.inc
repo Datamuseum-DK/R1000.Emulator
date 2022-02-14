@@ -681,12 +681,33 @@ Components/XIOCRAM.o: Components/XIOCRAM.cc \
     Chassis/r1000sc.h
 	${SC_CC} -o Components/XIOCRAM.o Components/XIOCRAM.cc
 
+OBJS += Components/XLAT32.o
+Components/XLAT32.o: Components/XLAT32.cc \
+    Components/XLAT32.hh \
+    Infra/context.h \
+    Chassis/r1000sc.h
+	${SC_CC} -o Components/XLAT32.o Components/XLAT32.cc
+
 OBJS += Components/XLAT64.o
 Components/XLAT64.o: Components/XLAT64.cc \
     Components/XLAT64.hh \
     Infra/context.h \
     Chassis/r1000sc.h
 	${SC_CC} -o Components/XLAT64.o Components/XLAT64.cc
+
+OBJS += Components/XREG16.o
+Components/XREG16.o: Components/XREG16.cc \
+    Components/XREG16.hh \
+    Infra/context.h \
+    Chassis/r1000sc.h
+	${SC_CC} -o Components/XREG16.o Components/XREG16.cc
+
+OBJS += Components/XREG32.o
+Components/XREG32.o: Components/XREG32.cc \
+    Components/XREG32.hh \
+    Infra/context.h \
+    Chassis/r1000sc.h
+	${SC_CC} -o Components/XREG32.o Components/XREG32.cc
 
 OBJS += Components/XREG64.o
 Components/XREG64.o: Components/XREG64.cc \
@@ -708,6 +729,13 @@ Components/XSR12.o: Components/XSR12.cc \
     Infra/context.h \
     Chassis/r1000sc.h
 	${SC_CC} -o Components/XSR12.o Components/XSR12.cc
+
+OBJS += Components/XSR16.o
+Components/XSR16.o: Components/XSR16.cc \
+    Components/XSR16.hh \
+    Infra/context.h \
+    Chassis/r1000sc.h
+	${SC_CC} -o Components/XSR16.o Components/XSR16.cc
 
 OBJS += Components/XSR8.o
 Components/XSR8.o: Components/XSR8.cc \

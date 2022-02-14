@@ -32,7 +32,7 @@ SCM_XLAT64 :: doit(void)
 	    << " le " << pin1.posedge()
 	    << " oe " << pin2
 	    << " | " XLAT64_PINS()
-        );
+	);
 	#undef PIN
 
 

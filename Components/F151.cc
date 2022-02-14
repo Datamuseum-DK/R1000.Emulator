@@ -10,9 +10,12 @@ struct scm_f151_state {
 	struct ctx ctx;
 };
 
-void
-SCM_F151 :: loadit(const char *arg)
+SCM_F151 :: SCM_F151(sc_module_name nm, const char *arg) : sc_module(nm)
 {
+	SC_METHOD(doit);
+	sensitive << pin1 << pin2 << pin3 << pin4 << pin7 << pin9
+		  << pin10 << pin11 << pin12 << pin13 << pin14 << pin15;
+
 	state = (struct scm_f151_state *)
 	    CTX_Get("f151", this->name(), sizeof *state);
 	should_i_trace(this->name(), &state->ctx.do_trace);
@@ -40,20 +43,23 @@ SCM_F151 :: doit(void)
 	default: s = false ; break;
 	}
 	TRACE(
-	    << pin1
-	    << pin2
-	    << pin3
 	    << pin4
-	    << pin7
+	    << pin3
+	    << pin2
+	    << pin1
+	    << pin15
+	    << pin14
+	    << pin13
+	    << pin12
+	    << " s "
 	    << pin9
 	    << pin10
 	    << pin11
-	    << pin12
-	    << pin13
-	    << pin14
-	    << pin15
-	    << "|"
+	    << " e "
+	    << pin7
+	    << " n "
 	    << adr
+	    << " | "
 	    << s
 	);
 	pin5 = AS(s);

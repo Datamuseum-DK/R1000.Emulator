@@ -1,27 +1,27 @@
 #include <systemc.h>
 #include "Chassis/r1000sc.h"
 #include "Infra/context.h"
-#include "XREG64.hh"
+#include "XLAT32.hh"
 
-struct scm_xreg64_state {
+struct scm_xlat32_state {
 	struct ctx ctx;
-	bool reg[64];
+	bool reg[32];
 	int job;
 };
 
-SCM_XREG64 :: SCM_XREG64(sc_module_name nm, const char *arg) : sc_module(nm)
+SCM_XLAT32 :: SCM_XLAT32(sc_module_name nm, const char *arg) : sc_module(nm)
 {
 	SC_METHOD(doit);
 	sensitive << pin1.pos() << pin2;
 
-	state = (struct scm_xreg64_state *)CTX_Get("XREG64", this->name(), sizeof *state);
+	state = (struct scm_xlat32_state *)CTX_Get("XLAT32", this->name(), sizeof *state);
 	should_i_trace(this->name(), &state->ctx.do_trace);
 }
 
 void
-SCM_XREG64 :: doit(void)
+SCM_XLAT32 :: doit(void)
 {
-	bool nxt[64];
+	bool nxt[32];
 
 	state->ctx.activations++;
 
@@ -31,7 +31,7 @@ SCM_XREG64 :: doit(void)
 	    << " job " << state->job
 	    << " le " << pin1.posedge()
 	    << " oe " << pin2
-	    << " | " XREG64_PINS()
+	    << " | " XLAT32_PINS()
 	);
 	#undef PIN
 
@@ -39,40 +39,23 @@ SCM_XREG64 :: doit(void)
 	if (state->job > 0) {
 		#define PIN(bit,pin_in,pin_out) \
 		pin_out = AS(state->reg[bit]);
-		XREG64_PINS()
+		XLAT32_PINS()
 		#undef PIN
 		state->job = 0;
 	} else if (state->job < 0) {
 		#define PIN(bit,pin_in,pin_out) \
 		pin_out = sc_logic_Z;
-		XREG64_PINS()
+		XLAT32_PINS()
 		#undef PIN
 	}
 
-	if (pin1.posedge()) {
-		if (IS_H(pin2)) {
-			#define PIN(bit,pin_in,pin_out) \
-			state->reg[bit] = IS_H(pin_in);
-			XREG64_PINS()
-			#undef PIN
-		} else {
-
-			#define PIN(bit,pin_in,pin_out) \
-			nxt[bit] = IS_H(pin_in); \
-			if (nxt[bit] != state->reg[bit]) state->job = 1;
-			XREG64_PINS()
-			#undef PIN
-
-			if (state->job != 0) {
-				state->job = 1;
-				#define PIN(bit,pin_in,pin_out) \
-				state->reg[bit] = nxt[bit];
-				XREG64_PINS()
-				next_trigger(5, SC_NS);
-			}
-		}
+	if (IS_H(pin1)) {
+		#define PIN(bit,pin_in,pin_out) \
+		nxt[bit] = IS_H(pin_in); \
+		if (nxt[bit] != state->reg[bit]) state->job = 1;
+		XLAT32_PINS()
+		memcpy(state->reg, nxt, sizeof state->reg);
 	}
-
 	if (IS_H(pin2)) {
 		if (state->job >= 0) {
 			state->job = -1;
