@@ -44,6 +44,12 @@ SCM_F169 :: doit(void)
 				what = " dn ";
 				state->count = (state->count + 0xf) & 0xf;
 			}
+		} else {
+			next_trigger(
+				pin9.negedge_event() |
+				pin7.default_event() |
+				pin10.default_event()
+			);
 		}
 	}
 	if (IS_H(pin10))
