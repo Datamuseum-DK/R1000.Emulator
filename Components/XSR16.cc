@@ -81,7 +81,7 @@ SCM_XSR16 :: doit(void)
 		} else if (IS_L(pin6) && IS_H(pin5)) {
 			what = " right ";
 			nxt >>= 1;
-			if (IS_H(pin3)) nxt |= (1<<11);
+			if (IS_H(pin3)) nxt |= (1<<15);
 		} else if (IS_H(pin6) && IS_L(pin5)) {
 			what = " left ";
 			nxt <<= 1;
