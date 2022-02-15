@@ -778,3 +778,10 @@ Components/XWCSRAM.o: Components/XWCSRAM.cc \
     Infra/context.h \
     Chassis/r1000sc.h
 	${SC_CC} -o Components/XWCSRAM.o Components/XWCSRAM.cc
+
+OBJS += Components/XZCNT.o
+Components/XZCNT.o: Components/XZCNT.cc \
+    Components/XZCNT.hh \
+    Infra/context.h \
+    Chassis/r1000sc.h
+	${SC_CC} -o Components/XZCNT.o Components/XZCNT.cc
