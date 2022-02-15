@@ -36,7 +36,7 @@ SCM_F20 :: doit(void)
 	    << s
 	);
 	pin6 = AS(s);
-#if 1
+#if 0	// This does not work with the VAL ALUs OC-or'ing of A=B and VAL.CNAN3A
 	if (pin1 != sc_logic_1)
 		next_trigger(pin1.posedge_event());
 	else if (pin2 != sc_logic_1)
