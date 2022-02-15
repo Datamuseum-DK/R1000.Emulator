@@ -19,6 +19,7 @@ SCM_XBUFI64 :: SCM_XBUFI64(sc_module_name nm, const char *arg) : sc_module(nm)
 
 	state = (struct scm_xbufi64_state *)CTX_Get("XBUFI64", this->name(), sizeof *state);
 	should_i_trace(this->name(), &state->ctx.do_trace);
+	state->job = -1;
 }
 
 #define XBUF_CLASS SCM_XBUFI64

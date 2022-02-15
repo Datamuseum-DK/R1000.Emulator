@@ -19,7 +19,7 @@ XBUF_CLASS :: XBUF_DOIT(void)
 
 	#define PIN(bit,pin_in,pin_out) << pin_in
 	if (state->XBUF_JOB || (state->ctx.do_trace & 2)) {
-		TRACE( XBUF_TRACE << "job " << state->XBUF_JOB << " e " << pin1
+		TRACE( XBUF_TRACE << "job " << state->XBUF_JOB << " oe " << XBUF_OE
 		    << " d " XBUF_PINS());
 	}
 	#undef PIN
@@ -34,7 +34,6 @@ XBUF_CLASS :: XBUF_DOIT(void)
 		XBUF_PINS()
 		#undef PIN
 	}
-
 	if (IS_H(XBUF_OE)) {
 		#define PIN(bit,pin_in,pin_out) \
 		pin_out = sc_logic_Z;

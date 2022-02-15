@@ -19,6 +19,7 @@ SCM_XBUF32 :: SCM_XBUF32(sc_module_name nm, const char *arg) : sc_module(nm)
 
 	state = (struct scm_xbuf32_state *)CTX_Get("XBUF32", this->name(), sizeof *state);
 	should_i_trace(this->name(), &state->ctx.do_trace);
+	state->job = -1;
 }
 
 #define XBUF_CLASS SCM_XBUF32
