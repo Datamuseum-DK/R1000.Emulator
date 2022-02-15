@@ -39,13 +39,14 @@ SCM_XCTR16 :: doit(void)
 			XCTR16_PINS()
 			#undef PIN
 		} else if (IS_L(pin36) && IS_L(pin37)) {
-			if (IS_H(pin1)) {
+			if (IS_H(pin35)) {
 				what = " up ";
-				state->count = (state->count + 0x1) & 0xffff;
+				state->count += 0x0001;
 			} else {
 				what = " dn ";
-				state->count = (state->count + 0xf) & 0xffff;
+				state->count += 0xffff;
 			}
+			state->count &= 0xffff;
 		} else {
 			next_trigger(
 				pin34.negedge_event() |
@@ -72,12 +73,12 @@ SCM_XCTR16 :: doit(void)
 		#define PIN(bit, pin_in, pin_out) << pin_in
 		TRACE(
 		    << what
-		    << " ud " << pin35
 		    << " clk " << pin33
+		    << " ud " << pin35
+		    << " load " << pin34
 		    << " in "
 		    XCTR16_PINS()
 		    << " enp " << pin36
-		    << " load " << pin34
 		    << " ent " << pin37
 		    << " | "
 		    << std::hex << state->count
