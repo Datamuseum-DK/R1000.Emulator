@@ -32,14 +32,14 @@ SCM_F374 :: doit(void)
 	/* TEST_ABUS_PARITY.FIU requires a zero initial state */
 	state->ctx.activations++;
 	if (state->newreg == -2) {
-		pin2 = sc_logic_0;
-		pin5 = sc_logic_0;
-		pin6 = sc_logic_0;
-		pin9 = sc_logic_0;
-		pin12 = sc_logic_0;
-		pin15 = sc_logic_0;
-		pin16 = sc_logic_0;
-		pin19 = sc_logic_0;
+		pin2 = sc_logic_Z;
+		pin5 = sc_logic_Z;
+		pin6 = sc_logic_Z;
+		pin9 = sc_logic_Z;
+		pin12 = sc_logic_Z;
+		pin15 = sc_logic_Z;
+		pin16 = sc_logic_Z;
+		pin19 = sc_logic_Z;
 		state->newreg = -1;
 	}
 	if (state->newreg >= 0) {
