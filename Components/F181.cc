@@ -48,7 +48,10 @@ SCM_F181 :: doit(void)
 	pin11 = AS(val & 0x40);
 	pin10 = AS(val & 0x20);
 	pin9 = AS(val & 0x10);
-	pin14 = AS(val & 0x08);
+	if (val & 0x08)
+		pin14 = sc_logic_Z;
+	else
+		pin14 = sc_logic_0;
 	pin15 = AS(val & 0x04);
 	pin16 = AS(val & 0x02);
 	pin17 = AS(val & 0x01);
