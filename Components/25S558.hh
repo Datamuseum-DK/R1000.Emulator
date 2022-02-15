@@ -51,7 +51,6 @@ SC_MODULE(SCM_25S558)
 
 	private:
 	struct scm_25s558_state *state;
-	void loadit(const char *arg);
 	void doit(void);
 };
 

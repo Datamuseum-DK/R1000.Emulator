@@ -49,7 +49,7 @@ SCM_F258 :: doit(void)
 	    << output[2]
 	    << output[3]
 	);
-	if (!IS_L(pin15)) {
+	if (IS_H(pin15)) {
 		pin4 = sc_logic_Z;
 		pin7 = sc_logic_Z;
 		pin9 = sc_logic_Z;
