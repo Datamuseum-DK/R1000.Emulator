@@ -12,7 +12,9 @@ struct scm_xlat32_state {
 SCM_XLAT32 :: SCM_XLAT32(sc_module_name nm, const char *arg) : sc_module(nm)
 {
 	SC_METHOD(doit);
-	sensitive << pin1.pos() << pin2;
+	#define PIN(bit, pin_in, pin_out) << pin_in
+	sensitive << pin1.pos() << pin2 XLAT32_PINS();
+	#undef PIN
 
 	state = (struct scm_xlat32_state *)CTX_Get("XLAT32", this->name(), sizeof *state);
 	should_i_trace(this->name(), &state->ctx.do_trace);
