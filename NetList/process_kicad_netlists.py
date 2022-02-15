@@ -125,6 +125,8 @@ class Net():
             self.sheets[0].local_nets.append(self)
         self.find_cname()
 
+        self.ponder()
+
     def find_cname(self):
         ''' This is gnarly '''
         self.cname = self.name
@@ -164,6 +166,27 @@ class Net():
         while len(text.expandtabs()) < 64:
             text += "\t"
         return text + "// " + self.name + "\n"
+
+    def ponder(self):
+        if self.name[:2] in ("GB", "GF", "PD", "PU",):
+            return
+        census = {}
+        for i in self.nodes:
+            j = str(i.sexp.find_first("pintype")[0])
+            census[j] = 1 + census.get(j, 0)
+        if len(census) == 1 and '"output+no_connect"' in census:
+            return
+        if len(census) == 1 and '"input+no_connect"' in census:
+            return
+        if len(census) == 1 and '"tri_state+no_connect"' in census:
+            return
+        if sum(census.values()) > 1 and '"tri_state"' in census:
+            return
+        if '"input"' in census and '"tri_state"' in census:
+            return
+        if '"input"' in census and '"output"' in census:
+            return
+        print("    ", self, census)
 
 class Component():
     ''' A `component` from the netlist file '''
