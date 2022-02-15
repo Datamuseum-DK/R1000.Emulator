@@ -10,9 +10,13 @@ struct scm_f133_state {
 	struct ctx ctx;
 };
 
-void
-SCM_F133 :: loadit(const char *arg)
+SCM_F133 :: SCM_F133(sc_module_name nm, const char *arg) : sc_module(nm)
 {
+	SC_METHOD(doit);
+	sensitive << pin1 << pin2 << pin3 << pin4 << pin5 << pin6
+		  << pin7 << pin10 << pin11 << pin12 << pin13
+		  << pin14 << pin15;
+
 	state = (struct scm_f133_state *)
 	    CTX_Get("f133", this->name(), sizeof *state);
 	should_i_trace(this->name(), &state->ctx.do_trace);
@@ -27,6 +31,12 @@ SCM_F133 :: doit(void)
 	    && IS_H(pin11) && IS_H(pin12) && IS_H(pin13) && IS_H(pin14)
 	    && IS_H(pin15));
 	TRACE(
+	    << pin10
+	    << pin11
+	    << pin12
+	    << pin13
+	    << pin14
+	    << pin15
 	    << pin1
 	    << pin2
 	    << pin3
@@ -34,12 +44,6 @@ SCM_F133 :: doit(void)
 	    << pin5
 	    << pin6
 	    << pin7
-	    << pin10
-	    << pin11
-	    << pin12
-	    << pin13
-	    << pin14
-	    << pin15
 	    << "|"
 	    << s
 	);
