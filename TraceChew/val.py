@@ -4,6 +4,7 @@ class VAL_Board(Board):
 
     CHAINS = {
         0x30: ("WDR", 8, 0x38, [".WDR0"]),
+        0x33: ("WDR", 8, 0x39, [".WDR0"]),
         0x40: ("UIR", 6, 0x3b, []),
     }
 

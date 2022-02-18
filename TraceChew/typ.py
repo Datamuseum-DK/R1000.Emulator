@@ -87,6 +87,13 @@ class TYP_Board(Board):
     def __init__(self):
         super().__init__("TYP", 6)
 
+    def Ins_d4(self, adr, lines):
+
+        if self.mem[adr+1] == 0x08 and self.mem[adr+2] == 0x41:
+            print("    PAREG => 0x%02x:" % self.mem[adr+3])
+            return True
+
+
     def DUIRG0(self, line):
         self.explines.append(line[:2] + [self.just_bits(line[-1], self.DUIRG0_BITS)])
 

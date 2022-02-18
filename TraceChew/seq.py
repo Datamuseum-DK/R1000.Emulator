@@ -25,21 +25,21 @@ class SEQ_Board(Board):
     )
 
     DUIRG3_BITS = (
-        "-ALWAYS.MODE0",
-        "-ALWAYS.MODE1",
-        "-UIR.MODE0",
-        "-UIR.MODE1",
-        "-DECODER.MODE0",
-        "-DECODER.MODE1",
-        "-DG_SEQ.MODE0",
-        "-DG_SEQ.MODE1",
+        "ALWAYS.MODE.0",
+        "ALWAYS.MODE.1",
+        "UIR.MODE.0",
+        "UIR.MODE.1",
+        "DECODER.MODE.0",
+        "DECODER.MODE.1",
+        "DG_SEQ.MODE.0",
+        "DG_SEQ.MODE.1",
     )
 
     DUIRG4_BITS = (
         "-DSYNC.FSM",
         "DIAG_STOP",
-        "SCAN.MODE0",
-        "SCAN.MODE1",
+        "SCAN.MODE.0",
+        "SCAN.MODE.1",
         "-CUR_DV~.DIAG",
         "+DEC_WRITE.OE~",
         "-DEC_CS.DIAG",
@@ -52,9 +52,9 @@ class SEQ_Board(Board):
         "+NOVRAM.WE~",
         "+NOVRAM.CS~",
         "+NOVRAM.STORE~",
-        "DEC0",
-        "DEC1",
-        "DEC2",
+        "DEC.0",
+        "DEC.1",
+        "DEC.2",
     )
 
     DUIRG6_BITS = (
@@ -81,6 +81,12 @@ class SEQ_Board(Board):
 
     def __init__(self):
         super().__init__("SEQ", 2)
+
+    def Ins_cb(self, adr, lines):
+
+        if self.mem[adr+1] == 0x31:
+            print("    SEQDG.L => @R3 (0x%02x)" % self.mem[0x13])
+            return True
 
     def Ins_da(self, adr, lines):
 
