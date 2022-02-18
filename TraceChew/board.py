@@ -9,7 +9,7 @@ class Board():
     def __init__(self, name, address):
         self.name = name
         self.address = address
-        self.mem = mem.ByteMem(0, 0xff, attr=2)
+        self.mem = mem.ByteMem(0, 0x100, attr=2)
         self.dlpt = 0x0f # space for length byte
         self.expins = None
         self.explines = []
@@ -34,7 +34,7 @@ class Board():
             self.explines.append(line)
 
     def finish(self):
-        self.one_ins()
+        return
 
     def diproc(self, line):
         if line[2] == "DIAGBUS":
@@ -52,18 +52,29 @@ class Board():
         self.tref = int(line[0])
         self.one_ins()
         self.expins = line
+        if line[5] == "5c": # END
+            self.one_ins()
 
     def diagbus(self, line):
+        if line[3] == "TX":
+            return
         # print("DB", self.name, self.dbus_state, line)
         if self.dbus_state == -1:
             if line[5] == "DOWNLOAD" and line[6] == self.name:
+                self.mem = mem.ByteMem(0, 0x100, attr=2)
+                #print("DLD START", self.name)
                 self.dbus_state = 0
+                self.dlpt = 0x0f
             return
-        if line[-2] == "payload":
+        if line[-2] == "payload" and self.dbus_state == 0:
             self.mem[self.dlpt] = int(line[4], 16)
+            #print("DLD DATA", "0x%02x" % self.dlpt, "0x%02x" % self.mem[self.dlpt])
             if self.dlpt == 0x10 + self.mem[0xf]:
+                #print("DLD END", self.name)
+                self.dbus_state = -1
                 self.disass()
-            self.dlpt += 1
+            else:
+                self.dlpt += 1
 
     def disass(self):
         cx = R1kExp(board=self.name)
@@ -73,23 +84,39 @@ class Board():
         cx.disass(cx.code_base)
         print(self.name, "EXPERIMENT")
         print("=" * 80)
-        for i in self.mem:
-            j = i.render()
-            self.src[i.lo] = j
-            print("%02x\t" % i.lo, j)
-        print("=" * 80)
+        fn = "/tmp/_r1ktrace"
+        listing.Listing(
+            cx.m,
+            fn=fn,
+            ncol=5,
+            lo=0x10,
+            charset=False,
+        )
+        self.src = {}
+        for i in open(fn):
+            i = i.rstrip()
+            j = int(i[:2], 16)
+            i = i[:2] + ":" + i[2:]
+            self.src[j] = i
+            print(i)
 
     def one_ins(self):
         if self.expins:
             adr = int(self.expins[3], 16)
             print("-" * 80)
             print(self.expins[0])
-            print("%02x" % adr, self.src.get(adr))
+            print(self.src.get(adr))
             for i in range(10, len(self.expins), 16):
                 print("   %02x: " % (i + 6), " ".join(self.expins[i:i + 16]))
             for n, i in enumerate(self.expins[10:]):
                 self.mem[n + 0x10] = int(i, 16)
-            handler = getattr(self, "Ins_%02x" % self.mem[adr], None)
+            try:
+                ins = self.mem[adr]
+                ins_hdl = "Ins_%02x" % ins
+            except mem.MemError:
+                ins = None
+                ins_hdl = "_nonexistent"
+            handler = getattr(self, ins_hdl, None)
             if not handler or not handler(adr, self.explines):
                 for i in self.explines:
                     print("   ", i)

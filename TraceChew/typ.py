@@ -17,7 +17,7 @@ class TYP_Board(Board):
         "+CN.DIAG_ON~",
         "+b1",
         "+BANK_SELECT~",
-        "TYPE.DIAG_ON~",
+        "+TYPE.DIAG_ON~",
         "+FIU.DIAG_ON~",
         "+FSM_DONE~",
         "DIAG.WDR.S~.1",
@@ -36,7 +36,7 @@ class TYP_Board(Board):
     )
 
     DUIRG3_BITS = (
-        "DIAG_STOP",
+        "+DIAG_STOP",
         "+CSA.DIAG.EN~",
         "+b2",
         "+NOVRAM.CS~",
@@ -69,14 +69,14 @@ class TYP_Board(Board):
     )
 
     DUIRG6_BITS = (
-        "LOOP.DIAG.LD~",
-        "LOOP.DIAG.CT~",
-        "LOOP.DIAG.EN",
-        "DIAG_CNTR.EN~",
-        "DIAG_CNTR.LD~",
-        "UIR.SEL0~",
-        "ADR.DIAG_OFF~",
-        "DIAG_UADR.SEL~",
+        "+LOOP.DIAG.LD~",
+        "-LOOP.DIAG.CT~",
+        "-LOOP.DIAG.EN",
+        "+DIAG_CNTR.EN~",
+        "+DIAG_CNTR.LD~",
+        "-UIR.SEL0~",
+        "-ADR.DIAG_OFF~",
+        "+DIAG_UADR.SEL~",
     )
 
     CHAINS = {
