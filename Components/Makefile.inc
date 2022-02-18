@@ -723,6 +723,13 @@ Components/XLAT64.o: Components/XLAT64.cc \
     Chassis/r1000sc.h
 	${SC_CC} -o Components/XLAT64.o Components/XLAT64.cc
 
+OBJS += Components/XMUX16.o
+Components/XMUX16.o: Components/XMUX16.cc \
+    Components/XMUX16.hh \
+    Infra/context.h \
+    Chassis/r1000sc.h
+	${SC_CC} -o Components/XMUX16.o Components/XMUX16.cc
+
 OBJS += Components/XREG16.o
 Components/XREG16.o: Components/XREG16.cc \
     Components/XREG16.hh \
@@ -771,6 +778,13 @@ Components/XSR8.o: Components/XSR8.cc \
     Infra/context.h \
     Chassis/r1000sc.h
 	${SC_CC} -o Components/XSR8.o Components/XSR8.cc
+
+OBJS += Components/XSTKRAM.o
+Components/XSTKRAM.o: Components/XSTKRAM.cc \
+    Components/XSTKRAM.hh \
+    Infra/context.h \
+    Chassis/r1000sc.h
+	${SC_CC} -o Components/XSTKRAM.o Components/XSTKRAM.cc
 
 OBJS += Components/XWCSRAM.o
 Components/XWCSRAM.o: Components/XWCSRAM.cc \
