@@ -26,7 +26,7 @@ SCM_F174 :: SCM_F174(sc_module_name nm, const char *arg) : sc_module(nm)
 void
 SCM_F174 :: doit(void)
 {
-	const char *what;
+	const char *what = "";
 	bool nxt[6];
 
 	state->ctx.activations++;
