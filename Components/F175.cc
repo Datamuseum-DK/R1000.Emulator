@@ -35,6 +35,7 @@ SCM_F175 :: doit(void)
 	state->ctx.activations++;
 	if (state->job || (state->ctx.do_trace & 2)) {
 		TRACE(
+		    << " job " << state->job
 		    << " clr_ " << pin1
 		    << " clk " << pin9
 		    << " d "
