@@ -30,14 +30,14 @@ SCM_XMUX16 :: doit(void)
 		#undef PIN
 		next_trigger(pin2.negedge_event());
 	} else if (IS_L(pin1)) {
-		#define PIN(bit, pin_a, pin_b, pin_out) << pin_a 
+		#define PIN(bit, pin_a, pin_b, pin_out) << pin_a
 		TRACE(<< " s " << pin1 << " a " XMUX16_PINS());
 		#undef PIN
 		#define PIN(bit, pin_a, pin_b, pin_out) pin_out = AS(IS_H(pin_a));
 		XMUX16_PINS()
 		#undef PIN
 	} else {
-		#define PIN(bit, pin_a, pin_b, pin_out) << pin_b 
+		#define PIN(bit, pin_a, pin_b, pin_out) << pin_b
 		TRACE(<< " s " << pin1 << " b " XMUX16_PINS());
 		#undef PIN
 		#define PIN(bit, pin_a, pin_b, pin_out) pin_out = AS(IS_H(pin_b));
