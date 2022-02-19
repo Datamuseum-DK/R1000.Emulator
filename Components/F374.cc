@@ -77,7 +77,7 @@ SCM_F374 :: doit(void)
 		if (state->newreg == state->reg) {
 			state->newreg = -1;
 		} else {
-			next_trigger(1, SC_NS);
+			next_trigger(5, SC_NS);
 		}
 	}
 	if (pin1.posedge()) {

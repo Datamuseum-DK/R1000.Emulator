@@ -131,6 +131,6 @@ SCM_XSR16 :: doit(void)
 	if (nxt != state->out) {
 		state->out = nxt;
 		state->job = 1;
-		next_trigger(1, SC_NS);
+		next_trigger(5, SC_NS);
 	}
 }
