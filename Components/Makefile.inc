@@ -653,6 +653,13 @@ Components/XADD16.o: Components/XADD16.cc Components/xbuf_doit.h \
     Chassis/r1000sc.h
 	${SC_CC} -o Components/XADD16.o Components/XADD16.cc
 
+OBJS += Components/XALU8.o
+Components/XALU8.o: Components/XALU8.cc Components/xbuf_doit.h \
+    Components/XALU8.hh \
+    Infra/context.h \
+    Chassis/r1000sc.h
+	${SC_CC} -o Components/XALU8.o Components/XALU8.cc
+
 OBJS += Components/XBUF32.o
 Components/XBUF32.o: Components/XBUF32.cc Components/xbuf_doit.h \
     Components/XBUF32.hh \
