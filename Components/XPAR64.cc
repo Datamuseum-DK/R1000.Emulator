@@ -24,8 +24,10 @@ SCM_XPAR64 :: doit(void)
 {
 	bool par[8];
 
+	state->ctx.activations++;
+
 	par[0] = par[1] = par[2] = par[3] =
-		    par[4] = par[5] = par[6] = par[7] = IS_H(pin1);
+	    par[4] = par[5] = par[6] = par[7] = IS_H(pin1);
 
 	#define PIN(bit, pin_in) par[bit] ^= IS_H(pin_in);
 	XPAR64_PINS();
