@@ -27,7 +27,7 @@ SCM_XPAR64 :: doit(void)
 	state->ctx.activations++;
 
 	par[0] = par[1] = par[2] = par[3] =
-	    par[4] = par[5] = par[6] = par[7] = IS_H(pin1);
+	    par[4] = par[5] = par[6] = par[7] = IS_L(pin1);
 
 	#define PIN(bit, pin_in) par[bit] ^= IS_H(pin_in);
 	XPAR64_PINS();
@@ -35,7 +35,7 @@ SCM_XPAR64 :: doit(void)
 
 	#define PIN(bit, pin_in) << pin_in
 	TRACE(
-		<< " even " << pin1
+		<< " odd " << pin1
 		<< " "
 		XPAR64_PINS()
 		<< " | "
