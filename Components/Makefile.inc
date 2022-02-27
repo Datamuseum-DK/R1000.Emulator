@@ -737,6 +737,13 @@ Components/XMUX16.o: Components/XMUX16.cc \
     Chassis/r1000sc.h
 	${SC_CC} -o Components/XMUX16.o Components/XMUX16.cc
 
+OBJS += Components/XPAR64.o
+Components/XPAR64.o: Components/XPAR64.cc \
+    Components/XPAR64.hh \
+    Infra/context.h \
+    Chassis/r1000sc.h
+	${SC_CC} -o Components/XPAR64.o Components/XPAR64.cc
+
 OBJS += Components/XREG16.o
 Components/XREG16.o: Components/XREG16.cc \
     Components/XREG16.hh \
