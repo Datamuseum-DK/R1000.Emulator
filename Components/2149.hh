@@ -24,18 +24,10 @@ SC_MODULE(SCM_2149)
 
 	SC_HAS_PROCESS(SCM_2149);
 
-	SCM_2149(sc_module_name nm, const char *arg) : sc_module(nm)
-	{
-		SC_METHOD(doit);
-		sensitive << pin1 << pin2 << pin3 << pin4 << pin5 << pin6 << pin7
-		    << pin8 << pin10 << pin11 << pin12 << pin13 << pin14
-		    << pin15 << pin16 << pin17;
-		loadit(arg);
-	}
+	SCM_2149(sc_module_name nm, const char *arg);
 
 	private:
 	struct scm_2149_state *state;
-	void loadit(const char *arg);
 	void doit(void);
 };
 
