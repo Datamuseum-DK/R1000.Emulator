@@ -11,8 +11,6 @@ sc_now(void)
 	return (sc_simulation_time());
 }
 
-int debug_flag = 0;
-
 #include "Chassis/planes.hh"
 
 #include "fiu_board_pub.hh"
@@ -22,12 +20,12 @@ int debug_flag = 0;
 #include "typ_board_pub.hh"
 #include "val_board_pub.hh"
 
-char Fiu_how[] = "++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++";
-char Ioc_how[] = "++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++";
-char Mem32_how[] = "+++++++++++++++++++++++++++++++++++++++++++++++";
-char Seq_how[] = "+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++";
-char Typ_how[] = "++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++";
-char Val_how[] = "+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++";
+static char Fiu_how[] = "++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++";
+static char Ioc_how[] = "++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++";
+static char Mem32_how[] = "+++++++++++++++++++++++++++++++++++++++++++++++";
+static char Seq_how[] = "+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++";
+static char Typ_how[] = "++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++";
+static char Val_how[] = "+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++";
 
 
 SC_MODULE(BackPlaneClocks)
@@ -167,6 +165,8 @@ sc_main_thread(void *priv)
 	char **argv = NULL;
 	int retval;
 
+	(void)priv;
+
 	retval = sc_core::sc_elab_and_sim( argc, argv);
 	fprintf(stderr, "HERE %s %d: retval %d\n", __func__, __LINE__, retval);
 	return (NULL);
@@ -182,6 +182,9 @@ sc_main(int argc, char *argv[])
 	mod_val *val;
 	mod_fiu *fiu;
 	mod_ioc *ioc;
+
+	(void)argc;
+	(void)argv;
 
 	mod_planes planes("PLANES");
 	planes.tf = sc_create_vcd_trace_file("/critter/_r1000");

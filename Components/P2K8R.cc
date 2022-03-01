@@ -23,7 +23,7 @@ void
 SCM_P2K8R :: doit(void)
 {
 	const char *what = NULL;
-	unsigned adr = 0;
+	int adr = 0;
 
 	state->ctx.activations++;
 	if (state->nxt >= 0) {

@@ -65,7 +65,6 @@ diagbus_wait(struct cli *cli)
 {
 	int state, want_state = -6;
 	uint8_t buf[1];
-	size_t sz;
 	struct diproc *dp;
 
 	if (cli->ac > 1)
@@ -75,7 +74,7 @@ diagbus_wait(struct cli *cli)
 	 * Do first poll via diagbus, to make sure download is complete
 	 */
 	DiagBus_Send(dp, 0x100 + cli->priv);
-	sz = elastic_get(diag_elastic, buf, sizeof buf);
+	assert(1 == elastic_get(diag_elastic, buf, sizeof buf));
 	state = buf[0] & 0xf;
 	while (1) {
 		if (want_state == state)

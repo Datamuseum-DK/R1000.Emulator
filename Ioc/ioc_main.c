@@ -40,7 +40,7 @@
 
 #include "Infra/r1000.h"
 #include "Ioc/ioc.h"
-#include "m68k.h"
+#include "Musashi/m68k.h"
 #include "Infra/vsb.h"
 #include "Infra/vend.h"
 #include "Ioc/memspace.h"

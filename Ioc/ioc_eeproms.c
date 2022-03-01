@@ -29,7 +29,9 @@
  *
  */
 
+#include <errno.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 
 #include "Infra/r1000.h"
@@ -45,7 +47,12 @@ ioc_load_eeproms(void)
 	FILE* fhandle;
 
 	fhandle = fopen(FIRMWARE_PATH "/IOC_EEPROM.bin", "rb");
-	AN(fhandle);
+	if (fhandle == NULL) {
+		fprintf(stderr, "Cannot open %s: %s\n",
+		    FIRMWARE_PATH "/IOC_EEPROM.bin",
+		    strerror(errno));
+		exit(2);
+	}
 	assert(fread(ioc_eeprom_space + 0x0000, 1, 8192, fhandle) == 8192);
 	assert(fread(ioc_eeprom_space + 0x4000, 1, 8192, fhandle) == 8192);
 	assert(fread(ioc_eeprom_space + 0x2000, 1, 8192, fhandle) == 8192);
@@ -55,7 +62,12 @@ ioc_load_eeproms(void)
 	Ioc_HotFix_Ioc();
 
 	fhandle = fopen(FIRMWARE_PATH "/RESHA_EEPROM.bin", "rb");
-	AN(fhandle);
+	if (fhandle == NULL) {
+		fprintf(stderr, "Cannot open %s: %s\n",
+		    FIRMWARE_PATH "/RESHA_EEPROM.bin",
+		    strerror(errno));
+		exit(2);
+	}
 	assert(fread(resha_eeprom + 0x0000, 1, 32768, fhandle) == 32768);
 	AZ(fclose(fhandle));
 

@@ -35,7 +35,7 @@
 #include <string.h>
 
 #include "Infra/r1000.h"
-#include "m68k.h"
+#include "Musashi/m68k.h"
 #include "Ioc/ioc.h"
 #include "Infra/vsb.h"
 #include "Ioc/memspace.h"

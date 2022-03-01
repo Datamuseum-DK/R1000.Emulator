@@ -31,7 +31,7 @@ def main():
 
     ioc += Range("io_map", 0xa1000000, 0xa1002000)
 
-    ioc += Range("xx_map", 0xa2000000, 0xffffff)
+    ioc += Range("xx_map", 0xa2000000, 0xa3000000)
 
     ioc += Range("io_rtc", 0xffff8000, 0x1f, pre_read = 1, post_write = 1)
 
