@@ -8,10 +8,11 @@ Ioc/ioc_cli.o: \
 OBJS += Ioc/ioc_debug.o
 Ioc/ioc_debug.o: \
     Ioc/ioc_debug.c \
-    m68k.h \
+    Musashi/m68k.h \
     Ioc/ioc.h \
     Infra/vsb.h \
     Ioc/memspace.h \
+    Ioc/_memcfg.h \
     ${R1000DEP}
 
 OBJS += Ioc/ioc_duart.o
@@ -119,6 +120,7 @@ Ioc/_memcfg.o: \
     Ioc/memspace.h
 
 CLEANFILES += Ioc/_memcfg.c Ioc/_memcfg.h
+
 Ioc/_memcfg.c Ioc/_memcfg.h: \
     Ioc/makemem.py \
     Ioc/makemem_class.py

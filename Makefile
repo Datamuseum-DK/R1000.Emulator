@@ -22,12 +22,8 @@ DISK1B_IMAGE = "/critter/DDHF/R1000/R1K_Seagate/R1K_Seagate1.BIN"
 # Cache directory for firmware files, (relative to this directory)
 FIRMWARE_PATH = _Firmware
 
-VPATH	= Musashi:Musashi/softfloat:Infra:Ioc:Diag
 
-OBJS	+= m68kcpu.o m68kdasm.o m68kops.o softfloat.o
-
-
-CFLAGSMINUSI += -I. -IMusashi
+CFLAGSMINUSI += -I.
 CFLAGSMINUSD += -DMUSASHI_CNF='"Ioc/musashi_conf.h"'
 CFLAGSMINUSD += -DFIRMWARE_PATH='"${FIRMWARE_PATH}"'
 
@@ -41,23 +37,11 @@ PARANOIA != sh cflags.sh "${CC}"
 CFLAGS += ${PARANOIA}
 
 SC_OPT = -O2
-SC_WARN = -Wall -Werror
+SC_WARN = -Wall -Werror ${PARANOIA} -Wno-cast-qual -Wno-cast-align -Wno-unused-parameter
 SC_CC = ${CXX} ${SC_OPT} ${SC_WARN} -pthread -c
 SC_CC += -I/usr/local/include -I.
 
 R1000DEP = Infra/r1000.h Infra/vqueue.h Infra/trace.h
-
-M68K_INCL = \
-	Musashi/m68kcpu.h \
-	Musashi/m68kmmu.h \
-	Musashi/softfloat/softfloat.h \
-	Ioc/musashi_conf.h \
-	m68kops.h
-
-CLI_INCL = \
-	Infra/r1000.h \
-	Infra/trace.h \
-	Infra/elastic.h
 
 all:	netlist
 	${MAKE} r1000sim
@@ -67,6 +51,7 @@ netlist:
 
 include Infra/Makefile.inc
 include Diag/Makefile.inc
+include Makefile.musashi.inc
 include Ioc/Makefile.inc
 include Chassis/Makefile.inc
 include Components/Makefile.inc
@@ -77,6 +62,36 @@ include Components/Makefile.inc
 -include Typ/${SC_BRANCH}/Makefile.inc
 -include Val/${SC_BRANCH}/Makefile.inc
 
+r1000sim.${SC_BRANCH}:	netlist ${OBJS}
+	@${CXX} -o r1000sim.${SC_BRANCH} ${CFLAGS} ${LDFLAGS} ${OBJS} \
+		-L /usr/local/lib -lsystemc
+
+size: r1000sim
+	@size ${OBJS} | sort -n
+	@size r1000sim
+
+.PHONY: r1000sim
+
+r1000sim:
+	${MAKE} r1000sim.${SC_BRANCH}
+	cp r1000sim.${SC_BRANCH} r1000sim
+
+clean:
+	rm -f ${OBJS} ${CLEANFILES} *.tmp r1000sim*
+
+flint:
+	flexelint flint.lnt \
+		${CFLAGSMINUSD} \
+		${CFLAGSMINUSI} \
+		Diag/*.c \
+		Infra/*.c \
+		Ioc/*.c \
+		SystemC/sc.c \
+		diagbus.c
+
+setup:
+	git clone https://github.com/Datamuseum-DK/Musashi
+	python3 -u fetch_firmware.py all
 cli:	r1000sim.${SC_BRANCH}
 	./r1000sim.${SC_BRANCH} \
 		-T ${TRACE_FILE} \
@@ -149,7 +164,7 @@ test_fiu:	r1000sim.${SC_BRANCH}
 		"exit"
 
 TYP_TEST=TEST_WCS_ADDRESS.TYP
-		
+
 test_typ:	r1000sim.${SC_BRANCH}
 	./r1000sim.${SC_BRANCH} \
 		-T ${TRACE_FILE} \
@@ -165,7 +180,7 @@ test_typ:	r1000sim.${SC_BRANCH}
 		"diag typ wait" \
 		"diag typ check" \
 		"exit"
-		
+
 
 VAL_TEST=TEST_WCS_ADDRESS.VAL
 
@@ -184,10 +199,10 @@ test_val:	r1000sim.${SC_BRANCH}
 		"diag val wait" \
 		"diag val check" \
 		"exit"
-		
+
 
 SEQ_TEST=LATCHED_STACK_BIT_1_FRU.SEQ
-		
+
 test_seq:	r1000sim.${SC_BRANCH}
 	./r1000sim.${SC_BRANCH} \
 		-T ${TRACE_FILE} \
@@ -203,7 +218,7 @@ test_seq:	r1000sim.${SC_BRANCH}
 		"diag seq wait" \
 		"diag seq check" \
 		"exit"
-		
+
 
 MEM_TEST=TEST_PARALLEL_SERIAL.M32
 
@@ -222,7 +237,7 @@ test_mem:	r1000sim.${SC_BRANCH}
 		"diag mem0 wait" \
 		"diag mem0 check" \
 		"exit"
-		
+
 
 
 hack:	r1000sim.${SC_BRANCH}
@@ -382,7 +397,7 @@ rdiag:	r1000sim.${SC_BRANCH}
 		'console match expect "EM>"' \
 		'sc rate' \
 		exit
-		
+
 
 seagate:	r1000sim.${SC_BRANCH}
 	./r1000sim.${SC_BRANCH} \
@@ -430,43 +445,3 @@ foo:
 		'console << "0"' \
 		'console match expect "Tape drive unit number : "' \
 		'console << "0"'
-		
-
-r1000sim.${SC_BRANCH}:	netlist ${OBJS}
-	@${CXX} -o r1000sim.${SC_BRANCH} ${CFLAGS} ${LDFLAGS} ${OBJS} \
-		-L /usr/local/lib -lsystemc
-
-.PHONY: r1000sim
-
-r1000sim:
-	${MAKE} r1000sim.${SC_BRANCH}
-	cp r1000sim.${SC_BRANCH} r1000sim
-
-clean:
-	rm -f ${OBJS} ${CLEANFILES} *.tmp r1000sim* m68kops.h m68kops.c m68kmake
-
-m68kcpu.o:		${M68K_INCL} Musashi/m68kcpu.c
-m68kdasm.o:		${M68K_INCL} Musashi/m68kdasm.c
-softfloat.o:		${M68K_INCL} Musashi/softfloat/softfloat.c \
-
-m68kops.o:		Musashi/m68kcpu.h m68kops.h m68kops.c
-m68kops.h m68kops.c:	m68kmake Ioc/musashi_conf.h Musashi/m68k_in.c
-			./m68kmake `pwd` Musashi/m68k_in.c
-
-m68kmake:		Musashi/m68kmake.c
-
-Musashi/m68kcpu.h:	Musashi/m68k.h
-
-flint:
-	flexelint flint.lnt \
-		${CFLAGSMINUSD} \
-		${CFLAGSMINUSI} \
-		Diag/*.c \
-		Infra/*.c \
-		Ioc/*.c \
-		SystemC/sc.c \
-		diagbus.c
-
-setup:
-	git clone https://github.com/Datamuseum-DK/Musashi
-	python3 -u fetch_firmware.py all
