@@ -6,12 +6,6 @@ _*
 *.so.1.debug
 *.so.1.full
 
-m68kmake
-m68kops.c
-m68kops.h
 Musashi
-
-IOC_EEPROM.bin
-RESHA_EEPROM.bin
 
 r1000sim
