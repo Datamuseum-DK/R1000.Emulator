@@ -1,7 +1,9 @@
 #!/bin/sh
 
 if $1 --version | grep -q clang ; then
-	echo " -std=gnu99 -Wno-format-zero-length -nobuiltininc"
+	echo " -Qunused-arguments"
+	echo " -Wno-unknown-warning-option"
+	echo " -Wno-format-zero-length -nobuiltininc"
 	echo " -fstack-protector-strong -Wsystem-headers -Werror -Wall"
 	echo " -Wno-format-y2k -W -Wno-unused-parameter -Wstrict-prototypes"
 	echo " -Wmissing-prototypes -Wpointer-arith -Wreturn-type -Wcast-qual"
@@ -12,7 +14,7 @@ if $1 --version | grep -q clang ; then
 	echo " -Wmissing-variable-declarations -Wthread-safety -Wno-empty-body"
 	echo " -Wno-string-plus-int"
 	echo " -Wno-missing-field-initializers"
-	echo " -Qunused-arguments"
+	echo " -Wno-unused-but-set-variable"
 fi
 
 echo " -Wno-format-zero-length"
