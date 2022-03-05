@@ -30,32 +30,11 @@ SC_MODULE(SCM_F652)
 
 	SC_HAS_PROCESS(SCM_F652);
 
-	SCM_F652(sc_module_name nm, const char *arg) : sc_module(nm)
-	{
-		SC_METHOD(doit_1);
-		sensitive << pin1.pos();
-
-		SC_METHOD(doit_2);
-		sensitive << pin23.pos();
-
-		SC_METHOD(doit_3);
-		sensitive << pin2 << pin3 << pin4 << pin5 << pin6 << pin7
-		    << pin8 << pin9 << pin10 << pin11;
-
-		SC_METHOD(doit_4);
-		sensitive << pin22 << pin3 << pin20 << pin19 << pin18 << pin17
-		    << pin16 << pin15 << pin14 << pin13;
-
-		loadit(arg);
-	}
+	SCM_F652(sc_module_name nm, const char *arg);
 
 	private:
 	struct scm_F652_state *state;
-	void loadit(const char *arg);
-	void doit_1(void);
-	void doit_2(void);
-	void doit_3(void);
-	void doit_4(void);
+	void doit(void);
 };
 
 #endif /* R1000_F652 */
