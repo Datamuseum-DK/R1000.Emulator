@@ -12,13 +12,30 @@ struct scm_F652_state {
 SCM_F652 :: SCM_F652(sc_module_name nm, const char *arg) : sc_module(nm)
 {
 	SC_METHOD(doit);
-	sensitive << pin1.pos() << pin23.pos() << pin2 << pin22 << pin3 << pin21
-	    << pin4 << pin5 << pin6 << pin7 << pin8 << pin9 << pin10 << pin11
-	    << pin20 << pin19 << pin18 << pin17 << pin16 << pin15 << pin14 << pin13;
+	sensitive << F652_OEA << F652_CBA.pos() << F652_SBA
+	    << F652_OEB << F652_CAB.pos() << F652_SAB
+#define PIN(nbr, pin_a, pin_b) << pin_a << pin_b
+	F652_PINS()
+#undef PIN
+	;
 
 	state = (struct scm_F652_state *)CTX_Get("F652", this->name(), sizeof *state);
 	should_i_trace(this->name(), &state->ctx.do_trace);
 }
+
+#define XXCV_CLS SCM_F652
+#define XXCV_OEA F652_OEA
+#define XXCV_CBA F652_CBA
+#define XXCV_SBA F652_SBA
+#define XXCV_OEB F652_OEB
+#define XXCV_CAB F652_CAB
+#define XXCV_SAB F652_SAB
+#define XXCV_LPIN F652_LPIN
+#define XXCV_PINS F652_PINS
+
+#include "xxcv_doit.h"
+
+#if 0
 
 // pin1 CPAB
 // pin2 SAB
@@ -150,3 +167,5 @@ SCM_F652 :: doit(void)
 	    << std::hex << state->breg
 	);
 }
+#endif
+

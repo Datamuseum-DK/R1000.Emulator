@@ -800,12 +800,33 @@ Components/XSTKRAM.o: Components/XSTKRAM.cc \
     Chassis/r1000sc.h
 	${SC_CC} -o Components/XSTKRAM.o Components/XSTKRAM.cc
 
+OBJS += Components/XTAGRAM.o
+Components/XTAGRAM.o: Components/XTAGRAM.cc \
+    Components/XTAGRAM.hh \
+    Infra/context.h \
+    Chassis/r1000sc.h
+	${SC_CC} -o Components/XTAGRAM.o Components/XTAGRAM.cc
+
 OBJS += Components/XWCSRAM.o
 Components/XWCSRAM.o: Components/XWCSRAM.cc \
     Components/XWCSRAM.hh \
     Infra/context.h \
     Chassis/r1000sc.h
 	${SC_CC} -o Components/XWCSRAM.o Components/XWCSRAM.cc
+
+OBJS += Components/XXCV9.o
+Components/XXCV9.o: Components/XXCV9.cc \
+    Components/XXCV9.hh \
+    Infra/context.h \
+    Chassis/r1000sc.h
+	${SC_CC} -o Components/XXCV9.o Components/XXCV9.cc
+
+OBJS += Components/XXCV64.o
+Components/XXCV64.o: Components/XXCV64.cc \
+    Components/XXCV64.hh \
+    Infra/context.h \
+    Chassis/r1000sc.h
+	${SC_CC} -o Components/XXCV64.o Components/XXCV64.cc
 
 OBJS += Components/XZCNT.o
 Components/XZCNT.o: Components/XZCNT.cc \

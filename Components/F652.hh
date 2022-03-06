@@ -3,6 +3,20 @@
 
 struct scm_F652_state;
 
+#define F652_LPIN 8
+
+#define F652_PINS() \
+	PIN(0, pin4, pin20) PIN(1, pin5, pin19) PIN(2, pin6, pin18) \
+	PIN(3, pin7, pin17) PIN(4, pin8, pin16) PIN(5, pin9, pin15) \
+	PIN(6, pin10, pin14) PIN(7, pin11, pin13)
+
+#define F652_OEA pin21
+#define F652_CBA pin23
+#define F652_SBA pin22
+#define F652_OEB pin3
+#define F652_CAB pin1
+#define F652_SAB pin2
+
 SC_MODULE(SCM_F652)
 {
 	sc_in <sc_logic>	pin1;	// CAB (input)
