@@ -709,6 +709,13 @@ Components/XDRAM.o: Components/XDRAM.cc \
     Chassis/r1000sc.h
 	${SC_CC} -o Components/XDRAM.o Components/XDRAM.cc
 
+OBJS += Components/XDRAM9.o
+Components/XDRAM9.o: Components/XDRAM9.cc \
+    Components/XDRAM9.hh \
+    Infra/context.h \
+    Chassis/r1000sc.h
+	${SC_CC} -o Components/XDRAM9.o Components/XDRAM9.cc
+
 OBJS += Components/XIOCRAM.o
 Components/XIOCRAM.o: Components/XIOCRAM.cc \
     Components/XIOCRAM.hh \
