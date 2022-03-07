@@ -758,6 +758,13 @@ Components/XPAR64.o: Components/XPAR64.cc \
     Chassis/r1000sc.h
 	${SC_CC} -o Components/XPAR64.o Components/XPAR64.cc
 
+OBJS += Components/XPAR67.o
+Components/XPAR67.o: Components/XPAR67.cc \
+    Components/XPAR67.hh \
+    Infra/context.h \
+    Chassis/r1000sc.h
+	${SC_CC} -o Components/XPAR67.o Components/XPAR67.cc
+
 OBJS += Components/XREG16.o
 Components/XREG16.o: Components/XREG16.cc \
     Components/XREG16.hh \
