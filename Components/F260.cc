@@ -10,9 +10,11 @@ struct scm_f260_state {
 	struct ctx ctx;
 };
 
-void
-SCM_F260 :: loadit(const char *arg)
+SCM_F260 :: SCM_F260(sc_module_name nm, const char *arg) : sc_module(nm)
 {
+	SC_METHOD(doit);
+	sensitive << pin1 << pin2 << pin3 << pin12 << pin13;
+
 	state = (struct scm_f260_state *)
 	    CTX_Get("f260", this->name(), sizeof *state);
 	should_i_trace(this->name(), &state->ctx.do_trace);
@@ -26,12 +28,12 @@ SCM_F260 :: doit(void)
 	bool s = !(IS_H(pin1) || IS_H(pin2) || IS_H(pin3)
 	    || IS_H(pin12) || IS_H(pin13));
 	TRACE(
+	    << pin12
+	    << pin13
 	    << pin1
 	    << pin2
 	    << pin3
-	    << pin12
-	    << pin13
-	    << "|"
+	    << " | "
 	    << s
 	);
 	pin5 = AS(s);
