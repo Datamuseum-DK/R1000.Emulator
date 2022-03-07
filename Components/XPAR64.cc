@@ -52,4 +52,15 @@ SCM_XPAR64 :: doit(void)
 	pin71 = AS(par[5]);
 	pin72 = AS(par[6]);
 	pin73 = AS(par[7]);
+	pin74 = AS(
+	    par[0] ^
+	    par[1] ^
+	    par[2] ^
+	    par[3] ^
+	    par[4] ^
+	    par[5] ^
+	    par[6] ^
+	    par[7] ^
+	    IS_L(pin1)
+	);
 }
