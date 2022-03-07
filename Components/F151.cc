@@ -40,7 +40,10 @@ SCM_F151 :: doit(void)
 	case 5: s = IS_H(pin14); break;
 	case 6: s = IS_H(pin13); break;
 	case 7: s = IS_H(pin12); break;
-	default: s = false ; break;
+	default:
+		s = false;
+		next_trigger(pin7.negedge_event());
+		break;
 	}
 	TRACE(
 	    << pin4
