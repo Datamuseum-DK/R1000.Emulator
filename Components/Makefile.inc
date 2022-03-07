@@ -821,6 +821,13 @@ Components/XTAGRAM.o: Components/XTAGRAM.cc \
     Chassis/r1000sc.h
 	${SC_CC} -o Components/XTAGRAM.o Components/XTAGRAM.cc
 
+OBJS += Components/XUAMUX.o
+Components/XUAMUX.o: Components/XUAMUX.cc \
+    Components/XUAMUX.hh \
+    Infra/context.h \
+    Chassis/r1000sc.h
+	${SC_CC} -o Components/XUAMUX.o Components/XUAMUX.cc
+
 OBJS += Components/XWCSRAM.o
 Components/XWCSRAM.o: Components/XWCSRAM.cc \
     Components/XWCSRAM.hh \
