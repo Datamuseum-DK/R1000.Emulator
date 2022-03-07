@@ -39,6 +39,7 @@ SC_MODULE(SCM_XPAR64)
 	sc_out <sc_logic>       pin71;
 	sc_out <sc_logic>       pin72;
 	sc_out <sc_logic>       pin73;
+	sc_out <sc_logic>       pin74;
 
 	SC_HAS_PROCESS(SCM_XPAR64);
 
