@@ -300,7 +300,7 @@ hotfix_kernel_4_2_18(void)
 	 * 00009826 13 fc 00 00 93 03 ec 18    MOVE.B  #0x00,IO_SCSI_T_18_CMD
 	 * 0000982e 4e b9 00 00 97 f4          JSR     0x97f4
 	 */
-	ioc_breakpoint_rpn(0x0000981e, "D0 0x40 min !D0");
+	ioc_breakpoint_rpn(0x0000981e, "D0 0x400 min !D0");
 
 	/*
 	 * 00009af6 20 3c 00 07 ff ff          MOVE.L  #0x0007ffff,D0
