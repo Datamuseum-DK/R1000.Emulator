@@ -27,7 +27,7 @@ SCM_2149 :: doit(void)
 
 	state->ctx.activations++;
 
-        if (IS_H(pin8)) {
+	if (IS_H(pin8)) {
 		// TRACE(<< "z");
 		pin14 = sc_logic_Z;
 		pin13 = sc_logic_Z;
