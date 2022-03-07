@@ -10,9 +10,12 @@ struct scm_f251_state {
 	struct ctx ctx;
 };
 
-void
-SCM_F251 :: loadit(const char *arg)
+SCM_F251 :: SCM_F251(sc_module_name nm, const char *arg) : sc_module(nm)
 {
+	SC_METHOD(doit);
+	sensitive << pin1 << pin2 << pin3 << pin4 << pin7 << pin9
+		  << pin10 << pin11 << pin12 << pin13 << pin14 << pin15;
+
 	state = (struct scm_f251_state *)
 	    CTX_Get("f251", this->name(), sizeof *state);
 	should_i_trace(this->name(), &state->ctx.do_trace);
@@ -39,9 +42,10 @@ SCM_F251 :: doit(void)
 	case 6: s = IS_H(pin13); break;
 	case 7: s = IS_H(pin12); break;
 	}
-	if (!IS_L(pin7)) {
+	if (IS_H(pin7)) {
 		pin5 = sc_logic_Z;
 		pin6 = sc_logic_Z;
+		next_trigger(pin7.negedge_event());
 	} else {
 		pin5 = AS(s);
 		pin6 = AS(!s);
@@ -62,7 +66,7 @@ SCM_F251 :: doit(void)
 	    <<pin11
 	    << " oe "
 	    <<pin7
-	    << "|"
+	    << " | "
 	    << s
 	);
 }
