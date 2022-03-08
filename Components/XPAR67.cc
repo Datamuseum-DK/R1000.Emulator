@@ -12,7 +12,7 @@ SCM_XPAR67 :: SCM_XPAR67(sc_module_name nm, const char *arg) : sc_module(nm)
 	SC_METHOD(doit);
 
 	#define PIN(bit, pin_in) << pin_in
-	sensitive XPAR67_PINS();
+	sensitive << pin1 XPAR67_PINS();
 	#undef PIN
 
 	state = (struct scm_xpar67_state *)CTX_Get("XPAR67", this->name(), sizeof *state);
@@ -26,8 +26,8 @@ SCM_XPAR67 :: doit(void)
 
 	state->ctx.activations++;
 
-	par[0] = par[6] = par[8] = IS_H(pin1);
-	par[1] = par[2] = par[3] = par[4] = par[5] = par[7] = IS_L(pin1);
+	par[0] = par[1] = par[2] = par[3] = par[4] =
+	    par[5] = par[6] = par[7] = par[8] = IS_L(pin1);
 
 	#define PIN(bit, pin_in) par[bit] ^= IS_H(pin_in);
 	XPAR67_PINS();
@@ -35,6 +35,7 @@ SCM_XPAR67 :: doit(void)
 
 	#define PIN(bit, pin_in) << pin_in
 	TRACE(
+		<< " test " << pin1 << " i "
 		XPAR67_PINS()
 		<< " | "
 		<< par[0] << par[1] << par[2] << par[3]
