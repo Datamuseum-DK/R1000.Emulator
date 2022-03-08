@@ -1,6 +1,70 @@
-from board import Board
+from board import Board, Chain
+import scan_chains 
+
+SEQ_DUIRG = {
+    "DIPROC",
+    "DUIRG0",
+    "DUIRG1",
+    "DUIRG2",
+    "DUIRG3",
+    "DUIRG4",
+    "DUIRG5",
+    "DUIRG6",
+    "DUIRG7",
+}
+
+class ChainSeqTypVal(Chain):
+    def __init__(self):
+        super().__init__("S.TYPVAL", 16)
+        self.SUPRESS |= SEQ_DUIRG
+        for i in range(16):
+            self.SUPRESS.add("SEQDG%X" % i)
+        self.chain = scan_chains.SeqTypVal()
+
+class ChainSeqUir(Chain):
+    def __init__(self):
+        super().__init__("S.UIR", 6)
+        self.SUPRESS |= SEQ_DUIRG
+        self.SUPRESS |= {
+           "UIR01",
+           "UIR23",
+           "UIR45",
+           "UIR67",
+           "UIR89",
+           "UIRA",
+           "UIRP",
+        }
+        self.chain = scan_chains.SeqUir()
+
+class ChainSeqDecoder(Chain):
+
+    def __init__(self):
+        super().__init__("S.DECODER", 5)
+        self.SUPRESS |= SEQ_DUIRG
+        self.SUPRESS |= {
+            "DECDG0",
+            "DECDG1",
+            "DECDG2",
+            "DECDG3",
+        }
+        self.chain = scan_chains.SeqDecoder()
+
+class ChainSeqMisc(Chain):
+
+    def __init__(self):
+        super().__init__("S.MISC", 9)
+        self.SUPRESS |= SEQ_DUIRG
+        self.chain = scan_chains.SeqMisc()
 
 class SEQ_Board(Board):
+
+
+    CHAINS = {
+	0x9: ChainSeqTypVal(),
+	0xa: ChainSeqUir(),
+	0xb: ChainSeqDecoder(),
+	0xc: ChainSeqMisc(),
+    }
 
     DUIRG1_BITS = (
         "LOCL_STOP.DIAG~",
@@ -72,8 +136,8 @@ class SEQ_Board(Board):
         "FSM_BANK_SELECT",
         "PARITY_CHK.EN",
         "FLIP_VAL.DRV",
-        "DG_SEQ_V.MODE0",
-        "DG_SEQ_V.MODE1",
+        "DG_SEQ_V.MODE.0",
+        "DG_SEQ_V.MODE.1",
         "LOC_STOP.DIAG2~",
         "b6",
         "STOP_MACH.ME~",
@@ -88,48 +152,8 @@ class SEQ_Board(Board):
             print("    SEQDG.L => @R3 (0x%02x)" % self.mem[0x13])
             return True
 
-    def Ins_da(self, adr, lines):
-
-        if self.mem[adr+1] == 0xa0 and self.mem[adr + 3] == 0x41:
-            p = self.mem[adr+2]
-            l = ["%02x" % self.mem[x] for x in range(p, p + 6)]
-            print("    UIR = @%02x: " % p + " ".join(l))
-            regs = {}
-            for i in lines:
-                if ".UIR" in i[1]:
-                    regs[i[1]] = i
-            for i, j in sorted(regs.items()):
-                print("    ", j)
-            return True
-
-        if self.mem[adr+1] == 0xc0 and self.mem[adr + 3] == 0x43:
-            p = self.mem[adr+2]
-            l = ["%02x" % self.mem[x] for x in range(p, p + 9)]
-            print("    SEQCHAIN <= @%02x: " % p + " ".join(l))
-            rlist = (
-                "RESTRG", "TSVLD", "PAREG0", "LTCHRG",	# DIAG.D4
-                "UADR0", "UADR1", "UADR2", "UADR3",	# DIAG.D5
-                "UEVNT0", "UEVNT1", "UEVNT2", "UEVNT3",	# DIAG.D6
-                "BHREG0", "BHREG1", "MEVNT0", "MEVNT1",	# DIAG.D7
-            )
-            regs = {}
-            for i in lines:
-                j = i[1].split(".")[-1]
-                if j in rlist:
-                    regs[j] = i
-            for i in rlist:
-                if i in regs:
-                    print("    ", regs[i])
-            return True
-
-        if self.mem[adr+1] == 0xc2 and self.mem[adr + 3] == 0x36:
-            p = self.mem[adr+2]
-            print("    SEQCHAIN => @%02x: " % p)
-            return True
-
     def Ins_c4(self, adr, lines):
         if self.mem[adr + 2] == 0x43:
-            print("    SEQCHAIN <= #0x%02x" % self.mem[adr + 1])
             return True
 
     def DUIRG1(self, line):

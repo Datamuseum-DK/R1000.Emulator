@@ -2,6 +2,98 @@
 from pyreveng import mem, assy, data, listing
 from exp_disass import R1kExp
 
+class Chain():
+
+
+    def __init__(self, name, length):
+        self.name = name
+        self.length = length
+        self.SUPRESS = set()
+        self.chain = None
+
+    def __repr__(self):
+        return "<Chain " + self.name + " %d>" % self.length
+
+    def render_da(self, board, adr, lines):
+        through_register = board.mem[adr + 1] & 1
+        mode = (board.mem[adr + 1] >> 1) & 7
+        data = None
+        if mode == 0:
+            # SND
+            txt = "    " + self.name + " <= "
+            if through_register:
+                txt += "@R2 "
+                src = board.mem[0x12]
+            else:
+                src = board.mem[adr + 2]
+            txt += "0x%02x: " % src
+            data = [board.mem[x] for x in range(src, src + self.length)]
+            txt += " ".join("%02x" % x for x in data)
+            print(txt)
+        elif mode == 1:
+            # RCV
+            txt = "    " + self.name + " => "
+            if through_register:
+                txt += "@R3 "
+                dst = board.mem[0x13]
+            else:
+                dst = board.mem[adr + 2]
+            txt += "0x%02x: " % dst
+            data = board.data_after[dst - 0x10:][:self.length]
+            txt += " ".join("%02x" % x for x in data)
+            print(txt)
+        else:
+            print("RENDER chain", self, mode, through_register, self.SUPRESS)
+        if data is not None:
+            self.explain(data)
+        for i in lines:
+            chip = i[1].split('.')[-1]
+            if chip not in self.SUPRESS:
+                print("    ", i)
+        return True
+
+    def explain(self, data):
+        if self.chain:
+            for i in self.chain.explain(data):
+                print("\t" + i)
+
+    def do_chain(self, adr, lines, reg, length, tbl, regs):
+        mode = self.mem[adr + 1] & 3
+        tp = adr + 2
+        if mode == 0:
+            p = self.mem[adr + 2]
+            tp += 1
+            q = "<= 0x%02x: "
+        elif mode == 1:
+            p = self.mem[0x12]
+            q = "<= @R2 0x%02x: "
+        elif mode == 2:
+            p = self.mem[adr + 2]
+            tp += 1
+            q = "=> @R3 0x%02x: "
+            tbl += 1
+        elif mode == 3:
+            p = self.mem[0x13]
+            q = "=> @R3 0x%02x: "
+            tbl += 1
+        if not mode & 2:
+            l = ["%02x" % self.mem[x] for x in range(p, p + length)]
+        else:
+            l = ["__"] * length
+        if self.mem[tp] != tbl:
+            msg = "TABLE MISMATCH e:%02x g:%02x" % (tbl, self.mem[tp])
+        else:
+            msg = ""
+        print("   ", reg, q % p, " ".join(l), msg)
+        cache = {}
+        for i in lines:
+            for j in regs:
+                if j in i[1]:
+                    cache[i[1]] = i
+        for i, j in sorted(cache.items()):
+            print("    ", j)
+        return True
+
 class Board():
 
     CHAINS = {}
@@ -50,10 +142,10 @@ class Board():
         if line[2] != "Exec":
             return
         self.tref = int(line[0])
-        self.one_ins()
+        self.one_ins(line)
         self.expins = line
         if line[5] == "5c": # END
-            self.one_ins()
+            self.one_ins(None)
 
     def diagbus(self, line):
         if line[3] == "TX":
@@ -100,7 +192,7 @@ class Board():
             self.src[j] = i
             print(i)
 
-    def one_ins(self):
+    def one_ins(self, next):
         if self.expins:
             adr = int(self.expins[3], 16)
             print("-" * 80)
@@ -110,6 +202,10 @@ class Board():
                 print("   %02x: " % (i + 6), " ".join(self.expins[i:i + 16]))
             for n, i in enumerate(self.expins[10:]):
                 self.mem[n + 0x10] = int(i, 16)
+            if next:
+                self.data_after = [int(x, 16) for x in next[10:]]
+            else:
+                self.data_after = []
             try:
                 ins = self.mem[adr]
                 ins_hdl = "Ins_%02x" % ins
@@ -154,7 +250,6 @@ class Board():
             else:
                 text[lbl] = str(j)
 
-        
         return ", ".join(x + "=" + str(y) for x, y in sorted(text.items()))
 
     def just_bits(self, val, bits):
@@ -216,11 +311,11 @@ class Board():
         return True
 
     def Ins_da(self, adr, lines):
-        chain_no = self.mem[adr + 1] & 0xfc
+        chain_no = self.mem[adr + 1] >> 4
         chain = self.CHAINS.get(chain_no)
-        if chain is None:
-            return False
-        return self.do_chain(adr, lines, *chain)
+        if chain:
+            return chain.render_da(self, adr, lines)
+        return False
 
     def Ins_d8(self, _adr, _lines):
         print("    DFSM_RESET")
