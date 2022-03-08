@@ -34,6 +34,8 @@ struct scm_xpar67_state;
 SC_MODULE(SCM_XPAR67)
 {
 
+	sc_in <sc_logic>	pin1;
+
 	#define PIN(bit, pin_in) \
 	sc_in <sc_logic>        pin_in;
 	XPAR67_PINS()

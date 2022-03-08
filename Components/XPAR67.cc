@@ -26,8 +26,8 @@ SCM_XPAR67 :: doit(void)
 
 	state->ctx.activations++;
 
-	par[0] = par[6] = par[8] = false;
-	par[1] = par[2] = par[3] = par[4] = par[5] = par[7] = true;
+	par[0] = par[6] = par[8] = IS_H(pin1);
+	par[1] = par[2] = par[3] = par[4] = par[5] = par[7] = IS_L(pin1);
 
 	#define PIN(bit, pin_in) par[bit] ^= IS_H(pin_in);
 	XPAR67_PINS();
