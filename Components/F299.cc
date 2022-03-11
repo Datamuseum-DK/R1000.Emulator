@@ -22,7 +22,6 @@ SCM_F299 :: SCM_F299(sc_module_name nm, const char *arg) : sc_module(nm)
 	state = (struct scm_f299_state *)
 	    CTX_Get("f299", this->name(), sizeof *state);
 	should_i_trace(this->name(), &state->ctx.do_trace);
-	state->ctx.do_trace |= 3;
 }
 
 void
