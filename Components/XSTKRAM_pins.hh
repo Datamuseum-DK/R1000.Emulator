@@ -1,0 +1,79 @@
+// Machine-generated, see R1000.HwDoc/ImageProcessing/Chipdesc/chip.py
+#define XSTKRAM_PIN_WE pin33
+#define XSTKRAM_PIN_CS pin34
+#define XSTKRAM_PIN_D0 pin1
+#define XSTKRAM_PIN_Q0 pin17
+#define XSTKRAM_PIN_D1 pin2
+#define XSTKRAM_PIN_Q1 pin18
+#define XSTKRAM_PIN_D2 pin3
+#define XSTKRAM_PIN_Q2 pin19
+#define XSTKRAM_PIN_D3 pin4
+#define XSTKRAM_PIN_Q3 pin20
+#define XSTKRAM_PIN_D4 pin5
+#define XSTKRAM_PIN_Q4 pin21
+#define XSTKRAM_PIN_D5 pin6
+#define XSTKRAM_PIN_Q5 pin22
+#define XSTKRAM_PIN_D6 pin7
+#define XSTKRAM_PIN_Q6 pin23
+#define XSTKRAM_PIN_D7 pin8
+#define XSTKRAM_PIN_Q7 pin24
+#define XSTKRAM_PIN_D8 pin9
+#define XSTKRAM_PIN_Q8 pin25
+#define XSTKRAM_PIN_D9 pin10
+#define XSTKRAM_PIN_Q9 pin26
+#define XSTKRAM_PIN_D10 pin11
+#define XSTKRAM_PIN_Q10 pin27
+#define XSTKRAM_PIN_D11 pin12
+#define XSTKRAM_PIN_Q11 pin28
+#define XSTKRAM_PIN_D12 pin13
+#define XSTKRAM_PIN_Q12 pin29
+#define XSTKRAM_PIN_D13 pin14
+#define XSTKRAM_PIN_Q13 pin30
+#define XSTKRAM_PIN_D14 pin15
+#define XSTKRAM_PIN_Q14 pin31
+#define XSTKRAM_PIN_D15 pin16
+#define XSTKRAM_PIN_Q15 pin32
+#define XSTKRAM_PIN_A0 pin35
+#define XSTKRAM_PIN_A1 pin36
+#define XSTKRAM_PIN_A2 pin37
+#define XSTKRAM_PIN_A3 pin38
+#ifdef ANON_PINS
+    #define PIN_WE XSTKRAM_PIN_WE
+    #define PIN_CS XSTKRAM_PIN_CS
+    #define PIN_D0 XSTKRAM_PIN_D0
+    #define PIN_Q0 XSTKRAM_PIN_Q0
+    #define PIN_D1 XSTKRAM_PIN_D1
+    #define PIN_Q1 XSTKRAM_PIN_Q1
+    #define PIN_D2 XSTKRAM_PIN_D2
+    #define PIN_Q2 XSTKRAM_PIN_Q2
+    #define PIN_D3 XSTKRAM_PIN_D3
+    #define PIN_Q3 XSTKRAM_PIN_Q3
+    #define PIN_D4 XSTKRAM_PIN_D4
+    #define PIN_Q4 XSTKRAM_PIN_Q4
+    #define PIN_D5 XSTKRAM_PIN_D5
+    #define PIN_Q5 XSTKRAM_PIN_Q5
+    #define PIN_D6 XSTKRAM_PIN_D6
+    #define PIN_Q6 XSTKRAM_PIN_Q6
+    #define PIN_D7 XSTKRAM_PIN_D7
+    #define PIN_Q7 XSTKRAM_PIN_Q7
+    #define PIN_D8 XSTKRAM_PIN_D8
+    #define PIN_Q8 XSTKRAM_PIN_Q8
+    #define PIN_D9 XSTKRAM_PIN_D9
+    #define PIN_Q9 XSTKRAM_PIN_Q9
+    #define PIN_D10 XSTKRAM_PIN_D10
+    #define PIN_Q10 XSTKRAM_PIN_Q10
+    #define PIN_D11 XSTKRAM_PIN_D11
+    #define PIN_Q11 XSTKRAM_PIN_Q11
+    #define PIN_D12 XSTKRAM_PIN_D12
+    #define PIN_Q12 XSTKRAM_PIN_Q12
+    #define PIN_D13 XSTKRAM_PIN_D13
+    #define PIN_Q13 XSTKRAM_PIN_Q13
+    #define PIN_D14 XSTKRAM_PIN_D14
+    #define PIN_Q14 XSTKRAM_PIN_Q14
+    #define PIN_D15 XSTKRAM_PIN_D15
+    #define PIN_Q15 XSTKRAM_PIN_Q15
+    #define PIN_A0 XSTKRAM_PIN_A0
+    #define PIN_A1 XSTKRAM_PIN_A1
+    #define PIN_A2 XSTKRAM_PIN_A2
+    #define PIN_A3 XSTKRAM_PIN_A3
+#endif

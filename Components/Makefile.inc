@@ -829,6 +829,9 @@ Components/XSR8.o: Components/XSR8.cc \
     Chassis/r1000sc.h
 	${SC_CC} -o Components/XSR8.o Components/XSR8.cc
 
+Components/R1000.Emulator/Components.hh:: Components/R1000.Emulator/Components_pins.hh
+	@touch Components/R1000.Emulator/Components.hh
+
 OBJS += Components/XSTKRAM.o
 Components/XSTKRAM.o: Components/XSTKRAM.cc \
     Components/XSTKRAM.hh \
