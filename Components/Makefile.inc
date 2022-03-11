@@ -780,9 +780,13 @@ Components/XPAR67.o: Components/XPAR67.cc \
     Chassis/r1000sc.h
 	${SC_CC} -o Components/XPAR67.o Components/XPAR67.cc
 
+Components/XREG16.hh:: Components/XREG16_pins.hh
+	@touch Components/XREG16.hh
+
 OBJS += Components/XREG16.o
 Components/XREG16.o: Components/XREG16.cc \
     Components/XREG16.hh \
+    Components/XREG_doit.hh \
     Infra/context.h \
     Chassis/r1000sc.h
 	${SC_CC} -o Components/XREG16.o Components/XREG16.cc
