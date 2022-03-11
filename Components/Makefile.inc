@@ -802,12 +802,18 @@ Components/XREG20.o: Components/XREG20.cc \
     Chassis/r1000sc.h
 	${SC_CC} -o Components/XREG20.o Components/XREG20.cc
 
+Components/XREG32.hh:: Components/XREG32_pins.hh
+	@touch Components/XREG32.hh
+
 OBJS += Components/XREG32.o
 Components/XREG32.o: Components/XREG32.cc \
     Components/XREG32.hh \
     Infra/context.h \
     Chassis/r1000sc.h
 	${SC_CC} -o Components/XREG32.o Components/XREG32.cc
+
+Components/XREG64.hh:: Components/XREG64_pins.hh
+	@touch Components/XREG64.hh
 
 OBJS += Components/XREG64.o
 Components/XREG64.o: Components/XREG64.cc \

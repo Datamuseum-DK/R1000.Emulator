@@ -17,7 +17,7 @@
 		if (IS_L(PIN_INV))
 			tmp = ~tmp;
 		#define PINM(bit, pin_in, pin_out) \
-		pin_out = AS(tmp & (1 << bit));
+		pin_out = AS(tmp & ((uint64_t)1 << bit));
 		PIN_PAIRS(PINM)
 		#undef PINM
 		state->job = 0;
@@ -32,7 +32,7 @@
 	if (PIN_CLK.posedge()) {
 		uint64_t tmp = 0;
 		#define PINM(bit,pin_in,pin_out) \
-		if (IS_H(pin_in)) tmp |= (1 << bit);
+		if (IS_H(pin_in)) tmp |= ((uint64_t)1 << bit);
 		PIN_PAIRS(PINM)
 		#undef PINM
 		if (tmp != state->data) {
