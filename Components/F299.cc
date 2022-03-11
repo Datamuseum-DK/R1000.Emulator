@@ -1,6 +1,9 @@
 #include <systemc.h>
 #include "Chassis/r1000sc.h"
 #include "Infra/context.h"
+
+#define ANON_PINS
+
 #include "F299.hh"
 
 // Octal Universal Shift/Storage Register with Common Parallel I/O Pins
@@ -14,21 +17,33 @@ struct scm_f299_state {
 SCM_F299 :: SCM_F299(sc_module_name nm, const char *arg) : sc_module(nm)
 {
 	SC_METHOD(doit);
-	sensitive << pin2 << pin3 << pin9 << pin12.pos();
+	sensitive << PIN_G1 << PIN_G2 << PIN_CLR << PIN_CLK.pos();
 
 	state = (struct scm_f299_state *)
 	    CTX_Get("f299", this->name(), sizeof *state);
 	should_i_trace(this->name(), &state->ctx.do_trace);
+	state->ctx.do_trace |= 3;
 }
 
 void
 SCM_F299 :: doit(void)
 {
 	const char *what = NULL;
+	unsigned mode = 0;
 
 	state->ctx.activations++;
 
-	if (IS_L(pin9)) {
+	if (IS_H(PIN_S0)) mode |= 2;
+	if (IS_H(PIN_S1)) mode |= 1;
+
+	if (mode == 0) {
+		next_trigger(
+		    PIN_S0.default_event() | PIN_S1.default_event() |
+		    PIN_G1.default_event() | PIN_G2.default_event()
+		);
+	}
+
+	if (IS_L(PIN_CLR)) {
 		state->reg[0] = false;
 		state->reg[1] = false;
 		state->reg[2] = false;
@@ -37,31 +52,23 @@ SCM_F299 :: doit(void)
 		state->reg[5] = false;
 		state->reg[6] = false;
 		state->reg[7] = false;
-		what = " clr ";
-		next_trigger(pin9.posedge_event());
-	} else if (pin12.posedge()) {
-		if (IS_H(pin19) && IS_H(pin1)) {
-			what = " load ";
-			state->reg[0] = IS_H(pin7);
-			state->reg[1] = IS_H(pin13);
-			state->reg[2] = IS_H(pin6);
-			state->reg[3] = IS_H(pin14);
-			state->reg[4] = IS_H(pin5);
-			state->reg[5] = IS_H(pin15);
-			state->reg[6] = IS_H(pin4);
-			state->reg[7] = IS_H(pin16);
-		} else if (IS_L(pin19) && IS_H(pin1)) {
-			what = " right ";
-			state->reg[7] = state->reg[6];
-			state->reg[6] = state->reg[5];
-			state->reg[5] = state->reg[4];
-			state->reg[4] = state->reg[3];
-			state->reg[3] = state->reg[2];
-			state->reg[2] = state->reg[1];
-			state->reg[1] = state->reg[0];
-			state->reg[0] = IS_H(pin11);
-		} else if (IS_H(pin19) && IS_L(pin1)) {
-			what = " left ";
+		what = "clr ";
+		next_trigger(PIN_CLR.posedge_event());
+	} else if (PIN_CLK.posedge()) {
+		switch (mode) {
+		case 3:
+			what = "load ";
+			state->reg[0] = IS_H(PIN_DQ0);
+			state->reg[1] = IS_H(PIN_DQ1);
+			state->reg[2] = IS_H(PIN_DQ2);
+			state->reg[3] = IS_H(PIN_DQ3);
+			state->reg[4] = IS_H(PIN_DQ4);
+			state->reg[5] = IS_H(PIN_DQ5);
+			state->reg[6] = IS_H(PIN_DQ6);
+			state->reg[7] = IS_H(PIN_DQ7);
+			break;
+		case 2:
+			what = "<< ";
 			state->reg[0] = state->reg[1];
 			state->reg[1] = state->reg[2];
 			state->reg[2] = state->reg[3];
@@ -69,46 +76,61 @@ SCM_F299 :: doit(void)
 			state->reg[4] = state->reg[5];
 			state->reg[5] = state->reg[6];
 			state->reg[6] = state->reg[7];
-			state->reg[7] = IS_H(pin18);
+			state->reg[7] = IS_H(PIN_LSI);
+			break;
+		case 1:
+			what = ">> ";
+			state->reg[7] = state->reg[6];
+			state->reg[6] = state->reg[5];
+			state->reg[5] = state->reg[4];
+			state->reg[4] = state->reg[3];
+			state->reg[3] = state->reg[2];
+			state->reg[2] = state->reg[1];
+			state->reg[1] = state->reg[0];
+			state->reg[0] = IS_H(PIN_RSI);
+			break;
+		default:
+			break;
 		}
 	}
-	if ((IS_H(pin2) || IS_H(pin3)) || (IS_H(pin19) && IS_H(pin1))) {
+	if ((IS_H(PIN_G1) || IS_H(PIN_G2)) || (mode == 3)) {
 		if (what == NULL && (state->ctx.do_trace & 2))
-			what = " Z ";
-		pin7 = sc_logic_Z;
-		pin13 = sc_logic_Z;
-		pin6 = sc_logic_Z;
-		pin14 = sc_logic_Z;
-		pin5 = sc_logic_Z;
-		pin15 = sc_logic_Z;
-		pin4 = sc_logic_Z;
-		pin16 = sc_logic_Z;
+			what = "Z ";
+		PIN_DQ0 = sc_logic_Z;
+		PIN_DQ1 = sc_logic_Z;
+		PIN_DQ2 = sc_logic_Z;
+		PIN_DQ3 = sc_logic_Z;
+		PIN_DQ4 = sc_logic_Z;
+		PIN_DQ5 = sc_logic_Z;
+		PIN_DQ6 = sc_logic_Z;
+		PIN_DQ7 = sc_logic_Z;
 	} else {
 		if (what == NULL && (state->ctx.do_trace & 2))
-			what = " out ";
-		pin7 = AS(state->reg[0]);
-		pin13 = AS(state->reg[1]);
-		pin6 = AS(state->reg[2]);
-		pin14 = AS(state->reg[3]);
-		pin5 = AS(state->reg[4]);
-		pin15 = AS(state->reg[5]);
-		pin4 = AS(state->reg[6]);
-		pin16 = AS(state->reg[7]);
+			what = "out ";
+		PIN_DQ0 = AS(state->reg[0]);
+		PIN_DQ1 = AS(state->reg[1]);
+		PIN_DQ2 = AS(state->reg[2]);
+		PIN_DQ3 = AS(state->reg[3]);
+		PIN_DQ4 = AS(state->reg[4]);
+		PIN_DQ5 = AS(state->reg[5]);
+		PIN_DQ6 = AS(state->reg[6]);
+		PIN_DQ7 = AS(state->reg[7]);
 	}
-	pin8 = AS(state->reg[0]);
-	pin17 = AS(state->reg[7]);
+	PIN_Q0 = AS(state->reg[0]);
+	PIN_Q7 = AS(state->reg[7]);
 	if (what != NULL) {
 		TRACE(
 		    << what
-		    << " clk" << pin12
-		    << " s " << pin1 << pin19
-		    << " oe " << pin2 << pin3
-		    << " mr " << pin9
-		    << " rsi " << pin11
-		    << " lsi " << pin18
-		    << " dq " << pin7 << pin13 << pin6 << pin14
-		    << pin5 << pin15 << pin4 << pin16
-		    << "|"
+		    << "clk " << PIN_CLK.posedge()
+		    << " s " << PIN_S0 << PIN_S1
+		    << " g " << PIN_G1 << PIN_G2
+		    << " mr " << PIN_CLR
+		    << " rsi " << PIN_RSI
+		    << " lsi " << PIN_LSI
+		    << " dq "
+		    << PIN_DQ0 << PIN_DQ1 << PIN_DQ2 << PIN_DQ3
+		    << PIN_DQ4 << PIN_DQ5 << PIN_DQ6 << PIN_DQ7
+		    << " | "
 		    << state->reg[0]
 		    << state->reg[1]
 		    << state->reg[2]
