@@ -24,6 +24,7 @@ SCM_XPAXXXL :: SCM_XPAXXXL(sc_module_name nm, const char *arg) : sc_module(nm)
 	    CTX_Get("xpaxxxl", this->name(), sizeof *state);
 	should_i_trace(this->name(), &state->ctx.do_trace);
 	load_programmable(this->name(), prom, sizeof prom, arg);
+	state->job = 1;
 }
 
 void
