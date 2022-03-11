@@ -791,6 +791,17 @@ Components/XREG16.o: Components/XREG16.cc \
     Chassis/r1000sc.h
 	${SC_CC} -o Components/XREG16.o Components/XREG16.cc
 
+Components/XREG20.hh:: Components/XREG20_pins.hh
+	@touch Components/XREG20.hh
+
+OBJS += Components/XREG20.o
+Components/XREG20.o: Components/XREG20.cc \
+    Components/XREG20.hh \
+    Components/XREG_doit.hh \
+    Infra/context.h \
+    Chassis/r1000sc.h
+	${SC_CC} -o Components/XREG20.o Components/XREG20.cc
+
 OBJS += Components/XREG32.o
 Components/XREG32.o: Components/XREG32.cc \
     Components/XREG32.hh \
