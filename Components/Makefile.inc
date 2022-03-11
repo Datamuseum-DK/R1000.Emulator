@@ -576,14 +576,6 @@ Components/PAxxx.o: Components/PAxxx.cc \
     Chassis/r1000sc.h
 	${SC_CC} -o Components/PAxxx.o Components/PAxxx.cc
 
-OBJS += Components/PAxxxL.o
-Components/PAxxxL.o: Components/PAxxxL.cc \
-    Components/PAxxxL.hh \
-    Infra/context.h \
-    Chassis/r1000sc.h
-	${SC_CC} -o Components/PAxxxL.o Components/PAxxxL.cc
-
-OBJS += Components/PBxxx.o
 Components/PBxxx.o: Components/PBxxx.cc \
     Components/PBxxx.hh \
     Infra/context.h \
@@ -757,6 +749,19 @@ Components/XMUXI16.o: Components/XMUXI16.cc \
     Infra/context.h \
     Chassis/r1000sc.h
 	${SC_CC} -o Components/XMUXI16.o Components/XMUXI16.cc
+
+OBJS += Components/XPAXXXL.o
+
+Components/XPAXXXL.hh:: Components/XPAXXXL_pins.hh
+	@touch Components/XPAXXXL.hh
+
+Components/XPAXXXL.o: Components/XPAXXXL.cc \
+    Components/XPAXXXL.hh \
+    Infra/context.h \
+    Chassis/r1000sc.h
+	${SC_CC} -o Components/XPAXXXL.o Components/XPAXXXL.cc
+
+OBJS += Components/PBxxx.o
 
 OBJS += Components/XPAR64.o
 Components/XPAR64.o: Components/XPAR64.cc \

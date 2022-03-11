@@ -1,0 +1,39 @@
+// Machine-generated, see R1000.HwDoc/ImageProcessing/Chipdesc/chip.py
+#define XPAXXXL_PIN_CLK pin15
+#define XPAXXXL_PIN_A0 pin19
+#define XPAXXXL_PIN_A1 pin18
+#define XPAXXXL_PIN_Y0 pin14
+#define XPAXXXL_PIN_A2 pin17
+#define XPAXXXL_PIN_Y1 pin13
+#define XPAXXXL_PIN_A3 pin16
+#define XPAXXXL_PIN_Y2 pin12
+#define XPAXXXL_PIN_A4 pin5
+#define XPAXXXL_PIN_Y3 pin11
+#define XPAXXXL_PIN_A5 pin4
+#define XPAXXXL_PIN_Y4 pin9
+#define XPAXXXL_PIN_A6 pin3
+#define XPAXXXL_PIN_Y5 pin8
+#define XPAXXXL_PIN_A7 pin2
+#define XPAXXXL_PIN_Y6 pin7
+#define XPAXXXL_PIN_A8 pin1
+#define XPAXXXL_PIN_Y7 pin6
+#ifdef ANON_PINS
+    #define PIN_CLK XPAXXXL_PIN_CLK
+    #define PIN_A0 XPAXXXL_PIN_A0
+    #define PIN_A1 XPAXXXL_PIN_A1
+    #define PIN_Y0 XPAXXXL_PIN_Y0
+    #define PIN_A2 XPAXXXL_PIN_A2
+    #define PIN_Y1 XPAXXXL_PIN_Y1
+    #define PIN_A3 XPAXXXL_PIN_A3
+    #define PIN_Y2 XPAXXXL_PIN_Y2
+    #define PIN_A4 XPAXXXL_PIN_A4
+    #define PIN_Y3 XPAXXXL_PIN_Y3
+    #define PIN_A5 XPAXXXL_PIN_A5
+    #define PIN_Y4 XPAXXXL_PIN_Y4
+    #define PIN_A6 XPAXXXL_PIN_A6
+    #define PIN_Y5 XPAXXXL_PIN_Y5
+    #define PIN_A7 XPAXXXL_PIN_A7
+    #define PIN_Y6 XPAXXXL_PIN_Y6
+    #define PIN_A8 XPAXXXL_PIN_A8
+    #define PIN_Y7 XPAXXXL_PIN_Y7
+#endif
