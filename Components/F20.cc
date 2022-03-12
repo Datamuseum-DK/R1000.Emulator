@@ -8,6 +8,7 @@
 
 struct scm_f20_state {
 	struct ctx ctx;
+	bool faster;
 };
 
 SCM_F20 :: SCM_F20(sc_module_name nm, const char *arg) : sc_module(nm)
@@ -18,6 +19,8 @@ SCM_F20 :: SCM_F20(sc_module_name nm, const char *arg) : sc_module(nm)
 	state = (struct scm_f20_state *)
 	    CTX_Get("f20", this->name(), sizeof *state);
 	should_i_trace(this->name(), &state->ctx.do_trace);
+	if (strstr(this->name(), "FIU.fiu_") != NULL)
+		state->faster = true;
 }
 
 void
@@ -36,8 +39,10 @@ SCM_F20 :: doit(void)
 	    << s
 	);
 	pin6 = AS(s);
-#if 0	// This does not work with the VAL ALUs OC-or'ing of A=B and VAL.CNAN3A
-	if (pin1 != sc_logic_1)
+
+	if (!state->faster)
+		;
+	else if (pin1 != sc_logic_1)
 		next_trigger(pin1.posedge_event());
 	else if (pin2 != sc_logic_1)
 		next_trigger(pin2.posedge_event());
@@ -45,5 +50,4 @@ SCM_F20 :: doit(void)
 		next_trigger(pin4.posedge_event());
 	else if (pin5 != sc_logic_1)
 		next_trigger(pin5.posedge_event());
-#endif
 }
