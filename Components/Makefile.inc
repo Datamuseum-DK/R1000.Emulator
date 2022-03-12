@@ -648,19 +648,22 @@ Components/XALU8.o: Components/XALU8.cc Components/xbuf_doit.h \
     Chassis/r1000sc.h
 	${SC_CC} -o Components/XALU8.o Components/XALU8.cc
 
-#OBJS += Components/XBUF16.o
-#Components/XBUF16.o: Components/XBUF16.cc Components/xbuf_doit.h \
-#    Components/XBUF16.hh \
-#    Infra/context.h \
-#    Chassis/r1000sc.h
-#	${SC_CC} -o Components/XBUF16.o Components/XBUF16.cc
-#
 #OBJS += Components/XBUF32.o
 #Components/XBUF32.o: Components/XBUF32.cc Components/xbuf_doit.h \
 #    Components/XBUF32.hh \
 #    Infra/context.h \
 #    Chassis/r1000sc.h
 #	${SC_CC} -o Components/XBUF32.o Components/XBUF32.cc
+
+Components/XBUF16.hh:: Components/XBUF16_pins.hh
+	@touch Components/XBUF16.hh
+
+OBJS += Components/XBUF16.o
+Components/XBUF16.o: Components/XBUF16.cc Components/xbuf_doit.h \
+    Components/XBUF16.hh \
+    Infra/context.h \
+    Chassis/r1000sc.h
+	${SC_CC} -o Components/XBUF16.o Components/XBUF16.cc
 
 Components/XBUF64.hh:: Components/XBUF64_pins.hh
 	@touch Components/XBUF64.hh
@@ -706,6 +709,16 @@ Components/XIOCRAM.o: Components/XIOCRAM.cc \
 #    Infra/context.h \
 #    Chassis/r1000sc.h
 #	${SC_CC} -o Components/XLAT32.o Components/XLAT32.cc
+
+Components/XLAT16.hh:: Components/XLAT16_pins.hh
+	@touch Components/XLAT16.hh
+
+OBJS += Components/XLAT16.o
+Components/XLAT16.o: Components/XLAT16.cc \
+    Components/XLAT16.hh \
+    Infra/context.h \
+    Chassis/r1000sc.h
+	${SC_CC} -o Components/XLAT16.o Components/XLAT16.cc
 
 Components/XLAT64.hh:: Components/XLAT64_pins.hh
 	@touch Components/XLAT64.hh
