@@ -816,6 +816,9 @@ Components/XREG64.o: Components/XREG64.cc \
     Chassis/r1000sc.h
 	${SC_CC} -o Components/XREG64.o Components/XREG64.cc
 
+Components/XRFRAM.hh:: Components/XRFRAM_pins.hh
+	@touch Components/XRFRAM.hh
+
 OBJS += Components/XRFRAM.o
 Components/XRFRAM.o: Components/XRFRAM.cc \
     Components/XRFRAM.hh \

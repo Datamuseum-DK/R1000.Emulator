@@ -1,40 +1,90 @@
 #ifndef R1000_XRFRAM
 #define R1000_XRFRAM
 
+#include "XRFRAM_pins.hh"
+
 #define DQPINS() \
-	PIN(0, pin13) PIN(1, pin14) PIN(2, pin15) PIN(3, pin16) \
-	PIN(4, pin17) PIN(5, pin18) PIN(6, pin19) PIN(7, pin20) \
-	PIN(8, pin21) PIN(9, pin22) PIN(10, pin23) PIN(11, pin24) \
-	PIN(12, pin25) PIN(13, pin26) PIN(14, pin27) PIN(15, pin28) \
-	PIN(16, pin29) PIN(17, pin30) PIN(18, pin31) PIN(19, pin32) \
-	PIN(20, pin33) PIN(21, pin34) PIN(22, pin35) PIN(23, pin36) \
-	PIN(24, pin37) PIN(25, pin38) PIN(26, pin39) PIN(27, pin40) \
-	PIN(28, pin41) PIN(29, pin42) PIN(30, pin43) PIN(31, pin44) \
-	PIN(32, pin45) PIN(33, pin46) PIN(34, pin47) PIN(35, pin48) \
-	PIN(36, pin49) PIN(37, pin50) PIN(38, pin51) PIN(39, pin52) \
-	PIN(40, pin53) PIN(41, pin54) PIN(42, pin55) PIN(43, pin56) \
-	PIN(44, pin57) PIN(45, pin58) PIN(46, pin59) PIN(47, pin60) \
-	PIN(48, pin61) PIN(49, pin62) PIN(50, pin63) PIN(51, pin64) \
-	PIN(52, pin65) PIN(53, pin66) PIN(54, pin67) PIN(55, pin68) \
-	PIN(56, pin69) PIN(57, pin70) PIN(58, pin71) PIN(59, pin72) \
-	PIN(60, pin73) PIN(61, pin74) PIN(62, pin75) PIN(63, pin76)
+	PIN(0, XRFRAM_PIN_DQ0) \
+	PIN(1, XRFRAM_PIN_DQ1) \
+	PIN(2, XRFRAM_PIN_DQ2) \
+	PIN(3, XRFRAM_PIN_DQ3) \
+	PIN(4, XRFRAM_PIN_DQ4) \
+	PIN(5, XRFRAM_PIN_DQ5) \
+	PIN(6, XRFRAM_PIN_DQ6) \
+	PIN(7, XRFRAM_PIN_DQ7) \
+	PIN(8, XRFRAM_PIN_DQ8) \
+	PIN(9, XRFRAM_PIN_DQ9) \
+	PIN(10, XRFRAM_PIN_DQ10) \
+	PIN(11, XRFRAM_PIN_DQ11) \
+	PIN(12, XRFRAM_PIN_DQ12) \
+	PIN(13, XRFRAM_PIN_DQ13) \
+	PIN(14, XRFRAM_PIN_DQ14) \
+	PIN(15, XRFRAM_PIN_DQ15) \
+	PIN(16, XRFRAM_PIN_DQ16) \
+	PIN(17, XRFRAM_PIN_DQ17) \
+	PIN(18, XRFRAM_PIN_DQ18) \
+	PIN(19, XRFRAM_PIN_DQ19) \
+	PIN(20, XRFRAM_PIN_DQ20) \
+	PIN(21, XRFRAM_PIN_DQ21) \
+	PIN(22, XRFRAM_PIN_DQ22) \
+	PIN(23, XRFRAM_PIN_DQ23) \
+	PIN(24, XRFRAM_PIN_DQ24) \
+	PIN(25, XRFRAM_PIN_DQ25) \
+	PIN(26, XRFRAM_PIN_DQ26) \
+	PIN(27, XRFRAM_PIN_DQ27) \
+	PIN(28, XRFRAM_PIN_DQ28) \
+	PIN(29, XRFRAM_PIN_DQ29) \
+	PIN(30, XRFRAM_PIN_DQ30) \
+	PIN(31, XRFRAM_PIN_DQ31) \
+	PIN(32, XRFRAM_PIN_DQ32) \
+	PIN(33, XRFRAM_PIN_DQ33) \
+	PIN(34, XRFRAM_PIN_DQ34) \
+	PIN(35, XRFRAM_PIN_DQ35) \
+	PIN(36, XRFRAM_PIN_DQ36) \
+	PIN(37, XRFRAM_PIN_DQ37) \
+	PIN(38, XRFRAM_PIN_DQ38) \
+	PIN(39, XRFRAM_PIN_DQ39) \
+	PIN(40, XRFRAM_PIN_DQ40) \
+	PIN(41, XRFRAM_PIN_DQ41) \
+	PIN(42, XRFRAM_PIN_DQ42) \
+	PIN(43, XRFRAM_PIN_DQ43) \
+	PIN(44, XRFRAM_PIN_DQ44) \
+	PIN(45, XRFRAM_PIN_DQ45) \
+	PIN(46, XRFRAM_PIN_DQ46) \
+	PIN(47, XRFRAM_PIN_DQ47) \
+	PIN(48, XRFRAM_PIN_DQ48) \
+	PIN(49, XRFRAM_PIN_DQ49) \
+	PIN(50, XRFRAM_PIN_DQ50) \
+	PIN(51, XRFRAM_PIN_DQ51) \
+	PIN(52, XRFRAM_PIN_DQ52) \
+	PIN(53, XRFRAM_PIN_DQ53) \
+	PIN(54, XRFRAM_PIN_DQ54) \
+	PIN(55, XRFRAM_PIN_DQ55) \
+	PIN(56, XRFRAM_PIN_DQ56) \
+	PIN(57, XRFRAM_PIN_DQ57) \
+	PIN(58, XRFRAM_PIN_DQ58) \
+	PIN(59, XRFRAM_PIN_DQ59) \
+	PIN(60, XRFRAM_PIN_DQ60) \
+	PIN(61, XRFRAM_PIN_DQ61) \
+	PIN(62, XRFRAM_PIN_DQ62) \
+	PIN(63, XRFRAM_PIN_DQ63)
 
 struct scm_xrfram_state;
 
 SC_MODULE(SCM_XRFRAM)
 {
-	sc_in <sc_logic>	pin1;	// WE_ (input)
-	sc_in <sc_logic>	pin2;	// CS_ (input)
-	sc_in <sc_logic>	pin3;	// A0 (input)
-	sc_in <sc_logic>	pin4;	// A1 (input)
-	sc_in <sc_logic>	pin5;	// A2 (input)
-	sc_in <sc_logic>	pin6;	// A3 (input)
-	sc_in <sc_logic>	pin7;	// A4 (input)
-	sc_in <sc_logic>	pin8;	// A5 (input)
-	sc_in <sc_logic>	pin9;	// A6 (input)
-	sc_in <sc_logic>	pin10;	// A7 (input)
-	sc_in <sc_logic>	pin11;	// A8 (input)
-	sc_in <sc_logic>	pin12;	// A9 (input)
+	sc_in <sc_logic>	XRFRAM_PIN_WE;	// WE_ (input)
+	sc_in <sc_logic>	XRFRAM_PIN_CS;	// CS_ (input)
+	sc_in <sc_logic>	XRFRAM_PIN_A0;	// A0 (input)
+	sc_in <sc_logic>	XRFRAM_PIN_A1;	// A0 (input)
+	sc_in <sc_logic>	XRFRAM_PIN_A2;	// A0 (input)
+	sc_in <sc_logic>	XRFRAM_PIN_A3;	// A0 (input)
+	sc_in <sc_logic>	XRFRAM_PIN_A4;	// A0 (input)
+	sc_in <sc_logic>	XRFRAM_PIN_A5;	// A0 (input)
+	sc_in <sc_logic>	XRFRAM_PIN_A6;	// A0 (input)
+	sc_in <sc_logic>	XRFRAM_PIN_A7;	// A0 (input)
+	sc_in <sc_logic>	XRFRAM_PIN_A8;	// A0 (input)
+	sc_in <sc_logic>	XRFRAM_PIN_A9;	// A0 (input)
 
 	#define PIN(bit, pin_no) sc_inout_resolved pin_no;
 	DQPINS()

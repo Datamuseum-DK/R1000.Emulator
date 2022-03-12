@@ -16,7 +16,7 @@ struct scm_f251_state {
 SCM_F251 :: SCM_F251(sc_module_name nm, const char *arg) : sc_module(nm)
 {
 	SC_METHOD(doit);
-	sensitive << PIN_OE_ << PIN_S0 << PIN_S1 << PIN_S2 
+	sensitive << PIN_OE_ << PIN_S0 << PIN_S1 << PIN_S2
 	    << PIN_A << PIN_B << PIN_C << PIN_D
 	    << PIN_E << PIN_F << PIN_G << PIN_H;
 
@@ -33,9 +33,9 @@ SCM_F251 :: doit(void)
 
 	state->ctx.activations++;
 
-	if (IS_H(PIN_S0)) adr |= 1;
+	if (IS_H(PIN_S0)) adr |= 4;
 	if (IS_H(PIN_S1)) adr |= 2;
-	if (IS_H(PIN_S2)) adr |= 4;
+	if (IS_H(PIN_S2)) adr |= 1;
 	switch(adr) {
 	case 0: s = IS_H(PIN_A); break;
 	case 1: s = IS_H(PIN_B); break;
