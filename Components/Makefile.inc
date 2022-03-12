@@ -366,6 +366,9 @@ Components/F245.o: Components/F245.cc \
     Chassis/r1000sc.h
 	${SC_CC} -o Components/F245.o Components/F245.cc
 
+Components/F251.hh:: Components/F251_pins.hh
+	@touch Components/F251.hh
+
 OBJS += Components/F251.o
 Components/F251.o: Components/F251.cc \
     Components/F251.hh \
@@ -826,6 +829,9 @@ Components/XSR12.o: Components/XSR12.cc \
     Infra/context.h \
     Chassis/r1000sc.h
 	${SC_CC} -o Components/XSR12.o Components/XSR12.cc
+
+Components/XSR16.hh:: Components/XSR16_pins.hh
+	@touch Components/XSR16.hh
 
 OBJS += Components/XSR16.o
 Components/XSR16.o: Components/XSR16.cc \

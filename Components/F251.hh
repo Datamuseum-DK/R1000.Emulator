@@ -1,6 +1,8 @@
 #ifndef R1000_F251
 #define R1000_F251
 
+#include "F251_pins.hh"
+
 // 8-Input Multiplexer with 3-STATE Outputs
 // Fairchild DS009504 April 1988 Revised September 2000
 
@@ -9,20 +11,20 @@ struct scm_f251_state;
 
 SC_MODULE(SCM_F251)
 {
-	sc_in <sc_logic>	pin1;	// I3 - D (input)
-	sc_in <sc_logic>	pin2;	// I2 - C (input)
-	sc_in <sc_logic>	pin3;	// I1 - B (input)
-	sc_in <sc_logic>	pin4;	// I0 - A (input)
-	sc_out_resolved		pin5;	// Z - Y (tri_state)
-	sc_out_resolved		pin6;	// Z_ - Y_ (tri_state)
-	sc_in <sc_logic>	pin7;	// OE_ - OE_ (input)
-	sc_in <sc_logic>	pin9;	// S2 - S0 (input)
-	sc_in <sc_logic>	pin10;	// S1 - S1 (input)
-	sc_in <sc_logic>	pin11;	// S0 - S2 (input)
-	sc_in <sc_logic>	pin12;	// I7 - H (input)
-	sc_in <sc_logic>	pin13;	// I6 - G (input)
-	sc_in <sc_logic>	pin14;	// I5 - F (input)
-	sc_in <sc_logic>	pin15;	// I4 - E (input)
+	sc_in <sc_logic>	F251_PIN_OE_;
+	sc_in <sc_logic>	F251_PIN_S0;
+	sc_in <sc_logic>	F251_PIN_S1;
+	sc_in <sc_logic>	F251_PIN_S2;
+	sc_out_resolved		F251_PIN_Y;
+	sc_out_resolved		F251_PIN_Y_;
+	sc_in <sc_logic>	F251_PIN_A;
+	sc_in <sc_logic>	F251_PIN_B;
+	sc_in <sc_logic>	F251_PIN_C;
+	sc_in <sc_logic>	F251_PIN_D;
+	sc_in <sc_logic>	F251_PIN_E;
+	sc_in <sc_logic>	F251_PIN_F;
+	sc_in <sc_logic>	F251_PIN_G;
+	sc_in <sc_logic>	F251_PIN_H;
 
 	SC_HAS_PROCESS(SCM_F251);
 
