@@ -1,9 +1,12 @@
-#ifndef R1000_F245BA
-#define R1000_F245BA
+#ifndef R1000_F245
+#define R1000_F245
 
-struct scm_f245ba_state;
+// Octal Bidirectional Transceiver with 3-STATE Outputs
+// Fairchild Rev 1.4.0 January 2008
 
-SC_MODULE(SCM_F245BA)
+struct scm_f245_state;
+
+SC_MODULE(SCM_F245)
 {
 	sc_in <sc_logic>	pin1;	// DIR (input)
 	sc_inout_resolved	pin2;	// A0 (tri_state)
@@ -24,13 +27,13 @@ SC_MODULE(SCM_F245BA)
 	sc_inout_resolved	pin18;	// B0 (tri_state)
 	sc_in <sc_logic>	pin19;	// OE_ (input)
 
-	SC_HAS_PROCESS(SCM_F245BA);
+	SC_HAS_PROCESS(SCM_F245);
 
-	SCM_F245BA(sc_module_name nm, const char *arg);
+	SCM_F245(sc_module_name nm, const char *arg);
 
 	private:
-	struct scm_f245ba_state *state;
+	struct scm_f245_state *state;
 	void doit(void);
 };
 
-#endif /* R1000_F245BA */
+#endif /* R1000_F245 */

@@ -359,19 +359,12 @@ Components/F244.o: Components/F244.cc Components/xbuf_doit.h \
     Chassis/r1000sc.h
 	${SC_CC} -o Components/F244.o Components/F244.cc
 
-OBJS += Components/F245AB.o
-Components/F245AB.o: Components/F245AB.cc \
-    Components/F245AB.hh \
+OBJS += Components/F245.o
+Components/F245.o: Components/F245.cc \
+    Components/F245.hh \
     Infra/context.h \
     Chassis/r1000sc.h
-	${SC_CC} -o Components/F245AB.o Components/F245AB.cc
-
-OBJS += Components/F245BA.o
-Components/F245BA.o: Components/F245BA.cc \
-    Components/F245BA.hh \
-    Infra/context.h \
-    Chassis/r1000sc.h
-	${SC_CC} -o Components/F245BA.o Components/F245BA.cc
+	${SC_CC} -o Components/F245.o Components/F245.cc
 
 OBJS += Components/F251.o
 Components/F251.o: Components/F251.cc \

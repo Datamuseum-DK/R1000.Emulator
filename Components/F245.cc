@@ -1,29 +1,29 @@
 #include <systemc.h>
 #include "Chassis/r1000sc.h"
 #include "Infra/context.h"
-#include "F245BA.hh"
+#include "F245.hh"
 
 // Octal Bidirectional Transceiver with 3-STATE Outputs
 // Fairchild Rev 1.4.0 January 2008
 
-struct scm_f245ba_state {
+struct scm_f245_state {
 	struct ctx ctx;
 };
 
-SCM_F245BA :: SCM_F245BA(sc_module_name nm, const char *arg) : sc_module(nm)
+SCM_F245 :: SCM_F245(sc_module_name nm, const char *arg) : sc_module(nm)
 {
 	SC_METHOD(doit);
 	sensitive << pin1 << pin2 << pin3 << pin4 << pin5 << pin6
 		  << pin7 << pin8 << pin9 << pin11 << pin12 << pin13
 		  << pin14 << pin15 << pin16 << pin17 << pin18 << pin19;
 
-	state = (struct scm_f245ba_state *)
-	    CTX_Get("f245ba", this->name(), sizeof *state);
+	state = (struct scm_f245_state *)
+	    CTX_Get("f245", this->name(), sizeof *state);
 	should_i_trace(this->name(), &state->ctx.do_trace);
 }
 
 void
-SCM_F245BA :: doit(void)
+SCM_F245 :: doit(void)
 {
 	state->ctx.activations++;
 	TRACE(
