@@ -21,6 +21,8 @@ SCM_F20 :: SCM_F20(sc_module_name nm, const char *arg) : sc_module(nm)
 	should_i_trace(this->name(), &state->ctx.do_trace);
 	if (strstr(this->name(), "FIU.fiu_") != NULL)
 		state->faster = true;
+	else if (strstr(this->name(), "SEQ.seq_") != NULL)
+		state->faster = true;
 }
 
 void
