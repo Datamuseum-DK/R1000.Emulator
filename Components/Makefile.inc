@@ -874,6 +874,9 @@ Components/XUAMUX.o: Components/XUAMUX.cc \
     Chassis/r1000sc.h
 	${SC_CC} -o Components/XUAMUX.o Components/XUAMUX.cc
 
+Components/XWCSRAM.hh:: Components/XWCSRAM_pins.hh
+	@touch Components/XWCSRAM.hh
+
 OBJS += Components/XWCSRAM.o
 Components/XWCSRAM.o: Components/XWCSRAM.cc \
     Components/XWCSRAM.hh \

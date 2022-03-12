@@ -1,41 +1,43 @@
 #ifndef R1000_XWCSRAM
 #define R1000_XWCSRAM
 
+#include "XWCSRAM_pins.hh"
+
 struct scm_xwcsram_state;
 
 SC_MODULE(SCM_XWCSRAM)
 {
-	sc_in <sc_logic>	pin1;	// D0 (input)
-	sc_out <sc_logic>	pin2;	// Q0 (output)
-	sc_in <sc_logic>	pin3;	// D1 (input)
-	sc_out <sc_logic>	pin4;	// Q1 (output)
-	sc_in <sc_logic>	pin5;	// D2 (input)
-	sc_out <sc_logic>	pin6;	// Q2 (output)
-	sc_in <sc_logic>	pin7;	// D3 (input)
-	sc_out <sc_logic>	pin8;	// Q3 (output)
-	sc_in <sc_logic>	pin9;	// D4 (input)
-	sc_out <sc_logic>	pin10;	// Q4 (output)
-	sc_in <sc_logic>	pin11;	// D5 (input)
-	sc_out <sc_logic>	pin12;	// Q5 (output)
-	sc_in <sc_logic>	pin13;	// D6 (input)
-	sc_out <sc_logic>	pin14;	// Q6 (output)
-	sc_in <sc_logic>	pin15;	// D7 (input)
-	sc_out <sc_logic>	pin16;	// Q7 (output)
-	sc_in <sc_logic>	pin17;	// A0 (input)
-	sc_in <sc_logic>	pin18;	// A1 (input)
-	sc_in <sc_logic>	pin19;	// A2 (input)
-	sc_in <sc_logic>	pin20;	// A3 (input)
-	sc_in <sc_logic>	pin21;	// A4 (input)
-	sc_in <sc_logic>	pin22;	// A5 (input)
-	sc_in <sc_logic>	pin23;	// A6 (input)
-	sc_in <sc_logic>	pin24;	// A7 (input)
-	sc_in <sc_logic>	pin25;	// A8 (input)
-	sc_in <sc_logic>	pin26;	// A9 (input)
-	sc_in <sc_logic>	pin27;	// A10 (input)
-	sc_in <sc_logic>	pin28;	// A11 (input)
-	sc_in <sc_logic>	pin29;	// A12 (input)
-	sc_in <sc_logic>	pin30;	// A13 (input)
-	sc_in <sc_logic>	pin31;	// WE_ (input)
+	sc_in <sc_logic>	XWCSRAM_PIN_WE;
+	sc_in <sc_logic>	XWCSRAM_PIN_A0;
+	sc_in <sc_logic>	XWCSRAM_PIN_A1;
+	sc_in <sc_logic>	XWCSRAM_PIN_A2;
+	sc_in <sc_logic>	XWCSRAM_PIN_A3;
+	sc_in <sc_logic>	XWCSRAM_PIN_A4;
+	sc_in <sc_logic>	XWCSRAM_PIN_A5;
+	sc_in <sc_logic>	XWCSRAM_PIN_A6;
+	sc_in <sc_logic>	XWCSRAM_PIN_A7;
+	sc_in <sc_logic>	XWCSRAM_PIN_A8;
+	sc_in <sc_logic>	XWCSRAM_PIN_A9;
+	sc_in <sc_logic>	XWCSRAM_PIN_A10;
+	sc_in <sc_logic>	XWCSRAM_PIN_A11;
+	sc_in <sc_logic>	XWCSRAM_PIN_A12;
+	sc_in <sc_logic>	XWCSRAM_PIN_A13;
+	sc_in <sc_logic>	XWCSRAM_PIN_D0;
+	sc_in <sc_logic>	XWCSRAM_PIN_D1;
+	sc_in <sc_logic>	XWCSRAM_PIN_D2;
+	sc_in <sc_logic>	XWCSRAM_PIN_D3;
+	sc_in <sc_logic>	XWCSRAM_PIN_D4;
+	sc_in <sc_logic>	XWCSRAM_PIN_D5;
+	sc_in <sc_logic>	XWCSRAM_PIN_D6;
+	sc_in <sc_logic>	XWCSRAM_PIN_D7;
+	sc_out <sc_logic>	XWCSRAM_PIN_Q0;
+	sc_out <sc_logic>	XWCSRAM_PIN_Q1;
+	sc_out <sc_logic>	XWCSRAM_PIN_Q2;
+	sc_out <sc_logic>	XWCSRAM_PIN_Q3;
+	sc_out <sc_logic>	XWCSRAM_PIN_Q4;
+	sc_out <sc_logic>	XWCSRAM_PIN_Q5;
+	sc_out <sc_logic>	XWCSRAM_PIN_Q6;
+	sc_out <sc_logic>	XWCSRAM_PIN_Q7;
 
 	SC_HAS_PROCESS(SCM_XWCSRAM);
 

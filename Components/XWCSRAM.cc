@@ -1,6 +1,8 @@
 #include <systemc.h>
 #include "Chassis/r1000sc.h"
 #include "Infra/context.h"
+
+#define ANON_PINS
 #include "Components/XWCSRAM.hh"
 
 struct scm_xwcsram_state {
@@ -12,11 +14,9 @@ SCM_XWCSRAM :: SCM_XWCSRAM(sc_module_name nm, const char *arg) : sc_module(nm)
 {
 	SC_METHOD(doit);
 	sensitive
-	    << pin1 << pin3 << pin5 << pin7
-	    << pin9 << pin11 << pin13 << pin15
-	    << pin17 << pin18 << pin19 << pin20 << pin21 << pin22
-	    << pin23 << pin24 << pin25 << pin26 << pin27 << pin28
-	    << pin29 << pin30 << pin31;
+	    << PIN_WE
+	    << PIN_A0 << PIN_A1 << PIN_A2 << PIN_A3 << PIN_A4 << PIN_A5 << PIN_A6
+	    << PIN_A7 << PIN_A8 << PIN_A9 << PIN_A10 << PIN_A11 << PIN_A12 << PIN_A13;
 
 	state = (struct scm_xwcsram_state *)CTX_Get("XWCSRAM", this->name(), sizeof *state);
 	should_i_trace(this->name(), &state->ctx.do_trace);
@@ -29,49 +29,60 @@ SCM_XWCSRAM :: doit(void)
 
 	state->ctx.activations++;
 
-	if (IS_H(pin17))	adr |= 1 << 13;
-	if (IS_H(pin18))	adr |= 1 << 12;
-	if (IS_H(pin19))	adr |= 1 << 11;
-	if (IS_H(pin20))	adr |= 1 << 10;
-	if (IS_H(pin21))	adr |= 1 << 9;
-	if (IS_H(pin22))	adr |= 1 << 8;
-	if (IS_H(pin23))	adr |= 1 << 7;
-	if (IS_H(pin24))	adr |= 1 << 6;
-	if (IS_H(pin25))	adr |= 1 << 5;
-	if (IS_H(pin26))	adr |= 1 << 4;
-	if (IS_H(pin27))	adr |= 1 << 3;
-	if (IS_H(pin28))	adr |= 1 << 2;
-	if (IS_H(pin29))	adr |= 1 << 1;
-	if (IS_H(pin30))	adr |= 1 << 0;
+	if (IS_H(PIN_A0))	adr |= 1 << 13;
+	if (IS_H(PIN_A1))	adr |= 1 << 12;
+	if (IS_H(PIN_A2))	adr |= 1 << 11;
+	if (IS_H(PIN_A3))	adr |= 1 << 10;
+	if (IS_H(PIN_A4))	adr |= 1 << 9;
+	if (IS_H(PIN_A5))	adr |= 1 << 8;
+	if (IS_H(PIN_A6))	adr |= 1 << 7;
+	if (IS_H(PIN_A7))	adr |= 1 << 6;
+	if (IS_H(PIN_A8))	adr |= 1 << 5;
+	if (IS_H(PIN_A9))	adr |= 1 << 4;
+	if (IS_H(PIN_A10))	adr |= 1 << 3;
+	if (IS_H(PIN_A11))	adr |= 1 << 2;
+	if (IS_H(PIN_A12))	adr |= 1 << 1;
+	if (IS_H(PIN_A13))	adr |= 1 << 0;
 
-	if (IS_L(pin31)) {
+	if (IS_L(PIN_WE)) {
 		state->ram[adr] = 0;
-		if (IS_H(pin1)) state->ram[adr] |= 0x80;
-		if (IS_H(pin3)) state->ram[adr] |= 0x40;
-		if (IS_H(pin5)) state->ram[adr] |= 0x20;
-		if (IS_H(pin7)) state->ram[adr] |= 0x10;
-		if (IS_H(pin9)) state->ram[adr] |= 0x08;
-		if (IS_H(pin11)) state->ram[adr] |= 0x04;
-		if (IS_H(pin13)) state->ram[adr] |= 0x02;
-		if (IS_H(pin15)) state->ram[adr] |= 0x01;
+		if (IS_H(PIN_D0)) state->ram[adr] |= 0x80;
+		if (IS_H(PIN_D1)) state->ram[adr] |= 0x40;
+		if (IS_H(PIN_D2)) state->ram[adr] |= 0x20;
+		if (IS_H(PIN_D3)) state->ram[adr] |= 0x10;
+		if (IS_H(PIN_D4)) state->ram[adr] |= 0x08;
+		if (IS_H(PIN_D5)) state->ram[adr] |= 0x04;
+		if (IS_H(PIN_D6)) state->ram[adr] |= 0x02;
+		if (IS_H(PIN_D7)) state->ram[adr] |= 0x01;
 		TRACE(
 		    << " w a "
-		    <<pin17 <<pin18 <<pin19 <<pin20 <<pin21 <<pin22 <<pin23
-		    <<pin24 <<pin25 <<pin26 <<pin27 <<pin28 <<pin29 <<pin30
+		    << PIN_A0 << PIN_A1 << PIN_A2 << PIN_A3 << PIN_A4 << PIN_A5 << PIN_A6
+		    << PIN_A7 << PIN_A8 << PIN_A9 << PIN_A10 << PIN_A11 << PIN_A12 << PIN_A13
 		    << " d "
-		    <<pin1 <<pin3 <<pin5 <<pin7 <<pin9 <<pin11 <<pin13 <<pin15
+		    << PIN_D0 << PIN_D1 << PIN_D2 << PIN_D3 << PIN_D4 << PIN_D5 << PIN_D6 << PIN_D7
 		    << " we "
-		    <<pin31
+		    << PIN_WE
 		    << " adr "
 		    << std::hex << adr
 		    << " data "
 		    << std::hex << (unsigned)state->ram[adr]
 		);
+		next_trigger(
+		    PIN_WE.posedge_event() |
+		    PIN_D0.default_event() |
+		    PIN_D1.default_event() |
+		    PIN_D2.default_event() |
+		    PIN_D3.default_event() |
+		    PIN_D4.default_event() |
+		    PIN_D5.default_event() |
+		    PIN_D6.default_event() |
+		    PIN_D7.default_event()
+		);
 	} else {
 		TRACE(
 		    << " r a "
-		    <<pin17 <<pin18 <<pin19 <<pin20 <<pin21 <<pin22 <<pin23
-		    <<pin24 <<pin25 <<pin26 <<pin27 <<pin28 <<pin29 <<pin30
+		    << PIN_A0 << PIN_A1 << PIN_A2 << PIN_A3 << PIN_A4 << PIN_A5 << PIN_A6
+		    << PIN_A7 << PIN_A8 << PIN_A9 << PIN_A10 << PIN_A11 << PIN_A12 << PIN_A13
 		    << " d "
 		    <<AS(state->ram[adr] & 0x80)
 		    <<AS(state->ram[adr] & 0x40)
@@ -82,19 +93,19 @@ SCM_XWCSRAM :: doit(void)
 		    <<AS(state->ram[adr] & 0x02)
 		    <<AS(state->ram[adr] & 0x01)
 		    << " we "
-		    <<pin31
+		    << PIN_WE
 		    << " adr "
 		    << std::hex << adr
 		    << " data "
 		    << std::hex << (unsigned)state->ram[adr]
 		);
 	}
-	pin2 = AS(state->ram[adr] & 0x80);
-	pin4 = AS(state->ram[adr] & 0x40);
-	pin6 = AS(state->ram[adr] & 0x20);
-	pin8 = AS(state->ram[adr] & 0x10);
-	pin10 = AS(state->ram[adr] & 0x08);
-	pin12 = AS(state->ram[adr] & 0x04);
-	pin14 = AS(state->ram[adr] & 0x02);
-	pin16 = AS(state->ram[adr] & 0x01);
+	PIN_Q0 = AS(state->ram[adr] & 0x80);
+	PIN_Q1 = AS(state->ram[adr] & 0x40);
+	PIN_Q2 = AS(state->ram[adr] & 0x20);
+	PIN_Q3 = AS(state->ram[adr] & 0x10);
+	PIN_Q4 = AS(state->ram[adr] & 0x08);
+	PIN_Q5 = AS(state->ram[adr] & 0x04);
+	PIN_Q6 = AS(state->ram[adr] & 0x02);
+	PIN_Q7 = AS(state->ram[adr] & 0x01);
 }
