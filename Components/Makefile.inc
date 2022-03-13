@@ -657,6 +657,7 @@ Components/XBUF16.hh:: Components/XBUF16_pins.hh
 OBJS += Components/XBUF16.o
 Components/XBUF16.o: Components/XBUF16.cc Components/xbuf_doit.h \
     Components/XBUF16.hh \
+    Components/XBUF_doit.hh \
     Infra/context.h \
     Chassis/r1000sc.h
 	${SC_CC} -o Components/XBUF16.o Components/XBUF16.cc
@@ -667,6 +668,7 @@ Components/XBUF32.hh:: Components/XBUF32_pins.hh
 OBJS += Components/XBUF32.o
 Components/XBUF32.o: Components/XBUF32.cc Components/xbuf_doit.h \
     Components/XBUF32.hh \
+    Components/XBUF_doit.hh \
     Infra/context.h \
     Chassis/r1000sc.h
 	${SC_CC} -o Components/XBUF32.o Components/XBUF32.cc
@@ -677,6 +679,7 @@ Components/XBUF64.hh:: Components/XBUF64_pins.hh
 OBJS += Components/XBUF64.o
 Components/XBUF64.o: Components/XBUF64.cc Components/xbuf_doit.h \
     Components/XBUF64.hh \
+    Components/XBUF_doit.hh \
     Infra/context.h \
     Chassis/r1000sc.h
 	${SC_CC} -o Components/XBUF64.o Components/XBUF64.cc
@@ -709,19 +712,13 @@ Components/XIOCRAM.o: Components/XIOCRAM.cc \
     Chassis/r1000sc.h
 	${SC_CC} -o Components/XIOCRAM.o Components/XIOCRAM.cc
 
-#OBJS += Components/XLAT32.o
-#Components/XLAT32.o: Components/XLAT32.cc \
-#    Components/XLAT32.hh \
-#    Infra/context.h \
-#    Chassis/r1000sc.h
-#	${SC_CC} -o Components/XLAT32.o Components/XLAT32.cc
-
 Components/XLAT16.hh:: Components/XLAT16_pins.hh
 	@touch Components/XLAT16.hh
 
 OBJS += Components/XLAT16.o
 Components/XLAT16.o: Components/XLAT16.cc \
     Components/XLAT16.hh \
+    Components/XLAT_doit.hh \
     Infra/context.h \
     Chassis/r1000sc.h
 	${SC_CC} -o Components/XLAT16.o Components/XLAT16.cc
@@ -732,6 +729,7 @@ Components/XLAT64.hh:: Components/XLAT64_pins.hh
 OBJS += Components/XLAT64.o
 Components/XLAT64.o: Components/XLAT64.cc \
     Components/XLAT64.hh \
+    Components/XLAT_doit.hh \
     Infra/context.h \
     Chassis/r1000sc.h
 	${SC_CC} -o Components/XLAT64.o Components/XLAT64.cc
@@ -805,6 +803,7 @@ Components/XREG32.hh:: Components/XREG32_pins.hh
 OBJS += Components/XREG32.o
 Components/XREG32.o: Components/XREG32.cc \
     Components/XREG32.hh \
+    Components/XREG_doit.hh \
     Infra/context.h \
     Chassis/r1000sc.h
 	${SC_CC} -o Components/XREG32.o Components/XREG32.cc
@@ -815,6 +814,7 @@ Components/XREG64.hh:: Components/XREG64_pins.hh
 OBJS += Components/XREG64.o
 Components/XREG64.o: Components/XREG64.cc \
     Components/XREG64.hh \
+    Components/XREG_doit.hh \
     Infra/context.h \
     Chassis/r1000sc.h
 	${SC_CC} -o Components/XREG64.o Components/XREG64.cc
