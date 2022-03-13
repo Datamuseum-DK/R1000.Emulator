@@ -302,7 +302,7 @@ diagproc_istep(struct diagproc_ctrl *dc, struct diagproc_context *dctx)
 	if (dp->flags[npc] & FLAG_DUMP_MEM) {
 		dctx->executions++;
 		p = buf;
-		for (ptr = 0x10; ptr < dp->pc0 + 8; ptr++) {
+		for (ptr = 0x10; ptr < dp->pc0 + 16; ptr++) {
 			if (!(ptr & 3))
 				*p++ = ' ';
 			sprintf(p, " %02x", dp->mcs51->iram[ptr]);
