@@ -715,6 +715,16 @@ Components/XEQ16.o: Components/XEQ16.cc \
     Chassis/r1000sc.h
 	${SC_CC} -o Components/XEQ16.o Components/XEQ16.cc
 
+Components/XEQ20.hh:: Components/XEQ20_pins.hh
+	@touch Components/XEQ20.hh
+
+OBJS += Components/XEQ20.o
+Components/XEQ20.o: Components/XEQ20.cc \
+    Components/XEQ20.hh \
+    Infra/context.h \
+    Chassis/r1000sc.h
+	${SC_CC} -o Components/XEQ20.o Components/XEQ20.cc
+
 Components/XEQ32.hh:: Components/XEQ32_pins.hh
 	@touch Components/XEQ32.hh
 
