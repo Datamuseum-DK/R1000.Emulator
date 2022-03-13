@@ -1,0 +1,47 @@
+// Machine-generated, see R1000.HwDoc/ImageProcessing/Chipdesc/chip.py
+#define XSR8_PIN_CLK pin1
+#define XSR8_PIN_CLR pin2
+#define XSR8_PIN_RSI pin3
+#define XSR8_PIN_D0 pin7
+#define XSR8_PIN_Q0 pin15
+#define XSR8_PIN_D1 pin8
+#define XSR8_PIN_Q1 pin16
+#define XSR8_PIN_D2 pin9
+#define XSR8_PIN_Q2 pin17
+#define XSR8_PIN_D3 pin10
+#define XSR8_PIN_Q3 pin18
+#define XSR8_PIN_D4 pin11
+#define XSR8_PIN_Q4 pin19
+#define XSR8_PIN_D5 pin12
+#define XSR8_PIN_Q5 pin20
+#define XSR8_PIN_D6 pin13
+#define XSR8_PIN_Q6 pin21
+#define XSR8_PIN_D7 pin14
+#define XSR8_PIN_Q7 pin22
+#define XSR8_PIN_LSI pin4
+#define XSR8_PIN_S0 pin5
+#define XSR8_PIN_S1 pin6
+#ifdef ANON_PINS
+    #define PIN_CLK XSR8_PIN_CLK
+    #define PIN_CLR XSR8_PIN_CLR
+    #define PIN_RSI XSR8_PIN_RSI
+    #define PIN_D0 XSR8_PIN_D0
+    #define PIN_Q0 XSR8_PIN_Q0
+    #define PIN_D1 XSR8_PIN_D1
+    #define PIN_Q1 XSR8_PIN_Q1
+    #define PIN_D2 XSR8_PIN_D2
+    #define PIN_Q2 XSR8_PIN_Q2
+    #define PIN_D3 XSR8_PIN_D3
+    #define PIN_Q3 XSR8_PIN_Q3
+    #define PIN_D4 XSR8_PIN_D4
+    #define PIN_Q4 XSR8_PIN_Q4
+    #define PIN_D5 XSR8_PIN_D5
+    #define PIN_Q5 XSR8_PIN_Q5
+    #define PIN_D6 XSR8_PIN_D6
+    #define PIN_Q6 XSR8_PIN_Q6
+    #define PIN_D7 XSR8_PIN_D7
+    #define PIN_Q7 XSR8_PIN_Q7
+    #define PIN_LSI XSR8_PIN_LSI
+    #define PIN_S0 XSR8_PIN_S0
+    #define PIN_S1 XSR8_PIN_S1
+#endif

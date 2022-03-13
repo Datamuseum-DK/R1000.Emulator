@@ -880,6 +880,19 @@ Components/XRFRAM.o: Components/XRFRAM.cc \
     Chassis/r1000sc.h
 	${SC_CC} -o Components/XRFRAM.o Components/XRFRAM.cc
 
+Components/XSR12.hh:: Components/XSR12_pins.hh
+	@touch Components/XSR12.hh
+
+Components/XSR8.hh:: Components/XSR8_pins.hh
+	@touch Components/XSR8.hh
+
+OBJS += Components/XSR8.o
+Components/XSR8.o: Components/XSR8.cc \
+    Components/XSR8.hh \
+    Infra/context.h \
+    Chassis/r1000sc.h
+	${SC_CC} -o Components/XSR8.o Components/XSR8.cc
+
 OBJS += Components/XSR12.o
 Components/XSR12.o: Components/XSR12.cc \
     Components/XSR12.hh \
@@ -896,13 +909,6 @@ Components/XSR16.o: Components/XSR16.cc \
     Infra/context.h \
     Chassis/r1000sc.h
 	${SC_CC} -o Components/XSR16.o Components/XSR16.cc
-
-OBJS += Components/XSR8.o
-Components/XSR8.o: Components/XSR8.cc \
-    Components/XSR8.hh \
-    Infra/context.h \
-    Chassis/r1000sc.h
-	${SC_CC} -o Components/XSR8.o Components/XSR8.cc
 
 Components/R1000.Emulator/Components.hh:: Components/R1000.Emulator/Components_pins.hh
 	@touch Components/R1000.Emulator/Components.hh

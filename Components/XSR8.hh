@@ -1,6 +1,8 @@
 #ifndef R1000_XSR8
 #define R1000_XSR8
 
+#include "XSR8_pins.hh"
+
 // 4-bit bidirectional universal shift register
 // Philips 1989 Apr 04, IC15 Data Handbook
 
@@ -9,28 +11,30 @@ struct scm_xsr8_state;
 
 SC_MODULE(SCM_XSR8)
 {
-	sc_in <sc_logic>	pin1;	// clk
-	sc_in <sc_logic>	pin2;	// clr
-	sc_in <sc_logic>	pin3;	// rsi
-	sc_in <sc_logic>	pin4;	// lsi
-	sc_in <sc_logic>	pin5;	// s0
-	sc_in <sc_logic>	pin6;	// s1
-	sc_in <sc_logic>	pin7;	// d0
-	sc_in <sc_logic>	pin8;	// d1
-	sc_in <sc_logic>	pin9;	// d2
-	sc_in <sc_logic>	pin10;	// d3
-	sc_in <sc_logic>	pin11;	// d4
-	sc_in <sc_logic>	pin12;	// d5
-	sc_in <sc_logic>	pin13;	// d6
-	sc_in <sc_logic>	pin14;	// d7
-	sc_out <sc_logic>	pin15;	// q0
-	sc_out <sc_logic>	pin16;	// q1
-	sc_out <sc_logic>	pin17;	// q2
-	sc_out <sc_logic>	pin18;	// q3
-	sc_out <sc_logic>	pin19;	// q4
-	sc_out <sc_logic>	pin20;	// q5
-	sc_out <sc_logic>	pin21;	// q6
-	sc_out <sc_logic>	pin22;	// q7
+
+	sc_in <sc_logic>	XSR8_PIN_CLK;
+	sc_in <sc_logic>	XSR8_PIN_CLR;
+	sc_in <sc_logic>	XSR8_PIN_RSI;
+	sc_in <sc_logic>	XSR8_PIN_LSI;
+	sc_in <sc_logic>	XSR8_PIN_S0;
+	sc_in <sc_logic>	XSR8_PIN_S1;
+	sc_in <sc_logic>	XSR8_PIN_D0;
+	sc_in <sc_logic>	XSR8_PIN_D1;
+	sc_in <sc_logic>	XSR8_PIN_D2;
+	sc_in <sc_logic>	XSR8_PIN_D3;
+	sc_in <sc_logic>	XSR8_PIN_D4;
+	sc_in <sc_logic>	XSR8_PIN_D5;
+	sc_in <sc_logic>	XSR8_PIN_D6;
+	sc_in <sc_logic>	XSR8_PIN_D7;
+
+	sc_out <sc_logic>	XSR8_PIN_Q0;
+	sc_out <sc_logic>	XSR8_PIN_Q1;
+	sc_out <sc_logic>	XSR8_PIN_Q2;
+	sc_out <sc_logic>	XSR8_PIN_Q3;
+	sc_out <sc_logic>	XSR8_PIN_Q4;
+	sc_out <sc_logic>	XSR8_PIN_Q5;
+	sc_out <sc_logic>	XSR8_PIN_Q6;
+	sc_out <sc_logic>	XSR8_PIN_Q7;
 
 	SC_HAS_PROCESS(SCM_XSR8);
 

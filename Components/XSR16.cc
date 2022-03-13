@@ -18,7 +18,7 @@ SCM_XSR16 :: SCM_XSR16(sc_module_name nm, const char *arg) : sc_module(nm)
 {
 	(void)arg;
 	SC_METHOD(doit);
-	sensitive << XSR16_PIN_CLR << XSR16_PIN_CLK.pos();
+	sensitive << PIN_CLR << PIN_CLK.pos();
 
 	state = (struct scm_xsr16_state *)
 	    CTX_Get("xsr16", this->name(), sizeof *state);
@@ -87,13 +87,13 @@ SCM_XSR16 :: doit(void)
 		case 2:
 			what = " >> ";
 			nxt >>= 1;
-			if (IS_H(pin3)) nxt |= (1<<15);
+			if (IS_H(PIN_RSI)) nxt |= (1<<15);
 			break;
 		case 1:
 			what = " << ";
 			nxt <<= 1;
 			nxt &= 0xffff;
-			if (IS_H(pin4)) nxt |= (1<<0);
+			if (IS_H(PIN_LSI)) nxt |= (1<<0);
 			break;
 		case 0:
 			next_trigger(
@@ -109,8 +109,8 @@ SCM_XSR16 :: doit(void)
 	if (what != NULL) {
 		TRACE(
 		    << what
-		    << " mr_ " << pin2 // MR_
-		    << " dsr " << pin3 // DSR
+		    << " mr_ " << PIN_CLR
+		    << " rsi " << PIN_RSI
 		    << " d "
 		    << PIN_D0
 		    << PIN_D1
@@ -128,9 +128,9 @@ SCM_XSR16 :: doit(void)
 		    << PIN_D13
 		    << PIN_D14
 		    << PIN_D15
-		    << " dsl " << pin4 // DSL
-		    << " s " << pin5 << pin6
-		    << " cp " << pin1 // CP
+		    << " lsi " << PIN_LSI
+		    << " s " << PIN_S0 << PIN_S1
+		    << " cp " << PIN_CLK
 		    << " r "
 		    << std::hex << state->out
 		    << " nxt "

@@ -1,6 +1,8 @@
 #include <systemc.h>
 #include "Chassis/r1000sc.h"
 #include "Infra/context.h"
+
+#define ANON_PINS
 #include "XSR12.hh"
 
 // tripple 4-bit bidirectional universal shift register
@@ -16,7 +18,7 @@ SCM_XSR12 :: SCM_XSR12(sc_module_name nm, const char *arg) : sc_module(nm)
 {
 	(void)arg;
 	SC_METHOD(doit);
-	sensitive << pin2 << pin1.pos();
+	sensitive << PIN_CLR << PIN_CLK.pos();
 
 	state = (struct scm_xsr12_state *)
 	    CTX_Get("xsr12", this->name(), sizeof *state);
@@ -29,62 +31,69 @@ void
 SCM_XSR12 :: doit(void)
 {
 	const char *what = NULL;
-	unsigned nxt;
+	unsigned nxt, mode = 0;
 
 	state->ctx.activations++;
 	if (state->job) {
-		pin19 = AS(state->out & (1<<11));
-		pin20 = AS(state->out & (1<<10));
-		pin21 = AS(state->out & (1<<9));
-		pin22 = AS(state->out & (1<<8));
-		pin23 = AS(state->out & (1<<7));
-		pin24 = AS(state->out & (1<<6));
-		pin25 = AS(state->out & (1<<5));
-		pin26 = AS(state->out & (1<<4));
-		pin27 = AS(state->out & (1<<3));
-		pin28 = AS(state->out & (1<<2));
-		pin29 = AS(state->out & (1<<1));
-		pin30 = AS(state->out & (1<<0));
+		PIN_Q0 = AS(state->out & (1<<11));
+		PIN_Q1 = AS(state->out & (1<<10));
+		PIN_Q2 = AS(state->out & (1<<9));
+		PIN_Q3 = AS(state->out & (1<<8));
+		PIN_Q4 = AS(state->out & (1<<7));
+		PIN_Q5 = AS(state->out & (1<<6));
+		PIN_Q6 = AS(state->out & (1<<5));
+		PIN_Q7 = AS(state->out & (1<<4));
+		PIN_Q8 = AS(state->out & (1<<3));
+		PIN_Q9 = AS(state->out & (1<<2));
+		PIN_Q10 = AS(state->out & (1<<1));
+		PIN_Q11 = AS(state->out & (1<<0));
 		state->job = 0;
 	}
 	nxt = state->out;
-	if (IS_L(pin2)) {
+	if (IS_L(PIN_CLR)) {
 		what = " clr ";
 		if (nxt)
 			nxt = 0;
 		else
-			next_trigger(pin1.posedge_event());
-	} else if (pin1.posedge()) {
-		if (IS_H(pin5) && IS_H(pin6)) {
+			next_trigger(PIN_CLR.posedge_event());
+	} else if (PIN_CLK.posedge()) {
+		if (IS_H(PIN_S0)) mode |= 2;
+		if (IS_H(PIN_S1)) mode |= 1;
+		switch (mode) {
+		case 3:
 			what = " load ";
 			nxt = 0;
-			if (IS_H(pin7)) nxt |= (1<<11);
-			if (IS_H(pin8)) nxt |= (1<<10);
-			if (IS_H(pin9)) nxt |= (1<<9);
-			if (IS_H(pin10)) nxt |= (1<<8);
-			if (IS_H(pin11)) nxt |= (1<<7);
-			if (IS_H(pin12)) nxt |= (1<<6);
-			if (IS_H(pin13)) nxt |= (1<<5);
-			if (IS_H(pin14)) nxt |= (1<<4);
-			if (IS_H(pin15)) nxt |= (1<<3);
-			if (IS_H(pin16)) nxt |= (1<<2);
-			if (IS_H(pin17)) nxt |= (1<<1);
-			if (IS_H(pin18)) nxt |= (1<<0);
-		} else if (IS_L(pin6) && IS_H(pin5)) {
-			what = " right ";
+			if (IS_H(PIN_D0)) nxt |= (1<<11);
+			if (IS_H(PIN_D1)) nxt |= (1<<10);
+			if (IS_H(PIN_D2)) nxt |= (1<<9);
+			if (IS_H(PIN_D3)) nxt |= (1<<8);
+			if (IS_H(PIN_D4)) nxt |= (1<<7);
+			if (IS_H(PIN_D5)) nxt |= (1<<6);
+			if (IS_H(PIN_D6)) nxt |= (1<<5);
+			if (IS_H(PIN_D7)) nxt |= (1<<4);
+			if (IS_H(PIN_D8)) nxt |= (1<<3);
+			if (IS_H(PIN_D9)) nxt |= (1<<2);
+			if (IS_H(PIN_D10)) nxt |= (1<<1);
+			if (IS_H(PIN_D11)) nxt |= (1<<0);
+			break;
+		case 2:
+			what = " >> ";
 			nxt >>= 1;
-			if (IS_H(pin3)) nxt |= (1<<11);
-		} else if (IS_H(pin6) && IS_L(pin5)) {
-			what = " left ";
+			if (IS_H(PIN_RSI)) nxt |= (1<<11);
+			break;
+		case 1:
+			what = " << ";
 			nxt <<= 1;
 			nxt &= 0xfff;
-			if (IS_H(pin4)) nxt |= (1<<0);
-		} else {
+			if (IS_H(PIN_LSI)) nxt |= (1<<0);
+			break;
+		case 0:
 			next_trigger(
-			    pin1.negedge_event() |
-			    pin10.posedge_event() |
-			    pin9.posedge_event()
+			    PIN_CLR.negedge_event() |
+			    PIN_S0.posedge_event() |
+			    PIN_S1.posedge_event()
 			);
+			break;
 		}
 	}
 	if ((state->ctx.do_trace & 2) && what == NULL)
@@ -92,24 +101,24 @@ SCM_XSR12 :: doit(void)
 	if (what != NULL) {
 		TRACE(
 		    << what
-		    << " mr_ " << pin2 // MR_
-		    << " dsr " << pin3 // DSR
+		    << " mr_ " << PIN_CLR
+		    << " rsi " << PIN_RSI
 		    << " d "
-		    << pin7
-		    << pin8
-		    << pin9
-		    << pin10
-		    << pin11
-		    << pin12
-		    << pin13
-		    << pin14
-		    << pin15
-		    << pin16
-		    << pin17
-		    << pin18
-		    << " dsl " << pin4 // DSL
-		    << " s " << pin5 << pin6
-		    << " cp " << pin1 // CP
+		    << PIN_D0
+		    << PIN_D1
+		    << PIN_D2
+		    << PIN_D3
+		    << PIN_D4
+		    << PIN_D5
+		    << PIN_D6
+		    << PIN_D7
+		    << PIN_D8
+		    << PIN_D9
+		    << PIN_D10
+		    << PIN_D11
+		    << " lsi " << PIN_LSI
+		    << " s " << PIN_S0 << PIN_S1
+		    << " cp " << PIN_CLK
 		    << " r "
 		    << std::hex << state->out
 		    << " nxt "
