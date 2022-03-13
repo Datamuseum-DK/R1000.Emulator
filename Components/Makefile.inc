@@ -705,6 +705,36 @@ Components/XDRAM9.o: Components/XDRAM9.cc \
     Chassis/r1000sc.h
 	${SC_CC} -o Components/XDRAM9.o Components/XDRAM9.cc
 
+Components/XEQ16.hh:: Components/XEQ16_pins.hh
+	@touch Components/XEQ16.hh
+
+OBJS += Components/XEQ16.o
+Components/XEQ16.o: Components/XEQ16.cc \
+    Components/XEQ16.hh \
+    Infra/context.h \
+    Chassis/r1000sc.h
+	${SC_CC} -o Components/XEQ16.o Components/XEQ16.cc
+
+Components/XEQ32.hh:: Components/XEQ32_pins.hh
+	@touch Components/XEQ32.hh
+
+OBJS += Components/XEQ32.o
+Components/XEQ32.o: Components/XEQ32.cc \
+    Components/XEQ32.hh \
+    Infra/context.h \
+    Chassis/r1000sc.h
+	${SC_CC} -o Components/XEQ32.o Components/XEQ32.cc
+
+Components/XEQ40.hh:: Components/XEQ40_pins.hh
+	@touch Components/XEQ40.hh
+
+OBJS += Components/XEQ40.o
+Components/XEQ40.o: Components/XEQ40.cc \
+    Components/XEQ40.hh \
+    Infra/context.h \
+    Chassis/r1000sc.h
+	${SC_CC} -o Components/XEQ40.o Components/XEQ40.cc
+
 OBJS += Components/XIOCRAM.o
 Components/XIOCRAM.o: Components/XIOCRAM.cc \
     Components/XIOCRAM.hh \
