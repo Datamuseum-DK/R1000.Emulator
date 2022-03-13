@@ -26,6 +26,8 @@ SCM_XEQ16 :: doit(void)
 {
 	bool retval = true;
 
+	state->ctx.activations++;
+
 	do {
 		if (IS_H(PIN_E))
 			break;
