@@ -662,6 +662,17 @@ Components/XBUF16.o: Components/XBUF16.cc Components/xbuf_doit.h \
     Chassis/r1000sc.h
 	${SC_CC} -o Components/XBUF16.o Components/XBUF16.cc
 
+Components/XBUF20.hh:: Components/XBUF20_pins.hh
+	@touch Components/XBUF20.hh
+
+OBJS += Components/XBUF20.o
+Components/XBUF20.o: Components/XBUF20.cc Components/xbuf_doit.h \
+    Components/XBUF20.hh \
+    Components/XBUF_doit.hh \
+    Infra/context.h \
+    Chassis/r1000sc.h
+	${SC_CC} -o Components/XBUF20.o Components/XBUF20.cc
+
 Components/XBUF32.hh:: Components/XBUF32_pins.hh
 	@touch Components/XBUF32.hh
 
