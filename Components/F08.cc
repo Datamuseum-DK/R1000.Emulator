@@ -30,4 +30,8 @@ SCM_F08 :: doit(void)
 	    << s
 	);
 	pin3 = AS(s);
+	if (pin1 != sc_logic_1)
+		next_trigger(pin1.posedge_event());
+	else if (pin2 != sc_logic_1)
+		next_trigger(pin2.posedge_event());
 }
