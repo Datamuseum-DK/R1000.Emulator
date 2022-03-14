@@ -40,7 +40,7 @@ SCM_XSR8 :: doit(void)
 		PIN_Q2 = AS(state->out & (1<<5));
 		PIN_Q3 = AS(state->out & (1<<4));
 		PIN_Q4 = AS(state->out & (1<<3));
-		PIN_Q6 = AS(state->out & (1<<2));
+		PIN_Q5 = AS(state->out & (1<<2));
 		PIN_Q6 = AS(state->out & (1<<1));
 		PIN_Q7 = AS(state->out & (1<<0));
 		state->job = 0;
