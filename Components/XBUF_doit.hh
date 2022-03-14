@@ -26,7 +26,6 @@
 		#undef PINM
 		state->job = -2;
 		next_trigger(PIN_OE.negedge_event());
-		return;
 	}
 
 	uint64_t tmp = 0;
