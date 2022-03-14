@@ -1,6 +1,8 @@
 #include <systemc.h>
 #include "Chassis/r1000sc.h"
 #include "Infra/context.h"
+
+#define ANON_PINS
 #include "F194.hh"
 
 // 4-bit bidirectional universal shift register
@@ -9,7 +11,6 @@
 struct scm_f194_state {
 	struct ctx ctx;
 	unsigned out;
-	bool reg[4];
 	int job;
 };
 
@@ -17,7 +18,7 @@ SCM_F194 :: SCM_F194(sc_module_name nm, const char *arg) : sc_module(nm)
 {
 	(void)arg;
 	SC_METHOD(doit);
-	sensitive << pin1 << pin11.pos();
+	sensitive << PIN_CLR << PIN_CLK.pos();
 
 	state = (struct scm_f194_state *)
 	    CTX_Get("f194", this->name(), sizeof *state);
@@ -30,45 +31,50 @@ void
 SCM_F194 :: doit(void)
 {
 	const char *what = NULL;
-	unsigned nxt;
+	unsigned nxt, mode = 0;
 
 	state->ctx.activations++;
 	if (state->job) {
-		pin15 = AS(state->out & (1<<3));
-		pin14 = AS(state->out & (1<<2));
-		pin13 = AS(state->out & (1<<1));
-		pin12 = AS(state->out & (1<<0));
+		PIN_Q0 = AS(state->out & (1<<3));
+		PIN_Q1 = AS(state->out & (1<<2));
+		PIN_Q2 = AS(state->out & (1<<1));
+		PIN_Q3 = AS(state->out & (1<<0));
 		state->job = 0;
 	}
 	nxt = state->out;
-	if (IS_L(pin1)) {
+	if (IS_L(PIN_CLR)) {
 		what = " clr ";
 		if (nxt)
 			nxt = 0;
 		else
-			next_trigger(pin1.posedge_event());
-	} else if (pin11.posedge()) {
-		if (IS_H(pin10) && IS_H(pin9)) {
+			next_trigger(PIN_CLR.posedge_event());
+	} else if (PIN_CLK.posedge()) {
+		if (IS_H(PIN_S0)) mode |= 2;
+		if (IS_H(PIN_S1)) mode |= 1;
+		switch (mode) {
+		case 3:
 			what = " load ";
 			nxt = 0;
-			if (IS_H(pin3)) nxt |= (1<<3);
-			if (IS_H(pin4)) nxt |= (1<<2);
-			if (IS_H(pin5)) nxt |= (1<<1);
-			if (IS_H(pin6)) nxt |= (1<<0);
-		} else if (IS_L(pin10) && IS_H(pin9)) {
-			what = " right ";
+			if (IS_H(PIN_D0)) nxt |= (1<<3);
+			if (IS_H(PIN_D1)) nxt |= (1<<2);
+			if (IS_H(PIN_D2)) nxt |= (1<<1);
+			if (IS_H(PIN_D3)) nxt |= (1<<0);
+			break;
+		case 2:
+			what = " >> ";
 			nxt >>= 1;
-			if (IS_H(pin2)) nxt |= (1<<3);
-		} else if (IS_H(pin10) && IS_L(pin9)) {
-			what = " left ";
+			if (IS_H(PIN_RSI)) nxt |= (1<<3);
+			break;
+		case 1:
+			what = " <<ft ";
 			nxt <<= 1;
 			nxt &= 0xf;
-			if (IS_H(pin7)) nxt |= (1<<0);
-		} else {
+			if (IS_H(PIN_LSI)) nxt |= (1<<0);
+		case 0:
 			next_trigger(
-			    pin1.negedge_event() |
-			    pin10.posedge_event() |
-			    pin9.posedge_event()
+			    PIN_CLR.negedge_event() |
+			    PIN_S0.posedge_event() |
+			    PIN_S1.posedge_event()
 			);
 		}
 	}
@@ -77,16 +83,16 @@ SCM_F194 :: doit(void)
 	if (what != NULL) {
 		TRACE(
 		    << what
-		    << " mr_ " << pin1 // MR_
-		    << " dsr " << pin2 // DSR
+		    << " mr_ " << PIN_CLR
+		    << " rsi " << PIN_RSI
 		    << " d "
-		    << pin3 // D0
-		    << pin4 // D1
-		    << pin5 // D2
-		    << pin6 // D3
-		    << " dsl " << pin7 // DSL
-		    << " s " << pin9 << pin10
-		    << " cp " << pin11 // CP
+		    << PIN_D0
+		    << PIN_D1
+		    << PIN_D2
+		    << PIN_D3
+		    << " lsi " << PIN_LSI
+		    << " s " << PIN_S0 << PIN_S1
+		    << " cp " << PIN_CLK
 		    << " r "
 		    << std::hex << state->out
 		    << " nxt "

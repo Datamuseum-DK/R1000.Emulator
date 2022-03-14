@@ -331,6 +331,9 @@ Components/F189.o: Components/F189.cc \
     Chassis/r1000sc.h
 	${SC_CC} -o Components/F189.o Components/F189.cc
 
+Components/F194.hh:: Components/F194_pins.hh
+	@touch Components/F194.hh
+
 OBJS += Components/F194.o
 Components/F194.o: Components/F194.cc \
     Components/F194.hh \
