@@ -3,9 +3,8 @@
 
 #include "XSR12_pins.hh"
 
-// 4-bit bidirectional universal shift register
+// 3 * F194 4-bit bidirectional universal shift register
 // Philips 1989 Apr 04, IC15 Data Handbook
-
 
 struct scm_xsr12_state;
 
