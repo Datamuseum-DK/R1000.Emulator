@@ -802,6 +802,26 @@ Components/XLAT64.o: Components/XLAT64.cc \
     Chassis/r1000sc.h
 	${SC_CC} -o Components/XLAT64.o Components/XLAT64.cc
 
+Components/XMUX6.hh:: Components/XMUX6_pins.hh
+	@touch Components/XMUX6.hh
+
+OBJS += Components/XMUX6.o
+Components/XMUX6.o: Components/XMUX6.cc \
+    Components/XMUX6.hh \
+    Infra/context.h \
+    Chassis/r1000sc.h
+	${SC_CC} -o Components/XMUX6.o Components/XMUX6.cc
+
+Components/XMUX7.hh:: Components/XMUX7_pins.hh
+	@touch Components/XMUX7.hh
+
+OBJS += Components/XMUX7.o
+Components/XMUX7.o: Components/XMUX7.cc \
+    Components/XMUX7.hh \
+    Infra/context.h \
+    Chassis/r1000sc.h
+	${SC_CC} -o Components/XMUX7.o Components/XMUX7.cc
+
 Components/XMUX232.hh:: Components/XMUX232_pins.hh
 	@touch Components/XMUX232.hh
 
