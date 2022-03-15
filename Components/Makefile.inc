@@ -643,6 +643,16 @@ Components/TSXXPAL.o: Components/TSXXPAL.cc \
     Chassis/r1000sc.h
 	${SC_CC} -o Components/TSXXPAL.o Components/TSXXPAL.cc
 
+Components/XADD8.hh:: Components/XADD8_pins.hh
+	@touch Components/XADD8.hh
+
+OBJS += Components/XADD8.o
+Components/XADD8.o: Components/XADD8.cc Components/xbuf_doit.h \
+    Components/XADD8.hh \
+    Infra/context.h \
+    Chassis/r1000sc.h
+	${SC_CC} -o Components/XADD8.o Components/XADD8.cc
+
 OBJS += Components/XADD16.o
 Components/XADD16.o: Components/XADD16.cc Components/xbuf_doit.h \
     Components/XADD16.hh \
