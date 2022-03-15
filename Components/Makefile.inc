@@ -822,6 +822,16 @@ Components/XMUX7.o: Components/XMUX7.cc \
     Chassis/r1000sc.h
 	${SC_CC} -o Components/XMUX7.o Components/XMUX7.cc
 
+Components/XMUX16.hh:: Components/XMUX16_pins.hh
+	@touch Components/XMUX16.hh
+
+OBJS += Components/XMUX16.o
+Components/XMUX16.o: Components/XMUX16.cc \
+    Components/XMUX16.hh \
+    Infra/context.h \
+    Chassis/r1000sc.h
+	${SC_CC} -o Components/XMUX16.o Components/XMUX16.cc
+
 Components/XMUX232.hh:: Components/XMUX232_pins.hh
 	@touch Components/XMUX232.hh
 
@@ -831,13 +841,6 @@ Components/XMUX232.o: Components/XMUX232.cc \
     Infra/context.h \
     Chassis/r1000sc.h
 	${SC_CC} -o Components/XMUX232.o Components/XMUX232.cc
-
-OBJS += Components/XMUX16.o
-Components/XMUX16.o: Components/XMUX16.cc \
-    Components/XMUX16.hh \
-    Infra/context.h \
-    Chassis/r1000sc.h
-	${SC_CC} -o Components/XMUX16.o Components/XMUX16.cc
 
 OBJS += Components/XMUXI16.o
 Components/XMUXI16.o: Components/XMUXI16.cc \

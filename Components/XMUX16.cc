@@ -1,6 +1,10 @@
+// 16 bit two input multiplexer
+
 #include <systemc.h>
 #include "Chassis/r1000sc.h"
 #include "Infra/context.h"
+
+#define ANON_PINS
 #include "XMUX16.hh"
 
 struct scm_xmux16_state {
@@ -9,39 +13,38 @@ struct scm_xmux16_state {
 
 SCM_XMUX16 :: SCM_XMUX16(sc_module_name nm, const char *arg) : sc_module(nm)
 {
-	SC_METHOD(doit);
-	#define PIN(bit, pin_a, pin_b, pin_out) << pin_a << pin_b
-	sensitive << pin1 << pin2 XMUX16_PINS();
-	#undef PIN
 
 	state = (struct scm_xmux16_state *)CTX_Get("XMUX16", this->name(), sizeof *state);
 	should_i_trace(this->name(), &state->ctx.do_trace);
+
+	SC_METHOD(doit);
+	#define PINM(pin_a, pin_b, pin_y) << pin_a << pin_b
+	sensitive << PIN_S << PIN_E PIN_SETS(PINM);
+	#undef PINM
 }
 
 void
 SCM_XMUX16 :: doit(void)
 {
+	bool inv = IS_L(PIN_INV);
+
 	state->ctx.activations++;
 
-	if (IS_H(pin2)) {
-		TRACE( << " Z ");
-		#define PIN(bit, pin_a, pin_b, pin_out) pin_out = sc_logic_Z;
-		XMUX16_PINS()
-		#undef PIN
-		next_trigger(pin2.negedge_event());
-	} else if (IS_L(pin1)) {
-		#define PIN(bit, pin_a, pin_b, pin_out) << pin_a
-		TRACE(<< " s " << pin1 << " a " XMUX16_PINS());
-		#undef PIN
-		#define PIN(bit, pin_a, pin_b, pin_out) pin_out = AS(IS_H(pin_a));
-		XMUX16_PINS()
-		#undef PIN
+	if (IS_H(PIN_E)) {
+		TRACE( << " e ");
+		#define PINM(pin_a, pin_b, pin_y) pin_y = AS(inv);
+		PIN_SETS(PINM)
+		#undef PINM
+		next_trigger(PIN_E.negedge_event());
+	} else if (IS_L(PIN_S)) {
+		TRACE( << " a ");
+		#define PINM(pin_a, pin_b, pin_y) pin_y = AS(IS_H(pin_a) ^ inv);
+		PIN_SETS(PINM)
+		#undef PINM
 	} else {
-		#define PIN(bit, pin_a, pin_b, pin_out) << pin_b
-		TRACE(<< " s " << pin1 << " b " XMUX16_PINS());
-		#undef PIN
-		#define PIN(bit, pin_a, pin_b, pin_out) pin_out = AS(IS_H(pin_b));
-		XMUX16_PINS()
-		#undef PIN
+		TRACE( << " b ");
+		#define PINM(pin_a, pin_b, pin_y) pin_y = AS(IS_H(pin_b) ^ inv);
+		PIN_SETS(PINM)
+		#undef PINM
 	}
 }
