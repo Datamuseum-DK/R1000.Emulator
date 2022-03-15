@@ -5,7 +5,9 @@
 	TRACE(
 	    << " job " << state->job
 	    << " clk " << PIN_CLK.posedge()
+#ifdef PIN_INV
 	    << " inv " << PIN_INV
+#endif
 	    << " oe " << PIN_OE
 	    << " d " PIN_PAIRS(PINM)
 	    << " | " << std::hex << state->data
@@ -14,8 +16,10 @@
 
 	if (state->job > 0) {
 		uint64_t tmp = state->data;
+#ifdef PIN_INV
 		if (IS_L(PIN_INV))
 			tmp = ~tmp;
+#endif
 		#define PINM(bit, pin_in, pin_out) \
 		pin_out = AS(tmp & ((uint64_t)1 << bit));
 		PIN_PAIRS(PINM)

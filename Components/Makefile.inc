@@ -445,6 +445,9 @@ Components/F373.o: Components/F373.cc \
     Chassis/r1000sc.h
 	${SC_CC} -o Components/F373.o Components/F373.cc
 
+Components/F374.hh:: Components/F374_pins.hh
+	@touch Components/F374.hh
+
 OBJS += Components/F374.o
 Components/F374.o: Components/F374.cc \
     Components/F374.hh \
@@ -798,6 +801,16 @@ Components/XLAT64.o: Components/XLAT64.cc \
     Infra/context.h \
     Chassis/r1000sc.h
 	${SC_CC} -o Components/XLAT64.o Components/XLAT64.cc
+
+Components/XMUX232.hh:: Components/XMUX232_pins.hh
+	@touch Components/XMUX232.hh
+
+OBJS += Components/XMUX232.o
+Components/XMUX232.o: Components/XMUX232.cc \
+    Components/XMUX232.hh \
+    Infra/context.h \
+    Chassis/r1000sc.h
+	${SC_CC} -o Components/XMUX232.o Components/XMUX232.cc
 
 OBJS += Components/XMUX16.o
 Components/XMUX16.o: Components/XMUX16.cc \
