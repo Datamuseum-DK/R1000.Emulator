@@ -37,7 +37,8 @@ struct diagproc_ctrl {
 	struct diagproc_priv *priv;
 };
 
-struct diagproc_ctrl *DiagProcCreate(const char *name, uint32_t *do_trace);
+struct diagproc_ctrl *DiagProcCreate(const char *name, const char *arg,
+    uint32_t *do_trace);
 void DiagProcStep(struct diagproc_ctrl *, struct diagproc_context *);
 
 #ifdef __cplusplus

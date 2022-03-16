@@ -26,6 +26,8 @@
 
 struct diagproc_priv {
 	char *name;
+	char *arg;
+	unsigned mod;
 	struct mcs51 *mcs51;
 	int version;
 	int idle;
@@ -380,12 +382,13 @@ diagproc_set_serialflags(struct diagproc_priv *dp, unsigned serial_rx_byte)
 }
 
 struct diagproc_ctrl *
-DiagProcCreate(const char *name, uint32_t *do_trace)
+DiagProcCreate(const char *name, const char *arg, uint32_t *do_trace)
 {
 	struct diagproc_priv *dp;
 	struct diagproc_ctrl *dc;
 	uint8_t firmware[8192];
 	unsigned u;
+	char *p, *q;
 
 	dp = calloc(sizeof *dp, 1);
 	assert(dp != NULL);
@@ -398,6 +401,17 @@ DiagProcCreate(const char *name, uint32_t *do_trace)
 
 	dp->name = strdup(name);
 	assert(dp->name != NULL);
+
+	dp->arg = strdup(arg);
+	assert(dp->arg != NULL);
+
+	p = strstr(dp->arg, "mod");
+	if (p != NULL) {
+		q = NULL;
+		dp->mod = strtoul(p + 3, &q, 0);
+		assert(q != NULL);
+		assert(*q == '\0');
+	}
 
 	dp->mcs51 = MCS51_Create(name);
 	assert(dp->mcs51 != NULL);
@@ -427,7 +441,6 @@ DiagProcCreate(const char *name, uint32_t *do_trace)
 	if (strstr(name, "MEM") == NULL) {
 		dp->version = 1;
 		load_programmable(name, firmware, sizeof firmware, "P8052AH_9028");
-		MCS51_SetProgMem(dp->mcs51, firmware, sizeof firmware);
 		diagproc_set_serialflags(dp, 0x646);
 		dp->flags[0x17d] |= FLAG_IDLE;
 		dp->flags[0x17f] |= FLAG_IDLE;
@@ -453,7 +466,6 @@ DiagProcCreate(const char *name, uint32_t *do_trace)
 	} else {
 		dp->version = 2;
 		load_programmable(name, firmware, sizeof firmware, "DIPROC-01");
-		MCS51_SetProgMem(dp->mcs51, firmware, sizeof firmware);
 		diagproc_set_serialflags(dp, 0x69f);
 		dp->flags[0x19d] |= FLAG_IDLE;
 		dp->flags[0x19f] |= FLAG_IDLE;
@@ -464,6 +476,8 @@ DiagProcCreate(const char *name, uint32_t *do_trace)
 		for (u = 0x11c9; u <= sizeof dp->flags; u++)
 			dp->flags[u] |= FLAG_NOT_CODE;
 	}
+
+	MCS51_SetProgMem(dp->mcs51, firmware, sizeof firmware);
 
 	dp->diag_bus = elastic_subscribe(diag_elastic, diagproc_busrx, dp);
 
