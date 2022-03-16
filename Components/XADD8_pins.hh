@@ -82,23 +82,30 @@
 	sc_out <sc_logic> pin26;
 
 #ifdef ANON_PINS
-#define PIN_SETS_IN(macro) \
+
+#define PIN_SETS_A(macro) \
 	macro(7, PIN_A0) \
-	macro(7, PIN_B0) \
 	macro(6, PIN_A1) \
-	macro(6, PIN_B1) \
 	macro(5, PIN_A2) \
-	macro(5, PIN_B2) \
 	macro(4, PIN_A3) \
-	macro(4, PIN_B3) \
 	macro(3, PIN_A4) \
-	macro(3, PIN_B4) \
 	macro(2, PIN_A5) \
-	macro(2, PIN_B5) \
 	macro(1, PIN_A6) \
+	macro(0, PIN_A7)
+
+#define PIN_SETS_B(macro) \
+	macro(7, PIN_B0) \
+	macro(6, PIN_B1) \
+	macro(5, PIN_B2) \
+	macro(4, PIN_B3) \
+	macro(3, PIN_B4) \
+	macro(2, PIN_B5) \
 	macro(1, PIN_B6) \
-	macro(0, PIN_A7) \
-	macro(0, PIN_B7) \
+	macro(0, PIN_B7)
+
+#define PIN_SETS_IN(macro) \
+	PIN_SETS_A(macro) \
+	PIN_SETS_B(macro) \
 	macro(0, PIN_CI)
 
 #define PIN_SETS_OUT(macro) \

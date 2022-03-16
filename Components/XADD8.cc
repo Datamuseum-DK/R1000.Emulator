@@ -30,6 +30,7 @@ SCM_XADD8 :: doit(void)
 
 	state->ctx.activations++;
 
+
 	#define PINM(bit, pin) if (IS_H(pin)) sum += (1ULL << bit);
 	PIN_SETS_IN(PINM);
 	#undef PINM
@@ -37,4 +38,12 @@ SCM_XADD8 :: doit(void)
 	#define PINM(bit, pin) pin = AS(sum & (1ULL << bit));
 	PIN_SETS_OUT(PINM);
 	#undef PINM
+
+	#define PINM(bit, pin) << pin
+	TRACE(
+	    << " a " PIN_SETS_A(PINM)
+	    << " b " PIN_SETS_B(PINM)
+	    << " ci " << PIN_CI
+	    << " | " << std::hex << sum
+	);
 }
