@@ -46,16 +46,10 @@ SC_MODULE(SCM_8051)
 
 	SC_HAS_PROCESS(SCM_8051);
 
-	SCM_8051(sc_module_name nm, const char *arg) : sc_module(nm)
-	{
-		SC_METHOD(doit);
-		sensitive << pin9 << pin18.pos();
-		loadit(arg);
-	}
+	SCM_8051(sc_module_name nm, const char *arg);
 
 	private:
 	struct scm_8051_state *state;
-	void loadit(const char *arg);
 	struct diagproc_ctrl *diag_ctrl;
 	unsigned cycle;
 	void doit(void);

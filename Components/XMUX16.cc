@@ -37,12 +37,16 @@ SCM_XMUX16 :: doit(void)
 		#undef PINM
 		next_trigger(PIN_E.negedge_event());
 	} else if (IS_L(PIN_S)) {
-		TRACE( << " a ");
+		#define PINM(pin_a, pin_b, pin_y) << pin_a
+		TRACE( << " a " PIN_SETS(PINM));
+		#undef PINM
 		#define PINM(pin_a, pin_b, pin_y) pin_y = AS(IS_H(pin_a) ^ inv);
 		PIN_SETS(PINM)
 		#undef PINM
 	} else {
-		TRACE( << " b ");
+		#define PINM(pin_a, pin_b, pin_y) << pin_b
+		TRACE( << " b " PIN_SETS(PINM));
+		#undef PINM
 		#define PINM(pin_a, pin_b, pin_y) pin_y = AS(IS_H(pin_b) ^ inv);
 		PIN_SETS(PINM)
 		#undef PINM

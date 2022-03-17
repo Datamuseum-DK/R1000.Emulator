@@ -82,14 +82,18 @@ struct scm_8051_state {
 		} \
 	} while(0)
 
-void
-SCM_8051 :: loadit(const char *arg)
+SCM_8051 :: SCM_8051(sc_module_name nm, const char *arg) : sc_module(nm)
 {
 	(void)arg;
+
 	state = (struct scm_8051_state *)CTX_Get("8051", this->name(), sizeof *state);
 	should_i_trace(this->name(), &state->ctx.do_trace);
-	diag_ctrl = DiagProcCreate(this->name(), &state->ctx.do_trace);
+	diag_ctrl = DiagProcCreate(this->name(), arg, &state->ctx.do_trace);
 	assert(diag_ctrl != NULL);
+
+	SC_METHOD(doit);
+	sensitive << pin9 << pin18.pos();
+
 }
 
 void
