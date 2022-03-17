@@ -1,6 +1,39 @@
-from board import Board
+from board import Board, Chain
+import scan_chains
+
+TYP_DUIRG = {
+    "DIPROC",
+    "DUIRG0",
+    "DUIRG1",
+    "DUIRG2",
+    "DUIRG3",
+    "DUIRG4",
+    "DUIRG5",
+    "DUIRG6",
+    "DUIRG7",
+}
+
+class ChainTypUir(Chain):
+    def __init__(self):
+        super().__init__("S.UIR", 6)
+        self.SUPRESS |= TYP_DUIRG
+        self.SUPRESS_ = {
+           "UIR01",
+           "UIR23",
+           "UIR45",
+           "UIR67",
+           "UIR89",
+           "UIRA",
+           "UIRP",
+        }
+        self.chain = scan_chains.TypUir()
+
 
 class TYP_Board(Board):
+
+    CHAINS = {
+        0x5: ChainTypUir(),
+    }
 
     DUIRG0_BITS = (
         "DIAG.HUA.0",
@@ -78,11 +111,6 @@ class TYP_Board(Board):
         "-ADR.DIAG_OFF~",
         "+DIAG_UADR.SEL~",
     )
-
-    CHAINS = {
-        0x30: ("WDR", 9, 0x38, [".WDR0", ".WDRP"]),
-        0x50: ("UIR", 6, 0x3b, [".URSR"]),
-    }
 
     def __init__(self):
         super().__init__("TYP", 6)
