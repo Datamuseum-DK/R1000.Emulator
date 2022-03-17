@@ -667,6 +667,17 @@ Components/XALU8.o: Components/XALU8.cc Components/xbuf_doit.h \
     Chassis/r1000sc.h
 	${SC_CC} -o Components/XALU8.o Components/XALU8.cc
 
+Components/XBUF4.hh:: Components/XBUF4_pins.hh
+	@touch Components/XBUF4.hh
+
+OBJS += Components/XBUF4.o
+Components/XBUF4.o: Components/XBUF4.cc Components/xbuf_doit.h \
+    Components/XBUF4.hh \
+    Components/XBUF_doit.hh \
+    Infra/context.h \
+    Chassis/r1000sc.h
+	${SC_CC} -o Components/XBUF4.o Components/XBUF4.cc
+
 Components/XBUF16.hh:: Components/XBUF16_pins.hh
 	@touch Components/XBUF16.hh
 
