@@ -14,7 +14,6 @@ class LibPart():
         self.sexp = sexp
         i = self.sexp.find_first("part")
         self.partname = i[0].name[1:-1]
-        self.is_virtual = self.partname in ("GB", "GF", "Pull_Up", "Pull_Down")
         self.board.libparts[self.partname] = self
         self.pins = {}
         for i in self.sexp.find("pins.pin"):
@@ -25,6 +24,4 @@ class LibPart():
 
     def include_file(self):
         ''' Return include statement for this libpart '''
-        if self.is_virtual:
-            return ""
         return 'Components/' + self.partname + '.hh'

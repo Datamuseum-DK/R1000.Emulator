@@ -31,7 +31,7 @@ class Component():
             self.ref = self.ref[:2] + "%03d" % int(self.ref[2:], 10)
             self.ref = transit.do_transit(self.board.name, self.ref)
         self.part = self.board.libparts[self.partname]
-        self.is_virtual = self.part.is_virtual
+        self.is_virtual = self.partname in ("GB", "GF", "Pull_Up", "Pull_Down")
         self.connections = {}
 
         self.location = "x99"
@@ -61,14 +61,19 @@ class Component():
 
     def include_files(self):
         ''' Register necessary include files '''
-        yield self.part.include_file()
+        if not self.is_virtual:
+            yield self.part.include_file()
 
     def instance(self, file):
         ''' Emit the local instance of this component '''
+        if self.is_virtual:
+            return
         file.write('\t' + self.scm + " " + self.name + ";\n")
 
     def initialize(self, file):
         ''' Initialize the local instance of this component '''
+        if self.is_virtual:
+            return
         file.write(",\n\t" + self.name + '("' + self.name + '", "' + self.value + '")')
 
     def hookup_pin(self, file, pin_no, pin_num, cmt="", suf=""):
@@ -84,6 +89,8 @@ class Component():
 
     def hookup(self, file):
         ''' Emit the SystemC code to hook this component up '''
+        if self.is_virtual:
+            return
         file.write("\n\n\t// %s\n" % " ".join((self.ref, self.name, self.location, self.partname)))
         for pin in sorted(self.part.pins.values()):
             self.hookup_pin(file, pin.num, pin.num, cmt=str(pin))

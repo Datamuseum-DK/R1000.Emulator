@@ -55,17 +55,16 @@ class Sheet():
             for incl in comp.include_files():
                 if incl:
                     incls.add(incl)
-        for i in sorted(incls):
-            scm.include(i)
+        for incl in sorted(incls):
+            scm.include(incl)
         scm.write("\n")
         scm.write("SC_MODULE(%s)\n" % self.mod_type)
         scm.write("{\n")
-        for i in sorted(self.local_nets):
-            scm.write(i.decl())
+        for net in sorted(self.local_nets):
+            scm.write(net.decl())
         scm.write("\n")
-        for i in sorted(self.components.values()):
-            if not i.is_virtual:
-                i.instance(scm)
+        for comp in sorted(self.components.values()):
+            comp.instance(scm)
         scm.write("\n")
         scm.write(self.substitute('''
 		|	ttt(
@@ -104,12 +103,10 @@ class Sheet():
         for i in sorted(self.local_nets):
             scm.write(",\n\t" + i.cname + '("' + i.cname + '", sc_logic_1)')
         for comp in sorted(self.components.values()):
-            if not comp.is_virtual:
-                comp.initialize(scm)
+            comp.initialize(scm)
         scm.write("\n{\n")
-        for i in sorted(self.components.values()):
-            if not i.is_virtual:
-                i.hookup(scm)
+        for comp in sorted(self.components.values()):
+            comp.hookup(scm)
         scm.write("}\n")
 
     def produce(self):
