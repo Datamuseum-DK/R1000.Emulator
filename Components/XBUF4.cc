@@ -16,7 +16,7 @@ SCM_XBUF4 :: SCM_XBUF4(sc_module_name nm, const char *arg) : sc_module(nm)
 {
 	SC_METHOD(doit);
 	#define PINM(bit, pin_in, pin_out) << pin_in
-	sensitive << PIN_OE PIN_PAIRS(PINM);
+	sensitive << PIN_OE_ PIN_PAIRS(PINM);
 	#undef PINM
 
 	state = (struct scm_xbuf4_state *)CTX_Get("XBUF4", this->name(), sizeof *state);

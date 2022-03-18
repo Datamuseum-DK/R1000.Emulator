@@ -1,6 +1,6 @@
-
-#define XBUF4_PIN_INV pin1
-#define XBUF4_PIN_OE pin2
+// Machine-generated, see R1000.HwDoc/ImageProcessing/Chipdesc/chip.py
+#define XBUF4_PIN_INV_ pin1
+#define XBUF4_PIN_OE_ pin2
 #define XBUF4_PIN_I0 pin3
 #define XBUF4_PIN_Y0 pin4
 #define XBUF4_PIN_I1 pin5
@@ -10,8 +10,8 @@
 #define XBUF4_PIN_I3 pin9
 #define XBUF4_PIN_Y3 pin10
 #ifdef ANON_PINS
-    #define PIN_INV XBUF4_PIN_INV
-    #define PIN_OE XBUF4_PIN_OE
+    #define PIN_INV_ XBUF4_PIN_INV_
+    #define PIN_OE_ XBUF4_PIN_OE_
     #define PIN_I0 XBUF4_PIN_I0
     #define PIN_Y0 XBUF4_PIN_Y0
     #define PIN_I1 XBUF4_PIN_I1

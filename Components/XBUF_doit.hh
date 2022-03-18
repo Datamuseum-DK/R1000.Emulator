@@ -4,15 +4,15 @@
 #define PINM(bit, pin_in, pin_out) << pin_in
 	TRACE(
 	    << " job " << state->job
-	    << " inv " << PIN_INV
-	    << " oe " << PIN_OE
+	    << " inv " << PIN_INV_
+	    << " oe " << PIN_OE_
 	    << " d " PIN_PAIRS(PINM)
 	);
 	#undef PINM
 
 	if (state->job > 0) {
 		uint64_t tmp = state->data;
-		if (IS_L(PIN_INV))
+		if (IS_L(PIN_INV_))
 			tmp = ~tmp;
 		#define PINM(bit, pin_in, pin_out) \
 		pin_out = AS(tmp & ((uint64_t)1 << bit));
@@ -25,7 +25,7 @@
 		PIN_PAIRS(PINM)
 		#undef PINM
 		state->job = -2;
-		next_trigger(PIN_OE.negedge_event());
+		next_trigger(PIN_OE_.negedge_event());
 	}
 
 	uint64_t tmp = 0;
@@ -38,7 +38,7 @@
 		state->job = -1;
 	}
 
-	if (IS_L(PIN_OE)) {
+	if (IS_L(PIN_OE_)) {
 		if (state->job < 0) {
 			state->job = 1;
 			next_trigger(5, SC_NS);
