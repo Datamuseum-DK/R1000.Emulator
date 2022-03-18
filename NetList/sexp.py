@@ -38,6 +38,7 @@ class SExp():
     ''' Painfully primitive s-exp handling '''
     def __init__(self, name, *vals):
         self.name = name
+        self.quoted = False
         if len(vals) == 1 and vals[0] is None:
             self.members = None
         else:
@@ -109,6 +110,7 @@ class SExp():
                 assert src[end:end+2] in ('\\\\', '\\"', '\\n')
                 end += 2
             self.name = src[begin + 1:end - 1]
+            self.quoted = True
             self.members = None
             return end
 
@@ -137,10 +139,17 @@ class SExp():
             self += sexp
         return end + 1
 
+    def requote(self):
+        ''' Reapply quotes if string '''
+        if self.quoted:
+            return '"' + self.name + '"'
+        return self.name
+
     def serialize(self, indent="  "):
         ''' Serialize recursively '''
+
         if self.members is None:
-            yield self.name
+            yield self.requote()
         elif len(self.members) == 0:
             yield '(' + self.name + ')'
         elif sum(len(x) for x in self.members):
@@ -150,7 +159,7 @@ class SExp():
                     yield indent + j
             yield ')'
         else:
-            i = ' '.join(x.name for x in self.members)
+            i = ' '.join(x.requote() for x in self.members)
             yield '(' + self.name + ' ' + i + ')'
 
 def main():
