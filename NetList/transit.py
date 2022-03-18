@@ -236,8 +236,8 @@ def make_transit_h(file):
         file.write(text + "\n")
 
     file.write("\n")
-    for k,v in sorted(GB.items()):
-        file.write("#define GB_%s %s\n" % (k, v))
+    for key,val in sorted(GB.items()):
+        file.write("#define GB_%s %s\n" % (key, val))
 
 if __name__ == "__main__":
     make_transit_h(sys.stdout)
