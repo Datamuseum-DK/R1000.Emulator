@@ -91,9 +91,9 @@ class SExp():
         for i in self.find(name):
             return i
 
-    def parse(self, src):
+    def parse(self, src, start=0):
         ''' Parse sexp string '''
-        begin = 0
+        begin = start
 
         while src[begin] in " \t\n":
             begin += 1
@@ -133,7 +133,7 @@ class SExp():
             if src[end] == ')':
                 break
             sexp = SExp(None)
-            end += sexp.parse(src[end:])
+            end = sexp.parse(src, end)
             self += sexp
         return end + 1
 
