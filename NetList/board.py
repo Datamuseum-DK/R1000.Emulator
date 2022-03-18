@@ -59,7 +59,7 @@ class Board():
     def find_board_name(self):
         ''' We dont trust the filename '''
         title = self.sexp.find_first('design.sheet.title_block.title')
-        i = title[0].name[1:-1].split()
+        i = title[0].name.split()
         assert i[1] == "Main"
         assert i[0].upper() == i[0]
         self.name = i[0]

@@ -10,8 +10,8 @@ class Node():
     def __init__(self, net, sexp):
         self.net = net
         self.sexp = sexp
-        self.refname = sexp[0][0].name[1:-1]
-        self.pinno = sexp[1][0].name[1:-1]
+        self.refname = sexp[0][0].name
+        self.pinno = sexp[1][0].name
         self.pinfunction = sexp.find_first("pinfunction")
         if self.pinfunction:
             self.pinfunction = self.pinfunction[0].name

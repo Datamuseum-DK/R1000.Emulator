@@ -10,7 +10,7 @@ class Sheet():
     def __init__(self, board, sexp):
         self.board = board
         self.sexp = sexp
-        name = sexp.find_first("name")[0].name[1:-1]
+        name = sexp.find_first("name")[0].name
         self.page = self.board.pagename_to_sheet(name)
         self.board.sheets[self.page] = self
         # print("Sheet", board.name, self.page)

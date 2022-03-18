@@ -15,17 +15,17 @@ class Component():
     def __init__(self, board, sexp):
         self.board = board
         self.sexp = sexp
-        self.ref = sexp[0][0].name[1:-1]
-        self.value = sexp.find_first("value")[0].name[1:-1]
+        self.ref = sexp[0][0].name
+        self.value = sexp.find_first("value")[0].name
         self.board.components[self.ref] = self
         self.nodes = {}
 
         i = self.sexp.find_first("sheetpath.names")
-        self.sheet = board.sheets[board.pagename_to_sheet(i[0].name[1:-1])]
+        self.sheet = board.sheets[board.pagename_to_sheet(i[0].name)]
         self.sheet.components[self.ref] = self
 
         i = self.sexp.find_first("libsource.part")
-        self.partname = i[0].name[1:-1]
+        self.partname = i[0].name
         self.is_plane = self.partname in ("GF", "GB")
         if self.is_plane:
             self.ref = self.ref[:2] + "%03d" % int(self.ref[2:], 10)
@@ -38,10 +38,10 @@ class Component():
         if self.is_plane:
             self.name = self.ref
         for i in self.sexp.find("property"):
-            if i[0][0].name == '"Location"':
-                self.location = i[1][0].name[1:-1]
-            elif i[0][0].name == '"Name"':
-                self.name = i[1][0].name[1:-1]
+            if i[0][0].name == 'Location':
+                self.location = i[1][0].name
+            elif i[0][0].name == 'Name':
+                self.name = i[1][0].name
 
         self.scm = "SCM_" + self.part.partname.upper()
 

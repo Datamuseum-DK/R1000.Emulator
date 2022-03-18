@@ -13,7 +13,7 @@ class LibPart():
         self.board = board
         self.sexp = sexp
         i = self.sexp.find_first("part")
-        self.partname = i[0].name[1:-1]
+        self.partname = i[0].name
         self.board.libparts[self.partname] = self
         self.pins = {}
         for i in self.sexp.find("pins.pin"):

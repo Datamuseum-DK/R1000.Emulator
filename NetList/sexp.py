@@ -108,7 +108,7 @@ class SExp():
                     break
                 assert src[end:end+2] in ('\\\\', '\\"', '\\n')
                 end += 2
-            self.name = src[begin:end]
+            self.name = src[begin + 1:end - 1]
             self.members = None
             return end
 

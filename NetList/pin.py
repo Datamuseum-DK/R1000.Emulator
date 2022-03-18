@@ -11,9 +11,9 @@ class Pin():
         self.libpart = libpart
         self.sexp = sexp
 
-        self.num = sexp[0][0].name[1:-1]
-        self.name = sexp[1][0].name[1:-1]
-        self.type = sexp[2][0].name[1:-1]
+        self.num = sexp[0][0].name
+        self.name = sexp[1][0].name
+        self.type = sexp[2][0].name
         self.libpart.pins[self.num] = self
 
     def __str__(self):
