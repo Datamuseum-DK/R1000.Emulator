@@ -1,5 +1,5 @@
 
-from component import Component
+from component import Component, VirtualComponent
 
 #from model_f24x import F24X
 
@@ -9,5 +9,9 @@ def Model(board, sexp):
     cls = {
         #'"F240"': F24X,
         #'"F244"': F24X,
+        '"GB"': VirtualComponent,
+        '"GF"': VirtualComponent,
+        '"Pull_Up"': VirtualComponent,
+        '"Pull_Down"': VirtualComponent,
     }.get(part, Component)
     return cls(board, sexp)
