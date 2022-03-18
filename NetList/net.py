@@ -69,6 +69,9 @@ class Net():
     def __lt__(self, other):
         return self.name < other.name
 
+    def __len__(self):
+        return len(self.nodes)
+
     def decl(self):
         ''' Return a C declaration of this net '''
         text = "\tsc_signal_resolved " + self.bcname + ";\t"

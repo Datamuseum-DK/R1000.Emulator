@@ -71,20 +71,19 @@ class Component():
         ''' Initialize the local instance of this component '''
         file.write(",\n\t" + self.name + '("' + self.name + '", "' + self.value + '")')
 
+    def hookup_pin(self, file, pin_no, pin_num, cmt="", suf=""):
+        ''' Text formatting for hooking up a single pin '''
+        text = "\t%s.pin%s(" % (self.name + suf, pin_no)
+        text += self.connections[pin_num].net.cname
+        text += ");"
+        if cmt:
+            while len(text.expandtabs()) < 64:
+                text += "\t"
+            text += "// " + cmt
+        file.write(text + "\n")
+
     def hookup(self, file):
         ''' Emit the SystemC code to hook this component up '''
         file.write("\n\n\t// %s\n" % " ".join((self.ref, self.name, self.location, self.partname)))
         for pin in sorted(self.part.pins.values()):
-            text = "\t%s.pin%s(" % (self.name, pin.num)
-            text += self.connections[pin.num].net.cname
-            text += ");"
-            while len(text.expandtabs()) < 64:
-                text += "\t"
-            file.write(text + "// " + str(pin) + "\n")
-
-def GetComponent(board, sexp):
-    ''' Find the right (sub)class or this component '''
-    part = sexp.find_first("libsource.part")[0].name
-    cls = {
-    }.get(part, Component)
-    return cls(board, sexp)
+            self.hookup_pin(file, pin.num, pin.num, cmt=str(pin))

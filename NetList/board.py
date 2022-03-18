@@ -13,7 +13,7 @@ from srcfile import SrcFile
 from scmod import SC_Mod
 from sheet import Sheet
 from libpart import LibPart
-from component import GetComponent
+from model import Model
 from net import Net
 from bus import BusSchedule
 
@@ -42,7 +42,7 @@ class Board():
 
         self.components = {}
         for i in self.sexp.find("components.comp"):
-            comp = GetComponent(self, i)
+            comp = Model(self, i)
 
         self.nets = {}
         for i in self.sexp.find("nets.net"):
