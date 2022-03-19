@@ -89,7 +89,7 @@ class Sheet():
         scm.write("SC_MODULE(%s)\n" % self.mod_type)
         scm.write("{\n")
         for net in sorted(self.local_nets):
-            scm.write(net.decl())
+            net.write_decl(scm)
         scm.write("\n")
         for comp in sorted(self.components.values()):
             comp.instance(scm)
@@ -128,8 +128,8 @@ class Sheet():
 		|) :
 		|'''))
         scm.write("\tsc_module(name)")
-        for i in sorted(self.local_nets):
-            scm.write(",\n\t" + i.cname + '("' + i.cname + '", sc_logic_1)')
+        for net in sorted(self.local_nets):
+            net.write_init(scm)
         for comp in sorted(self.components.values()):
             comp.initialize(scm)
         scm.write("\n{\n")

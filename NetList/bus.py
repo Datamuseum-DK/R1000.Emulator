@@ -53,6 +53,7 @@ class Bus():
         return len(self.nets)
 
     def filter(self):
+        ''' Filter out busses which components dont like '''
         self.find_name()
         self.table()
 

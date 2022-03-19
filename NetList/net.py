@@ -43,11 +43,12 @@ class Net():
         self.name = self.sexp[1][0].name
         self.board.nets[self.name] = self
         self.nodes = []
+        self.bus = None
         for i in sexp.find("node"):
             self.nodes.append(Node(self, i))
         self.sheets = set()
         self.is_plane = self.name in ("PU", "PD")
-        self.busable = len(self.nodes) >= 4 and not self.is_plane
+        self.busable = len(self.nodes) >= 2 and not self.is_plane
         for node in self.nodes:
             if node.component.is_plane:
                 self.is_plane = True
@@ -100,12 +101,16 @@ class Net():
     def __len__(self):
         return len(self.nodes)
 
-    def decl(self):
-        ''' Return a C declaration of this net '''
+    def write_decl(self, file):
+        ''' Write a C declaration of this net '''
         text = "\tsc_signal_resolved " + self.bcname + ";\t"
         while len(text.expandtabs()) < 64:
             text += "\t"
-        return text + "// " + self.name + "\n"
+        file.write(text + "// " + self.name + "\n")
+
+    def write_init(self, file):
+        ''' Write a C initialization of this net '''
+        file.write(",\n\t" + self.bcname + '("' + self.cname + '", sc_logic_1)')
 
     def ponder(self):
         ''' post-parsing work '''

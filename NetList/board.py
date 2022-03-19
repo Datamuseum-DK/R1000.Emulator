@@ -74,8 +74,8 @@ class Board():
             comp = Model(self, i)
 
         self.nets = {}
-        for i in self.sexp.find("nets.net"):
-            Net(self, i)
+        for net in self.sexp.find("nets.net"):
+            Net(self, net)
 
         for comp in self.components.values():
             comp.post_parse()
@@ -203,10 +203,10 @@ class Board():
         ''' ... '''
         scm.write("\nSC_MODULE(mod_%s_globals)\n" % self.lname)
         scm.write("{\n")
-        for i in sorted(self.nets.values()):
-            if i.is_local or i.is_plane:
+        for net in sorted(self.nets.values()):
+            if net.is_local or net.is_plane:
                 continue
-            scm.write(i.decl())
+            net.write_decl(scm)
         scm.write(self.substitute('''
 		|
 		|	mod_lll_globals(sc_module_name name);
@@ -228,10 +228,10 @@ class Board():
 		|mod_lll_globals :: mod_lll_globals(sc_module_name name) :
 		|'''))
         scm.write("\tsc_module(name)")
-        for i in sorted(self.nets.values()):
-            if i.is_local or i.is_plane:
+        for net in sorted(self.nets.values()):
+            if net.is_local or net.is_plane:
                 continue
-            scm.write(",\n\t" + i.bcname + '("' + i.bcname + '", sc_logic_1)')
+            net.write_init(scm)
         scm.write("\n{\n}\n")
 
     def produce_makefile_inc(self, file):
