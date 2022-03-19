@@ -59,7 +59,6 @@ class Component():
             self.ref = self.ref[:2] + "%03d" % int(self.ref[2:], 10)
             self.ref = transit.do_transit(self.board.name, self.ref)
         self.part = self.board.libparts[self.partname]
-        self.connections = {}
 
         self.location = "x99"
         self.name = "X"
@@ -98,10 +97,10 @@ class Component():
         ''' Initialize the local instance of this component '''
         file.write(",\n\t" + self.name + '("' + self.name + '", "' + self.value + '")')
 
-    def hookup_pin(self, file, pin_no, pin_num, cmt="", suf=""):
+    def hookup_pin(self, file, pin_no, node, cmt="", suf=""):
         ''' Text formatting for hooking up a single pin '''
         text = "\t%s.pin%s(" % (self.name + suf, pin_no)
-        text += self.connections[pin_num].net.cname
+        text += node.net.cname
         text += ");"
         if cmt:
             while len(text.expandtabs()) < 64:
@@ -113,7 +112,7 @@ class Component():
         ''' Emit the SystemC code to hook this component up '''
         file.write("\n\n\t// %s\n" % " ".join((self.ref, self.name, self.location, self.partname)))
         for pin in sorted(self.part.pins.values()):
-            self.hookup_pin(file, pin.num, pin.num, cmt=str(pin))
+            self.hookup_pin(file, pin.num, self.nodes[pin.name], cmt=str(pin))
 
 class VirtualComponent(Component):
     ''' Components not instantiated in SystemC '''

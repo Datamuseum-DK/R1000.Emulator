@@ -44,7 +44,6 @@ class Node():
         if self.pinfunction:
             self.pinfunction = self.pinfunction[0].name
         self.component = self.net.board.components[self.refname]
-        self.component.connections[self.pinno] = self
 
     def __str__(self):
         return "_".join((str(self.net), str(self.component), str(self.pinno)))
