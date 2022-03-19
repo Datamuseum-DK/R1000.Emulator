@@ -10,13 +10,17 @@ struct scm_paxxx_state {
 	struct ctx ctx;
 };
 
-void
-SCM_PAXXX :: loadit(const char *arg)
+SCM_PAXXX :: SCM_PAXXX(sc_module_name nm, const char *arg) : sc_module(nm)
 {
 	state = (struct scm_paxxx_state *)
 	    CTX_Get("paxxx", this->name(), sizeof *state);
 	should_i_trace(this->name(), &state->ctx.do_trace);
 	load_programmable(this->name(), prom, sizeof prom, arg);
+
+	SC_METHOD(doit);
+	sensitive << pin1 << pin2 << pin3 << pin4 << pin5 << pin15
+	     << pin16 << pin17 << pin18 << pin19;
+
 }
 
 void
