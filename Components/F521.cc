@@ -10,12 +10,16 @@ struct scm_f521_state {
 	struct ctx ctx;
 };
 
-void
-SCM_F521 :: loadit(const char *arg)
+SCM_F521 :: SCM_F521(sc_module_name nm, const char *arg) : sc_module(nm)
 {
 	state = (struct scm_f521_state *)
 	    CTX_Get("f521", this->name(), sizeof *state);
 	should_i_trace(this->name(), &state->ctx.do_trace);
+
+	SC_METHOD(doit);
+	sensitive << pin1 << pin2 << pin3 << pin4 << pin5 << pin6
+		  << pin7 << pin8 << pin9 << pin11 << pin12 << pin13
+		  << pin14 << pin15 << pin16 << pin17 << pin18;
 }
 
 void
