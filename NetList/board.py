@@ -79,9 +79,6 @@ class Board():
         for net in self.sexp.find("nets.net"):
             Net(self, net)
 
-        for comp in self.components.values():
-            comp.post_parse()
-
         BusSchedule(self)
 
     def __str__(self):

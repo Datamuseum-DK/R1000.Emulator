@@ -72,7 +72,7 @@ class Component():
             elif i[0][0].name == 'Name':
                 self.name = i[1][0].name
 
-        self.scm = "SCM_" + self.part.partname.upper()
+        self.clsname = "SCM_" + self.part.partname.upper()
 
     def __str__(self):
         return "_".join((str(self.sheet), self.ref, self.partname, self.location, self.name))
@@ -84,16 +84,13 @@ class Component():
         ''' Add a node to this component '''
         self.nodes[node.pinfunction] = node
 
-    def post_parse(self):
-        ''' Chance to chew on things between parsing and generation '''
-
     def include_files(self):
         ''' Register necessary include files '''
         yield self.part.include_file()
 
     def instance(self, file):
         ''' Emit the local instance of this component '''
-        file.write('\t' + self.scm + " " + self.name + ";\n")
+        file.write('\t' + self.clsname + " " + self.name + ";\n")
 
     def initialize(self, file):
         ''' Initialize the local instance of this component '''
@@ -404,15 +401,11 @@ class ModelComponent(Component):
             if not bus:
                 yield 'if (IS_H(PIN_%s%d)) %s |= (1ULL << %d);' % (prefix, pin, var, bit)
                 continue
-            yield '{'
-            bus.tmpname = "bustmp%d" % pin
-            yield '\tsc_lv<%d> %s = BUS_%s%d.read();' % (len(bus), bus.tmpname, prefix, pin)
             for idx, bnode in enumerate(bus.mynodes(self)):
                 assert bnode.pinfunction[:len(prefix)] == prefix
                 bit = width - int(bnode.pinfunction[len(prefix):]) - 1
                 bidx = len(bus) - idx - 1
-                yield '\tif (IS_H(%s[%d])) %s |= (1ULL << %d);' % (bus.tmpname, bidx, var, bit)
-            yield '}'
+                yield 'if (IS_H(BUS_%s%d.read()[%d])) %s |= (1ULL << %d);' % (prefix, pin, bidx, var, bit)
 
     def write_bus_z(self, prefix, width):
         ''' Set bus to sc_logic_Z '''
@@ -441,15 +434,15 @@ class ModelComponent(Component):
                 if good:
                     yield 'BUS_%s%d.write(%s);' % (prefix, pin, var)
                     continue
-            bus.tmpname = "bustmp%d" % pin
+            tmpname = "bustmp%d" % pin
             yield '{'
-            yield '\tsc_lv<%d> %s;' % (len(bus), bus.tmpname)
+            yield '\tsc_lv<%d> %s;' % (len(bus), tmpname)
             for idx, bnode in enumerate(bus.mynodes(self)):
                 assert bnode.pinfunction[:len(prefix)] == prefix
                 bit = width - int(bnode.pinfunction[len(prefix):]) - 1
                 bidx = len(bus) - idx - 1
-                yield '\t%s[%d] = AS(%s & (1ULL << %d));' % (bus.tmpname, bidx, var, bit)
-            yield '\tBUS_%s%d.write(%s);' % (prefix, pin, bus.tmpname)
+                yield '\t%s[%d] = AS(%s & (1ULL << %d));' % (tmpname, bidx, var, bit)
+            yield '\tBUS_%s%d.write(%s);' % (prefix, pin, tmpname)
             yield '}'
 
     def instance(self, file):
