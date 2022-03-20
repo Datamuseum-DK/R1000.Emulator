@@ -41,6 +41,8 @@ class Bus():
         self.busname = None
         self.nets = []
         self.components = []
+        self.filtered = []
+        self.good = False
 
     def add_net(self, net):
         ''' ... '''
@@ -52,10 +54,56 @@ class Bus():
     def __len__(self):
         return len(self.nets)
 
+    def __repr__(self):
+        return "<Bus " + self.busname + " %d*%d>" % (len(self.nets[0].nodes), len(self))
+
+    def mynodes(self, comp):
+        for net in self.nets:
+            for node in net.nodes:
+                if node.component == comp:
+                    yield node
+                    break
+
     def filter(self):
         ''' Filter out busses which components dont like '''
+
+        # self.nets.sort(key=lambda net: net.nodes[0].pinfunction)
+        self.components.sort()
+
         self.find_name()
+
+        refused = []
+        for comp in self.components:
+            i = comp.is_bus_ok(self)
+            if not i:
+                refused.append(comp)
+            if i is not True:
+                self.filtered.append(i)
+
+        if refused:
+            # self.table()
+            comps = set(x.partname for x in refused)
+            print("Vetoed by", len(comps), ", ".join(sorted(comps)), ":", self)
+            return
+
+        if len(self.filtered) > 0:
+            for i in zip(*self.filtered):
+                if len(set(node.net for node in i)) != 1:
+                    self.table()
+                    print("Disagreement about bus-order", i)
+                    return
+            self.nets = [node.net for node in self.filtered[0]]
+
         self.table()
+        print("Good bus", self.busname, ", ".join(sorted(set(x.partname for x in self.components))))
+
+        self.good = True
+
+        for comp in self.components:
+            comp.commit_bus(self)
+
+        for net in self.nets:
+            net.bus = self
 
     def find_name(self):
         ''' Derive a good name for this bus '''
@@ -73,12 +121,14 @@ class Bus():
                 nbrs.append(-1)
 
         self.busname = names[0][:cut]
-        if self.busname[-1] != '_':
+        if cut > 0 and self.busname[-1] != '_':
             self.busname += '_'
         if min(nbrs) > -1 and len(nbrs) == 1 + max(nbrs) - min(nbrs):
             self.busname += str(min(nbrs)) + "__" + str(max(nbrs))
         else:
             self.busname += "_".join(sfxs)
+
+        self.cname = self.busname.split('.')[-1]
 
     def table(self):
         print()
@@ -86,24 +136,37 @@ class Bus():
         print(self.busname)
         print("-" * len(self.busname))
         line = []
-        for comp in sorted(self.components):
+        for comp in self.components:
             line.append(comp.partname)
         print("\t".join(line))
+
         line = []
-        for comp in sorted(self.components):
+        for comp in self.components:
             line.append(comp.name)
         print("\t".join(line))
 
-        for net in sorted(self.nets):
+        for net in self.nets:
             line = []
-            for comp in sorted(self.components):
+            for comp in self.components:
                 for node in net.nodes:
                     if node.component == comp:
-                        line.append(node.pinfunction)
+                        if node.pinfunction:
+                            line.append(node.pinfunction)
+                        else:
+                            line.append("?")
                         break
-            line.append(str(net))
             line.append(net.cname)
             print("\t".join(line))
+
+    def write_decl(self, net, file):
+        ''' ... '''
+        if net == self.nets[0]:
+            file.write('\tsc_signal_rv < %d > %s;\n' % (len(self.nets), self.cname))
+
+    def write_init(self, net, file):
+        ''' ... '''
+        if net == self.nets[0]:
+            file.write(',\n\t%s ("%s")' % (self.cname, self.cname))
 
 class BusSchedule():
     ''' ... '''
@@ -123,6 +186,7 @@ class BusSchedule():
         for key in list(self.busses):
             if len(self.busses[key]) < 2:
                 del self.busses[key]
-        print(len(self.busses), "potential busses")
         for bus in self.busses.values():
             bus.filter()
+        print(len(self.busses), "potential busses")
+        print(len([x for x in self.busses.values() if x.good]), "good busses")

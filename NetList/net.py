@@ -103,14 +103,20 @@ class Net():
 
     def write_decl(self, file):
         ''' Write a C declaration of this net '''
-        text = "\tsc_signal_resolved " + self.bcname + ";\t"
-        while len(text.expandtabs()) < 64:
-            text += "\t"
-        file.write(text + "// " + self.name + "\n")
+        if self.bus:
+            self.bus.write_decl(self, file)
+        else:
+            text = "\tsc_signal_resolved " + self.bcname + ";\t"
+            while len(text.expandtabs()) < 64:
+                text += "\t"
+            file.write(text + "// " + self.name + "\n")
 
     def write_init(self, file):
         ''' Write a C initialization of this net '''
-        file.write(",\n\t" + self.bcname + '("' + self.cname + '", sc_logic_1)')
+        if self.bus:
+            self.bus.write_init(self, file)
+        else:
+            file.write(",\n\t" + self.bcname + '("' + self.bcname + '", sc_logic_1)')
 
     def ponder(self):
         ''' post-parsing work '''

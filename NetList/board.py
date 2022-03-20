@@ -56,6 +56,8 @@ class Board():
         print("Board", self.name)
         self.dstdir = self.name.capitalize() + "/" + branch
         self.srcs = []
+        self.dynamic_components = {}
+        self.extra_scms = []
 
         self.chf_sheets = SrcFile(self.dstdir + "/" + self.lname + "_sheets.h")
         self.scm_board = self.sc_mod(self.lname + "_board")
@@ -240,6 +242,8 @@ class Board():
         self.scm_globals.makefile(file)
         for sheet in self.sheets.values():
             sheet.scm.makefile(file)
+        for scm in self.extra_scms:
+            scm.makefile(file)
 
     def produce(self):
         ''' ... '''

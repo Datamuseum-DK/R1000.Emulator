@@ -51,7 +51,7 @@ class SC_Mod():
 
     def makefile(self, file):
         ''' ... '''
-        file.write("\n#" + self.basename + "\n")
+        file.write("\n# " + self.basename + "\n")
         obj = self.basename + ".o"
         file.write("OBJS += " + obj + "\n")
         file.write(obj + ":")

@@ -139,6 +139,8 @@ class Sheet():
 
     def produce(self):
         ''' ... '''
+        for comp in sorted(self.components.values()):
+            comp.do_includes()
         self.produce_pub_hh(self.scm.pub)
         self.produce_hh(self.scm.hh)
         self.produce_cc(self.scm.cc)

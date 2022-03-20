@@ -35,6 +35,9 @@ Chip models
 from component import Component, VirtualComponent
 
 # from model_f24x import F24X
+from model_f374 import ModelXREG
+from model_f521 import ModelF521
+from model_paxxx import ModelPAxxx
 
 def Model(board, sexp):
     ''' Find the right (sub)class or this component '''
@@ -42,8 +45,11 @@ def Model(board, sexp):
     cls = {
         # 'F240': F24X,
         # 'F244': F24X,
+        'F374': ModelXREG,
+        'F521': ModelF521,
         'GB': VirtualComponent,
         'GF': VirtualComponent,
+        'PAxxx': ModelPAxxx,
         'Pull_Up': VirtualComponent,
         'Pull_Down': VirtualComponent,
     }.get(part, Component)
