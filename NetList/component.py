@@ -167,8 +167,7 @@ class ModelComponent(Component):
 
     def is_bus_ok(self, bus):
         ''' Accept or reject a bus, and suggest optimal order '''
-        return False
-        mynodes = [x for x in bus.mynodes(self)]
+        mynodes = list(bus.mynodes(self))
         busses = set()
         for node in mynodes:
             if node.pinfunction not in self.bus_signals:
@@ -387,7 +386,7 @@ class ModelComponent(Component):
     def write_sensitive_bus(self, file, prefix, width=0):
         ''' Write sensitivey lines for a bus '''
         if not width:
-            blow, bhigh, bdir = self.bus_spec[prefix]
+            blow, bhigh, _bdir = self.bus_spec[prefix]
             assert blow == 0
             width = 1 + bhigh - blow
         for bit, node in enumerate(self.iter_nodes(prefix, width)):

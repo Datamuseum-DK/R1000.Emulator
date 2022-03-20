@@ -33,12 +33,18 @@
    =======================
 '''
 
+MIN_BUS_WIDTH = 400
+MIN_BUS_MEMBERS = 3
+
+SHOW_VETOED_BUSSES = False
+
 class Bus():
 
     ''' A group of nets which reach the same set of components '''
 
     def __init__(self):
         self.busname = None
+        self.cname = None
         self.nets = []
         self.components = []
         self.filtered = []
@@ -46,6 +52,8 @@ class Bus():
 
     def add_net(self, net):
         ''' ... '''
+        if len(net.nodes) < MIN_BUS_MEMBERS:
+            return
         self.nets.append(net)
         if len(self.nets) == 1:
             for node in net.nodes:
@@ -55,9 +63,10 @@ class Bus():
         return len(self.nets)
 
     def __repr__(self):
-        return "<Bus " + self.busname + " %d*%d>" % (len(self.nets[0].nodes), len(self))
+        return "<Bus %d*%d %s>" % (len(self.nets[0].nodes), len(self), self.busname)
 
     def mynodes(self, comp):
+        ''' Iterate the nodes, in order, belonging to `comp` '''
         for net in self.nets:
             for node in net.nodes:
                 if node.component == comp:
@@ -81,9 +90,12 @@ class Bus():
                 self.filtered.append(i)
 
         if refused:
-            # self.table()
             comps = set(x.partname for x in refused)
+            if SHOW_VETOED_BUSSES:
+                print()
             print("Vetoed by", len(comps), ", ".join(sorted(comps)), ":", self)
+            if SHOW_VETOED_BUSSES:
+                self.table()
             return
 
         if len(self.filtered) > 0:
@@ -108,6 +120,17 @@ class Bus():
     def find_name(self):
         ''' Derive a good name for this bus '''
         names = [x.cname for x in self.nets]
+
+        if names[0][0] == 'U':
+            # Anonymous busses have signals named 'U6416_Pad7'
+            # Translate those to that chips pinfunctions
+            for comp in self.components:
+                if comp.ref == names[0][:len(comp.ref)]:
+                    names = []
+                    for node in self.mynodes(comp):
+                        names.append(comp.name + "_" + node.pinfunction)
+                    break
+
         for cut in range(len(names[0])):
             if len(set(x[cut] for x in names)) > 1:
                 break
@@ -121,17 +144,17 @@ class Bus():
                 nbrs.append(-1)
 
         self.busname = names[0][:cut]
-        if cut > 0 and self.busname[-1] != '_':
-            self.busname += '_'
         if min(nbrs) > -1 and len(nbrs) == 1 + max(nbrs) - min(nbrs):
             self.busname += str(min(nbrs)) + "__" + str(max(nbrs))
         else:
+            if cut > 0 and self.busname[-1] != '_':
+                self.busname += '_'
             self.busname += "_".join(sfxs)
 
         self.cname = self.busname.split('.')[-1]
 
     def table(self):
-        print()
+        ''' Print bus as a table '''
         print("-" * len(self.busname))
         print(self.busname)
         print("-" * len(self.busname))
@@ -143,6 +166,11 @@ class Bus():
         line = []
         for comp in self.components:
             line.append(comp.name)
+        print("\t".join(line))
+
+        line = []
+        for comp in self.components:
+            line.append(comp.ref)
         print("\t".join(line))
 
         for net in self.nets:
@@ -184,7 +212,7 @@ class BusSchedule():
                 bus = self.busses.setdefault(key, Bus())
             bus.add_net(net)
         for key in list(self.busses):
-            if len(self.busses[key]) < 2:
+            if len(self.busses[key]) < MIN_BUS_WIDTH:
                 del self.busses[key]
         for bus in self.busses.values():
             bus.filter()
