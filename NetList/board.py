@@ -73,7 +73,7 @@ class Board():
 
         self.components = {}
         for i in self.sexp.find("components.comp"):
-            comp = Model(self, i)
+            Model(self, i)
 
         self.nets = {}
         for net in self.sexp.find("nets.net"):

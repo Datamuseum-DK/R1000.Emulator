@@ -101,6 +101,14 @@ class Net():
     def __len__(self):
         return len(self.nodes)
 
+    def is_pd(self):
+        ''' Is this network a constant low value '''
+        return self.name == "PD"
+
+    def is_pu(self):
+        ''' Is this network a constant high value '''
+        return self.name == "PU"
+
     def write_decl(self, file):
         ''' Write a C declaration of this net '''
         if self.bus:

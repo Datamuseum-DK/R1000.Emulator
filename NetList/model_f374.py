@@ -41,17 +41,30 @@ class ModelXREG(ModelComponent):
     def __init__(self, *args):
         self.width = 8
         self.bus_spec = {
-            "D": (0, self.width - 1, "sc_in"),
-            "Q": (0, self.width - 1, "sc_out"),
+            "D": (0, self.width - 1, "sc_in", True, False),
+            "Q": (0, self.width - 1, "sc_out", False, True),
         }
         super().__init__(*args)
 
+    def is_bus_ok(self, bus):
+        retval = super().is_bus_ok(bus)
+        if retval and self.nodes["OE"].net.is_pd():
+            retval.numeric = True
+        return retval
+
+    def make_clsname(self):
+        super().make_clsname()
+        if not self.nodes["OE"].net.is_pd():
+            self.clsname += "Z"
+
     def write_code_hh_signals(self, file):
         file.write('\tsc_in <sc_logic>\tPIN_CLK;\n')
-        file.write('\tsc_in <sc_logic>\tPIN_OE;\n')
+        if not self.nodes["OE"].net.is_pd():
+            file.write('\tsc_in <sc_logic>\tPIN_OE;\n')
 
     def write_code_cc_sensitive(self, file):
-        file.write("\n\t    << PIN_OE")
+        if not self.nodes["OE"].net.is_pd():
+            file.write("\n\t    << PIN_OE")
         file.write("\n\t    << PIN_CLK.pos()")
 
     def write_code_cc(self, file):
@@ -65,11 +78,18 @@ class ModelXREG(ModelComponent):
 		|	TRACE(
 		|	    << " job " << state->job
 		|	    << " clk " << PIN_CLK.posedge()
+		|'''))
+
+        if not self.nodes["OE"].net.is_pd():
+            file.write(self.substitute('''
 		|	    << " oe " << PIN_OE
+		|'''))
+
+        file.write(self.substitute('''
 		|	    << " d "
 		|'''))
 
-        for sig in self.iter_signals("D", self.width):
+        for sig in self.iter_signals("D"):
             file.write("\t    << %s\n" % sig)
 
         file.write(self.substitute('''
@@ -80,26 +100,33 @@ class ModelXREG(ModelComponent):
 		|		uint64_t tmp = state->data;
 		|'''))
 
-        for i in self.write_bus_val("Q", self.width, "tmp"):
+        for i in self.write_bus_val("Q", "tmp"):
             file.write('\t\t' + i + '\n')
 
         file.write(self.substitute('''
 		|		state->job = 0;
-		|	} else if (state->job == -1) {
 		|'''))
 
-        for i in self.write_bus_z("Q", self.width):
-            file.write('\t\t' + i + '\n')
+
+        if not self.nodes["OE"].net.is_pd():
+            file.write(self.substitute('''
+		|	} else if (state->job == -1) {
+		|'''))
+            for i in self.write_bus_z("Q"):
+                file.write('\t\t' + i + '\n')
+
+            file.write(self.substitute('''
+		|		state->job = -2;
+		|'''))
 
         file.write(self.substitute('''
-		|		state->job = -2;
 		|	}
 		|
 		|	if (PIN_CLK.posedge()) {
 		|		uint64_t tmp = 0;
 		|'''))
 
-        for i in self.read_bus_value("tmp", "D", self.width):
+        for i in self.read_bus_value("tmp", "D"):
             file.write("\t\t" + i + "\n")
 
         file.write(self.substitute('''
@@ -109,6 +136,10 @@ class ModelXREG(ModelComponent):
 		|		}
 		|	}
 		|
+		|'''))
+
+        if not self.nodes["OE"].net.is_pd():
+            file.write(self.substitute('''
 		|	if (IS_L(PIN_OE)) {
 		|		if (state->job < 0) {
 		|			state->job = 1;
@@ -120,10 +151,19 @@ class ModelXREG(ModelComponent):
 		|	}
 		|}
 		|'''))
+        else:
+            file.write(self.substitute('''
+		|	if (state->job) {
+		|		state->job = 1;
+		|		next_trigger(5, SC_NS);
+		|	}
+		|}
+		|'''))
 
     def hookup(self, file):
         ''' ... '''
-        self.hookup_bus(file, "D", self.width)
-        self.hookup_bus(file, "Q", self.width)
-        self.hookup_pin(file, "PIN_OE", self.nodes["OE"])
+        self.hookup_bus(file, "D")
+        self.hookup_bus(file, "Q")
+        if not self.nodes["OE"].net.is_pd():
+            self.hookup_pin(file, "PIN_OE", self.nodes["OE"])
         self.hookup_pin(file, "PIN_CLK", self.nodes["CLK"])

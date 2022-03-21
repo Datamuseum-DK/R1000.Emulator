@@ -35,6 +35,8 @@
 
 import transit
 
+from bus import BusAttach
+
 class Component():
     ''' A `component` from the netlist file '''
 
@@ -152,44 +154,60 @@ class ModelComponent(Component):
 
     def __init__(self, board, sexp):
         super().__init__(board, sexp)
-        self.clsname = None
         self.lcname = None
         self.ucname = None
         self.modname = None
+        self.scm = None
+        self.fallback = False
 
-        self.bus_signals = set()
-        for bname, bdata in self.bus_spec.items():
-            for n in range(bdata[0], bdata[1] + 1):
-                self.bus_signals.add(bname + str(n))
 
     def is_bus_ok(self, bus):
         ''' Accept or reject a bus, and suggest optimal order '''
+        self.bus_signals = set()
+        for bname, bdata in self.bus_spec.items():
+            for i in range(bdata[0], bdata[1] + 1):
+                self.bus_signals.add(bname + str(i))
+        self.configure()
         mynodes = list(bus.mynodes(self))
         busses = set()
         for node in mynodes:
             if node.pinfunction not in self.bus_signals:
+                print("NNN", self, node.pinfunction, self.bus_signals)
                 return False
             busses.add(node.pinfunction[0])
         if len(busses) > 1:
+            print("MMM", self, busses)
             return False
-        mynodes.sort(key=lambda x: x.pinfunction)
-        return mynodes
+        mynodes.sort(key=lambda x: (x.pinfunction[0], int(x.pinfunction[1:],10)))
+        bspec = self.bus_spec[list(busses)[0]]
+        return BusAttach(self, bus, order=mynodes, numeric=bspec[3], output=bspec[4])
+
+    def configure(self):
+        ''' A chance to do stuff before we start '''
 
     def do_includes(self):
         ''' This is where the action starts '''
 
+        self.configure()
+        if self.fallback:
+            super().do_includes()
+            return
         self.make_clsname()
+        self.lcname = self.clsname.lower()
+        self.ucname = self.clsname.upper()
+        self.modname = self.sheet.board.name + "_" + self.ucname
 
         old = self.sheet.board.dynamic_components.get(self.clsname)
         if not old:
-            self.create_dynamic()
+            self.write_the_implementation()
             self.sheet.board.dynamic_components[self.clsname] = self
         else:
             self.scm = old.scm
 
         self.sheet.scm.hh.include(self.scm.hh)
 
-    def create_dynamic(self):
+    def write_the_implementation(self):
+        ''' Write the code for this component '''
         self.scm = self.sheet.board.sc_mod(self.modname)
         self.write_code_hh(self.scm.hh)
         self.write_code_cc(self.scm.cc)
@@ -200,20 +218,28 @@ class ModelComponent(Component):
         ''' Write the .cc file '''
         assert False
 
-    def iter_nodes(self, name, width):
-        ''' iterate the nodes in a bus'''
-        for i in range(width):
-            node = self.nodes[(name + "%d") % i]
-            if (not node.net.bus) or node.net.bus.nets[0] == node.net:
-                yield node
+    def buswidth(self, prefix):
+        ''' Return the width of one of our busses '''
+        blow, bhigh, _bdir, _bnum, _bout = self.bus_spec[prefix]
+        assert blow == 0
+        return 1 + bhigh - blow
 
-    def iter_signals(self, name, width):
+    def iter_nodes(self, name):
+        ''' iterate the nodes in a bus'''
+        width = self.buswidth(name)
+        for i in range(width):
+            sig = name + "%d" % i
+            node = self.nodes[sig]
+            if (not node.net.bus) or node.net.bus.nets[0] == node.net:
+                if node.net.bus:
+                    yield "BUS_%s" % sig, node
+                else:
+                    yield "PIN_%s" % sig, node
+
+    def iter_signals(self, name):
         ''' iterate the signals in a bus '''
-        for pin, node in enumerate(self.iter_nodes(name, width)):
-            if node.net.bus:
-                yield "BUS_%s%d" % (name, pin)
-            else:
-                yield "PIN_%s%d" % (name, pin)
+        for sig, _node in self.iter_nodes(name):
+            yield sig
 
     def make_clsname(self):
         ''' Nail down the class name and see of this model is sharable '''
@@ -230,12 +256,14 @@ class ModelComponent(Component):
                     signature.append(('P', 1))
             elif not bus:
                 signature.append(('P', 1))
+            elif bus.nets[0] == node.net and bus.numeric:
+                signature.append(('N', 1, bus))
             elif bus.nets[0] == node.net:
                 signature.append(('B', 1, bus))
             elif signature:
                 prev = signature[-1]
-                if prev[0] == 'B' and prev[2] == bus:
-                    signature[-1] = ('B', 1 + prev[1], bus)
+                if prev[0] in 'BN' and prev[2] == bus:
+                    signature[-1] = (prev[0], 1 + prev[1], bus)
                 else:
                     signature.append(('b', 1, bus))
         text = ''
@@ -244,15 +272,12 @@ class ModelComponent(Component):
                 text += i[0] + str(i[1])
             else:
                 text += i[0]
-        # print("Signature", self.partname, text)
+        # print("Signature", self.name, self.partname, text)
         if 'b' in text:
             # unordered bus(ses), invent a sharable signature if relevant
             self.clsname = self.name
         else:
             self.clsname = self.partname.upper() + "_" + text
-        self.lcname = self.clsname.lower()
-        self.ucname = self.clsname.upper()
-        self.modname = self.sheet.board.name + "_" + self.ucname
 
     def substitute(self, text):
         ''' Substitute things into C-source text '''
@@ -270,14 +295,16 @@ class ModelComponent(Component):
             text = text.replace(find, replace)
         return text
 
-    def write_bus_signals(self, file, typ, prefix, width):
+    def write_bus_signals(self, file, typ, prefix):
         ''' Write the signals for a bus '''
-        for pin, node in enumerate(self.iter_nodes(prefix, width)):
+        for sig, node in self.iter_nodes(prefix):
             bus = node.net.bus
             if not bus:
-                file.write('\t%s <sc_logic>\tPIN_%s%d;\n' % (typ, prefix, pin))
+                file.write('\t%s <sc_logic>\t%s;\n' % (typ, sig))
+            elif bus.numeric:
+                file.write('\t%s <uint64_t>\t\t%s;\n' % (typ, sig))
             else:
-                file.write('\t%s_rv<%d>\t\tBUS_%s%d;\n' % (typ, len(bus), prefix, pin))
+                file.write('\t%s_rv<%d>\t\t%s;\n' % (typ, len(bus), sig))
 
     def write_code_hh(self, file):
         ''' Write the .hh file '''
@@ -296,7 +323,7 @@ class ModelComponent(Component):
         self.write_code_hh_signals(file)
         for bname, bdata in self.bus_spec.items():
             assert bdata[0] == 0
-            self.write_bus_signals(file, bdata[2], bname, 1 + bdata[1] - bdata[0])
+            self.write_bus_signals(file, bdata[2], bname)
 
         file.write(self.substitute('''
 		|
@@ -319,8 +346,8 @@ class ModelComponent(Component):
 		|'''))
 
     def write_code_hh_signals(self, _file):
-        ''' write the list of SC signals '''
-        assert False
+        ''' write the list of other SC signals '''
+        return
 
     def write_code_cc_init(self, file):
         ''' Write the top of the .cc file, including the initializer '''
@@ -380,51 +407,76 @@ class ModelComponent(Component):
     def write_code_hh_extra_private(self, file):
         ''' Used to add mode private fields '''
 
-    def write_sensitive_bus(self, file, prefix, width=0):
+    def write_sensitive_bus(self, file, prefix):
         ''' Write sensitivey lines for a bus '''
-        if not width:
-            blow, bhigh, _bdir = self.bus_spec[prefix]
-            assert blow == 0
-            width = 1 + bhigh - blow
-        for bit, node in enumerate(self.iter_nodes(prefix, width)):
+        for sig, node in self.iter_nodes(prefix):
             if node.net.bus:
-                file.write("\n\t    << BUS_%s%d" % (prefix, bit))
+                file.write("\n\t    << %s" % sig)
             else:
-                file.write("\n\t    << PIN_%s%d" % (prefix, bit))
+                file.write("\n\t    << %s" % sig)
 
-    def read_bus_value(self, var, prefix, width):
+    def bus_is_sequential(self, bus):
+        ''' Are the bits in the bus sequential for our bus ? '''
+        offset = set()
+        for idx, bnode in enumerate(bus.mynodes(self)):
+            offset.add(int(bnode.pinfunction[1:], 10) - idx)
+        offset = list(offset)
+        return len(offset) == 1, offset[0]
+
+    def read_bus_value(self, var, prefix):
         ''' Read value of bus '''
-        for pin, node in enumerate(self.iter_nodes(prefix, width)):
+        width = self.buswidth(prefix)
+        yield '%s = 0;' % var
+        for sig, node in self.iter_nodes(prefix):
             assert node.pinfunction[:len(prefix)] == prefix
             bit = width - int(node.pinfunction[len(prefix):]) - 1
             bus = node.net.bus
             if not bus:
-                yield 'if (IS_H(PIN_%s%d)) %s |= (1ULL << %d);' % (prefix, pin, var, bit)
+                yield 'if (IS_H(%s)) %s |= (1ULL << %d);' % (sig, var, bit)
                 continue
+            bus_seq, bus_off = self.bus_is_sequential(bus)
+
+            if not bus.numeric:
+                for idx, bnode in enumerate(bus.mynodes(self)):
+                    assert bnode.pinfunction[:len(prefix)] == prefix
+                    bit = width - int(bnode.pinfunction[len(prefix):]) - 1
+                    bidx = len(bus) - idx - 1
+                    yield 'if (IS_H(%s.read()[%d])) %s |= (1ULL << %d);' % (sig, bidx, var, bit)
+                continue
+
+            if bus_seq:
+                busmask = (1 << len(bus)) - 1
+                bshift = width - len(bus) - bus_off
+                yield '%s |= (%s.read() & 0x%xULL) << %d;' % (var, sig, busmask, bshift)
+                continue
+
             for idx, bnode in enumerate(bus.mynodes(self)):
                 assert bnode.pinfunction[:len(prefix)] == prefix
                 bit = width - int(bnode.pinfunction[len(prefix):]) - 1
                 bidx = len(bus) - idx - 1
-                yield 'if (IS_H(BUS_%s%d.read()[%d])) %s |= (1ULL << %d);' % (prefix, pin, bidx, var, bit)
+                yield 'if (%s.read() & (1ULL << %d)) %s |= (1ULL << %d);' % (sig, bidx, var, bit)
 
-    def write_bus_z(self, prefix, width):
+    def write_bus_z(self, prefix):
         ''' Set bus to sc_logic_Z '''
-        for pin, node in enumerate(self.iter_nodes(prefix, width)):
+        for sig, node in self.iter_nodes(prefix):
             if not node.net.bus:
-                yield 'PIN_%s%d = sc_logic_Z;' % (prefix, pin)
+                yield '%s = sc_logic_Z;' % sig
             else:
-                yield 'BUS_%s%d.write("%s");' % (prefix, pin, 'Z' * width)
+                yield '%s.write("%s");' % (sig, 'Z' * len(node.net.bus))
 
-    def write_bus_val(self, prefix, width, var):
+    def write_bus_val(self, prefix, var):
         ''' Write a value to a bus '''
-        for pin, node in enumerate(self.iter_nodes(prefix, width)):
+        width = self.buswidth(prefix)
+        for sig, node in self.iter_nodes(prefix):
             assert node.pinfunction[:len(prefix)] == prefix
             bit = width - int(node.pinfunction[len(prefix):]) - 1
             bus = node.net.bus
 
             if not bus:
-                yield 'PIN_%s%d = AS(%s & (1ULL << %d));' % (prefix, pin, var, bit)
+                yield '%s = AS(%s & (1ULL << %d));' % (sig, var, bit)
                 continue
+            bus_seq, bus_off = self.bus_is_sequential(bus)
+            tmpname = sig + "_tmp"
             if len(bus) == width:
                 good = True
                 for idx, bnode in enumerate(bus.mynodes(self)):
@@ -432,32 +484,55 @@ class ModelComponent(Component):
                         good = False
                         break
                 if good:
-                    yield 'BUS_%s%d.write(%s);' % (prefix, pin, var)
+                    yield '%s.write(%s);' % (sig, var)
                     continue
-            tmpname = "bustmp%d" % pin
+            if not bus.numeric:
+                yield '{'
+                yield '\tsc_lv<%d> %s;' % (len(bus), tmpname)
+                for idx, bnode in enumerate(bus.mynodes(self)):
+                    assert bnode.pinfunction[:len(prefix)] == prefix
+                    bit = width - int(bnode.pinfunction[len(prefix):]) - 1
+                    bidx = len(bus) - idx - 1
+                    yield '\t%s[%d] = AS(%s & (1ULL << %d));' % (tmpname, bidx, var, bit)
+                yield '%s.write(%s);' % (sig, tmpname)
+                yield '}'
+                continue
+
+            if bus_seq:
+                busmask = (1 << len(bus)) - 1
+                bshift = width - len(bus) - bus_off
+                yield '%s.write((%s >> %d) & 0x%xULL);' % (sig, var, bshift, busmask)
+                continue
+
             yield '{'
-            yield '\tsc_lv<%d> %s;' % (len(bus), tmpname)
+            yield '\tuint64_t %s = 0;' % tmpname
             for idx, bnode in enumerate(bus.mynodes(self)):
                 assert bnode.pinfunction[:len(prefix)] == prefix
                 bit = width - int(bnode.pinfunction[len(prefix):]) - 1
                 bidx = len(bus) - idx - 1
-                yield '\t%s[%d] = AS(%s & (1ULL << %d));' % (tmpname, bidx, var, bit)
-            yield '\tBUS_%s%d.write(%s);' % (prefix, pin, tmpname)
+                yield '\tif (%s & (1ULL << %d)) %s |= (1ULL << %d);' % (var, bit, tmpname, bidx)
+            yield '\t%s.write(%s);' % (sig, tmpname)
             yield '}'
 
     def instance(self, file):
         ''' Write the instance for the .hh file '''
+        if self.fallback:
+            super().instance(file)
+            return
         file.write(self.substitute('\tSCM_MMM CCC;\n'))
 
     def initialize(self, file):
         ''' Initialize the instance in the .cc file '''
+        if self.fallback:
+            super().initialize(file)
+            return
         file.write(self.substitute(',\n\tCCC("CCC", "VVV")'))
 
-    def hookup_bus(self, file, prefix, width):
+    def hookup_bus(self, file, prefix):
         ''' Hook this bus into the SC simulation '''
-        for pin, node in enumerate(self.iter_nodes(prefix, width)):
+        for sig, node in self.iter_nodes(prefix):
             bus = node.net.bus
             if not bus:
-                file.write('\t%s.PIN_%s%d(%s);\n' % (self.name, prefix, pin, node.net.cname))
+                file.write('\t%s.%s(%s);\n' % (self.name, sig, node.net.cname))
             else:
-                file.write('\t%s.BUS_%s%d(%s);\n' % (self.name, prefix, pin, bus.busname))
+                file.write('\t%s.%s(%s);\n' % (self.name, sig, bus.busname))

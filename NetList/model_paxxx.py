@@ -39,18 +39,31 @@ class ModelPAxxx(ModelComponent):
     ''' ... '''
 
     bus_spec = {
-        "A": (0, 8, "sc_in"),
-        "Y": (0, 7, "sc_out"),
+        "A": (0, 8, "sc_in", True, False),
+        "Y": (0, 7, "sc_out", False, True),
     }
 
+    def is_bus_ok(self, bus):
+        retval = super().is_bus_ok(bus)
+        if retval and self.nodes["OE"].net.is_pd():
+            retval.numeric = True
+        return retval
+
+    def make_clsname(self):
+        super().make_clsname()
+        if not self.nodes["OE"].net.is_pd():
+            self.clsname += "Z"
+
     def write_code_hh_signals(self, file):
-        file.write('\tsc_in <sc_logic>\tPIN_OE_;\n')
+        if not self.nodes["OE"].net.is_pd():
+            file.write('\tsc_in <sc_logic>\tPIN_OE_;\n')
 
     def write_code_hh_extra_private(self, file):
         file.write('\tuint8_t prom[512];\n')
 
     def write_code_cc_sensitive(self, file):
-        file.write("\n\t    << PIN_OE_")
+        if not self.nodes["OE"].net.is_pd():
+            file.write("\n\t    << PIN_OE_")
         self.write_sensitive_bus(file, "A")
 
     def write_code_cc_init_extra(self, file):
@@ -66,31 +79,45 @@ class ModelPAxxx(ModelComponent):
 		|	state->ctx.activations++;
 		|
 		|	TRACE(
+		|'''))
+
+        if not self.nodes["OE"].net.is_pd():
+            file.write(self.substitute('''
 		|	    << " e " << PIN_OE_
+		|'''))
+
+        file.write(self.substitute('''
 		|	    << " a "
 		|'''))
-        for sig in self.iter_signals("A", 8):
+
+        for sig in self.iter_signals("A"):
             file.write("\t    << %s\n" % sig)
 
         file.write(self.substitute('''
 		|	);
 		|
+		|'''))
+        if not self.nodes["OE"].net.is_pd():
+            file.write(self.substitute('''
 		|	if (IS_H(PIN_OE_)) {
 		|'''))
 
-        for i in self.write_bus_z("Y", 8):
-            file.write('\t\t' + i + '\n')
+            for i in self.write_bus_z("Y"):
+                file.write('\t\t' + i + '\n')
 
-        file.write(self.substitute('''
+            file.write(self.substitute('''
 		|		next_trigger(PIN_OE_.negedge_event());
 		|		return;
 		|	}
+		|'''))
+
+        file.write(self.substitute('''
 		|
 		|	uint64_t a_val = 0;
 		|
 		|'''))
 
-        for i in self.read_bus_value("a_val", "A", 9):
+        for i in self.read_bus_value("a_val", "A"):
             file.write("\t" + i + "\n")
 
         file.write(self.substitute('''
@@ -99,7 +126,7 @@ class ModelPAxxx(ModelComponent):
 		|
 		|'''))
 
-        for i in self.write_bus_val("Y", 8, "data"):
+        for i in self.write_bus_val("Y", "data"):
             file.write('\t' + i + '\n')
 
         file.write(self.substitute('''
@@ -108,6 +135,7 @@ class ModelPAxxx(ModelComponent):
 
     def hookup(self, file):
         ''' ... '''
-        self.hookup_bus(file, "A", 9)
-        self.hookup_bus(file, "Y", 8)
-        self.hookup_pin(file, "PIN_OE_", self.nodes["OE"])
+        self.hookup_bus(file, "A")
+        self.hookup_bus(file, "Y")
+        if not self.nodes["OE"].net.is_pd():
+            self.hookup_pin(file, "PIN_OE_", self.nodes["OE"])

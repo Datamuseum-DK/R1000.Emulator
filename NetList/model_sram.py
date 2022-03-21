@@ -29,28 +29,44 @@
 # SUCH DAMAGE.
 
 '''
-   Model the F521 chips
+   Model the SRAM chips
    =====================
 '''
 
 from component import ModelComponent
 
-class ModelF521(ModelComponent):
-    ''' ... '''
+class ModelSRAM(ModelComponent):
 
-    bus_spec = {
-        "A": (0, 7, "sc_in", True, False),
-        "B": (0, 7, "sc_in", True, False),
-    }
+    ''' Model various SRAM chips '''
+
+    bus_spec = {}
+
+    def configure(self):
+        if self.partname == "2167":
+            self.bus_spec["A"] = (0, 13, "sc_in", True, False)
+        else:
+            print("SRAM", self.partname, ", ".join(self.nodes.keys()))
+
+    def make_clsname(self):
+        super().make_clsname()
+        if not self.nodes["CS"].net.is_pd():
+            self.clsname += "Z"
+
+    def write_code_cc_state_extra(self, file):
+        file.write('\tbool ram[16384];\n')
 
     def write_code_hh_signals(self, file):
-        file.write('\tsc_in <sc_logic>\tPIN_E_;\n')
-        file.write('\tsc_out <sc_logic>\tPIN_A_eq_B_;\n')
+        if not self.nodes["CS"].net.is_pd():
+            file.write('\tsc_in <sc_logic>\tPIN_CS;\n')
+        file.write('\tsc_in <sc_logic>\tPIN_WE;\n')
+        file.write('\tsc_in <sc_logic>\tPIN_D;\n')
+        file.write('\tsc_out <sc_logic>\tPIN_Q;\n')
 
     def write_code_cc_sensitive(self, file):
-        file.write("\n\t    << PIN_E_")
+        if not self.nodes["CS"].net.is_pd():
+            file.write("\n\t    << PIN_CS")
+        file.write("\n\t    << PIN_WE")
         self.write_sensitive_bus(file, "A")
-        self.write_sensitive_bus(file, "B")
 
     def write_code_cc(self, file):
         self.write_code_cc_init(file)
@@ -61,8 +77,38 @@ class ModelF521(ModelComponent):
 		|{
 		|	state->ctx.activations++;
 		|
+		|	uint64_t a_val = 0;
+		|'''))
+
+        for i in self.read_bus_value("a_val", "A"):
+            file.write("\t" + i + "\n")
+
+        if not self.nodes["CS"].net.is_pd():
+            file.write(self.substitute('''
+		|
+		|	if (!IS_L(PIN_CS)) {
+		|		PIN_Q = sc_logic_Z;
+		|		next_trigger(PIN_CS.negedge_event());
+		|		TRACE(" Z ");
+		|		return;
+		|	}
+		|'''))
+
+        file.write(self.substitute('''
+		|	if (IS_L(PIN_WE))
+		|		state->ram[a_val] = IS_H(PIN_D);
+		|	PIN_Q = AS(state->ram[a_val]);
+		|
 		|	TRACE(
-		|	    << " e " << PIN_E_
+		|'''))
+
+        if not self.nodes["CS"].net.is_pd():
+            file.write(self.substitute('''
+		|	    << " cs " << PIN_CS
+		|'''))
+
+        file.write(self.substitute('''
+		|	    << " we " << PIN_WE
 		|	    << " a "
 		|'''))
 
@@ -70,44 +116,17 @@ class ModelF521(ModelComponent):
             file.write("\t    << %s\n" % sig)
 
         file.write(self.substitute('''
-		|	    << " b "
-		|'''))
-
-        for sig in self.iter_signals("B"):
-            file.write("\t    << %s\n" % sig)
-
-        file.write(self.substitute('''
+		|	    << " | "
+		|	    << state->ram[a_val]
 		|	);
-		|
-		|	if (IS_H(PIN_E_)) {
-		|		PIN_A_eq_B_ = sc_logic_1;
-		|		next_trigger(PIN_E_.negedge_event());
-		|		return;
-		|	}
-		|
-		|	uint64_t a_val = 0;
-		|'''))
-
-        for i in self.read_bus_value("a_val", "A"):
-            file.write("\t" + i + "\n")
-
-        file.write(self.substitute('''
-		|
-		|	uint64_t b_val=0;
-		|'''))
-
-        for i in self.read_bus_value("b_val", "B"):
-            file.write("\t" + i + "\n")
-
-        file.write(self.substitute('''
-		|
-		|	PIN_A_eq_B_ = AS(a_val != b_val);
 		|}
 		|'''))
 
     def hookup(self, file):
         ''' ... '''
         self.hookup_bus(file, "A")
-        self.hookup_bus(file, "B")
-        self.hookup_pin(file, "PIN_E_", self.nodes["E"])
-        self.hookup_pin(file, "PIN_A_eq_B_", self.nodes["A=B"])
+        self.hookup_pin(file, "PIN_D", self.nodes["D"])
+        self.hookup_pin(file, "PIN_Q", self.nodes["Q"])
+        self.hookup_pin(file, "PIN_WE", self.nodes["WE"])
+        if not self.nodes["CS"].net.is_pd():
+            self.hookup_pin(file, "PIN_CS", self.nodes["CS"])

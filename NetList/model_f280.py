@@ -29,28 +29,67 @@
 # SUCH DAMAGE.
 
 '''
-   Turn kicad netlist files into SystemC source code
-   =================================================
+   Model the F280 chips
+   =====================
 '''
 
-class Node():
-    ''' A `node` from the netlist file '''
-    def __init__(self, net, sexp):
-        self.net = net
-        self.sexp = sexp
-        self.refname = sexp[0][0].name
-        self.pinno = sexp[1][0].name
-        self.pinfunction = sexp.find_first("pinfunction")
-        if self.pinfunction:
-            self.pinfunction = self.pinfunction[0].name
-        self.component = self.net.board.components[self.refname]
+from component import ModelComponent
 
-    def __repr__(self):
-        return "_".join(
-            (
-                 str(self.net),
-                 str(self.component),
-                 str(self.pinno),
-                 str(self.pinfunction),
-            )
-        )
+class ModelF280(ModelComponent):
+    ''' ... '''
+
+    bus_spec = {
+        "I": (0, 8, "sc_in", True, False),
+    }
+
+    def write_code_hh_signals(self, file):
+        file.write('\tsc_out <sc_logic>\tPIN_PEV;\n')
+        file.write('\tsc_out <sc_logic>\tPIN_POD;\n')
+
+    def write_code_cc_sensitive(self, file):
+        self.write_sensitive_bus(file, "I")
+
+    def write_code_cc(self, file):
+        self.write_code_cc_init(file)
+
+        file.write(self.substitute('''
+		|void
+		|SCM_MMM :: doit(void)
+		|{
+		|	state->ctx.activations++;
+		|
+		|	uint64_t i_val = 0;
+		|'''))
+
+        for i in self.read_bus_value("i_val", "I"):
+            file.write("\t" + i + "\n")
+
+        file.write(self.substitute('''
+		|
+		|	i_val ^= i_val >> 8;
+		|	i_val ^= i_val >> 4;
+		|	i_val ^= i_val >> 2;
+		|	i_val ^= i_val >> 1;
+		|	i_val &= 1;
+		|	PIN_PEV = AS(!i_val);
+		|	PIN_POD = AS(i_val);
+		|
+		|	TRACE(
+		|	    << " i "
+		|'''))
+
+        for sig in self.iter_signals("I"):
+            file.write("\t    << %s\n" % sig)
+
+        file.write(self.substitute('''
+		|	    << " | "
+		|	    << i_val
+		|	);
+		|}
+		|'''))
+
+    def hookup(self, file):
+        ''' ... '''
+        self.hookup_bus(file, "I")
+        self.hookup_pin(file, "PIN_PEV", self.nodes["PEV"])
+        self.hookup_pin(file, "PIN_POD", self.nodes["POD"])

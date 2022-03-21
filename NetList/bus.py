@@ -33,10 +33,34 @@
    =======================
 '''
 
-MIN_BUS_WIDTH = 400
+MIN_BUS_WIDTH = 4
 MIN_BUS_MEMBERS = 3
 
-SHOW_VETOED_BUSSES = False
+SHOW_VETOED_BUSSES = 0
+
+class BusAttach():
+    ''' Describes how a component can attach to a bus '''
+
+    def __init__(self, comp, bus, numeric=False, order=None, output=False):
+        self.comp = comp
+        self.bus = bus
+        self.numeric = numeric
+        self.order = order
+        self.output = output
+
+    def __repr__(self):
+        text = "<BusAttach %s %s" % (self.comp.name, self.bus.busname) + self.show() + ">"
+        return text
+
+    def show(self):
+        text = ""
+        if self.output:
+            text += "W"
+        if self.numeric:
+            text += "#"
+        if self.order:
+            text += "…"
+        return text
 
 class Bus():
 
@@ -49,6 +73,7 @@ class Bus():
         self.components = []
         self.filtered = []
         self.good = False
+        self.numeric = False
 
     def add_net(self, net):
         ''' ... '''
@@ -86,27 +111,41 @@ class Bus():
             i = comp.is_bus_ok(self)
             if not i:
                 refused.append(comp)
-            if i is not True:
+            else:
                 self.filtered.append(i)
 
         if refused:
             comps = set(x.partname for x in refused)
-            if SHOW_VETOED_BUSSES:
+            if SHOW_VETOED_BUSSES > 1:
                 print()
-            print("Vetoed by", len(comps), ", ".join(sorted(comps)), ":", self)
             if SHOW_VETOED_BUSSES:
+                print("Vetoed by", len(comps), ", ".join(sorted(comps)), ":", self)
+            if SHOW_VETOED_BUSSES > 1:
                 self.table()
             return
 
-        if len(self.filtered) > 0:
-            for i in zip(*self.filtered):
+        orders = list(x.order for x in self.filtered if x.order)
+        if len(orders) > 0:
+            for i in zip(*orders):
                 if len(set(node.net for node in i)) != 1:
                     self.table()
-                    print("Disagreement about bus-order", i)
+                    print("Disagreement about bus-order:")
+                    for j in self.filtered:
+                        print("    ", j.comp.name, list(x.pinfunction for x in j.order))
                     return
-            self.nets = [node.net for node in self.filtered[0]]
+            self.nets = [node.net for node in orders[0]]
 
-        self.table()
+        self.numeric = min(x.numeric for x in self.filtered)
+        outputs = 0
+        for i in self.filtered:
+            if i.output:
+                outputs += 1
+        if outputs > 1:
+            self.numeric = False
+
+        self.table(self.filtered)
+        print("Numeric", self.numeric)
+        print("Outputs", outputs)
         print("Good bus", self.busname, ", ".join(sorted(set(x.partname for x in self.components))))
 
         self.good = True
@@ -153,11 +192,12 @@ class Bus():
 
         self.cname = self.busname.split('.')[-1]
 
-    def table(self):
+    def table(self, filtered=None):
         ''' Print bus as a table '''
-        print("-" * len(self.busname))
-        print(self.busname)
-        print("-" * len(self.busname))
+        text = str(self)
+        print("-" * len(text))
+        print(text)
+        print("-" * len(text))
         line = []
         for comp in self.components:
             line.append(comp.partname)
@@ -172,6 +212,12 @@ class Bus():
         for comp in self.components:
             line.append(comp.ref)
         print("\t".join(line))
+
+        if filtered:
+            line = []
+            for filter in self.filtered:
+                line.append(filter.show())
+            print("\t".join(line))
 
         for net in self.nets:
             line = []
@@ -188,7 +234,11 @@ class Bus():
 
     def write_decl(self, net, file):
         ''' ... '''
-        if net == self.nets[0]:
+        if net != self.nets[0]:
+            return
+        if self.numeric:
+            file.write('\tsc_signal <uint64_t> %s;\n' % self.cname)
+        else:
             file.write('\tsc_signal_rv < %d > %s;\n' % (len(self.nets), self.cname))
 
     def write_init(self, net, file):
