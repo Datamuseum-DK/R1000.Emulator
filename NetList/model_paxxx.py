@@ -54,6 +54,13 @@ class ModelPAxxx(ModelComponent):
         if not self.nodes["OE"].net.is_pd():
             self.clsname += "Z"
 
+    def hookup_model(self, file):
+        ''' ... '''
+        self.hookup_bus(file, "A")
+        self.hookup_bus(file, "Y")
+        if not self.nodes["OE"].net.is_pd():
+            self.hookup_pin(file, "PIN_OE_", self.nodes["OE"])
+
     def write_code_hh_signals(self, file):
         if not self.nodes["OE"].net.is_pd():
             file.write('\tsc_in <sc_logic>\tPIN_OE_;\n')
@@ -132,10 +139,3 @@ class ModelPAxxx(ModelComponent):
         file.write(self.substitute('''
 		|}
 		|'''))
-
-    def hookup(self, file):
-        ''' ... '''
-        self.hookup_bus(file, "A")
-        self.hookup_bus(file, "Y")
-        if not self.nodes["OE"].net.is_pd():
-            self.hookup_pin(file, "PIN_OE_", self.nodes["OE"])

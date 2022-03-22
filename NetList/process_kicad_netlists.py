@@ -71,6 +71,7 @@ def main():
         except FileNotFoundError:
             t_old = 0
         if t_new > t_old:
+            print()
             print("Processing", filename)
             board = Board(filename, branch)
             board.produce()

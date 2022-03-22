@@ -34,7 +34,7 @@
 '''
 
 MIN_BUS_WIDTH = 4
-MIN_BUS_MEMBERS = 3
+MIN_BUS_MEMBERS = 2
 
 SHOW_VETOED_BUSSES = 0
 
@@ -131,8 +131,7 @@ class Bus():
                     self.table()
                     print("Disagreement about bus-order:")
                     for j in self.filtered:
-                        print("    ", j.comp.name, list(x.pinfunction for x in j.order))
-                    return
+                        print("    ", j.comp.name, list(x.net.name for x in j.order))
             self.nets = [node.net for node in orders[0]]
 
         self.numeric = min(x.numeric for x in self.filtered)
@@ -143,9 +142,11 @@ class Bus():
         if outputs > 1:
             self.numeric = False
 
-        self.table(self.filtered)
-        print("Numeric", self.numeric)
-        print("Outputs", outputs)
+        if not SHOW_VETOED_BUSSES:
+            print()
+            self.table(self.filtered)
+            print("Numeric", self.numeric)
+            print("Outputs", outputs)
         print("Good bus", self.busname, ", ".join(sorted(set(x.partname for x in self.components))))
 
         self.good = True
@@ -266,5 +267,6 @@ class BusSchedule():
                 del self.busses[key]
         for bus in self.busses.values():
             bus.filter()
+        print()
         print(len(self.busses), "potential busses")
         print(len([x for x in self.busses.values() if x.good]), "good busses")

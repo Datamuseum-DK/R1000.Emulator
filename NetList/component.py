@@ -86,6 +86,9 @@ class Component():
         ''' Add a node to this component '''
         self.nodes[node.pinfunction] = node
 
+    def configure(self):
+        ''' A chance to change stuff before we wire it '''
+
     def include_files(self):
         ''' Register necessary include files '''
         yield self.part.include_file()
@@ -150,7 +153,6 @@ class ModelComponent(Component):
 
     busable = True
 
-    bus_spec = {}
 
     def __init__(self, board, sexp):
         super().__init__(board, sexp)
@@ -159,7 +161,6 @@ class ModelComponent(Component):
         self.modname = None
         self.scm = None
         self.fallback = False
-
 
     def is_bus_ok(self, bus):
         ''' Accept or reject a bus, and suggest optimal order '''
@@ -216,6 +217,7 @@ class ModelComponent(Component):
 
     def write_code_cc(self, _file):
         ''' Write the .cc file '''
+        print("WRONG TURN", self)
         assert False
 
     def buswidth(self, prefix):
@@ -228,7 +230,9 @@ class ModelComponent(Component):
         ''' iterate the nodes in a bus'''
         width = self.buswidth(name)
         for i in range(width):
-            sig = name + "%d" % i
+            sig = name
+            if width > 1:
+                sig +=  "%d" % i
             node = self.nodes[sig]
             if (not node.net.bus) or node.net.bus.nets[0] == node.net:
                 if node.net.bus:
@@ -245,8 +249,7 @@ class ModelComponent(Component):
         ''' Nail down the class name and see of this model is sharable '''
         signature = []
         nodes = list(self.nodes.values())
-        nodes.sort(key=lambda x: x.pinfunction)
-        for node in nodes:
+        for node in sorted(nodes):
             bus = node.net.bus
             if not bus and signature:
                 prev = signature[-1]
@@ -272,9 +275,9 @@ class ModelComponent(Component):
                 text += i[0] + str(i[1])
             else:
                 text += i[0]
-        # print("Signature", self.name, self.partname, text)
         if 'b' in text:
             # unordered bus(ses), invent a sharable signature if relevant
+            print("Signature", self, text, list(x.pinfunction for x in sorted(self.nodes.values())))
             self.clsname = self.name
         else:
             self.clsname = self.partname.upper() + "_" + text
@@ -302,7 +305,7 @@ class ModelComponent(Component):
             if not bus:
                 file.write('\t%s <sc_logic>\t%s;\n' % (typ, sig))
             elif bus.numeric:
-                file.write('\t%s <uint64_t>\t\t%s;\n' % (typ, sig))
+                file.write('\t%s <uint64_t>\t%s;\n' % (typ, sig))
             else:
                 file.write('\t%s_rv<%d>\t\t%s;\n' % (typ, len(bus), sig))
 
@@ -429,7 +432,10 @@ class ModelComponent(Component):
         yield '%s = 0;' % var
         for sig, node in self.iter_nodes(prefix):
             assert node.pinfunction[:len(prefix)] == prefix
-            bit = width - int(node.pinfunction[len(prefix):]) - 1
+            if width == 1:
+                bit = 0
+            else:
+                bit = width - int(node.pinfunction[len(prefix):]) - 1
             bus = node.net.bus
             if not bus:
                 yield 'if (IS_H(%s)) %s |= (1ULL << %d);' % (sig, var, bit)
@@ -469,7 +475,10 @@ class ModelComponent(Component):
         width = self.buswidth(prefix)
         for sig, node in self.iter_nodes(prefix):
             assert node.pinfunction[:len(prefix)] == prefix
-            bit = width - int(node.pinfunction[len(prefix):]) - 1
+            if width == 1:
+                bit = 0
+            else:
+                bit = width - int(node.pinfunction[len(prefix):]) - 1
             bus = node.net.bus
 
             if not bus:
@@ -527,6 +536,16 @@ class ModelComponent(Component):
             super().initialize(file)
             return
         file.write(self.substitute(',\n\tCCC("CCC", "VVV")'))
+
+    def hookup_model(self, file):
+        ''' Where the signals are hooked up to SystemC '''
+
+    def hookup(self, file):
+        if self.fallback:
+            super().hookup(file)
+            return
+        file.write("\n\n\t// %s\n" % " ".join((self.ref, self.name, self.location, self.partname)))
+        self.hookup_model(file)
 
     def hookup_bus(self, file, prefix):
         ''' Hook this bus into the SC simulation '''

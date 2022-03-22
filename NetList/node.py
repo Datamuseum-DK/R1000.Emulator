@@ -43,7 +43,21 @@ class Node():
         self.pinfunction = sexp.find_first("pinfunction")
         if self.pinfunction:
             self.pinfunction = self.pinfunction[0].name
+            self.sortkey = (self.pinfunction, 0)
+            for i in range(len(self.pinfunction)):
+                if self.pinfunction[i].isdigit():
+                    try:
+                        self.sortkey = (self.pinfunction[:i], int(self.pinfunction[i:]))
+                    except ValueError:
+                        pass
+                    break
+        else:
+            self.sortkey = (self.pinno, 0)
         self.component = self.net.board.components[self.refname]
+        # print("XXX", self, self.pinfunction, self.sortkey)
+
+    def __lt__(self, other):
+        return self.sortkey < other.sortkey
 
     def __repr__(self):
         return "_".join(

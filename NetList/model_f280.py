@@ -42,6 +42,12 @@ class ModelF280(ModelComponent):
         "I": (0, 8, "sc_in", True, False),
     }
 
+    def hookup_model(self, file):
+        ''' ... '''
+        self.hookup_bus(file, "I")
+        self.hookup_pin(file, "PIN_PEV", self.nodes["PEV"])
+        self.hookup_pin(file, "PIN_POD", self.nodes["POD"])
+
     def write_code_hh_signals(self, file):
         file.write('\tsc_out <sc_logic>\tPIN_PEV;\n')
         file.write('\tsc_out <sc_logic>\tPIN_POD;\n')
@@ -87,9 +93,3 @@ class ModelF280(ModelComponent):
 		|	);
 		|}
 		|'''))
-
-    def hookup(self, file):
-        ''' ... '''
-        self.hookup_bus(file, "I")
-        self.hookup_pin(file, "PIN_PEV", self.nodes["PEV"])
-        self.hookup_pin(file, "PIN_POD", self.nodes["POD"])

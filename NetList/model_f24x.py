@@ -29,278 +29,146 @@
 # SUCH DAMAGE.
 
 '''
-   Model the F240 and F244 chips as XBUF4(s) or XBUF8
-   ==================================================
+   Convert F240 and F244 chips to XBUF8 and XBUF4(s)
+   =================================================
 '''
 
-from component import ModelComponent
+import copy
 
-from libpart import LibPart
+from component import Component
+import model
 
-class ModelF24x(ModelComponent):
+import libpart
+import sexp
+
+LIBPART_XBUF4 = '''
+    (libpart (lib "r1000") (part "XBUF4")
+      (fields
+        (field (name "Reference") "U")
+        (field (name "Value") "XBUF4")
+        (field (name "Location") "___")
+        (field (name "Name") "______"))
+      (pins
+        (pin (num "1") (name "INV") (type "input"))
+        (pin (num "2") (name "OE") (type "input"))
+        (pin (num "3") (name "I0") (type "input"))
+        (pin (num "4") (name "Y0") (type "tri_state"))
+        (pin (num "5") (name "I1") (type "input"))
+        (pin (num "6") (name "Y1") (type "tri_state"))
+        (pin (num "7") (name "I2") (type "input"))
+        (pin (num "8") (name "Y2") (type "tri_state"))
+        (pin (num "9") (name "I3") (type "input"))
+        (pin (num "10") (name "Y3") (type "tri_state"))))
+'''
+
+LIBPART_XBUF8 = '''
+    (libpart (lib "r1000") (part "XBUF8")
+      (fields
+        (field (name "Reference") "U")
+        (field (name "Value") "XBUF8")
+        (field (name "Location") "___")
+        (field (name "Name") "______"))
+      (pins
+        (pin (num "1") (name "INV") (type "input"))
+        (pin (num "2") (name "OE") (type "input"))
+        (pin (num "3") (name "I0") (type "input"))
+        (pin (num "4") (name "Y0") (type "tri_state"))
+        (pin (num "5") (name "I1") (type "input"))
+        (pin (num "6") (name "Y1") (type "tri_state"))
+        (pin (num "7") (name "I2") (type "input"))
+        (pin (num "8") (name "Y2") (type "tri_state"))
+        (pin (num "9") (name "I3") (type "input"))
+        (pin (num "10") (name "Y3") (type "tri_state"))
+        (pin (num "11") (name "I4") (type "input"))
+        (pin (num "12") (name "Y4") (type "tri_state"))
+        (pin (num "13") (name "I5") (type "input"))
+        (pin (num "14") (name "Y5") (type "tri_state"))
+        (pin (num "15") (name "I6") (type "input"))
+        (pin (num "16") (name "Y6") (type "tri_state"))
+        (pin (num "17") (name "I7") (type "input"))
+        (pin (num "18") (name "Y7") (type "tri_state"))))
+'''
+
+class ModelF24x(Component):
     ''' F240/F244 '''
 
-    bus_spec = {
-        "I": (0, 7, "sc_in", True, False),
-        "Y": (0, 7, "sc_out", False, True),
-    }
-
     def configure(self):
-        self.noz = self.nodes["OE0"].net.is_pd() and self.nodes["OE1"].net.is_pd()
-        self.same = self.nodes["OE0"].net == self.nodes["OE1"].net
+        self.fallback = False
+        same = self.nodes["OE0"].net == self.nodes["OE1"].net
+        if not same:
 
-    def is_bus_ok(self, bus):
-        self.configure()
-        if self.fallback:
-            return False
-        retval = super().is_bus_ok(bus)
-        if retval and retval.output and not self.same:
-            return False
-        if retval and self.noz:
-            retval.numeric = True
-        return retval
+            if "XBUF4" not in self.board.libparts:
+                slp = sexp.SExp("bla")
+                slp.parse(LIBPART_XBUF4)
+                libpart.LibPart(self.board, slp)
 
-    def make_clsname(self):
-        super().make_clsname()
-        self.configure()
-        if self.fallback:
-            return
-        if not self.noz:
-            self.clsname += "Z"
-        if self.same:
-            self.clsname += "W"
+            for nbr, child in enumerate(("A", "B")):
 
-    def write_code_hh_signals(self, file):
-        if not self.noz:
-            file.write('\tsc_in <sc_logic>\tPIN_OE0;\n')
-            if not self.same:
-                file.write('\tsc_in <sc_logic>\tPIN_OE1;\n')
+                used = set()
+                used.add(len(self.nodes["OE%d" % nbr].net))
+                for i in range(4):
+                    j = i + nbr * 4
+                    used.add(len(self.nodes["I%d" % j].net))
+                    used.add(len(self.nodes["Y%d" % j].net))
+                if len(used) == 1 and 1 in used:
+                    # all terminals on this half are unconnnected
+                    continue
 
-    def write_code_cc_sensitive(self, file):
-        if not self.noz:
-            file.write("\n\t    << PIN_OE0")
-            if not self.same:
-                file.write("\n\t    << PIN_OE1")
-        self.write_sensitive_bus(file, "I")
+                nsexp = copy.deepcopy(self.sexp)
+
+                ref = nsexp.find_first("ref")
+                ref[0].name += child
+
+                libsource = nsexp.find_first("libsource")
+                libsource[1][0].name = "XBUF4"
+                libsource[2][0].name = self.partname
+
+                for fld in nsexp.find("property"):
+                    if fld[0][0].name == 'Name':
+                        fld[1][0].name = self.name + child
+
+                ncomp = model.Model(self.board, nsexp)
+
+                ncomp.nodes["OE"] = self.nodes["OE%d" % nbr]
+                for i in range(4):
+                    j = i + nbr * 4
+                    ncomp.nodes["I%d" % i] = self.nodes["I%d" % j]
+                    ncomp.nodes["I%d" % i].pinfunction = "I%d" % i
+                    ncomp.nodes["Y%d" % i] = self.nodes["Y%d" % j]
+                    ncomp.nodes["Y%d" % i].pinfunction = "Y%d" % i
+                for i in ncomp.nodes.values():
+                    i.component = ncomp
+
+        else:
+
+            if "XBUF8" not in self.board.libparts:
+                slp = sexp.SExp("bla")
+                slp.parse(LIBPART_XBUF8)
+                libpart.LibPart(self.board, slp)
+
+            nsexp = copy.deepcopy(self.sexp)
+            libsource = nsexp.find_first("libsource")
+            libsource[1][0].name = "XBUF8"
+            libsource[2][0].name = self.partname
+
+            ncomp = model.Model(self.board, nsexp)
+
+            ncomp.nodes["OE"] = self.nodes["OE0"]
+            for i in range(8):
+                ncomp.nodes["I%d" % i] = self.nodes["I%d" % i]
+                ncomp.nodes["Y%d" % i] = self.nodes["Y%d" % i]
+            for i in ncomp.nodes.values():
+                i.component = ncomp
+
+    def include_files(self):
+        if not self.name:
+            yield None
+
+    def instance(self, file):
+        return
+
+    def initialize(self, file):
+        return
 
     def hookup(self, file):
-        ''' ... '''
-        if self.fallback:
-            super().hookup(file)
-            return
-        self.hookup_bus(file, "I")
-        self.hookup_bus(file, "Y")
-        if not self.noz:
-            self.hookup_pin(file, "PIN_OE0", self.nodes["OE0"])
-            if not self.same:
-                self.hookup_pin(file, "PIN_OE1", self.nodes["OE1"])
-
-    def write_code_cc_state_extra(self, file):
-        file.write("\tuint64_t inv;\n")
-        if not self.same:
-            file.write("\tint job2;\n")
-
-    def write_code_cc_init_extra(self, file):
-        file.write("\tstate->job = -1;\n")
-        if not self.same:
-            file.write("\tstate->job2 = -1;\n")
-        if self.partname == "F240":
-            file.write("\tstate->inv = 0xff;\n")
-        else:
-            assert self.partname == "F244"
-            file.write("\tstate->inv = 0;\n")
-
-    def write_code_cc(self, file):
-        if self.same:
-            self.write_code_cc_one(file)
-        else:
-            self.write_code_cc_two(file)
-
-    def write_code_cc_one(self, file):
-        self.write_code_cc_init(file)
-        file.write(self.substitute('''
-		|void
-		|SCM_MMM :: doit(void)
-		|{
-		|	state->ctx.activations++;
-		|
-		|	TRACE(
-		|	    << " job " << state->job
-		|'''))
-
-        if not self.noz:
-            file.write(self.substitute('''
-		|	    << " oe " << PIN_OE0
-		|'''))
-
-        for sig in self.iter_signals("I"):
-            file.write("\t    << %s\n" % sig)
-
-        file.write(self.substitute('''
-		|	);
-		|
-		|	if (state->job > 0) {
-		|		uint64_t tmp = state->data ^ state->inv;
-		|'''))
-
-        for i in self.write_bus_val("Y", "tmp"):
-            file.write('\t\t' + i + '\n')
-
-        file.write(self.substitute('''
-		|		state->job = 0;
-		|'''))
-
-        if not self.noz:
-            file.write(self.substitute('''
-		|	} else if (state->job == -1) {
-		|'''))
-
-            for i in self.write_bus_z("Y"):
-                file.write('\t\t' + i + '\n')
-
-            file.write(self.substitute('''
-		|		state->job = -2;
-		|		next_trigger(PIN_OE0.negedge_event());
-		|	}
-		|
-		|	if (IS_H(PIN_OE0)) {
-		|		if (state->job != -2) {
-		|			state->job = -1;
-		|			next_trigger(5, SC_NS);
-		|		} else {
-		|			next_trigger(PIN_OE0.negedge_event());
-		|		}
-		|		return;
-		|	}
-		|	if (state->job < 0) {
-		|		state->job = 1;
-		|		next_trigger(5, SC_NS);
-		|'''))
-
-        file.write(self.substitute('''
-		|	}
-		|
-		|	uint64_t i_val = 0;
-		|'''))
-
-        for i in self.read_bus_value("i_val", "I"):
-            file.write("\t" + i + "\n")
-
-        file.write(self.substitute('''
-		|
-		|	if (i_val != state->data) {
-		|		state->data = i_val;
-		|		state->job = 1;
-		|		next_trigger(5, SC_NS);
-		|	}
-		|}
-		|'''))
-
-    def write_code_cc_two(self, file):
-        self.write_code_cc_init(file)
-
-        file.write(self.substitute('''
-		|void
-		|SCM_MMM :: doit(void)
-		|{
-		|	state->ctx.activations++;
-		|
-		|	TRACE(
-		|	    << " job1 " << state->job
-		|	    << " job2 " << state->job2
-		|'''))
-
-        if not self.noz:
-            file.write(self.substitute('''
-		|	    << " oe " << PIN_OE0 << PIN_OE1
-		|'''))
-
-        for sig in self.iter_signals("I"):
-            file.write("\t    << %s\n" % sig)
-
-        file.write(self.substitute('''
-		|	);
-		|
-		|	if (state->job > 0) {
-		|		uint64_t tmp = state->data ^ state->inv;
-		|		PIN_Y0 = AS(tmp & 0x80);
-		|		PIN_Y1 = AS(tmp & 0x40);
-		|		PIN_Y2 = AS(tmp & 0x20);
-		|		PIN_Y3 = AS(tmp & 0x10);
-		|		state->job = 0;
-		|	}
-		|	if (state->job2 > 0) {
-		|		uint64_t tmp = state->data ^ state->inv;
-		|		PIN_Y4 = AS(tmp & 0x08);
-		|		PIN_Y5 = AS(tmp & 0x04);
-		|		PIN_Y6 = AS(tmp & 0x02);
-		|		PIN_Y7 = AS(tmp & 0x01);
-		|		state->job2 = 0;
-		|	}
-		|'''))
-
-        if not self.noz:
-            file.write(self.substitute('''
-		|	if (state->job == -1) {
-		|		PIN_Y0 = sc_logic_Z;
-		|		PIN_Y1 = sc_logic_Z;
-		|		PIN_Y2 = sc_logic_Z;
-		|		PIN_Y3 = sc_logic_Z;
-		|		state->job = -2;
-		|	}
-		|	if (state->job2 == -1) {
-		|		PIN_Y4 = sc_logic_Z;
-		|		PIN_Y5 = sc_logic_Z;
-		|		PIN_Y6 = sc_logic_Z;
-		|		PIN_Y7 = sc_logic_Z;
-		|		state->job2 = -2;
-		|	}
-		|
-		|
-		|	if (IS_H(PIN_OE0) && state->job != -2)
-		|		state->job = -1;
-		|	else if (IS_L(PIN_OE0) && state->job < 0)
-		|		state->job = 1;
-		|
-		|	if (IS_H(PIN_OE1) && state->job2 != -2)
-		|		state->job2 = -1;
-		|	else if (IS_L(PIN_OE1) && state->job2 < 0)
-		|		state->job2 = 1;
-		|
-		|'''))
-
-        file.write(self.substitute('''
-		|
-		|	uint64_t i_val = 0;
-		|'''))
-
-        for i in self.read_bus_value("i_val", "I"):
-            file.write("\t" + i + "\n")
-
-        file.write(self.substitute('''
-		|
-		|	if (i_val ^ state->data) {
-		|		if (IS_L(PIN_OE0)) {
-		|			state->data = i_val;
-		|			state->job = 1;
-		|		}
-		|		if (IS_L(PIN_OE1)) {
-		|			state->data = i_val;
-		|			state->job2 = 1;
-		|		}
-		|	}
-		|
-		|	if (state->job == -1 || state->job2 == -1)
-		|		next_trigger(5, SC_NS);
-		|	else if (state->job == 1 || state->job2 == 1)
-		|		next_trigger(5, SC_NS);
-		|'''))
-        if not self.noz:
-            file.write(self.substitute('''
-		|	else if (IS_H(PIN_OE0) && IS_H(PIN_OE1))
-		|		next_trigger(PIN_OE0.negedge_event() | PIN_OE1.negedge_event());
-		|'''))
-
-        file.write(self.substitute('''
-		|}
-		|'''))
+        return

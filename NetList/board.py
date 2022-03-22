@@ -79,6 +79,14 @@ class Board():
         for net in self.sexp.find("nets.net"):
             Net(self, net)
 
+        i = set(self.components.values())
+        for comp in i:
+            comp.configure()
+
+        for comp in self.components.values():
+            if comp not in i:
+                comp.configure()
+
         BusSchedule(self)
 
     def __str__(self):

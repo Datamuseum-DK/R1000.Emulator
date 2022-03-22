@@ -35,41 +35,74 @@
 
 from component import ModelComponent
 
-class ModelF521(ModelComponent):
+class ModelF181(ModelComponent):
     ''' ... '''
 
     bus_spec = {
-        "A": (0, 7, "sc_in", True, False),
-        "B": (0, 7, "sc_in", True, False),
+        "A": (0, 3, "sc_in", True, False),
+        "B": (0, 3, "sc_in", True, False),
+        "S": (0, 3, "sc_in", True, False),
+        "Y": (0, 3, "sc_out", True, True),
+    }
+
+    signals_in = {
+        "CI": ("C1", 13),
+        "M": ("M", 12),
+    }
+    signals_out = {
+        "P": ("P", 2),
+        "G": ("Q", 0),
+        "EQ": ("A=B", 3),
+        "CO": ("C0", 1),
     }
 
     def hookup_model(self, file):
         ''' ... '''
         self.hookup_bus(file, "A")
         self.hookup_bus(file, "B")
-        self.hookup_pin(file, "PIN_E_", self.nodes["E"])
-        self.hookup_pin(file, "PIN_A_eq_B_", self.nodes["A=B"])
+        self.hookup_bus(file, "S")
+        self.hookup_bus(file, "Y")
+        for sig, spec in self.signals_in.items():
+            self.hookup_pin(file, "PIN_" + sig, self.nodes[spec[0]])
+        for sig, spec in self.signals_out.items():
+            self.hookup_pin(file, "PIN_" + sig, self.nodes[spec[0]])
 
     def write_code_hh_signals(self, file):
-        file.write('\tsc_in <sc_logic>\tPIN_E_;\n')
-        file.write('\tsc_out <sc_logic>\tPIN_A_eq_B_;\n')
+        for sig, spec in self.signals_in.items():
+            file.write('\tsc_in <sc_logic>\tPIN_%s;\n' % sig)
+        for sig, spec in self.signals_out.items():
+            file.write('\tsc_out <sc_logic>\tPIN_%s;\n' % sig)
 
     def write_code_cc_sensitive(self, file):
-        file.write("\n\t    << PIN_E_")
+        for sig, spec in self.signals_in.items():
+            file.write('\n\t    << PIN_' + sig)
         self.write_sensitive_bus(file, "A")
         self.write_sensitive_bus(file, "B")
+        self.write_sensitive_bus(file, "S")
 
     def write_code_cc(self, file):
         self.write_code_cc_init(file)
 
         file.write(self.substitute('''
+		|static const uint8_t lut181[16384] = {
+		|#include "Components/F181_tbl.h"
+		|};
+		|
 		|void
 		|SCM_MMM :: doit(void)
 		|{
 		|	state->ctx.activations++;
 		|
 		|	TRACE(
-		|	    << " e " << PIN_E_
+		|	    << " m " << PIN_M
+		|	    << " s "
+		|'''))
+
+        for sig in self.iter_signals("S"):
+            file.write("\t    << %s\n" % sig)
+
+        file.write(self.substitute('''
+		|	    << " ci " << PIN_CI
 		|	    << " a "
 		|'''))
 
@@ -86,28 +119,51 @@ class ModelF521(ModelComponent):
         file.write(self.substitute('''
 		|	);
 		|
-		|	if (IS_H(PIN_E_)) {
-		|		PIN_A_eq_B_ = sc_logic_1;
-		|		next_trigger(PIN_E_.negedge_event());
-		|		return;
-		|	}
-		|
-		|	uint64_t a_val = 0;
+		|	unsigned idx = 0, tmp;
+
 		|'''))
 
-        for i in self.read_bus_value("a_val", "A"):
+        for i in self.read_bus_value("tmp", "A"):
             file.write("\t" + i + "\n")
 
         file.write(self.substitute('''
 		|
-		|	uint64_t b_val=0;
+		|	idx |= tmp << 8;
 		|'''))
 
-        for i in self.read_bus_value("b_val", "B"):
+        for i in self.read_bus_value("tmp", "B"):
             file.write("\t" + i + "\n")
 
         file.write(self.substitute('''
 		|
-		|	PIN_A_eq_B_ = AS(a_val != b_val);
+		|	idx |= tmp << 4;
+		|'''))
+
+        for i in self.read_bus_value("tmp", "S"):
+            file.write("\t" + i + "\n")
+
+        file.write(self.substitute('''
+		|
+		|	idx |= tmp;
+		|	if (IS_H(PIN_CI)) idx |= (1 << 13);
+		|	if (IS_H(PIN_M)) idx |= (1 << 12);
+		|
+		|	unsigned val = lut181[idx];
+		|
+		|	tmp = val >> 4;
+		|'''))
+
+        for i in self.write_bus_val("Y", "tmp"):
+            file.write("\t" + i + "\n")
+
+        file.write(self.substitute('''
+		|
+		|	if (val & 0x08)
+		|		PIN_EQ = sc_logic_Z;
+		|	else
+		|		PIN_EQ = sc_logic_0;
+		|	PIN_P = AS(val & 0x04);
+		|	PIN_CO = AS(val & 0x02);
+		|	PIN_G = AS(val & 0x01);
 		|}
 		|'''))

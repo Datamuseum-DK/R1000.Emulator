@@ -41,7 +41,7 @@ class SrcFile():
     def __init__(self, filename):
         self.filename = filename
         self.text = []
-        self.includes = []
+        self.includes = set()
 
     def write(self, text):
         ''' ... '''
@@ -60,7 +60,9 @@ class SrcFile():
 
     def include(self, target):
         ''' ... '''
-        self.includes.append(target)
+        if target in self.includes:
+            return
+        self.includes.add(target)
         if isinstance(target, SrcFile):
             self.text.append('#include "' + target.filename + '"\n')
         else:

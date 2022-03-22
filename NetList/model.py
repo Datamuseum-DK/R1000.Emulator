@@ -34,27 +34,52 @@ Chip models
 
 from component import Component, VirtualComponent
 
-from model_sram import ModelSRAM
-from model_f24x import ModelF24x
-from model_f280 import ModelF280
-from model_f374 import ModelXREG
-from model_f521 import ModelF521
-from model_paxxx import ModelPAxxx
+import model_f181
+import model_f24x
+import model_f280
+import model_f521
+import model_mux2
+import model_paxxx
+import model_sram
+import model_xbuf
+import model_xlat
+import model_xreg
+
+DISPATCH = {
+    '2149': model_sram.ModelSRAM,
+    '2167': model_sram.ModelSRAM,
+    'F157': model_mux2.ModelMux2,
+    'F158': model_mux2.ModelMux2,
+    'F181': model_f181.ModelF181,
+    'F240': model_f24x.ModelF24x,
+    'F244': model_f24x.ModelF24x,
+    'F257': model_mux2.ModelMux2,
+    'F258': model_mux2.ModelMux2,
+    'F280': model_f280.ModelF280,
+    'F373': model_xlat.ModelXLAT,
+    'F374': model_xreg.ModelXREG,
+    'F521': model_f521.ModelF521,
+    'GB': VirtualComponent,
+    'GF': VirtualComponent,
+    'PAxxx': model_paxxx.ModelPAxxx,
+    'Pull_Up': VirtualComponent,
+    'Pull_Down': VirtualComponent,
+    'XBUF': model_xbuf.ModelXBUF,
+    'XREG': model_xreg.ModelXREG,
+    'XMUX16': model_mux2.ModelMux2,
+}
 
 def Model(board, sexp):
     ''' Find the right (sub)class or this component '''
     part = sexp.find_first("libsource.part")[0].name
-    cls = {
-        '2167': ModelSRAM,
-        'F240': ModelF24x,
-        'F244': ModelF24x,
-        'F280': ModelF280,
-        'F374': ModelXREG,
-        'F521': ModelF521,
-        'GB': VirtualComponent,
-        'GF': VirtualComponent,
-        'PAxxx': ModelPAxxx,
-        'Pull_Up': VirtualComponent,
-        'Pull_Down': VirtualComponent,
-    }.get(part, Component)
+
+    cls = DISPATCH.get(part)
+
+    if cls is None and part[0] == 'X' and part[:3].isalpha:
+        while part[-1].isdigit():
+            part = part[:-1]
+        cls = DISPATCH.get(part)
+
+    if cls is None:
+        cls = Component
     return cls(board, sexp)
