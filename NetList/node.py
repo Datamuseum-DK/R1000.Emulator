@@ -33,28 +33,20 @@
    =================================================
 '''
 
+import pin
+
 class Node():
-    ''' A `node` from the netlist file '''
-    def __init__(self, net, sexp):
+
+    ''' A `node` connects a `net` with a `component`'s `pin` '''
+
+    def __init__(self, net, component, pinspec):
         self.net = net
-        self.sexp = sexp
-        self.refname = sexp[0][0].name
-        self.pinno = sexp[1][0].name
-        self.pinfunction = sexp.find_first("pinfunction")
-        if self.pinfunction:
-            self.pinfunction = self.pinfunction[0].name
-            self.sortkey = (self.pinfunction, 0)
-            for i in range(len(self.pinfunction)):
-                if self.pinfunction[i].isdigit():
-                    try:
-                        self.sortkey = (self.pinfunction[:i], int(self.pinfunction[i:]))
-                    except ValueError:
-                        pass
-                    break
-        else:
-            self.sortkey = (self.pinno, 0)
-        self.component = self.net.board.components[self.refname]
-        # print("XXX", self, self.pinfunction, self.sortkey)
+        self.component = component
+        self.refname = component.name
+        self.pin = pinspec
+        self.sortkey = (self.net, self.pin)
+
+        self.component.add_node(self)
 
     def __lt__(self, other):
         return self.sortkey < other.sortkey
@@ -64,7 +56,26 @@ class Node():
             (
                  str(self.net),
                  str(self.component),
-                 str(self.pinno),
-                 str(self.pinfunction),
+                 str(self.pin),
+            )
+        )
+
+class NodeSexp(Node):
+
+    ''' Create `node` from netlist-sexp '''
+
+    def __init__(self, net, sexp):
+        pinname = sexp.find_first("pinfunction")
+        if pinname:
+            pinname = pinname[0].name
+        else:
+            pinname = "W"
+        super().__init__(
+            net = net,
+            component = net.board.get_component(sexp[0][0].name),
+            pinspec = pin.Pin(
+                pinident=sexp[1][0].name,
+                pinname=pinname,
+                pinrole=sexp.find_first("pintype")[0].name,
             )
         )

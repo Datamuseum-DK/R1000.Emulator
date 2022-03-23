@@ -42,6 +42,13 @@ class ModelF280(ModelComponent):
         "I": (0, 8, "sc_in", True, False),
     }
 
+    def is_bus_ok(self, bus):
+        ''' We dont care about the order '''
+        retval = super().is_bus_ok(bus)
+        if retval:
+            retval.order = None
+        return retval
+
     def hookup_model(self, file):
         ''' ... '''
         self.hookup_bus(file, "I")

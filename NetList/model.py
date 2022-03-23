@@ -32,54 +32,63 @@
 Chip models
 '''
 
-from component import Component, VirtualComponent
-
-import model_f181
-import model_f24x
-import model_f280
-import model_f521
-import model_mux2
-import model_paxxx
-import model_sram
-import model_xbuf
-import model_xlat
-import model_xreg
-
-DISPATCH = {
-    '2149': model_sram.ModelSRAM,
-    '2167': model_sram.ModelSRAM,
-    'F157': model_mux2.ModelMux2,
-    'F158': model_mux2.ModelMux2,
-    'F181': model_f181.ModelF181,
-    'F240': model_f24x.ModelF24x,
-    'F244': model_f24x.ModelF24x,
-    'F257': model_mux2.ModelMux2,
-    'F258': model_mux2.ModelMux2,
-    'F280': model_f280.ModelF280,
-    'F373': model_xlat.ModelXLAT,
-    'F374': model_xreg.ModelXREG,
-    'F521': model_f521.ModelF521,
-    'GB': VirtualComponent,
-    'GF': VirtualComponent,
-    'PAxxx': model_paxxx.ModelPAxxx,
-    'Pull_Up': VirtualComponent,
-    'Pull_Down': VirtualComponent,
-    'XBUF': model_xbuf.ModelXBUF,
-    'XREG': model_xreg.ModelXREG,
-    'XMUX16': model_mux2.ModelMux2,
-}
-
-def Model(board, sexp):
-    ''' Find the right (sub)class or this component '''
-    part = sexp.find_first("libsource.part")[0].name
-
-    cls = DISPATCH.get(part)
-
-    if cls is None and part[0] == 'X' and part[:3].isalpha:
-        while part[-1].isdigit():
-            part = part[:-1]
-        cls = DISPATCH.get(part)
-
-    if cls is None:
-        cls = Component
-    return cls(board, sexp)
+#from component import Component, VirtualComponent
+#
+#import model_f181
+#import model_f24x
+#import model_f280
+#import model_f521
+#import model_mux2
+#import model_paxxx
+#import model_sram
+#import model_xbuf
+#import model_xlat
+#import model_xreg
+#
+#DISPATCH = {
+#    #'2149': model_sram.ModelSRAM,
+#    #'2167': model_sram.ModelSRAM,
+#    #'F157': model_mux2.ModelMux2,
+#    #'F158': model_mux2.ModelMux2,
+#    #'F181': model_f181.ModelF181,
+#    #'F240': model_f24x.ModelF24x,
+#    #'F244': model_f24x.ModelF24x,
+#    #'F257': model_mux2.ModelMux2,
+#    #'F258': model_mux2.ModelMux2,
+#    #'F280': model_f280.ModelF280,
+#    #'F373': model_xlat.ModelXLAT,
+#    #'F374': model_xreg.ModelXREG,
+#    #'F521': model_f521.ModelF521,
+#    #'PAxxx': model_paxxx.ModelPAxxx,
+#    #'XBUF': model_xbuf.ModelXBUF,
+#    #'XREG': model_xreg.ModelXREG,
+#    #'XLAT': model_xlat.ModelXLAT,
+#    #'XMUX16': model_mux2.ModelMux2,
+#}
+#
+## These are not optional
+#VIRTUALS = {
+#    'GB': VirtualComponent,
+#    'GF': VirtualComponent,
+#    'Pull_Up': VirtualComponent,
+#    'Pull_Down': VirtualComponent,
+#}
+#
+#def Model(board, sexp):
+#    ''' Find the right (sub)class or this component '''
+#    part = sexp.find_first("libsource.part")[0].name
+#
+#    cls = VIRTUALS.get(part)
+#    if cls:
+#        return cls(board, sexp)
+#   
+#    cls = DISPATCH.get(part)
+#
+#    if cls is None and part[0] == 'X' and part[:3].isalpha:
+#        while part[-1].isdigit():
+#            part = part[:-1]
+#        cls = DISPATCH.get(part)
+#
+#    if cls is None:
+#        cls = Component
+#    return cls(board, sexp)

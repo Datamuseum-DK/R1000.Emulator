@@ -40,11 +40,14 @@ from sexp import SExp
 
 from srcfile import SrcFile
 from scmod import SC_Mod
-from sheet import Sheet
-from libpart import LibPart
-from model import Model
-from net import Net
-from bus import BusSchedule
+from sheet import SheetSexp
+from libpart import LibPartSexp
+from net import NetSexp
+from component import ComponentSexp
+
+from pass_planes import PassPlanes
+from pass_assign_part import PassAssignPart
+from pass_netconfig import PassNetConfig
 
 class Board():
     ''' A netlist file '''
@@ -65,32 +68,41 @@ class Board():
 
         self.sheets = {}
         for i in self.sexp.find("design.sheet"):
-            Sheet(self, i)
+            SheetSexp(self, i)
 
         self.libparts = {}
-        for i in self.sexp.find("libparts.libpart"):
-            LibPart(self, i)
+        for libpartsexp in self.sexp.find("libparts.libpart"):
+            part = LibPartSexp(libpartsexp)
+            self.libparts[part.name] = part
 
         self.components = {}
-        for i in self.sexp.find("components.comp"):
-            Model(self, i)
+        for compsexp in self.sexp.find("components.comp"):
+            comp = ComponentSexp(self, compsexp)
 
         self.nets = {}
-        for net in self.sexp.find("nets.net"):
-            Net(self, net)
+        for netsexp in self.sexp.find("nets.net"):
+            net = NetSexp(self, netsexp)
+            self.nets[net.name] = net
 
-        i = set(self.components.values())
-        for comp in i:
-            comp.configure()
-
-        for comp in self.components.values():
-            if comp not in i:
-                comp.configure()
-
-        BusSchedule(self)
+        PassPlanes(self)
+        PassAssignPart(self)
+        PassNetConfig(self)
 
     def __str__(self):
         return self.name
+
+    def iter_components(self):
+        yield from self.components.values()
+
+    def iter_nets(self):
+        yield from self.nets.values()
+
+    def get_component(self, name):
+        ''' ... '''
+        retval = self.components.get(name)
+        if not retval:
+            raise NameError(name)
+        return retval
 
     def find_board_name(self):
         ''' We dont trust the filename '''

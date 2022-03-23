@@ -66,8 +66,8 @@ class ModelSRAM(ModelComponent):
             nnodes = {}
             for name, node in self.nodes.items():
                 if name[:2] == "DQ":
-                    node.pinfunction = "D" + name[2:]
-                nnodes[node.pinfunction] = node
+                    node.pin.name = "D" + name[2:]
+                nnodes[node.pin.name] = node
             self.nodes = nnodes
 
     def make_clsname(self):

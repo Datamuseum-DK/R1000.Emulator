@@ -29,27 +29,83 @@
 # SUCH DAMAGE.
 
 '''
-   Turn kicad netlist files into SystemC source code
-   =================================================
+   Parts of which components are instances
+   =======================================
 '''
 
-from pin import Pin
+from pin import PinSexp
 
-class LibPart():
-    ''' A `libpart` from the netlist file '''
-    def __init__(self, board, sexp):
-        self.board = board
-        self.sexp = sexp
-        i = self.sexp.find_first("part")
-        self.partname = i[0].name
-        self.board.libparts[self.partname] = self
+class Part():
+
+    ''' A `part` is a type of `component` '''
+
+    def __init__(self, partname):
+        self.name = partname
         self.pins = {}
-        for i in self.sexp.find("pins.pin"):
-            Pin(self, i)
+        self.includes = []
+
+        self.clsname = "SCM_" + self.name.upper()
 
     def __str__(self):
-        return "_".join((str(self.board), self.partname))
+        return "_".join(("Part", self.name))
 
-    def include_file(self):
-        ''' Return include statement for this libpart '''
-        return 'Components/' + self.partname + '.hh'
+    def add_pin(self, pin):
+        ''' ... '''
+        self.pins[pin.ident] = pin
+
+    def yield_includes(self, _comp):
+        yield from self.includes
+
+    def instance(self, file, comp):
+        file.write('\t' + self.clsname + " " + comp.name + ";\n")
+
+    def initialize(self, file, comp):
+        file.write(",\n\t" + comp.name + '("' + comp.name + '", "' + comp.value + '")')
+
+    def hookup(self, _file, _comp):
+        return
+
+class NoPart(Part):
+    ''' Non-Instantiated Part ie: PU, PD, GF, GB '''
+
+    def instance(self, _file, _comp):
+        return
+
+    def initialize(self, _file, _comp):
+        return
+
+    def hookup(self, _file, _comp):
+        return
+
+class LibPartSexp(Part):
+
+    ''' Create `part` from netlist-sexp '''
+
+    def __init__(self, sexp):
+        super().__init__(
+            partname = sexp.find_first("part")[0].name
+        )
+        for pinsexp in sexp.find("pins.pin"):
+            self.add_pin(PinSexp(pinsexp))
+
+        self.includes.append('Components/' + self.name + '.hh')
+
+    def hookup_pin(self, file, comp, pin_no, node, cmt="", suf=""):
+        ''' Text formatting for hooking up a single pin '''
+        text = "\t%s.%s(" % (comp.name + suf, pin_no)
+        text += node.net.cname
+        text += ");"
+        if cmt:
+            while len(text.expandtabs()) < 64:
+                text += "\t"
+            text += "// " + cmt
+        file.write(text + "\n")
+
+    def hookup(self, file, comp):
+        ''' Emit the SystemC code to hook this component up '''
+        file.write("\n\n\t// %s\n" % " ".join((comp.ref, comp.name, comp.location, comp.partname)))
+        for pin in sorted(self.pins.values()):
+            node = comp.nodes[pin.name]
+            if not node.net.bus:
+                self.hookup_pin(file, comp, "pin" + pin.ident, node, cmt=str(pin))
+

@@ -49,7 +49,6 @@ class ModelXLAT(ModelComponent):
             self.nin = "D"
             self.nout = "Q"
         else:
-            assert False
             self.width = int(self.partname[4:], 10)
             self.bus_spec = {
                 "I": (0, self.width - 1, "sc_in", True, False),

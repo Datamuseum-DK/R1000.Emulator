@@ -100,7 +100,8 @@ class ModelF24x(Component):
             if "XBUF4" not in self.board.libparts:
                 slp = sexp.SExp("bla")
                 slp.parse(LIBPART_XBUF4)
-                libpart.LibPart(self.board, slp)
+                part = libpart.LibPartSexp(slp)
+                self.board.libparts[part.name] = part
 
             for nbr, child in enumerate(("A", "B")):
 
@@ -133,9 +134,9 @@ class ModelF24x(Component):
                 for i in range(4):
                     j = i + nbr * 4
                     ncomp.nodes["I%d" % i] = self.nodes["I%d" % j]
-                    ncomp.nodes["I%d" % i].pinfunction = "I%d" % i
+                    ncomp.nodes["I%d" % i].pin.name = "I%d" % i
                     ncomp.nodes["Y%d" % i] = self.nodes["Y%d" % j]
-                    ncomp.nodes["Y%d" % i].pinfunction = "Y%d" % i
+                    ncomp.nodes["Y%d" % i].pin.name = "Y%d" % i
                 for i in ncomp.nodes.values():
                     i.component = ncomp
 
@@ -144,7 +145,8 @@ class ModelF24x(Component):
             if "XBUF8" not in self.board.libparts:
                 slp = sexp.SExp("bla")
                 slp.parse(LIBPART_XBUF8)
-                libpart.LibPart(self.board, slp)
+                part = libpart.LibPartSexp(slp)
+                self.board.libparts[part.name] = part
 
             nsexp = copy.deepcopy(self.sexp)
             libsource = nsexp.find_first("libsource")

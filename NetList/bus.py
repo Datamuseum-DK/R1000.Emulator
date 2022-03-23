@@ -33,10 +33,10 @@
    =======================
 '''
 
-MIN_BUS_WIDTH = 4
+MIN_BUS_WIDTH = 400
 MIN_BUS_MEMBERS = 2
 
-SHOW_VETOED_BUSSES = 0
+SHOW_VETOED_BUSSES = 2
 
 class BusAttach():
     ''' Describes how a component can attach to a bus '''
@@ -101,7 +101,7 @@ class Bus():
     def filter(self):
         ''' Filter out busses which components dont like '''
 
-        # self.nets.sort(key=lambda net: net.nodes[0].pinfunction)
+        # self.nets.sort(key=lambda net: net.nodes[0].pinname)
         self.components.sort()
 
         self.find_name()
@@ -131,7 +131,8 @@ class Bus():
                     self.table()
                     print("Disagreement about bus-order:")
                     for j in self.filtered:
-                        print("    ", j.comp.name, list(x.net.name for x in j.order))
+                        if j.order:
+                            print("    ", j.comp.name, list(x.net.name for x in j.order))
             self.nets = [node.net for node in orders[0]]
 
         self.numeric = min(x.numeric for x in self.filtered)
@@ -142,7 +143,7 @@ class Bus():
         if outputs > 1:
             self.numeric = False
 
-        if not SHOW_VETOED_BUSSES:
+        if SHOW_VETOED_BUSSES < 2:
             print()
             self.table(self.filtered)
             print("Numeric", self.numeric)
@@ -163,12 +164,12 @@ class Bus():
 
         if names[0][0] == 'U':
             # Anonymous busses have signals named 'U6416_Pad7'
-            # Translate those to that chips pinfunctions
+            # Translate those to that chips pinname
             for comp in self.components:
                 if comp.ref == names[0][:len(comp.ref)]:
                     names = []
                     for node in self.mynodes(comp):
-                        names.append(comp.name + "_" + node.pinfunction)
+                        names.append(comp.name + "_" + node.pin.name)
                     break
 
         for cut in range(len(names[0])):
@@ -225,8 +226,8 @@ class Bus():
             for comp in self.components:
                 for node in net.nodes:
                     if node.component == comp:
-                        if node.pinfunction:
-                            line.append(node.pinfunction)
+                        if node.pin.name:
+                            line.append(node.pin.name)
                         else:
                             line.append("?")
                         break

@@ -29,43 +29,23 @@
 # SUCH DAMAGE.
 
 '''
-   Pins on components
-   ==================
+   Pass: Deal with components which are plane-connections
+   ======================================================
 '''
 
-import util
+import transit
 
-class Pin():
+class PassPlanes():
 
-    ''' A `pin` on a `component` '''
+    ''' Pass: Deal with connections to the planes '''
 
-    def __init__(self, pinident, pinname, pinrole):
-        self.ident = pinident	# Not always numeric!
-        self.name = pinname
-        self.role = pinrole
-        if not self.name:
-            self.name = "_"
-        self.sortkey = util.sortkey(self.name)
-        if isinstance(self.sortkey[0], int):
-            self.sortkey.insert(0, "_")
-        if len(self.sortkey) >= 2:
-            self.bus = self.sortkey[:2]
-        else:
-            self.bus = None
+    def __init__(self, board):
+        self.board = board
 
-    def __repr__(self):
-        return "_".join(("Pin", self.ident, self.name, self.role))
+        for comp in self.board.iter_components():
+            comp.is_plane = comp.partname in ("GF", "GB")
+            if comp.is_plane:
+                comp.ref = comp.ref[:2] + "%03d" % int(comp.ref[2:], 10)
+                comp.ref = transit.do_transit(board.name, comp.ref)
+                comp.name = comp.ref
 
-    def __lt__(self, other):
-        return self.sortkey < other.sortkey
-
-class PinSexp(Pin):
-
-    ''' Create `pin` from netlist-sexp '''
-
-    def __init__(self, sexp):
-        super().__init__(
-            pinident = sexp[0][0].name,
-            pinname = sexp[1][0].name,
-            pinrole = sexp[2][0].name,
-        )

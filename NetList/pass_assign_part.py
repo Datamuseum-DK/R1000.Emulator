@@ -29,43 +29,30 @@
 # SUCH DAMAGE.
 
 '''
-   Pins on components
-   ==================
+   Pass: Assign parts to components
+   ================================
 '''
 
-import util
+import libpart
 
-class Pin():
+class PassAssignPart():
 
-    ''' A `pin` on a `component` '''
+    ''' Pass: Assign parts to components '''
 
-    def __init__(self, pinident, pinname, pinrole):
-        self.ident = pinident	# Not always numeric!
-        self.name = pinname
-        self.role = pinrole
-        if not self.name:
-            self.name = "_"
-        self.sortkey = util.sortkey(self.name)
-        if isinstance(self.sortkey[0], int):
-            self.sortkey.insert(0, "_")
-        if len(self.sortkey) >= 2:
-            self.bus = self.sortkey[:2]
-        else:
-            self.bus = None
+    def __init__(self, board):
+        self.board = board
 
-    def __repr__(self):
-        return "_".join(("Pin", self.ident, self.name, self.role))
+        nopart = libpart.NoPart("<nopart>")
 
-    def __lt__(self, other):
-        return self.sortkey < other.sortkey
-
-class PinSexp(Pin):
-
-    ''' Create `pin` from netlist-sexp '''
-
-    def __init__(self, sexp):
-        super().__init__(
-            pinident = sexp[0][0].name,
-            pinname = sexp[1][0].name,
-            pinrole = sexp[2][0].name,
-        )
+        for comp in self.board.iter_components():
+            if comp.part:
+                continue
+            if comp.partname in (
+                'GB',
+                'GF',
+                'Pull_Up',
+                'Pull_Down',
+            ):
+                comp.part = nopart
+            else:
+                comp.part = self.board.libparts[comp.partname]

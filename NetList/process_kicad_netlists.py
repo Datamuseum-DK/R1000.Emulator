@@ -70,7 +70,7 @@ def main():
             t_old = os.stat(speculative_name + "/_timestamp").st_mtime
         except FileNotFoundError:
             t_old = 0
-        if t_new > t_old:
+        if t_new > t_old or True:
             print()
             print("Processing", filename)
             board = Board(filename, branch)

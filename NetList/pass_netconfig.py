@@ -29,43 +29,30 @@
 # SUCH DAMAGE.
 
 '''
-   Pins on components
-   ==================
+   Pass: Configure networks
+   ========================
 '''
 
-import util
+import libpart
 
-class Pin():
+class PassNetConfig():
 
-    ''' A `pin` on a `component` '''
+    ''' Pass: Configure the `net` '''
 
-    def __init__(self, pinident, pinname, pinrole):
-        self.ident = pinident	# Not always numeric!
-        self.name = pinname
-        self.role = pinrole
-        if not self.name:
-            self.name = "_"
-        self.sortkey = util.sortkey(self.name)
-        if isinstance(self.sortkey[0], int):
-            self.sortkey.insert(0, "_")
-        if len(self.sortkey) >= 2:
-            self.bus = self.sortkey[:2]
-        else:
-            self.bus = None
+    def __init__(self, board):
+        self.board = board
 
-    def __repr__(self):
-        return "_".join(("Pin", self.ident, self.name, self.role))
-
-    def __lt__(self, other):
-        return self.sortkey < other.sortkey
-
-class PinSexp(Pin):
-
-    ''' Create `pin` from netlist-sexp '''
-
-    def __init__(self, sexp):
-        super().__init__(
-            pinident = sexp[0][0].name,
-            pinname = sexp[1][0].name,
-            pinrole = sexp[2][0].name,
-        )
+        for net in self.board.iter_nets():
+            net.is_plane = net.name in ("PU", "PD")
+            for node in net.iter_nodes():
+                if node.component.partname in ("GF", "GB"):
+                    net.is_plane = True
+                    net.name = node.component.ref
+                    continue
+                net.sheets.add(node.component.sheet)
+            net.sheets = list(sorted(net.sheets))
+            net.is_local = not net.is_plane and len(net.sheets) == 1
+            if net.is_local:
+                net.sheets[0].local_nets.append(net)
+            net.find_cname()
+            # net.ponder()

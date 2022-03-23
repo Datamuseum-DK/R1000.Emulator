@@ -52,6 +52,13 @@ class Sheet():
     def __str__(self):
         return self.board.name + "_%d" % self.page
 
+    def __lt__(self, other):
+        self.page < other.page
+
+    def add_component(self, comp):
+        assert comp.ref not in self.components
+        self.components[comp.ref] = comp
+
     def substitute(self, text):
         ''' Substitute things into C-source text '''
         for find, replace in (
@@ -80,7 +87,7 @@ class Sheet():
         ''' ... '''
         incls = set()
         for comp in self.components.values():
-            for incl in comp.include_files():
+            for incl in comp.part.yield_includes(comp):
                 if incl:
                     incls.add(incl)
         for incl in sorted(incls):
@@ -92,7 +99,7 @@ class Sheet():
             net.write_decl(scm)
         scm.write("\n")
         for comp in sorted(self.components.values()):
-            comp.instance(scm)
+            comp.part.instance(scm, comp)
         scm.write("\n")
         scm.write(self.substitute('''
 		|	ttt(
@@ -131,17 +138,18 @@ class Sheet():
         for net in sorted(self.local_nets):
             net.write_init(scm)
         for comp in sorted(self.components.values()):
-            comp.initialize(scm)
+            comp.part.initialize(scm, comp)
         scm.write("\n{\n")
         for comp in sorted(self.components.values()):
-            comp.hookup(scm)
+            comp.part.hookup(scm, comp)
         scm.write("}\n")
 
     def produce(self):
         ''' ... '''
-        for comp in sorted(self.components.values()):
-            comp.do_includes()
         self.produce_pub_hh(self.scm.pub)
         self.produce_hh(self.scm.hh)
         self.produce_cc(self.scm.cc)
         self.scm.commit()
+
+class SheetSexp(Sheet):
+    ''' ... '''

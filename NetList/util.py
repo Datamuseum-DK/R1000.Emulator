@@ -29,43 +29,24 @@
 # SUCH DAMAGE.
 
 '''
-   Pins on components
-   ==================
+   Various stuff
+   =============
 '''
 
-import util
-
-class Pin():
-
-    ''' A `pin` on a `component` '''
-
-    def __init__(self, pinident, pinname, pinrole):
-        self.ident = pinident	# Not always numeric!
-        self.name = pinname
-        self.role = pinrole
-        if not self.name:
-            self.name = "_"
-        self.sortkey = util.sortkey(self.name)
-        if isinstance(self.sortkey[0], int):
-            self.sortkey.insert(0, "_")
-        if len(self.sortkey) >= 2:
-            self.bus = self.sortkey[:2]
+def sortkey(word):
+    '''
+	Split input into runs of digits vs. non-digits and return
+	a list with alternating strings and ints for sorting
+    '''
+    key = list([word[0]])
+    for glyph in word[1:]:
+        i = glyph.isdigit()
+        j = key[-1][-1].isdigit()
+        if i == j:
+            key[-1] += glyph
         else:
-            self.bus = None
-
-    def __repr__(self):
-        return "_".join(("Pin", self.ident, self.name, self.role))
-
-    def __lt__(self, other):
-        return self.sortkey < other.sortkey
-
-class PinSexp(Pin):
-
-    ''' Create `pin` from netlist-sexp '''
-
-    def __init__(self, sexp):
-        super().__init__(
-            pinident = sexp[0][0].name,
-            pinname = sexp[1][0].name,
-            pinrole = sexp[2][0].name,
-        )
+            key.append(glyph)
+    for i, j in enumerate(key):
+        if j.isdigit():
+            key[i] = int(j)
+    return key

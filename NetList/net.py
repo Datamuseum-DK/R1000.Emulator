@@ -33,20 +33,20 @@
    =================================================
 '''
 
-from node import Node
+from node import NodeSexp
 
 class Net():
     ''' A `net` from the netlist file '''
-    def __init__(self, board, sexp):
+    def __init__(self, board, netname):
         self.board = board
-        self.sexp = sexp
-        self.name = self.sexp[1][0].name
-        self.board.nets[self.name] = self
+        self.name = netname
         self.nodes = []
         self.bus = None
-        for i in sexp.find("node"):
-            self.nodes.append(Node(self, i))
         self.sheets = set()
+        self.is_plane = None
+        self.is_local = None
+
+    def xconfigure(self):
         self.is_plane = self.name in ("PU", "PD")
         self.busable = len(self.nodes) >= 2 and not self.is_plane
         for node in self.nodes:
@@ -56,7 +56,6 @@ class Net():
                 continue
             self.busable &= node.component.busable
             self.sheets.add(node.component.sheet)
-            node.component.add_node(node)
         self.sheets = list(self.sheets)
         self.is_local = not self.is_plane and len(self.sheets) == 1
         if self.is_local:
@@ -65,14 +64,21 @@ class Net():
 
         self.ponder()
 
+    def add_node(self, node):
+        ''' ... '''
+        self.nodes.append(node)
+
+    def iter_nodes(self):
+        yield from self.nodes
+
     def find_cname(self):
         ''' This is gnarly '''
         self.cname = self.name
         if self.cname[0].isdigit():
             self.cname = "z" + self.cname
         if len(self.nodes) == 1 and "unconnected" in self.cname:
-            i = self.nodes[0]
-            self.cname = "u_" + i.component.name + "_" + i.pinno
+            node = self.nodes[0]
+            self.cname = "u_" + node.component.name + "_" + node.pin.ident
             # print("ZZ", self.cname, self.nodes[0])
         for find, replace in (
             ("Net-", ""),
@@ -93,7 +99,7 @@ class Net():
             self.cname = self.board.lname + "_globals." + self.cname
 
     def __repr__(self):
-        return self.name
+        return "_".join(("Net", self.name))
 
     def __lt__(self, other):
         return self.name < other.name
@@ -131,9 +137,8 @@ class Net():
         if self.name[:2] in ("GB", "GF", "PD", "PU",):
             return
         census = {}
-        for i in self.nodes:
-            j = str(i.sexp.find_first("pintype")[0])
-            census[j] = 1 + census.get(j, 0)
+        for node in self.nodes:
+            census[node.pin.role] = 1 + census.get(node.pin.role, 0)
         if len(census) == 1 and 'output+no_connect' in census:
             return
         if len(census) == 1 and 'input+no_connect' in census:
@@ -147,3 +152,15 @@ class Net():
         if 'input' in census and 'output' in census:
             return
         print("    ", self, census)
+
+class NetSexp(Net):
+    ''' ... '''
+
+    def __init__(self, board, sexp):
+        super().__init__(
+            board,
+            netname = sexp[1][0].name,
+        )
+        for node_sexp in sexp.find("node"):
+            node = NodeSexp(self, node_sexp)
+            self.add_node(node)
