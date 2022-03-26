@@ -46,24 +46,6 @@ class Net():
         self.is_plane = None
         self.is_local = None
 
-    def xconfigure(self):
-        self.is_plane = self.name in ("PU", "PD")
-        self.busable = len(self.nodes) >= 2 and not self.is_plane
-        for node in self.nodes:
-            if node.component.is_plane:
-                self.is_plane = True
-                self.name = node.component.ref
-                continue
-            self.busable &= node.component.busable
-            self.sheets.add(node.component.sheet)
-        self.sheets = list(self.sheets)
-        self.is_local = not self.is_plane and len(self.sheets) == 1
-        if self.is_local:
-            self.sheets[0].local_nets.append(self)
-        self.find_cname()
-
-        self.ponder()
-
     def add_node(self, node):
         ''' ... '''
         self.nodes.append(node)

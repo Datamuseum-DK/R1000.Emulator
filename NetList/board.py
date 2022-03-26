@@ -41,13 +41,16 @@ from sexp import SExp
 from srcfile import SrcFile
 from scmod import SC_Mod
 from sheet import SheetSexp
-from libpart import LibPartSexp
+from part import LibPartSexp, NoPart
 from net import NetSexp
 from component import ComponentSexp
 
+import model_nand
+
 from pass_planes import PassPlanes
 from pass_assign_part import PassAssignPart
-from pass_netconfig import PassNetConfig
+from pass_net_config import PassNetConfig
+from pass_part_config import PassPartConfig
 
 class Board():
     ''' A netlist file '''
@@ -61,6 +64,9 @@ class Board():
         self.srcs = []
         self.dynamic_components = {}
         self.extra_scms = []
+        self.part_catalog = {}
+
+        model_nand.register(self)
 
         self.chf_sheets = SrcFile(self.dstdir + "/" + self.lname + "_sheets.h")
         self.scm_board = self.sc_mod(self.lname + "_board")
@@ -70,10 +76,12 @@ class Board():
         for i in self.sexp.find("design.sheet"):
             SheetSexp(self, i)
 
-        self.libparts = {}
+        self.add_part("GB", NoPart())
+        self.add_part("GF", NoPart())
+        self.add_part("Pull_Up", NoPart())
+        self.add_part("Pull_Down", NoPart())
         for libpartsexp in self.sexp.find("libparts.libpart"):
-            part = LibPartSexp(libpartsexp)
-            self.libparts[part.name] = part
+            LibPartSexp(self, libpartsexp)
 
         self.components = {}
         for compsexp in self.sexp.find("components.comp"):
@@ -87,9 +95,14 @@ class Board():
         PassPlanes(self)
         PassAssignPart(self)
         PassNetConfig(self)
+        PassPartConfig(self)
 
     def __str__(self):
         return self.name
+
+    def add_part(self, name, part):
+        if name not in self.part_catalog:
+            self.part_catalog[name] = part
 
     def iter_components(self):
         yield from self.components.values()

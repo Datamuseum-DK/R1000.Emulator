@@ -29,18 +29,28 @@
 # SUCH DAMAGE.
 
 '''
-   Pass: Assign parts to components
-   ================================
+   Pass: Configure networks
+   ========================
 '''
 
-import part
+class PassNetConfig():
 
-class PassAssignPart():
-
-    ''' Pass: Assign parts to components '''
+    ''' Pass: Configure the `net` '''
 
     def __init__(self, board):
+        self.board = board
 
-        for comp in board.iter_components():
-            if not comp.part:
-                comp.part = board.part_catalog[comp.partname]
+        for net in self.board.iter_nets():
+            net.is_plane = net.name in ("PU", "PD")
+            for node in net.iter_nodes():
+                if node.component.partname in ("GF", "GB"):
+                    net.is_plane = True
+                    net.name = node.component.ref
+                    continue
+                net.sheets.add(node.component.sheet)
+            net.sheets = list(sorted(net.sheets))
+            net.is_local = not net.is_plane and len(net.sheets) == 1
+            if net.is_local:
+                net.sheets[0].local_nets.append(net)
+            net.find_cname()
+            # net.ponder()

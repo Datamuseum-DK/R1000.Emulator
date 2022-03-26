@@ -141,7 +141,7 @@ class Sheet():
             comp.part.initialize(scm, comp)
         scm.write("\n{\n")
         for comp in sorted(self.components.values()):
-            comp.part.hookup(scm, comp)
+            comp.part.hookup_comp(scm, comp)
         scm.write("}\n")
 
     def produce(self):

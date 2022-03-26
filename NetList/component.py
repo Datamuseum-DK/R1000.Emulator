@@ -50,6 +50,7 @@ class Component():
         self.model = None
         self.sheet = compsheet
         self.partname = comppart
+        self.partinfo = None
         self.location = "x99"
         self.name = "X"
         self.part = None
@@ -65,6 +66,13 @@ class Component():
     def add_node(self, node):
         ''' Add a node to this component '''
         self.nodes[node.pin.name] = node
+
+    def del_node(self, node):
+        ''' Remove a node to this component '''
+        del self.nodes[node.pin.name]
+
+    def iter_nodes(self):
+        yield from list(sorted(self.nodes.values()))
 
 class ComponentSexp(Component):
 

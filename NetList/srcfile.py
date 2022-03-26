@@ -42,9 +42,22 @@ class SrcFile():
         self.filename = filename
         self.text = []
         self.includes = set()
+        self.substitute = [
+            ("\t\t|", ""),
+        ]
 
     def write(self, text):
         ''' ... '''
+        self.text.append(text)
+
+    def fmt(self, text):
+        ''' Substitute things into C-source text '''
+        if text[0] == '\n':
+            text = text[1:]
+        for find, replace in self.substitute:
+            text = text.replace(find, replace)
+        if text[-2:] == '\n\n':
+            text = text[:-1]
         self.text.append(text)
 
     def __iter__(self):

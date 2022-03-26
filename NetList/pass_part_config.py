@@ -29,18 +29,16 @@
 # SUCH DAMAGE.
 
 '''
-   Pass: Assign parts to components
-   ================================
+   Pass: Configure parts (to networks)
+   ===================================
 '''
 
-import part
+class PassPartConfig():
 
-class PassAssignPart():
-
-    ''' Pass: Assign parts to components '''
+    ''' Pass: Configure the `parts` '''
 
     def __init__(self, board):
+        self.board = board
 
-        for comp in board.iter_components():
-            if not comp.part:
-                comp.part = board.part_catalog[comp.partname]
+        for comp in self.board.iter_components():
+            comp.part.configure(board, comp) 
