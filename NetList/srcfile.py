@@ -83,6 +83,8 @@ class SrcFile():
 
     def commit(self):
         ''' ... '''
+        if not self.text:
+            return
         ident = os.path.basename(sys.argv[0])
         suff = self.filename.split(".")[-1]
         prefix, suffix = {

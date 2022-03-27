@@ -1,6 +1,6 @@
 #!/usr/local/bin/python3
 #
-# Copyright (c) 2021 Poul-Henning Kamp
+# Copyright (c) 2022 Poul-Henning Kamp
 # All rights reserved.
 #
 # Author: Poul-Henning Kamp <phk@phk.freebsd.dk>
@@ -40,9 +40,15 @@ class Nand(Part):
     ''' A generic N-input NAND component '''
 
     def __init__(self, board, inputs):
-        super().__init__("%s_NAND%d" % (board.name, inputs))
+        super().__init__('%s_NAND%d' % (board.name, inputs))
+        self.board = board
         self.inputs = inputs
-        self.scm = board.sc_mod(self.name)
+        self.scm = False
+
+    def build(self):
+        ''' Build this component (if/when used) '''
+
+        self.scm = self.board.sc_mod(self.name)
         self.scm.std_hh(self.name, self.pin_iterator())
         self.scm.std_cc(
             self.name,
@@ -52,19 +58,32 @@ class Nand(Part):
             self.doit
         )
         self.scm.commit()
-        board.extra_scms.append(self.scm)
+        self.board.extra_scms.append(self.scm)
+
+    def yield_includes(self, _comp):
+        ''' (This is the first call we get when used '''
+
+        if not self.scm:
+            self.build()
+        yield self.scm.hh.filename
 
     def pin_iterator(self):
+        ''' SC pin declarations '''
+
         for i in range(self.inputs):
             yield "sc_in <sc_logic>\tPIN_D%d;" % i
         yield "sc_out <sc_logic>\tPIN_Q;"
 
     def state(self, file):
+        ''' Extra state variable '''
+
         file.write("\tint job;\n")
         file.write("\tint out;\n")
         file.write("\tunsigned dly;\n")
 
     def init(self, file):
+        ''' Extra initialization '''
+
         file.fmt('''
 		|	state->out = -1;
 		|	state->job = 0;
@@ -84,11 +103,27 @@ class Nand(Part):
 		|''')
 
     def sensitive(self):
+        ''' sensitivity list '''
+
         for i in range(self.inputs):
             yield "PIN_D%d" % i
 
     def doit(self, file):
+        ''' The meat of the doit() function '''
+
         file.fmt('''
+		|
+		|	TRACE(
+		|	    << " j " << state->job
+		|	    << " out " << state->out
+		|''')
+
+        for i in range(self.inputs):
+            file.write("\t    << PIN_D%d\n" % i)
+
+        file.fmt('''
+		|	);
+		|
 		|	if (state->job) {
 		|		PIN_Q = AS(state->out);
 		|		state->job = false;
@@ -99,6 +134,7 @@ class Nand(Part):
         file.write("\n\tif (\n\t    ")
         file.write(" &&\n\t    ".join("IS_H(PIN_D%d)" % x for x in range(self.inputs)))
         file.fmt('''
+		|
 		|	) {
 		|		if (state->out != 0) {
 		|			state->out = 0;
@@ -129,20 +165,16 @@ class Nand(Part):
 		|	}
 		|''')
 
-    def yield_includes(self, _comp):
-        yield self.scm.hh.filename
-
     def hookup(self, file, comp):
-        next = 0
+        pno = 0
         for node in comp.iter_nodes():
             if node.pin.name == "Q":
                 file.write("\t%s.PIN_Q(%s);\n" % (comp.name, node.net.cname))
             else:
-                file.write("\t%s.PIN_D%d(%s);\n" % (comp.name, next, node.net.cname))
-                next += 1
+                file.write("\t%s.PIN_D%d(%s);\n" % (comp.name, pno, node.net.cname))
+                pno += 1
 
 class ModelNand(Part):
-
     ''' Model NAND components '''
 
     def __init__(self):
@@ -151,19 +183,14 @@ class ModelNand(Part):
     def configure(self, board, comp):
         #print("NAND", comp)
         inputs = len(comp.nodes) - 1
-        if str(comp) not in (
-        ):
-            ident = "NAND%d" % inputs
-            print("MOD", comp)
-        else:
-            ident = comp.partname + "_O"
-            print("ORIG", comp)
-        if ident not in board.part_catalog:
-            board.add_part(ident, Nand(board, inputs))
+        ident = "NAND%d" % inputs
         comp.part = board.part_catalog[ident]
 
 def register(board):
-    a = 0
+    ''' Register component model '''
+
+    for i in (1, 2, 3, 4, 13):
+        board.add_part("NAND{}".format(i), Nand(board, i))
     board.add_part("F04", ModelNand())	# Inverters are juvenile NAND gates
     board.add_part("F37", ModelNand())
     #board.add_part("F10", ModelNand())

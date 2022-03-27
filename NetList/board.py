@@ -61,6 +61,7 @@ class Board():
         self.find_board_name()
         print("Board", self.name)
         self.dstdir = self.name.capitalize() + "/" + branch
+        os.makedirs(self.dstdir, exist_ok=True)
         self.srcs = []
         self.dynamic_components = {}
         self.extra_scms = []

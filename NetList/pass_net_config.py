@@ -1,6 +1,6 @@
 #!/usr/local/bin/python3
 #
-# Copyright (c) 2021 Poul-Henning Kamp
+# Copyright (c) 2022 Poul-Henning Kamp
 # All rights reserved.
 #
 # Author: Poul-Henning Kamp <phk@phk.freebsd.dk>
