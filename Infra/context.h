@@ -40,8 +40,8 @@ struct ctx {
 	uint32_t	length;
 	uint64_t	activations;
 	uint32_t	do_trace;
-	char		kind[16];
-	char		ident[92];
+	char		kind[32];
+	char		ident[76];
 };
 
 void *CTX_Get(const char *kind, const char *ident, uint32_t length);
