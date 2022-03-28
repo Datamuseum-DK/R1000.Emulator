@@ -35,6 +35,8 @@
 
 from pin import PinSexp
 
+import util
+
 class Part():
 
     ''' A `part` is a type of `component` '''
@@ -129,3 +131,45 @@ class LibPartSexp(Part):
             node = comp.nodes[pin.name]
             if not node.net.bus:
                 self.hookup_pin(file, comp, "pin" + pin.ident, node, cmt=str(pin))
+
+class PartModel(Part):
+
+    ''' Parts with a python model '''
+
+    def assign(self, comp):
+        ''' Assigned to component '''
+
+        for node in comp.iter_nodes():
+            if node.pin.role in (
+                "input",
+                "input+no_connect",
+            ):
+                node.pin.role = "c_input"
+            elif node.pin.role in (
+                "output",
+                "output+no_connect",
+            ):
+                node.pin.role = "c_output"
+
+    def make_signature(self, comp):
+        ''' Produce a signature for this hookup '''
+
+        i = []
+        for node in comp.iter_nodes():
+            if node.net.sc_type == "bool":
+                i.append("B")
+            else:
+                i.append("L")
+        return util.signature(i)
+
+class PartFactory(Part):
+
+    ''' Produce parts on demand '''
+
+    def hookup(self, file, comp):
+        ''' Hook instance into SystemC model '''
+
+        for node in comp.iter_nodes():
+            file.write("\t%s.PIN_%s(%s);\n" % (comp.name, node.pin.name, node.net.cname))
+
+

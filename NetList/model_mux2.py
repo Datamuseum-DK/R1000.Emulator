@@ -33,145 +33,155 @@
    =======================
 '''
 
-from component import ModelComponent
 
-class ModelMux2(ModelComponent):
-    ''' Two-choice multiplexers '''
+from part import PartModel, PartFactory
 
-    def __init__(self, board, sexp):
-        super().__init__(board, sexp)
-        if self.partname == "XMUX16":
-            self.width = 16
-        else:
-            self.width = 4
-        self.inv = 0
-        self.oe = False
-        self.bus_spec = {
-            "A": [0, self.width - 1, "sc_in", True, False],
-            "B": [0, self.width - 1, "sc_in", True, False],
-            "Y": [0, self.width - 1, "sc_out", False, True],
-        }
-        if self.partname == "XMUX16":
-            print("XX", self)
-        elif self.partname == "F157":
-            self.bus_spec["Y"][3] = True
-        elif self.partname == "F158":
-            self.bus_spec["Y"][3] = True
-            self.inv = (1<<self.width) - 1
-        elif self.partname == "F258":
-            self.inv = (1<<self.width) - 1
-            self.oe = True
-        else:
-            assert self.partname == "F257"
-            self.oe = True
+class Mux2(PartFactory):
 
-    def configure(self):
-        node = self.nodes.get("INV")
-        if node and node.net.is_pd():
-            self.inv = (1<<self.width) - 1
-        node = self.nodes.get("OE")
-        if node and node.net.is_pd():
-            self.oe = False
+    ''' F15[78] multiplexors '''
 
-    def make_clsname(self):
-        super().make_clsname()
-        if not self.oe:
-            self.clsname += "Z"
-        if self.inv:
-            self.clsname += "I"
+    def __init__(self, board, invert, ident):
+        super().__init__(ident)
+        self.board = board
+        self.scm = False
+        self.invert = invert
+        self.comp = None
 
-    def hookup_model(self, file):
-        ''' ... '''
-        if self.fallback:
-            print("TTT", self.partname, self.nodes["OE"].net)
-            super().hookup(file)
-            return
-        self.hookup_bus(file, "A")
-        self.hookup_bus(file, "B")
-        self.hookup_bus(file, "Y")
-        self.hookup_pin(file, "PIN_S", self.nodes["S"])
-        if self.oe:
-            self.hookup_pin(file, "PIN_OE", self.nodes["OE"])
-        else:
-            self.hookup_pin(file, "PIN_E", self.nodes["E"])
+    def build(self):
+        ''' Build this component (if/when used) '''
 
-    def write_code_hh_signals(self, file):
-        file.write('\tsc_in <sc_logic>\tPIN_S;\n')
-        if self.oe:
-            file.write('\tsc_in <sc_logic>\tPIN_OE;\n')
-        else:
-            file.write('\tsc_in <sc_logic>\tPIN_E;\n')
+        self.scm = self.board.sc_mod(self.name)
+        self.scm.std_hh(self.name, self.pin_iterator())
+        self.scm.std_cc(
+            self.name,
+            None,
+            None,
+            self.sensitive,
+            self.doit
+        )
+        self.scm.commit()
+        self.board.extra_scms.append(self.scm)
 
-    def write_code_cc_sensitive(self, file):
-        if self.oe:
-            file.write("\n\t    << PIN_OE")
-        else:
-            file.write("\n\t    << PIN_E")
-        file.write("\n\t    << PIN_S")
-        self.write_sensitive_bus(file, "A")
-        self.write_sensitive_bus(file, "B")
+    def yield_includes(self, comp):
+        ''' (This is the first call we get when used '''
 
-    def write_code_cc(self, file):
-        self.write_code_cc_init(file)
-        file.write(self.substitute('''
-		|void
-		|SCM_MMM :: doit(void)
-		|{
-		|	uint64_t tmp = 0;
+        self.comp = comp
+        if not self.scm:
+            self.build()
+        self.comp = None
+        yield self.scm.hh.filename
+
+    def pin_iterator(self):
+        ''' SC pin declarations '''
+
+        for node in self.comp.iter_nodes():
+            if node.pin.name[0] == "Y" and node.net.sc_type == "bool":
+                yield "sc_out <bool>\t\tPIN_%s;" % node.pin.name
+            elif node.pin.name[0] == "Y":
+                yield "sc_out <sc_logic>\tPIN_%s;" % node.pin.name
+            elif node.net.sc_type == "bool":
+                yield "sc_in <bool>\t\tPIN_%s;" % node.pin.name
+            else:
+                yield "sc_in <sc_logic>\tPIN_%s;" % node.pin.name
+
+    def sensitive(self):
+        ''' sensitivity list '''
+
+        for node in self.comp.iter_nodes():
+            if node.pin.name[0] != "Y":
+                yield "PIN_%s" % node.pin.name
+
+    def doit(self, file):
+        ''' The meat of the doit() function '''
+
+        for node in self.comp.iter_nodes():
+            dst = "PIN_%s<=" % node.pin.name
+            src = "PIN_%s=>" % node.pin.name
+            if node.pin.name[0] == "Y" and node.net.sc_type == "bool":
+                file.substitute.append(
+                    (dst, "PIN_%s = tmp[%s]" % (node.pin.name, node.pin.name[1]))
+                )
+            elif node.pin.name[0] == "Y":
+                file.substitute.append(
+                    (dst, "PIN_%s = AS(tmp[%s])" % (node.pin.name, node.pin.name[1]))
+                )
+            elif node.net.sc_type == "bool":
+                file.substitute.append(
+                    (src, "PIN_%s" % node.pin.name)
+                )
+            else:
+                file.substitute.append(
+                    (src, "IS_H(PIN_%s)" % node.pin.name)
+                )
+
+        file.fmt('''
+		|	bool tmp[4];
 		|
-		|	state->ctx.activations++;
-		|
-		|'''))
-
-        if self.oe:
-            file.write(self.substitute('''
-		|	if (IS_H(PIN_OE)) {
-		|'''))
-            for i in self.write_bus_z("Y"):
-                file.write('\t\t' + i + '\n')
-            file.write(self.substitute('''
-		|		next_trigger(PIN_OE.negedge_event());
-		|		return;
-		|'''))
-
-        else:
-
-            file.write(self.substitute('''
-		|	if (IS_H(PIN_E)) {
-		|'''))
-
-            for i in self.write_bus_val("Y", "0x%xULL" % self.inv):
-                file.write('\t\t' + i + '\n')
-
-            file.write(self.substitute('''
+		|	if (PIN_E=>) {
+		|		tmp[0] = false;
+		|		tmp[1] = false;
+		|		tmp[2] = false;
+		|		tmp[3] = false;
 		|		next_trigger(PIN_E.negedge_event());
-		|'''))
-
-        file.write(self.substitute('''
-		|	} else if (IS_H(PIN_S)) {
-		|'''))
-
-        for i in self.read_bus_value("tmp", "B"):
-            file.write("\t\t" + i + "\n")
-
-        file.write(self.substitute('''
+		|	} else if (PIN_S=>) {
+		|		tmp[0] = PIN_B0=>;
+		|		tmp[1] = PIN_B1=>;
+		|		tmp[2] = PIN_B2=>;
+		|		tmp[3] = PIN_B3=>;
 		|	} else {
-		|'''))
-
-        for i in self.read_bus_value("tmp", "A"):
-            file.write("\t\t" + i + "\n")
-
-        file.write(self.substitute('''
+		|		tmp[0] = PIN_A0=>;
+		|		tmp[1] = PIN_A1=>;
+		|		tmp[2] = PIN_A2=>;
+		|		tmp[3] = PIN_A3=>;
 		|	}
 		|
-		|'''))
+		|''')
 
-        if self.inv:
-            file.write("\ttmp ^= 0x%xULL;\n\n" % self.inv)
+        if self.invert:
+            file.fmt('''
+		|
+		|	tmp[0] = !tmp[0];
+		|	tmp[1] = !tmp[1];
+		|	tmp[2] = !tmp[2];
+		|	tmp[3] = !tmp[3];
+		|
+		|''')
 
-        for i in self.write_bus_val("Y", "tmp"):
-            file.write('\t' + i + '\n')
+        file.fmt('''
+		|
+		|	TRACE (
+		|	    << " e " << PIN_E
+		|	    << " s " << PIN_S
+		|	    << " a " << PIN_A0 << PIN_A1 << PIN_A2 << PIN_A3
+		|	    << " b " << PIN_B0 << PIN_B1 << PIN_B2 << PIN_B3
+		|	    << " | " << tmp[0] << tmp[1] << tmp[2] << tmp[3]
+		|	);
+		|
+		|	PIN_Y0<=;
+		|	PIN_Y1<=;
+		|	PIN_Y2<=;
+		|	PIN_Y3<=;
+		|''')
 
-        file.write(self.substitute('''
-		|}
-		|'''))
+class ModelMux2(PartModel):
+    ''' Model quad two input multiplexers '''
+
+    def __init__(self, invert):
+        if invert:
+            super().__init__("MUX2I")
+        else:
+            super().__init__("MUX2")
+        self.invert = invert
+
+    def configure(self, board, comp):
+        sig = self.make_signature(comp)
+        ident = board.name + "_" + self.name + "_" + sig
+        if ident not in board.part_catalog:
+            board.add_part(ident, Mux2(board, self.invert, ident))
+        comp.part = board.part_catalog[ident]
+
+def register(board):
+    ''' Register component model '''
+
+    board.add_part("F157", ModelMux2(invert=False))
+    board.add_part("F158", ModelMux2(invert=True))

@@ -47,6 +47,7 @@ from component import ComponentSexp
 
 import model_nand
 import model_nor
+import model_mux2
 
 from pass_planes import PassPlanes
 from pass_assign_part import PassAssignPart
@@ -70,6 +71,7 @@ class Board():
 
         model_nand.register(self)
         model_nor.register(self)
+        model_mux2.register(self)
 
         self.chf_sheets = SrcFile(self.dstdir + "/" + self.lname + "_sheets.h")
         self.scm_board = self.sc_mod(self.lname + "_board")

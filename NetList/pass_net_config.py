@@ -88,7 +88,7 @@ class PassNetConfig():
                 "c_output",
             ):
                 continue
-            k = node.component.part.name + "::" + node.pin.sortkey[0]
+            k = self.board.name + "::" + node.component.part.name + "::" + node.pin.sortkey[0]
             i[k] = 1 + i.setdefault(k, 0)
         if len(i) == 1:
             j = list(i.keys())[0]
