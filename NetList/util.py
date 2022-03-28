@@ -50,3 +50,19 @@ def sortkey(word):
         if j.isdigit():
             key[i] = int(j)
     return key
+
+def signature(elem):
+    retval = [elem[0]]
+    i = 1
+    j = 1
+    for i in range(1, len(elem)):
+        if elem[i] == retval[-1]:
+            j += 1
+        else:
+            if j > 1:
+                retval[-1] = retval[-1] + ("%d" % j)
+            retval.append(elem[i])
+            j = 1
+    if j > 1:
+        retval[-1] = retval[-1] + ("%d" % j)
+    return "".join(retval)

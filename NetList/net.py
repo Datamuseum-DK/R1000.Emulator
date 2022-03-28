@@ -45,6 +45,8 @@ class Net():
         self.sheets = set()
         self.is_plane = None
         self.is_local = None
+        self.sc_type = "sc_logic"
+        self.cname = None
 
     def add_node(self, node):
         ''' ... '''
@@ -102,7 +104,10 @@ class Net():
         if self.bus:
             self.bus.write_decl(self, file)
         else:
-            text = "\tsc_signal_resolved " + self.bcname + ";\t"
+            if self.sc_type == "bool":
+                text = "\tsc_signal <bool> " + self.bcname + ";\t"
+            else:
+                text = "\tsc_signal_resolved " + self.bcname + ";\t"
             while len(text.expandtabs()) < 64:
                 text += "\t"
             file.write(text + "// " + self.name + "\n")
@@ -111,6 +116,8 @@ class Net():
         ''' Write a C initialization of this net '''
         if self.bus:
             self.bus.write_init(self, file)
+        elif self.sc_type == "bool":
+            file.write(",\n\t" + self.bcname + '("' + self.bcname + '", true)')
         else:
             file.write(",\n\t" + self.bcname + '("' + self.bcname + '", sc_logic_1)')
 

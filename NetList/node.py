@@ -44,7 +44,7 @@ class Node():
         self.component = component
         self.refname = component.name
         self.pin = pinspec
-        self.sortkey = (self.net, self.pin)
+        self.sortkey = (self.component, self.pin)
 
         self.component.add_node(self)
 

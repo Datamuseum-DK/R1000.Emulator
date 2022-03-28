@@ -33,8 +33,6 @@
    ================================
 '''
 
-import part
-
 class PassAssignPart():
 
     ''' Pass: Assign parts to components '''
@@ -44,3 +42,4 @@ class PassAssignPart():
         for comp in board.iter_components():
             if not comp.part:
                 comp.part = board.part_catalog[comp.partname]
+            comp.part.assign(comp)

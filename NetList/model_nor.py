@@ -29,7 +29,7 @@
 # SUCH DAMAGE.
 
 '''
-   Model the NAND components
+   Model the NOR components
    =========================
 '''
 
@@ -37,17 +37,16 @@ from part import Part
 
 import util
 
-class Nand(Part):
+class Nor(Part):
 
-    ''' A generic N-input NAND component '''
+    ''' A generic N-input NOR component '''
 
-    def __init__(self, board, inputs, ident, delay):
+    def __init__(self, board, inputs, ident):
         super().__init__(ident)
         self.board = board
         self.inputs = inputs
         self.scm = False
         self.comp = None
-        self.delay = delay
 
     def build(self):
         ''' Build this component (if/when used) '''
@@ -65,7 +64,6 @@ class Nand(Part):
         self.board.extra_scms.append(self.scm)
 
     def pin_is_bool(self, pin):
-        ''' ... '''
         return self.comp.nodes[pin].net.sc_type == "bool"
 
     def yield_includes(self, comp):
@@ -100,23 +98,10 @@ class Nand(Part):
     def init(self, file):
         ''' Extra initialization '''
 
-        file.write("\tstate->dly = %d;\n" % self.delay)
-
         file.fmt('''
 		|	state->out = -1;
 		|	state->job = 0;
-		|	if (strstr(this->name(), "IOC.ioc_54.RDNAN0A") != NULL) {
-		|		// TEST_MACRO_EVENT_SLICE.IOC @ optimized
-		|		state->dly = 10;
-		|	}
-		|	if (strstr(this->name(), "IOC.ioc_54.RDNAN0B") != NULL) {
-		|		// TEST_MACRO_EVENT_DELAY.IOC @ optimized
-		|		state->dly = 10;
-		|	}
-		|	if (strstr(this->name(), "TYP.typ_40.CKDR5A") != NULL) {
-		|		// TEST_LOOP_CNTR_OVERFLOW.TYP @ main
-		|		state->dly = 2;
-		|	}
+		|	state->dly = 0;
 		|''')
 
     def sensitive(self):
@@ -133,7 +118,6 @@ class Nand(Part):
 		|	TRACE(
 		|	    << " j " << state->job
 		|	    << " out " << state->out
-		|	    << " in "
 		|''')
 
         for i in range(self.inputs):
@@ -161,24 +145,14 @@ class Nand(Part):
             if node.pin.name == "Q":
                 continue
             if node.net.sc_type == "bool":
-                i.append("PIN_%s.read()" % node.pin.name)
+                i.append("(!PIN_%s.read())" % node.pin.name)
             else:
-                i.append("IS_H(PIN_%s.read())" % node.pin.name)
+                i.append("IS_L(PIN_%s.read())" % node.pin.name)
         file.write(" &&\n\t    ".join(i))
 
         file.fmt('''
 		|
 		|	) {
-		|		if (state->out != 0) {
-		|			state->out = 0;
-		|			if (state->dly == 0) {
-		|				QQQ=state;
-		|			} else {
-		|				state->job = true;
-		|				next_trigger(state->dly, SC_NS);
-		|			}
-		|		}
-		|	} else {
 		|		if (state->out != 1) {
 		|			state->out = 1;
 		|			if (state->dly == 0) {
@@ -187,17 +161,26 @@ class Nand(Part):
 		|				state->job = true;
 		|				next_trigger(state->dly, SC_NS);
 		|			}
+		|		}
+		|	} else {
+		|		if (state->out != 0) {
+		|			state->out = 0;
+		|			if (state->dly == 0) {
+		|				QQQ=state;
+		|			} else {
+		|				state->job = true;
+		|				next_trigger(state->dly, SC_NS);
+		|			}
 		|''')
 
-        if self.inputs > 1:
-            for node in self.comp.iter_nodes():
-                if node.pin.name == "Q":
-                    continue
-                if node.net.sc_type == "bool":
-                    file.write("\t\t} else if (!PIN_%s.read()) {\n" % node.pin.name)
-                else:
-                    file.write("\t\t} else if (IS_L(PIN_%s.read())) {\n" % node.pin.name)
-                file.write("\t\t\tnext_trigger(PIN_%s.posedge_event());\n" % node.pin.name)
+        for node in self.comp.iter_nodes():
+            if node.pin.name == "Q":
+                continue
+            if node.net.sc_type == "bool":
+                file.write("\t\t} else if (PIN_%s.read()) {\n" % node.pin.name)
+            else:
+                file.write("\t\t} else if (IS_H(PIN_%s.read())) {\n" % node.pin.name)
+            file.write("\t\t\tnext_trigger(PIN_%s.negedge_event());\n" % node.pin.name)
 
         file.fmt('''
 		|		}
@@ -213,12 +196,11 @@ class Nand(Part):
                 file.write("\t%s.PIN_D%d(%s);\n" % (comp.name, pno, node.net.cname))
                 pno += 1
 
-class ModelNand(Part):
-    ''' Model NAND components '''
+class ModelNor(Part):
+    ''' Model NOR components '''
 
-    def __init__(self, delay):
-        super().__init__("NAND")
-        self.delay = delay
+    def __init__(self):
+        super().__init__("NOR")
 
     def assign(self, comp):
         ''' Assigned to component '''
@@ -241,19 +223,12 @@ class ModelNand(Part):
                 i.append("L")
         inputs = len(comp.nodes) - 1
         sig = util.signature(i)
-        ident = board.name + "_NAND%d_" % inputs + "%d_" % self.delay + sig
+        ident = board.name + "_NOR%d_" % inputs + sig
         if ident not in board.part_catalog:
-            board.add_part(ident, Nand(board, inputs, ident, self.delay))
+            board.add_part(ident, Nor(board, inputs, ident))
         comp.part = board.part_catalog[ident]
 
 def register(board):
     ''' Register component model '''
-
-    board.add_part("F00", ModelNand(0))
-    board.add_part("F04", ModelNand(5))	# Inverters are juvenile NAND gates
-    board.add_part("F37", ModelNand(5))
-    board.add_part("F10", ModelNand(0))
-    # board.add_part("F20", ModelNand())   ### Not: OC-thing with ALU-ZERO outputs
-    board.add_part("F30", ModelNand(0))
-    board.add_part("F40", ModelNand(0))
-    board.add_part("F133", ModelNand(0))
+    board.add_part("F02", ModelNor())
+    board.add_part("F260", ModelNor())

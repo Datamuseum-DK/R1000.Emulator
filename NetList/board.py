@@ -46,6 +46,7 @@ from net import NetSexp
 from component import ComponentSexp
 
 import model_nand
+import model_nor
 
 from pass_planes import PassPlanes
 from pass_assign_part import PassAssignPart
@@ -68,6 +69,7 @@ class Board():
         self.part_catalog = {}
 
         model_nand.register(self)
+        model_nor.register(self)
 
         self.chf_sheets = SrcFile(self.dstdir + "/" + self.lname + "_sheets.h")
         self.scm_board = self.sc_mod(self.lname + "_board")
@@ -86,7 +88,7 @@ class Board():
 
         self.components = {}
         for compsexp in self.sexp.find("components.comp"):
-            comp = ComponentSexp(self, compsexp)
+            ComponentSexp(self, compsexp)
 
         self.nets = {}
         for netsexp in self.sexp.find("nets.net"):

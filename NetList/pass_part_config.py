@@ -41,4 +41,4 @@ class PassPartConfig():
         self.board = board
 
         for comp in self.board.iter_components():
-            comp.part.configure(board, comp) 
+            comp.part.configure(board, comp)

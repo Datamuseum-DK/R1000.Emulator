@@ -108,4 +108,3 @@ class LibPartSexp(Part):
             node = comp.nodes[pin.name]
             if not node.net.bus:
                 self.hookup_pin(file, comp, "pin" + pin.ident, node, cmt=str(pin))
-

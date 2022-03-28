@@ -60,6 +60,9 @@ class Part():
     def yield_includes(self, _comp):
         yield from self.includes
 
+    def assign(self, _comp):
+        ''' When assigned to component '''
+
     def instance(self, file, comp):
         file.write('\t' + self.clsname + " " + comp.name + ";\n")
 
@@ -126,4 +129,3 @@ class LibPartSexp(Part):
             node = comp.nodes[pin.name]
             if not node.net.bus:
                 self.hookup_pin(file, comp, "pin" + pin.ident, node, cmt=str(pin))
-

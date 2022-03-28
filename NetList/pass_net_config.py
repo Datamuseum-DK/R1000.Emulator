@@ -39,6 +39,7 @@ class PassNetConfig():
 
     def __init__(self, board):
         self.board = board
+        self.blame = {}
 
         for net in self.board.iter_nets():
             net.is_plane = net.name in ("PU", "PD")
@@ -46,11 +47,50 @@ class PassNetConfig():
                 if node.component.partname in ("GF", "GB"):
                     net.is_plane = True
                     net.name = node.component.ref
-                    continue
-                net.sheets.add(node.component.sheet)
+                else:
+                    net.sheets.add(node.component.sheet)
             net.sheets = list(sorted(net.sheets))
             net.is_local = not net.is_plane and len(net.sheets) == 1
             if net.is_local:
                 net.sheets[0].local_nets.append(net)
             net.find_cname()
-            # net.ponder()
+
+        self.ponder_bool()
+        for i, j in sorted(self.blame.items(), key=lambda x: -x[1]):
+            if j > 8:
+                print(i, j)
+
+    def ponder_bool(self):
+        for net in self.board.iter_nets():
+            i = {}
+            for node in net.iter_nodes():
+                i[node.pin.role] = 1 + i.setdefault(node.pin.role, 0)
+            if 'c_input' not in i or 'c_output' not in i or len(i) > 2:
+                self.assign_blame(net)
+                continue
+            if i['c_output'] > 1:
+                continue
+            print(net, '=>', "bool")
+            net.sc_type = "bool"
+
+    def assign_blame(self, net):
+        if len(net) < 2 or net.is_plane:
+            return
+        i = {}
+        for node in net.iter_nodes():
+            if node.pin.role in (
+                "tri_state",
+                "bidirectional",
+            ):
+                return
+            if node.pin.role in (
+                "c_input",
+                "c_output",
+            ):
+                continue
+            k = node.component.part.name + "::" + node.pin.sortkey[0]
+            i[k] = 1 + i.setdefault(k, 0)
+        if len(i) == 1:
+            j = list(i.keys())[0]
+            # print("BL", j, net, ",".join(x.component.name for x in net.iter_nodes()))
+            self.blame[j] = self.blame.setdefault(j, 0) + 1
