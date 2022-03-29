@@ -29,8 +29,10 @@
 # SUCH DAMAGE.
 
 '''
-   F51 flip-flops
-   ==============
+   F51 (Dual) 2-wide 3-input AND-OR-invert gate
+   ============================================
+
+   Ref: Philips IC15 1989 Mar 03
 '''
 
 
@@ -38,7 +40,7 @@ from part import PartModel, PartFactory
 
 class F51(PartFactory):
 
-    ''' F51 flip-flops '''
+    ''' F51 (Dual) 2-wide 3-input AND-OR-invert gate '''
 
     def doit(self, file):
         ''' The meat of the doit() function '''

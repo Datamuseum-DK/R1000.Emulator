@@ -29,8 +29,9 @@
 # SUCH DAMAGE.
 
 '''
-   PAxxx PROMS
-   ===========
+   4096 (512 Words by 8 bits) PROM
+   ===============================
+
 '''
 
 
@@ -38,8 +39,7 @@ from part import PartModel, PartFactory
 
 class PAxxx(PartFactory):
 
-    ''' PAxxx PROMS '''
-
+    ''' 4096 (512 Words by 8 bits) PROM '''
 
     def state(self, file):
         ''' Extra state variable '''

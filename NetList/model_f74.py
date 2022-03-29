@@ -29,8 +29,10 @@
 # SUCH DAMAGE.
 
 '''
-   F74 flip-flops
-   ==============
+   F74 (Dual) D-Type Positive Edge-Triggered Flip-Flop
+   ===================================================
+
+   Ref: Fairchild DS009469 April 1988 Revised September 2000
 '''
 
 
@@ -38,7 +40,7 @@ from part import PartModel, PartFactory
 
 class F74(PartFactory):
 
-    ''' F74 flip-flops '''
+    ''' F74 (Dual) D-Type Positive Edge-Triggered Flip-Flop '''
 
     def state(self, file):
         ''' Extra state variable '''

@@ -29,15 +29,17 @@
 # SUCH DAMAGE.
 
 '''
-   Model the F374 chips
-   =====================
+   F374 Octal D-Type Flip-Flop with 3-STATE Outputs
+   ================================================
+
+   Ref: Fairchild DS009524 May 1988 Revised September 2000
 '''
 
 from part import PartModel, PartFactory
 
 class Xreg(PartFactory):
 
-    ''' XReg(isters) '''
+    ''' F374 Octal D-Type Flip-Flop with 3-STATE Outputs '''
 
     def __init__(self, board, ident, bits, invert):
         super().__init__(board, ident)

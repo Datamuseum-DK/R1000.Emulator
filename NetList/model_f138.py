@@ -29,18 +29,18 @@
 # SUCH DAMAGE.
 
 '''
-   F153 Dual 4-Input Multiplexer
-   =============================
+   F138 1-of-8 decoder/demultiplexer
+   =================================
 
-   Ref: Fairchild DS009482 April 1988 Revised September 2000
+   Ref: Philips IC15 1991 Feb 14
 '''
 
 
 from part import PartModel, PartFactory
 
-class F153(PartFactory):
+class F138(PartFactory):
 
-    ''' F153 Dual 4-Input Multiplexer '''
+    ''' F138 1-of-8 decoder/demultiplexer '''
 
     def doit(self, file):
         ''' The meat of the doit() function '''
@@ -48,48 +48,33 @@ class F153(PartFactory):
         super().doit(file)
 
         file.fmt('''
-		|	bool s[2];
-		|	uint tmp = 0;
+		|	unsigned adr = 0;
 		|
-		|	if (PIN_S0=>) tmp |= 2;
-		|	if (PIN_S1=>) tmp |= 1;
-		|
-		|	switch (tmp) {
-		|	case 0:
-		|		s[0] = PIN_A0=>;
-		|		s[1] = PIN_A1=>;
-		|		break;
-		|	case 1:
-		|		s[0] = PIN_B0=>;
-		|		s[1] = PIN_B1=>;
-		|		break;
-		|	case 2:
-		|		s[0] = PIN_C0=>;
-		|		s[1] = PIN_C1=>;
-		|		break;
-		|	case 3:
-		|		s[0] = PIN_D0=>;
-		|		s[1] = PIN_D1=>;
-		|		break;
-		|	}
-		|	if (PIN_E0=>)
-		|		s[0] = false;
-		|	if (PIN_E1=>)
-		|		s[1] = false;
+		|	if (PIN_S2=>) adr |= 1;
+		|	if (PIN_S1=>) adr |= 2;
+		|	if (PIN_S0=>) adr |= 4;
+		|	if (!PIN_D0=>) adr |= 8;
+		|	if (PIN_D1=>) adr |= 8;
+		|	if (PIN_D2=>) adr |= 8;
 		|	TRACE(
-		|	    << " a " << PIN_A0? << PIN_A1?
-		|	    << " b " << PIN_B0? << PIN_B1?
-		|	    << " c " << PIN_C0? << PIN_C1?
-		|	    << " d " << PIN_D0? << PIN_D1?
-		|	    << " e " << PIN_E0? << PIN_E1?
-		|	    << " s " << PIN_S0? << PIN_S1?
-		|	    << " | " << s[0] << s[1]
+		|	    << " s "
+		|	    << PIN_S0? << PIN_S1? << PIN_S2?
+		|	    << " e "
+		|	    << PIN_D0? << PIN_D1? << PIN_D2?
+		|	    << " | "
+		|	    << std::hex << adr
 		|	);
-		|	PIN_Y0<=(s[0]);
-		|	PIN_Y1<=(s[1]);
+		|	PIN_Y7_<=(adr != 7);
+		|	PIN_Y6_<=(adr != 6);
+		|	PIN_Y5_<=(adr != 5);
+		|	PIN_Y4_<=(adr != 4);
+		|	PIN_Y3_<=(adr != 3);
+		|	PIN_Y2_<=(adr != 2);
+		|	PIN_Y1_<=(adr != 1);
+		|	PIN_Y0_<=(adr != 0);
 		|''')
 
 def register(board):
     ''' Register component model '''
 
-    board.add_part("F153", PartModel("F153", F153))
+    board.add_part("F138", PartModel("F138", F138))

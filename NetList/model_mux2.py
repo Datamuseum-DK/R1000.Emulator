@@ -31,6 +31,10 @@
 '''
    Two-choice multiplexers
    =======================
+
+   F157 Quad 2-input data selector/multiplexer, non-inverting
+   F158 Quad 2-input data selector/multiplexer, inverting
+   Ref: Philips IC15 1996 Mar 12
 '''
 
 
@@ -38,7 +42,7 @@ from part import PartModel, PartFactory
 
 class Mux2(PartFactory):
 
-    ''' F15[78] multiplexors '''
+    ''' Two-choice multiplexers '''
 
     def __init__(self, board, ident, invert):
         super().__init__(board, ident)

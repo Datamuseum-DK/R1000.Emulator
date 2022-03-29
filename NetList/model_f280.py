@@ -29,18 +29,18 @@
 # SUCH DAMAGE.
 
 '''
-   F153 Dual 4-Input Multiplexer
-   =============================
+   F280 9-Bit Parity Generator Checker
+   ===================================
 
-   Ref: Fairchild DS009482 April 1988 Revised September 2000
+   Ref: Fairchild DS009512 April 1988 Revised September 2000
 '''
 
 
 from part import PartModel, PartFactory
 
-class F153(PartFactory):
+class F280(PartFactory):
 
-    ''' F153 Dual 4-Input Multiplexer '''
+    ''' F280 9-Bit Parity Generator Checker '''
 
     def doit(self, file):
         ''' The meat of the doit() function '''
@@ -48,48 +48,36 @@ class F153(PartFactory):
         super().doit(file)
 
         file.fmt('''
-		|	bool s[2];
-		|	uint tmp = 0;
 		|
-		|	if (PIN_S0=>) tmp |= 2;
-		|	if (PIN_S1=>) tmp |= 1;
+		|	bool s = PIN_I0=>
+		|	    ^ PIN_I1=>
+		|	    ^ PIN_I2=>
+		|	    ^ PIN_I3=>
+		|	    ^ PIN_I4=>
+		|	    ^ PIN_I5=>
+		|	    ^ PIN_I6=>
+		|	    ^ PIN_I7=>
+		|	    ^ PIN_I8=>;
 		|
-		|	switch (tmp) {
-		|	case 0:
-		|		s[0] = PIN_A0=>;
-		|		s[1] = PIN_A1=>;
-		|		break;
-		|	case 1:
-		|		s[0] = PIN_B0=>;
-		|		s[1] = PIN_B1=>;
-		|		break;
-		|	case 2:
-		|		s[0] = PIN_C0=>;
-		|		s[1] = PIN_C1=>;
-		|		break;
-		|	case 3:
-		|		s[0] = PIN_D0=>;
-		|		s[1] = PIN_D1=>;
-		|		break;
-		|	}
-		|	if (PIN_E0=>)
-		|		s[0] = false;
-		|	if (PIN_E1=>)
-		|		s[1] = false;
 		|	TRACE(
-		|	    << " a " << PIN_A0? << PIN_A1?
-		|	    << " b " << PIN_B0? << PIN_B1?
-		|	    << " c " << PIN_C0? << PIN_C1?
-		|	    << " d " << PIN_D0? << PIN_D1?
-		|	    << " e " << PIN_E0? << PIN_E1?
-		|	    << " s " << PIN_S0? << PIN_S1?
-		|	    << " | " << s[0] << s[1]
+		|	    << PIN_I0?
+		|	    << PIN_I1?
+		|	    << PIN_I2?
+		|	    << PIN_I3?
+		|	    << PIN_I4?
+		|	    << PIN_I5?
+		|	    << PIN_I6?
+		|	    << PIN_I7?
+		|	    << PIN_I8?
+		|	    << " odd "
+		|	    << s
 		|	);
-		|	PIN_Y0<=(s[0]);
-		|	PIN_Y1<=(s[1]);
+		|
+		|	PIN_PEV<=(!s);
+		|	PIN_POD<=(s);
 		|''')
 
 def register(board):
     ''' Register component model '''
 
-    board.add_part("F153", PartModel("F153", F153))
+    board.add_part("F280", PartModel("F280", F280))

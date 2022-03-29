@@ -50,7 +50,9 @@ import model_nor
 import model_mux2
 import model_f51
 import model_f74
+import model_f138
 import model_f153
+import model_f280
 import model_f521
 import model_paxxx
 import model_xreg
@@ -81,10 +83,11 @@ class Board():
             model_mux2.register(self)
             model_f51.register(self)
             model_f74.register(self)
+            model_f138.register(self)
             model_f153.register(self)
+            model_f280.register(self)
             model_f521.register(self)
             model_paxxx.register(self)
-        if True:
             model_xreg.register(self)
 
         self.chf_sheets = SrcFile(self.dstdir + "/" + self.lname + "_sheets.h")

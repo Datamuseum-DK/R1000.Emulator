@@ -29,8 +29,10 @@
 # SUCH DAMAGE.
 
 '''
-   F521 8 bit comparator
-   =====================
+   F521 8-Bit Identity Comparator
+   ==============================
+
+   Ref: Fairchild DS009545 April 1988 Revised October 2000
 '''
 
 
@@ -38,7 +40,7 @@ from part import PartModel, PartFactory
 
 class F521(PartFactory):
 
-    ''' F521 8 bit comparator '''
+    ''' F521 8-Bit Identity Comparator '''
 
     def doit(self, file):
         ''' The meat of the doit() function '''
