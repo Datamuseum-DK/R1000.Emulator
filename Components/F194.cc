@@ -70,6 +70,7 @@ SCM_F194 :: doit(void)
 			nxt <<= 1;
 			nxt &= 0xf;
 			if (IS_H(PIN_LSI)) nxt |= (1<<0);
+			break;
 		case 0:
 			next_trigger(
 			    PIN_CLR.negedge_event() |
