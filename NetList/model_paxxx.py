@@ -29,113 +29,136 @@
 # SUCH DAMAGE.
 
 '''
-   Model the PAxxx chips
-   =====================
+   PAxxx PROMS
+   ===========
 '''
 
-from component import ModelComponent
 
-class ModelPAxxx(ModelComponent):
-    ''' ... '''
+from part import PartModel, PartFactory
 
-    bus_spec = {
-        "A": (0, 8, "sc_in", True, False),
-        "Y": (0, 7, "sc_out", False, True),
-    }
+class PAxxx(PartFactory):
 
-    def is_bus_ok(self, bus):
-        retval = super().is_bus_ok(bus)
-        if retval and self.nodes["OE"].net.is_pd():
-            retval.numeric = True
-        return retval
+    ''' PAxxx PROMS '''
 
-    def make_clsname(self):
-        super().make_clsname()
-        if not self.nodes["OE"].net.is_pd():
-            self.clsname += "Z"
 
-    def hookup_model(self, file):
-        ''' ... '''
-        self.hookup_bus(file, "A")
-        self.hookup_bus(file, "Y")
-        if not self.nodes["OE"].net.is_pd():
-            self.hookup_pin(file, "PIN_OE_", self.nodes["OE"])
+    def state(self, file):
+        ''' Extra state variable '''
 
-    def write_code_hh_signals(self, file):
-        if not self.nodes["OE"].net.is_pd():
-            file.write('\tsc_in <sc_logic>\tPIN_OE_;\n')
+        file.write("\tuint8_t prom[512];\n")
 
-    def write_code_hh_extra_private(self, file):
-        file.write('\tuint8_t prom[512];\n')
+    def init(self, file):
+        ''' Extra initialization '''
 
-    def write_code_cc_sensitive(self, file):
-        if not self.nodes["OE"].net.is_pd():
-            file.write("\n\t    << PIN_OE_")
-        self.write_sensitive_bus(file, "A")
+        file.fmt('''
+		|	load_programmable(this->name(), state->prom, sizeof state->prom, arg);
+		''')
 
-    def write_code_cc_init_extra(self, file):
-        file.write('\tload_programmable(this->name(), prom, sizeof prom, arg);\n')
+    def doit(self, file):
+        ''' The meat of the doit() function '''
 
-    def write_code_cc(self, file):
-        self.write_code_cc_init(file)
+        super().doit(file)
 
-        file.write(self.substitute('''
-		|void
-		|SCM_MMM :: doit(void)
-		|{
-		|	state->ctx.activations++;
+        file.fmt('''
+		|	unsigned adr = 0;
 		|
+		|	if (PIN_A8=>) adr |= 1 << 0;
+		|	if (PIN_A7=>) adr |= 1 << 1;
+		|	if (PIN_A6=>) adr |= 1 << 2;
+		|	if (PIN_A5=>) adr |= 1 << 3;
+		|	if (PIN_A4=>) adr |= 1 << 4;
+		|	if (PIN_A3=>) adr |= 1 << 5;
+		|	if (PIN_A2=>) adr |= 1 << 6;
+		|	if (PIN_A1=>) adr |= 1 << 7;
+		|	if (PIN_A0=>) adr |= 1 << 8;
+		|	unsigned data = state->prom[adr];
 		|	TRACE(
-		|'''))
+		|''')
 
-        if not self.nodes["OE"].net.is_pd():
-            file.write(self.substitute('''
-		|	    << " e " << PIN_OE_
-		|'''))
+        if 'OE' in self.comp.nodes:
+            file.fmt('''
+		|	    << " oe_ " << PIN_OE=>
+		|''')
 
-        file.write(self.substitute('''
+        file.fmt('''
 		|	    << " a "
-		|'''))
-
-        for sig in self.iter_signals("A"):
-            file.write("\t    << %s\n" % sig)
-
-        file.write(self.substitute('''
+		|	    << PIN_A0=>
+		|	    << PIN_A1=>
+		|	    << PIN_A2=>
+		|	    << PIN_A3=>
+		|	    << PIN_A4=>
+		|	    << PIN_A5=>
+		|	    << PIN_A6=>
+		|	    << PIN_A7=>
+		|	    << PIN_A8=>
+		|	    << " d "
+		|	    << AS(data & 0x80)
+		|	    << AS(data & 0x40)
+		|	    << AS(data & 0x20)
+		|	    << AS(data & 0x10)
+		|	    << AS(data & 0x08)
+		|	    << AS(data & 0x04)
+		|	    << AS(data & 0x02)
+		|	    << AS(data & 0x01)
 		|	);
-		|
-		|'''))
-        if not self.nodes["OE"].net.is_pd():
-            file.write(self.substitute('''
-		|	if (IS_H(PIN_OE_)) {
-		|'''))
+		|''')
 
-            for i in self.write_bus_z("Y"):
-                file.write('\t\t' + i + '\n')
+        if 'OE' not in self.comp.nodes:
 
-            file.write(self.substitute('''
-		|		next_trigger(PIN_OE_.negedge_event());
-		|		return;
+            file.fmt('''
+		|	PIN_Y0<=(data & 0x80);
+		|	PIN_Y1<=(data & 0x40);
+		|	PIN_Y2<=(data & 0x20);
+		|	PIN_Y3<=(data & 0x10);
+		|	PIN_Y4<=(data & 0x08);
+		|	PIN_Y5<=(data & 0x04);
+		|	PIN_Y6<=(data & 0x02);
+		|	PIN_Y7<=(data & 0x01);
+		|''')
+
+        else:
+
+            file.fmt('''
+		|	if (!PIN_OE=>) {
+		|		PIN_Y0<=(data & 0x80);
+		|		PIN_Y1<=(data & 0x40);
+		|		PIN_Y2<=(data & 0x20);
+		|		PIN_Y3<=(data & 0x10);
+		|		PIN_Y4<=(data & 0x08);
+		|		PIN_Y5<=(data & 0x04);
+		|		PIN_Y6<=(data & 0x02);
+		|		PIN_Y7<=(data & 0x01);
+		|	} else {
+		|		PIN_Y0 = sc_logic_Z;
+		|		PIN_Y1 = sc_logic_Z;
+		|		PIN_Y2 = sc_logic_Z;
+		|		PIN_Y3 = sc_logic_Z;
+		|		PIN_Y4 = sc_logic_Z;
+		|		PIN_Y5 = sc_logic_Z;
+		|		PIN_Y6 = sc_logic_Z;
+		|		PIN_Y7 = sc_logic_Z;
 		|	}
-		|'''))
+		|''')
 
-        file.write(self.substitute('''
-		|
-		|	uint64_t a_val = 0;
-		|
-		|'''))
+class ModelPAxxx(PartModel):
+    ''' PAxxx Rom '''
 
-        for i in self.read_bus_value("a_val", "A"):
-            file.write("\t" + i + "\n")
+    def assign(self, comp):
+        if comp.nodes["OE"].net.is_pd():
+            for node in comp.iter_nodes():
+                if node.pin.name[0] == "Y":
+                    node.pin.role = "c_output"
+        super().assign(comp)
 
-        file.write(self.substitute('''
-		|
-		|	uint8_t data = prom[a_val];
-		|
-		|'''))
+    def configure(self, board, comp):
+        if comp.nodes["OE"].net.is_pd():
+            del comp.nodes["OE"]
+        sig = self.make_signature(comp)
+        ident = board.name + "_" + self.name + "_" + sig
+        if ident not in board.part_catalog:
+            board.add_part(ident, PAxxx(board, ident))
+        comp.part = board.part_catalog[ident]
 
-        for i in self.write_bus_val("Y", "data"):
-            file.write('\t' + i + '\n')
+def register(board):
+    ''' Register component model '''
 
-        file.write(self.substitute('''
-		|}
-		|'''))
+    board.add_part("PAxxx", ModelPAxxx("PAXXX"))

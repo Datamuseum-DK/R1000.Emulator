@@ -136,6 +136,10 @@ class PartModel(Part):
 
     ''' Parts with a python model '''
 
+    def __init__(self, partname, factory = None):
+        super().__init__(partname)
+        self.factory = factory
+
     def assign(self, comp):
         ''' Assigned to component '''
 
@@ -156,20 +160,146 @@ class PartModel(Part):
 
         i = []
         for node in comp.iter_nodes():
-            if node.net.sc_type == "bool":
+            if node.net.is_pu():
+                i.append("U")
+            elif node.net.is_pd():
+                i.append("D")
+            elif node.net.sc_type == "bool":
                 i.append("B")
             else:
                 i.append("L")
         return util.signature(i)
 
+    def configure(self, board, comp):
+        sig = self.make_signature(comp)
+        ident = board.name + "_" + self.name + "_" + sig
+        if ident not in board.part_catalog:
+            board.add_part(ident, self.factory(board, ident))
+        comp.part = board.part_catalog[ident]
+
 class PartFactory(Part):
 
     ''' Produce parts on demand '''
+
+    def __init__(self, board, ident):
+        super().__init__(ident)
+        self.board = board
+        self.scm = False
+        self.comp = None
+
+    def yield_includes(self, comp):
+        ''' (This is the first call we get when used '''
+
+        self.comp = comp
+        if not self.scm:
+            self.build()
+        self.comp = None
+        yield self.scm.hh.filename
+
+    def build(self):
+        ''' Build this component (if/when used) '''
+
+        self.scm = self.board.sc_mod(self.name)
+        self.scm.std_hh(self.name, self.pin_iterator())
+        self.scm.std_cc(
+            self.name,
+            self.state,
+            self.init,
+            self.sensitive,
+            self.doit
+        )
+        self.scm.commit()
+        self.board.extra_scms.append(self.scm)
+
+    def state(self, _file):
+        ''' Extra state variable '''
+        return
+
+    def init(self, _file):
+        ''' Extra initialization '''
+        return
+
+    def sensitive(self):
+        ''' sensitivity list '''
+
+        for node in self.comp.iter_nodes():
+            if node.net.is_pu():
+                continue
+            if node.net.is_pd():
+                continue
+            if node.pin.role == "c_input":
+                yield "PIN_%s" % node.pin.name
+
+    def doit(self, file):
+        ''' The meat of the doit() function '''
+
+        for node in self.comp.iter_nodes():
+            dst = "PIN_%s<=" % node.pin.name
+            src = "PIN_%s=>" % node.pin.name
+            trc = "PIN_%s?" % node.pin.name
+            if node.pin.role == "c_output" and node.net.sc_type == "bool":
+                file.substitute.append(
+                    (dst, "PIN_%s = " % (node.pin.name,))
+                )
+            elif node.pin.role == "c_output" or "tri_state" in node.pin.role:
+                file.substitute.append(
+                    (dst, "PIN_%s = AS" % (node.pin.name,))
+                )
+            elif node.net.is_pd():
+                file.substitute.append(
+                    (src, "false"),
+                )
+                file.substitute.append(
+                    (trc, '"v"'),
+                )
+            elif node.net.is_pu():
+                file.substitute.append(
+                    (src, "true"),
+                )
+                file.substitute.append(
+                    (trc, '"^"'),
+                )
+            elif node.net.sc_type == "bool":
+                file.substitute.append(
+                    (src, "PIN_%s" % node.pin.name)
+                )
+                file.substitute.append(
+                    (trc, "PIN_%s" % node.pin.name)
+                )
+            else:
+                file.substitute.append(
+                    (src, "IS_H(PIN_%s)" % node.pin.name)
+                )
+                file.substitute.append(
+                    (trc, "PIN_%s" % node.pin.name)
+                )
+
+    def pin_iterator(self):
+        ''' SC pin declarations '''
+
+        for node in self.comp.iter_nodes():
+            if node.pin.role == "c_output" and node.net.sc_type == "bool":
+                yield "sc_out <bool>\t\tPIN_%s;" % node.pin.name
+            elif node.pin.role == "c_output":
+                yield "sc_out <sc_logic>\tPIN_%s;" % node.pin.name
+            elif node.net.is_pu():
+                continue
+            elif node.net.is_pd():
+                continue
+            elif node.net.sc_type == "bool":
+                yield "sc_in <bool>\t\tPIN_%s;" % node.pin.name
+            elif 'tri_state' in node.pin.role:
+                yield "sc_out <sc_logic>\tPIN_%s;" % node.pin.name
+            else:
+                yield "sc_in <sc_logic>\tPIN_%s;" % node.pin.name + "\t// " + str(node.pin.role)
+
 
     def hookup(self, file, comp):
         ''' Hook instance into SystemC model '''
 
         for node in comp.iter_nodes():
+            if node.net.is_pu():
+                continue
+            if node.net.is_pd():
+                continue
             file.write("\t%s.PIN_%s(%s);\n" % (comp.name, node.pin.name, node.net.cname))
-
-

@@ -29,16 +29,16 @@
 # SUCH DAMAGE.
 
 '''
-   F521 8 bit comparator
-   =====================
+   F51 flip-flops
+   ==============
 '''
 
 
 from part import PartModel, PartFactory
 
-class F521(PartFactory):
+class F51(PartFactory):
 
-    ''' F521 8 bit comparator '''
+    ''' F51 flip-flops '''
 
     def doit(self, file):
         ''' The meat of the doit() function '''
@@ -46,29 +46,21 @@ class F521(PartFactory):
         super().doit(file)
 
         file.fmt('''
-		|	bool s = PIN_E=> ||
-		|	    PIN_A0=> != PIN_B0=> ||
-		|	    PIN_A1=> != PIN_B1=> ||
-		|	    PIN_A2=> != PIN_B2=> ||
-		|	    PIN_A3=> != PIN_B3=> ||
-		|	    PIN_A4=> != PIN_B4=> ||
-		|	    PIN_A5=> != PIN_B5=> ||
-		|	    PIN_A6=> != PIN_B6=> ||
-		|	    PIN_A7=> != PIN_B7=>;
+		|	bool s = !(
+		|	    (PIN_A1=> && PIN_A2=> && PIN_A3=>)
+		|	    ||
+		|	    (PIN_B1=> && PIN_B2=> && PIN_B3=>)
+		|	);
 		|	TRACE(
-		|	    << " Ia=b " << PIN_E?
-		|	    << " a " << PIN_A0? << PIN_A1? << PIN_A2? << PIN_A3?
-		|		<< PIN_A4? << PIN_A5? << PIN_A6? << PIN_A7?
-		|
-		|	    << " b " << PIN_B0? << PIN_B1? << PIN_B2? << PIN_B3?
-		|		<< PIN_B4? << PIN_B5? << PIN_B6? << PIN_B7?
-		|	    << " = "
+		|	    << " a " << PIN_A1? << PIN_A2? << PIN_A3?
+		|	    << " b " << PIN_B1? << PIN_B2? << PIN_B3?
+		|	    << " | "
 		|	    << s
 		|	);
-		|	PIN_AeqB<=(s);
+		|	PIN_Q<=(s);
 		|''')
 
 def register(board):
     ''' Register component model '''
 
-    board.add_part("F521", PartModel("F521", F521))
+    board.add_part("F51", PartModel("F51", F51))

@@ -40,79 +40,14 @@ class Mux2(PartFactory):
 
     ''' F15[78] multiplexors '''
 
-    def __init__(self, board, invert, ident):
-        super().__init__(ident)
-        self.board = board
-        self.scm = False
+    def __init__(self, board, ident, invert):
+        super().__init__(board, ident)
         self.invert = invert
-        self.comp = None
-
-    def build(self):
-        ''' Build this component (if/when used) '''
-
-        self.scm = self.board.sc_mod(self.name)
-        self.scm.std_hh(self.name, self.pin_iterator())
-        self.scm.std_cc(
-            self.name,
-            None,
-            None,
-            self.sensitive,
-            self.doit
-        )
-        self.scm.commit()
-        self.board.extra_scms.append(self.scm)
-
-    def yield_includes(self, comp):
-        ''' (This is the first call we get when used '''
-
-        self.comp = comp
-        if not self.scm:
-            self.build()
-        self.comp = None
-        yield self.scm.hh.filename
-
-    def pin_iterator(self):
-        ''' SC pin declarations '''
-
-        for node in self.comp.iter_nodes():
-            if node.pin.name[0] == "Y" and node.net.sc_type == "bool":
-                yield "sc_out <bool>\t\tPIN_%s;" % node.pin.name
-            elif node.pin.name[0] == "Y":
-                yield "sc_out <sc_logic>\tPIN_%s;" % node.pin.name
-            elif node.net.sc_type == "bool":
-                yield "sc_in <bool>\t\tPIN_%s;" % node.pin.name
-            else:
-                yield "sc_in <sc_logic>\tPIN_%s;" % node.pin.name
-
-    def sensitive(self):
-        ''' sensitivity list '''
-
-        for node in self.comp.iter_nodes():
-            if node.pin.name[0] != "Y":
-                yield "PIN_%s" % node.pin.name
 
     def doit(self, file):
         ''' The meat of the doit() function '''
 
-        for node in self.comp.iter_nodes():
-            dst = "PIN_%s<=" % node.pin.name
-            src = "PIN_%s=>" % node.pin.name
-            if node.pin.name[0] == "Y" and node.net.sc_type == "bool":
-                file.substitute.append(
-                    (dst, "PIN_%s = tmp[%s]" % (node.pin.name, node.pin.name[1]))
-                )
-            elif node.pin.name[0] == "Y":
-                file.substitute.append(
-                    (dst, "PIN_%s = AS(tmp[%s])" % (node.pin.name, node.pin.name[1]))
-                )
-            elif node.net.sc_type == "bool":
-                file.substitute.append(
-                    (src, "PIN_%s" % node.pin.name)
-                )
-            else:
-                file.substitute.append(
-                    (src, "IS_H(PIN_%s)" % node.pin.name)
-                )
+        super().doit(file)
 
         file.fmt('''
 		|	bool tmp[4];
@@ -122,7 +57,7 @@ class Mux2(PartFactory):
 		|		tmp[1] = false;
 		|		tmp[2] = false;
 		|		tmp[3] = false;
-		|		next_trigger(PIN_E.negedge_event());
+		|		// next_trigger(PIN_E.negedge_event());
 		|	} else if (PIN_S=>) {
 		|		tmp[0] = PIN_B0=>;
 		|		tmp[1] = PIN_B1=>;
@@ -150,17 +85,17 @@ class Mux2(PartFactory):
         file.fmt('''
 		|
 		|	TRACE (
-		|	    << " e " << PIN_E
-		|	    << " s " << PIN_S
-		|	    << " a " << PIN_A0 << PIN_A1 << PIN_A2 << PIN_A3
-		|	    << " b " << PIN_B0 << PIN_B1 << PIN_B2 << PIN_B3
+		|	    << " e " << PIN_E=>
+		|	    << " s " << PIN_S=>
+		|	    << " a " << PIN_A0=> << PIN_A1=> << PIN_A2=> << PIN_A3=>
+		|	    << " b " << PIN_B0=> << PIN_B1=> << PIN_B2=> << PIN_B3=>
 		|	    << " | " << tmp[0] << tmp[1] << tmp[2] << tmp[3]
 		|	);
 		|
-		|	PIN_Y0<=;
-		|	PIN_Y1<=;
-		|	PIN_Y2<=;
-		|	PIN_Y3<=;
+		|	PIN_Y0<=(tmp[0]);
+		|	PIN_Y1<=(tmp[1]);
+		|	PIN_Y2<=(tmp[2]);
+		|	PIN_Y3<=(tmp[3]);
 		|''')
 
 class ModelMux2(PartModel):
@@ -177,7 +112,7 @@ class ModelMux2(PartModel):
         sig = self.make_signature(comp)
         ident = board.name + "_" + self.name + "_" + sig
         if ident not in board.part_catalog:
-            board.add_part(ident, Mux2(board, self.invert, ident))
+            board.add_part(ident, Mux2(board, ident, self.invert))
         comp.part = board.part_catalog[ident]
 
 def register(board):

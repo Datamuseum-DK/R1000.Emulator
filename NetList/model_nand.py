@@ -33,49 +33,21 @@
    =========================
 '''
 
-from part import Part
+from part import Part, PartFactory
 
 import util
 
-class Nand(Part):
+class Nand(PartFactory):
 
     ''' A generic N-input NAND component '''
 
-    def __init__(self, board, inputs, ident, delay):
-        super().__init__(ident)
+    def __init__(self, board, ident, inputs, delay):
+        super().__init__(board, ident)
         self.board = board
         self.inputs = inputs
         self.scm = False
         self.comp = None
         self.delay = delay
-
-    def build(self):
-        ''' Build this component (if/when used) '''
-
-        self.scm = self.board.sc_mod(self.name)
-        self.scm.std_hh(self.name, self.pin_iterator())
-        self.scm.std_cc(
-            self.name,
-            self.state,
-            self.init,
-            self.sensitive,
-            self.doit
-        )
-        self.scm.commit()
-        self.board.extra_scms.append(self.scm)
-
-    def pin_is_bool(self, pin):
-        ''' ... '''
-        return self.comp.nodes[pin].net.sc_type == "bool"
-
-    def yield_includes(self, comp):
-        ''' (This is the first call we get when used '''
-
-        self.comp = comp
-        if not self.scm:
-            self.build()
-        self.comp = None
-        yield self.scm.hh.filename
 
     def pin_iterator(self):
         ''' SC pin declarations '''
@@ -128,6 +100,8 @@ class Nand(Part):
     def doit(self, file):
         ''' The meat of the doit() function '''
 
+        super().doit(file)
+
         file.fmt('''
 		|
 		|	TRACE(
@@ -139,16 +113,11 @@ class Nand(Part):
         for i in range(self.inputs):
             file.write("\t    << PIN_D%d\n" % i)
 
-        if self.pin_is_bool("Q"):
-            file.substitute.append(("QQQ=state", "PIN_Q.write(state->out)"))
-        else:
-            file.substitute.append(("QQQ=state", "PIN_Q.write(AS(state->out))"))
-
         file.fmt('''
 		|	);
 		|
 		|	if (state->job) {
-		|		QQQ=state;
+		|		PIN_Q<=(state->out);
 		|		state->job = false;
 		|	}
 		|
@@ -172,7 +141,7 @@ class Nand(Part):
 		|		if (state->out != 0) {
 		|			state->out = 0;
 		|			if (state->dly == 0) {
-		|				QQQ=state;
+		|				PIN_Q<=(state->out);
 		|			} else {
 		|				state->job = true;
 		|				next_trigger(state->dly, SC_NS);
@@ -182,7 +151,7 @@ class Nand(Part):
 		|		if (state->out != 1) {
 		|			state->out = 1;
 		|			if (state->dly == 0) {
-		|				QQQ=state;
+		|				PIN_Q<=(state->out);
 		|			} else {
 		|				state->job = true;
 		|				next_trigger(state->dly, SC_NS);
@@ -195,9 +164,10 @@ class Nand(Part):
                     continue
                 if node.net.sc_type == "bool":
                     file.write("\t\t} else if (!PIN_%s.read()) {\n" % node.pin.name)
-                else:
-                    file.write("\t\t} else if (IS_L(PIN_%s.read())) {\n" % node.pin.name)
-                file.write("\t\t\tnext_trigger(PIN_%s.posedge_event());\n" % node.pin.name)
+                    file.write("\t\t\tnext_trigger(PIN_%s.posedge_event());\n" % node.pin.name)
+                elif self.name[-3:] != "_OC":
+                    file.write("\t\t} else if (PIN_%s.read() != sc_logic_1) {\n" % node.pin.name)
+                    file.write("\t\t\tnext_trigger(PIN_%s.posedge_event());\n" % node.pin.name)
 
         file.fmt('''
 		|		}
@@ -231,7 +201,10 @@ class ModelNand(Part):
     def configure(self, board, comp):
         i = []
         j = 0
+        alu_zero = False
         for node in comp.iter_nodes():
+            if "ALU.ZERO" in node.net.name:
+                alu_zero = True
             if node.pin.name != "Q":
                 node.pin.name = "D%d" % j
                 j += 1
@@ -242,8 +215,10 @@ class ModelNand(Part):
         inputs = len(comp.nodes) - 1
         sig = util.signature(i)
         ident = board.name + "_NAND%d_" % inputs + "%d_" % self.delay + sig
+        if alu_zero:
+            ident += "_OC"
         if ident not in board.part_catalog:
-            board.add_part(ident, Nand(board, inputs, ident, self.delay))
+            board.add_part(ident, Nand(board, ident, inputs, self.delay))
         comp.part = board.part_catalog[ident]
 
 def register(board):
@@ -253,7 +228,7 @@ def register(board):
     board.add_part("F04", ModelNand(5))	# Inverters are juvenile NAND gates
     board.add_part("F37", ModelNand(5))
     board.add_part("F10", ModelNand(0))
-    # board.add_part("F20", ModelNand())   ### Not: OC-thing with ALU-ZERO outputs
+    board.add_part("F20", ModelNand(0))   ### Not: OC-thing with ALU-ZERO outputs
     board.add_part("F30", ModelNand(0))
     board.add_part("F40", ModelNand(0))
     board.add_part("F133", ModelNand(0))

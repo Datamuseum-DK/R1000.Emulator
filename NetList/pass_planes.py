@@ -48,4 +48,3 @@ class PassPlanes():
                 comp.ref = comp.ref[:2] + "%03d" % int(comp.ref[2:], 10)
                 comp.ref = transit.do_transit(board.name, comp.ref)
                 comp.name = comp.ref
-

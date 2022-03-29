@@ -33,47 +33,17 @@
    =========================
 '''
 
-from part import Part
+from part import Part, PartFactory
 
 import util
 
-class Nor(Part):
+class Nor(PartFactory):
 
     ''' A generic N-input NOR component '''
 
-    def __init__(self, board, inputs, ident):
-        super().__init__(ident)
-        self.board = board
+    def __init__(self, board, ident, inputs):
+        super().__init__(board, ident)
         self.inputs = inputs
-        self.scm = False
-        self.comp = None
-
-    def build(self):
-        ''' Build this component (if/when used) '''
-
-        self.scm = self.board.sc_mod(self.name)
-        self.scm.std_hh(self.name, self.pin_iterator())
-        self.scm.std_cc(
-            self.name,
-            self.state,
-            self.init,
-            self.sensitive,
-            self.doit
-        )
-        self.scm.commit()
-        self.board.extra_scms.append(self.scm)
-
-    def pin_is_bool(self, pin):
-        return self.comp.nodes[pin].net.sc_type == "bool"
-
-    def yield_includes(self, comp):
-        ''' (This is the first call we get when used '''
-
-        self.comp = comp
-        if not self.scm:
-            self.build()
-        self.comp = None
-        yield self.scm.hh.filename
 
     def pin_iterator(self):
         ''' SC pin declarations '''
@@ -113,6 +83,8 @@ class Nor(Part):
     def doit(self, file):
         ''' The meat of the doit() function '''
 
+        super().doit(file)
+
         file.fmt('''
 		|
 		|	TRACE(
@@ -123,16 +95,11 @@ class Nor(Part):
         for i in range(self.inputs):
             file.write("\t    << PIN_D%d\n" % i)
 
-        if self.pin_is_bool("Q"):
-            file.substitute.append(("QQQ=state", "PIN_Q.write(state->out)"))
-        else:
-            file.substitute.append(("QQQ=state", "PIN_Q.write(AS(state->out))"))
-
         file.fmt('''
 		|	);
 		|
 		|	if (state->job) {
-		|		QQQ=state;
+		|		PIN_Q<=(state->out);
 		|		state->job = false;
 		|	}
 		|
@@ -156,7 +123,7 @@ class Nor(Part):
 		|		if (state->out != 1) {
 		|			state->out = 1;
 		|			if (state->dly == 0) {
-		|				QQQ=state;
+		|				PIN_Q<=(state->out);
 		|			} else {
 		|				state->job = true;
 		|				next_trigger(state->dly, SC_NS);
@@ -166,7 +133,7 @@ class Nor(Part):
 		|		if (state->out != 0) {
 		|			state->out = 0;
 		|			if (state->dly == 0) {
-		|				QQQ=state;
+		|				PIN_Q<=(state->out);
 		|			} else {
 		|				state->job = true;
 		|				next_trigger(state->dly, SC_NS);
@@ -199,9 +166,6 @@ class Nor(Part):
 class ModelNor(Part):
     ''' Model NOR components '''
 
-    def __init__(self):
-        super().__init__("NOR")
-
     def assign(self, comp):
         ''' Assigned to component '''
         for node in comp.iter_nodes():
@@ -225,10 +189,10 @@ class ModelNor(Part):
         sig = util.signature(i)
         ident = board.name + "_NOR%d_" % inputs + sig
         if ident not in board.part_catalog:
-            board.add_part(ident, Nor(board, inputs, ident))
+            board.add_part(ident, Nor(board, ident, inputs))
         comp.part = board.part_catalog[ident]
 
 def register(board):
     ''' Register component model '''
-    board.add_part("F02", ModelNor())
-    board.add_part("F260", ModelNor())
+    board.add_part("F02", ModelNor("NOR"))
+    board.add_part("F260", ModelNor("NOR"))

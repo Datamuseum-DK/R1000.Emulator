@@ -29,16 +29,16 @@
 # SUCH DAMAGE.
 
 '''
-   F521 8 bit comparator
-   =====================
+   F153 dual 4-in mux
+   ==================
 '''
 
 
 from part import PartModel, PartFactory
 
-class F521(PartFactory):
+class F153(PartFactory):
 
-    ''' F521 8 bit comparator '''
+    ''' F153 dual 4-in mux '''
 
     def doit(self, file):
         ''' The meat of the doit() function '''
@@ -46,29 +46,48 @@ class F521(PartFactory):
         super().doit(file)
 
         file.fmt('''
-		|	bool s = PIN_E=> ||
-		|	    PIN_A0=> != PIN_B0=> ||
-		|	    PIN_A1=> != PIN_B1=> ||
-		|	    PIN_A2=> != PIN_B2=> ||
-		|	    PIN_A3=> != PIN_B3=> ||
-		|	    PIN_A4=> != PIN_B4=> ||
-		|	    PIN_A5=> != PIN_B5=> ||
-		|	    PIN_A6=> != PIN_B6=> ||
-		|	    PIN_A7=> != PIN_B7=>;
-		|	TRACE(
-		|	    << " Ia=b " << PIN_E?
-		|	    << " a " << PIN_A0? << PIN_A1? << PIN_A2? << PIN_A3?
-		|		<< PIN_A4? << PIN_A5? << PIN_A6? << PIN_A7?
+		|	bool s[2];
+		|	uint tmp = 0;
 		|
-		|	    << " b " << PIN_B0? << PIN_B1? << PIN_B2? << PIN_B3?
-		|		<< PIN_B4? << PIN_B5? << PIN_B6? << PIN_B7?
-		|	    << " = "
-		|	    << s
+		|	if (PIN_S0=>) tmp |= 2;
+		|	if (PIN_S1=>) tmp |= 1;
+		|
+		|	switch (tmp) {
+		|	case 0:
+		|		s[0] = PIN_A0=>;
+		|		s[1] = PIN_A1=>;
+		|		break;
+		|	case 1:
+		|		s[0] = PIN_B0=>;
+		|		s[1] = PIN_B1=>;
+		|		break;
+		|	case 2:
+		|		s[0] = PIN_C0=>;
+		|		s[1] = PIN_C1=>;
+		|		break;
+		|	case 3:
+		|		s[0] = PIN_D0=>;
+		|		s[1] = PIN_D1=>;
+		|		break;
+		|	}
+		|	if (PIN_E0=>)
+		|		s[0] = false;
+		|	if (PIN_E1=>)
+		|		s[1] = false;
+		|	TRACE(
+		|	    << " a " << PIN_A0? << PIN_A1?
+		|	    << " b " << PIN_B0? << PIN_B1?
+		|	    << " c " << PIN_C0? << PIN_C1?
+		|	    << " d " << PIN_D0? << PIN_D1?
+		|	    << " e " << PIN_E0? << PIN_E1?
+		|	    << " s " << PIN_S0? << PIN_S1?
+		|	    << " | " << s[0] << s[1]
 		|	);
-		|	PIN_AeqB<=(s);
+		|	PIN_Y0<=(s[0]);
+		|	PIN_Y1<=(s[1]);
 		|''')
 
 def register(board):
     ''' Register component model '''
 
-    board.add_part("F521", PartModel("F521", F521))
+    board.add_part("F153", PartModel("F153", F153))

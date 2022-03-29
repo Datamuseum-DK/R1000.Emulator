@@ -42,6 +42,10 @@ class Pin():
     def __init__(self, pinident, pinname, pinrole):
         self.ident = pinident	# Not always numeric!
         self.name = pinname
+        for i, j in (
+            ("=", "eq"),
+        ):
+            self.name = self.name.replace(i, j)
         self.role = pinrole
         if not self.name:
             self.name = "_"

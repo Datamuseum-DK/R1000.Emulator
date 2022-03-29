@@ -48,6 +48,12 @@ from component import ComponentSexp
 import model_nand
 import model_nor
 import model_mux2
+import model_f51
+import model_f74
+import model_f153
+import model_f521
+import model_paxxx
+import model_xreg
 
 from pass_planes import PassPlanes
 from pass_assign_part import PassAssignPart
@@ -69,9 +75,17 @@ class Board():
         self.extra_scms = []
         self.part_catalog = {}
 
-        model_nand.register(self)
-        model_nor.register(self)
-        model_mux2.register(self)
+        if True:
+            model_nand.register(self)
+            model_nor.register(self)
+            model_mux2.register(self)
+            model_f51.register(self)
+            model_f74.register(self)
+            model_f153.register(self)
+            model_f521.register(self)
+            model_paxxx.register(self)
+        if True:
+            model_xreg.register(self)
 
         self.chf_sheets = SrcFile(self.dstdir + "/" + self.lname + "_sheets.h")
         self.scm_board = self.sc_mod(self.lname + "_board")

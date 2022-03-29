@@ -33,147 +33,100 @@
    =====================
 '''
 
-from component import ModelComponent
+from part import PartModel, PartFactory
 
-class ModelXREG(ModelComponent):
-    ''' ... '''
+class Xreg(PartFactory):
 
-    def __init__(self, *args):
-        super().__init__(*args)
-        if self.partname == "F374":
-            self.width = 8
-            self.bus_spec = {
-                "D": (0, self.width - 1, "sc_in", True, False),
-                "Q": (0, self.width - 1, "sc_out", False, True),
-            }
-            self.nin = "D"
-            self.nout = "Q"
-        else:
-            self.width = int(self.partname[4:], 10)
-            self.bus_spec = {
-                "I": (0, self.width - 1, "sc_in", True, False),
-                "Y": (0, self.width - 1, "sc_out", False, True),
-            }
-            self.nin = "I"
-            self.nout = "Y"
+    ''' XReg(isters) '''
 
-    def configure(self):
-        self.noz = self.nodes["OE"].net.is_pd()
-        node = self.nodes.get("INV")
-        self.inv = node and node.net.is_pd()
+    def __init__(self, board, ident, bits, invert):
+        super().__init__(board, ident)
+        self.bits = bits
+        self.invert = invert
 
-    def is_bus_ok(self, bus):
-        retval = super().is_bus_ok(bus)
-        if retval and self.noz:
-            retval.numeric = True
-        return retval
+    def state(self, file):
+        ''' Extra state variable '''
 
-    def make_clsname(self):
-        super().make_clsname()
-        if self.noz:
-            self.clsname += "Z"
-        if self.inv:
-            self.clsname += "I"
+        file.write("\tuint64_t data;\n")
+        file.write("\tint job;\n")
 
-    def hookup_model(self, file):
-        ''' ... '''
-        self.hookup_bus(file, self.nin)
-        self.hookup_bus(file, self.nout)
-        self.hookup_pin(file, "PIN_CLK", self.nodes["CLK"])
-        if not self.noz:
-            self.hookup_pin(file, "PIN_OE", self.nodes["OE"])
+    def init(self, file):
+        ''' Extra initialization '''
 
-    def write_code_hh_signals(self, file):
-        file.write('\tsc_in <sc_logic>\tPIN_CLK;\n')
-        if not self.noz:
-            file.write('\tsc_in <sc_logic>\tPIN_OE;\n')
+        file.fmt('''
+		|	state->job = -2;
+		''')
 
-    def write_code_cc_state_extra(self, file):
-        file.write("\tuint64_t inv;\n")
+    def sensitive(self):
+        ''' sensitivity list '''
+        yield "PIN_CLK.pos()"
+        if 'OE' in self.comp.nodes:
+            yield "PIN_OE"
 
-    def write_code_cc_init_extra(self, file):
-        file.write("\tstate->job = -1;\n")
-        if self.inv:
-            file.write("\tstate->inv = 0x%xULL;\n" % ((1<<self.width) -1))
+    def doit(self, file):
+        ''' The meat of the doit() function '''
 
-    def write_code_cc_sensitive(self, file):
-        if not self.noz:
-            file.write("\n\t    << PIN_OE")
-        file.write("\n\t    << PIN_CLK.pos()")
+        super().doit(file)
 
-    def write_code_cc(self, file):
-        self.write_code_cc_init(file)
-        file.write(self.substitute('''
-		|void
-		|SCM_MMM :: doit(void)
-		|{
-		|	state->ctx.activations++;
+        file.fmt('''
 		|
-		|	TRACE(
-		|	    << " job " << state->job
-		|	    << " clk " << PIN_CLK.posedge()
-		|'''))
+		|	if (state->job == -2) {
+		|''')
+        for node in self.comp.iter_nodes():
+            if node.pin.name[0] == 'Q':
+                file.fmt("\n\t\t|\t\tPIN_%s<=(false);\n\n" % node.pin.name)
 
-        if not self.noz:
-            file.write(self.substitute('''
-		|	    << " oe " << PIN_OE
-		|'''))
-
-        file.write(self.substitute('''
-		|	    << " d "
-		|'''))
-
-        for sig in self.iter_signals(self.nin):
-            file.write("\t    << %s\n" % sig)
-
-        file.write(self.substitute('''
-		|	    << " | " << std::hex << state->data
-		|	);
+        file.fmt('''
+		|		state->job = -1;
+		|	}
 		|
 		|	if (state->job > 0) {
-		|		uint64_t tmp = state->data ^ state->inv;
-		|'''))
+		|		uint64_t tmp = state->data;
+		|''')
 
-        for i in self.write_bus_val(self.nout, "tmp"):
-            file.write('\t\t' + i + '\n')
+        if self.invert:
+            file.fmt('''
+		|		tmp = ~tmp;
+		|''')
 
-        file.write(self.substitute('''
+        for node in self.comp.iter_nodes():
+            if node.pin.name[0] == 'Q':
+                i = self.bits - int(node.pin.name[1:]) - 1
+                file.fmt("\n\t\t|\t\tPIN_%s<=(tmp & ((uint64_t)1 << %d));\n\n" % (node.pin.name, i))
+
+        file.fmt('''
 		|		state->job = 0;
-		|'''))
+		|''')
 
-
-        if not self.noz:
-            file.write(self.substitute('''
+        if 'OE' in self.comp.nodes:
+            file.fmt('''
 		|	} else if (state->job == -1) {
-		|'''))
-            for i in self.write_bus_z(self.nout):
-                file.write('\t\t' + i + '\n')
-
-            file.write(self.substitute('''
+		|''')
+            for node in self.comp.iter_nodes():
+                if node.pin.name[0] == 'Q':
+                    file.write("\t\tPIN_%s = sc_logic_Z;\n" % node.pin.name)
+            file.fmt('''
 		|		state->job = -2;
-		|'''))
+		|''')
 
-        file.write(self.substitute('''
+        file.fmt('''
 		|	}
 		|
 		|	if (PIN_CLK.posedge()) {
 		|		uint64_t tmp = 0;
-		|'''))
-
-        for i in self.read_bus_value("tmp", self.nin):
-            file.write("\t\t" + i + "\n")
-
-        file.write(self.substitute('''
+		|''')
+        for node in self.comp.iter_nodes():
+            if node.pin.name[0] == 'D':
+                i = self.bits - int(node.pin.name[1:]) - 1
+                file.fmt("\n\t\t|\t\tif (PIN_%s=>) tmp |= ((uint64_t)1 << %d);\n\n" % (node.pin.name, i))
+        if 'OE' in self.comp.nodes:
+            file.fmt('''
 		|		if (tmp != state->data) {
 		|			state->data = tmp;
 		|			state->job = -1;
 		|		}
 		|	}
 		|
-		|'''))
-
-        if not self.noz:
-            file.write(self.substitute('''
 		|	if (IS_L(PIN_OE)) {
 		|		if (state->job < 0) {
 		|			state->job = 1;
@@ -183,13 +136,49 @@ class ModelXREG(ModelComponent):
 		|		state->job = -1;
 		|		next_trigger(5, SC_NS);
 		|	}
-		|}
-		|'''))
+		|''')
         else:
-            file.write(self.substitute('''
-		|	if (state->job) {
-		|		state->job = 1;
-		|		next_trigger(5, SC_NS);
+            file.fmt('''
+		|		if (tmp != state->data) {
+		|			state->data = tmp;
+		|			state->job = 1;
+		|			next_trigger(5, SC_NS);
+		|		}
 		|	}
-		|}
-		|'''))
+		|''')
+
+
+class ModelXreg(PartModel):
+    ''' Xreg registers '''
+
+    def __init__(self, bits, invert):
+        super().__init__("XREG")
+        self.bits = bits
+        self.invert = invert
+
+    def assign(self, comp):
+        if comp.board.name == "VAL" and "ZREG" in comp.name:
+            comp.part = comp.board.part_catalog["F374_O"]
+            return
+        if comp.nodes["OE"].net.is_pd():
+            for node in comp.iter_nodes():
+                if node.pin.name[0] == "Q":
+                    node.pin.role = "c_output"
+        super().assign(comp)
+
+    def configure(self, board, comp):
+        if board.name == "VAL" and "ZREG" in comp.name:
+            comp.part = board.part_catalog["F374_O"]
+            return
+        if comp.nodes["OE"].net.is_pd():
+            del comp.nodes["OE"]
+        sig = self.make_signature(comp)
+        ident = board.name + "_" + self.name + "_" + sig
+        if ident not in board.part_catalog:
+            board.add_part(ident, Xreg(board, ident, self.bits, self.invert))
+        comp.part = board.part_catalog[ident]
+
+def register(board):
+    ''' Register component model '''
+
+    board.add_part("F374", ModelXreg(8, False))

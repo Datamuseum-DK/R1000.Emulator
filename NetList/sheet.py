@@ -53,7 +53,7 @@ class Sheet():
         return self.board.name + "_%d" % self.page
 
     def __lt__(self, other):
-        self.page < other.page
+        return self.page < other.page
 
     def add_component(self, comp):
         assert comp.ref not in self.components
