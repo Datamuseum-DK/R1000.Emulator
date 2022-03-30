@@ -29,48 +29,69 @@
 # SUCH DAMAGE.
 
 '''
-   Pins on components
-   ==================
+   F148 8-Line to 3-Line Priority Encoder
+   ======================================
+
+   Ref: Fairchild DS009480 April 1988 Revised September 2000
 '''
 
-import util
+from part import PartModel, PartFactory
 
-class Pin():
+class F148(PartFactory):
 
-    ''' A `pin` on a `component` '''
+    ''' F148 8-Line to 3-Line Priority Encoder '''
 
-    def __init__(self, pinident, pinname, pinrole):
-        self.ident = pinident	# Not always numeric!
-        self.name = pinname
-        for i, j in (
-            ("=", "eq"),
-            ("~", "not"),
-        ):
-            self.name = self.name.replace(i, j)
-        self.role = pinrole
-        if not self.name:
-            self.name = "_"
-        self.sortkey = util.sortkey(self.name)
-        if isinstance(self.sortkey[0], int):
-            self.sortkey.insert(0, "_")
-        if len(self.sortkey) >= 2:
-            self.bus = self.sortkey[:2]
-        else:
-            self.bus = None
 
-    def __repr__(self):
-        return "_".join(("Pin", self.ident, self.name, self.role))
+    def doit(self, file):
+        ''' The meat of the doit() function '''
 
-    def __lt__(self, other):
-        return self.sortkey < other.sortkey
+        super().doit(file)
 
-class PinSexp(Pin):
+        file.fmt('''
+		|
+		|	unsigned s;
+		|
+		|	if (!PIN_I0=>)
+		|		s = 7;
+		|	else if (!PIN_I1=>)
+		|		s = 6;
+		|	else if (!PIN_I2=>)
+		|		s = 5;
+		|	else if (!PIN_I3=>)
+		|		s = 4;
+		|	else if (!PIN_I4=>)
+		|		s = 3;
+		|	else if (!PIN_I5=>)
+		|		s = 2;
+		|	else if (!PIN_I6=>)
+		|		s = 1;
+		|	else if (!PIN_I7=>)
+		|		s = 0;
+		|	else
+		|		s = 8|16;
+		|	if (PIN_E=>)
+		|		s = 16;
+		|	TRACE(
+		|	    << " i " << PIN_I0?
+		|	    << PIN_I1?
+		|	    << PIN_I2?
+		|	    << PIN_I3?
+		|	    << PIN_I4?
+		|	    << PIN_I5?
+		|	    << PIN_I6?
+		|	    << PIN_I7?
+		|	    << " e " << PIN_E?
+		|	    << " | "
+		|	    << std::hex << s
+		|	);
+		|	PIN_Y2<=(!(s & 1));
+		|	PIN_Y1<=(!(s & 2));
+		|	PIN_Y0<=(!(s & 4));
+		|	PIN_GS<=(s & 16);
+		|	PIN_EZ<=(!(s & 8));
+		|''')
 
-    ''' Create `pin` from netlist-sexp '''
+def register(board):
+    ''' Register component model '''
 
-    def __init__(self, sexp):
-        super().__init__(
-            pinident = sexp[0][0].name,
-            pinname = sexp[1][0].name,
-            pinrole = sexp[2][0].name,
-        )
+    board.add_part("F148", PartModel("F148", F148))

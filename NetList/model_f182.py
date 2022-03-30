@@ -29,102 +29,67 @@
 # SUCH DAMAGE.
 
 '''
-   2167 CMOS Static RAM 16K x 1-Bit
-   ================================
+   F182 Carry Lookahead Generator
+   ==============================
 
-   Ref: Rensas DSC2981/08 February 2001
+   Ref: Fairchild DS009492 April 1988 Revised June 2002
+   See also: http://www.righto.com/2017/03/inside-vintage-74182-alu-chip-how-it.html
 '''
-
 
 from part import PartModel, PartFactory
 
-class SRAM2167(PartFactory):
+class F182(PartFactory):
 
-    ''' 2167 CMOS Static RAM 16K x 1-Bit '''
+    ''' F182 Carry Lookahead Generator '''
 
-    def state(self, file):
-        file.fmt('''
-		|	bool ram[16384];
-		|''')
+    def build(self):
+        super().build(extra=self.extra)
+
+    def extra(self, file):
+
+        file.include("Components/tables.h")
 
     def doit(self, file):
         ''' The meat of the doit() function '''
 
         super().doit(file)
 
-        if not self.comp.nodes["CS"].net.is_pd():
-            file.fmt('''
-		|	if (PIN_CS=>) {
-		|		TRACE("Z");
-		|		PIN_Q = sc_logic_Z;
-		|		next_trigger(PIN_CS.negedge_event());
-		|		return;
-		|	}
-		|''')
-
         file.fmt('''
+		|
 		|	unsigned adr = 0;
 		|
 		|	state->ctx.activations++;
-		|	if (PIN_A0=>) adr |= 1 << 13;
-		|	if (PIN_A1=>) adr |= 1 << 12;
-		|	if (PIN_A2=>) adr |= 1 << 11;
-		|	if (PIN_A3=>) adr |= 1 << 10;
-		|	if (PIN_A4=>) adr |= 1 << 9;
-		|	if (PIN_A5=>) adr |= 1 << 8;
-		|	if (PIN_A6=>) adr |= 1 << 7;
-		|	if (PIN_A7=>) adr |= 1 << 6;
-		|	if (PIN_A8=>) adr |= 1 << 5;
-		|	if (PIN_A9=>) adr |= 1 << 4;
-		|	if (PIN_A10=>) adr |= 1 << 3;
-		|	if (PIN_A11=>) adr |= 1 << 2;
-		|	if (PIN_A12=>) adr |= 1 << 1;
-		|	if (PIN_A13=>) adr |= 1 << 0;
-		|
-		|	if (!PIN_WE=>)
-		|		state->ram[adr] = PIN_D=>;
-		|	PIN_Q<=(state->ram[adr]);
-		|
+		|	if (PIN_C1=>) adr |= 1 << 8;
+		|	if (PIN_G3=>) adr |= 1 << 7;
+		|	if (PIN_P3=>) adr |= 1 << 6;
+		|	if (PIN_G2=>) adr |= 1 << 5;
+		|	if (PIN_P2=>) adr |= 1 << 4;
+		|	if (PIN_G1=>) adr |= 1 << 3;
+		|	if (PIN_P1=>) adr |= 1 << 2;
+		|	if (PIN_G0=>) adr |= 1 << 1;
+		|	if (PIN_P0=>) adr |= 1 << 0;
+		|	unsigned val = lut182[adr];
 		|	TRACE(
-		|	    << " a "
-		|	    << PIN_A0?
-		|	    << PIN_A1?
-		|	    << PIN_A2?
-		|	    << PIN_A3?
-		|	    << PIN_A4?
-		|	    << PIN_A5?
-		|	    << PIN_A6?
-		|	    << PIN_A7?
-		|	    << PIN_A8?
-		|	    << PIN_A9?
-		|	    << PIN_A10?
-		|	    << PIN_A11?
-		|	    << PIN_A12?
-		|	    << PIN_A13?
-		|	    << " d "
-		|	    << PIN_D?
-		|	    << " w "
-		|	    << PIN_WE?
-		|	    << " cs "
-		|	    << PIN_CS?
+		|	    << PIN_C1?
+		|	    << PIN_G3?
+		|	    << PIN_P3?
+		|	    << PIN_G2?
+		|	    << PIN_P2?
+		|	    << PIN_G1?
+		|	    << PIN_P1?
+		|	    << PIN_G0?
+		|	    << PIN_P0?
 		|	    << " | "
-		|	    << std::hex << adr
-		|	    << " "
-		|	    << state->ram[adr]
+		|	    << std::hex << val
 		|	);
+		|	PIN_CO3<=(val & 0x10);
+		|	PIN_CO2<=(val & 0x8);
+		|	PIN_CO1<=(val & 0x4);
+		|	PIN_CG<=(val & 0x2);
+		|	PIN_CP<=(val & 0x1);
 		|''')
-
-class Model_2167(PartModel):
-
-    ''' Fix Q pin to be tri-state '''
-
-    def assign(self, comp):
-        if comp.nodes["CS"].net.is_pd():
-            comp.nodes["Q"].pin.role = "c_output"
-        super().assign(comp)
-
 
 def register(board):
     ''' Register component model '''
 
-    board.add_part("2167", Model_2167("2167", SRAM2167))
+    board.add_part("F182", PartModel("F182", F182))

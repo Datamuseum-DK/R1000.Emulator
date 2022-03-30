@@ -29,22 +29,21 @@
 # SUCH DAMAGE.
 
 '''
-   2167 CMOS Static RAM 16K x 1-Bit
-   ================================
+   2149 CMOS Static RAM 1024 x 4 bit
+   =================================
 
-   Ref: Rensas DSC2981/08 February 2001
 '''
 
 
 from part import PartModel, PartFactory
 
-class SRAM2167(PartFactory):
+class SRAM2149(PartFactory):
 
-    ''' 2167 CMOS Static RAM 16K x 1-Bit '''
+    ''' 2149 CMOS Static RAM 1024 x 4 bit '''
 
     def state(self, file):
         file.fmt('''
-		|	bool ram[16384];
+		|	uint8_t ram[1024];
 		|''')
 
     def doit(self, file):
@@ -52,79 +51,87 @@ class SRAM2167(PartFactory):
 
         super().doit(file)
 
+        file.fmt('''
+		|	unsigned adr = 0, wrote = 0;
+		|
+		|
+		|''')
+
         if not self.comp.nodes["CS"].net.is_pd():
             file.fmt('''
 		|	if (PIN_CS=>) {
-		|		TRACE("Z");
-		|		PIN_Q = sc_logic_Z;
+		|		// TRACE(<< "z");
+		|		PIN_DQ0 = sc_logic_Z;
+		|		PIN_DQ1 = sc_logic_Z;
+		|		PIN_DQ2 = sc_logic_Z;
+		|		PIN_DQ3 = sc_logic_Z;
 		|		next_trigger(PIN_CS.negedge_event());
 		|		return;
 		|	}
 		|''')
 
         file.fmt('''
-		|	unsigned adr = 0;
 		|
-		|	state->ctx.activations++;
-		|	if (PIN_A0=>) adr |= 1 << 13;
-		|	if (PIN_A1=>) adr |= 1 << 12;
-		|	if (PIN_A2=>) adr |= 1 << 11;
-		|	if (PIN_A3=>) adr |= 1 << 10;
-		|	if (PIN_A4=>) adr |= 1 << 9;
-		|	if (PIN_A5=>) adr |= 1 << 8;
-		|	if (PIN_A6=>) adr |= 1 << 7;
-		|	if (PIN_A7=>) adr |= 1 << 6;
-		|	if (PIN_A8=>) adr |= 1 << 5;
-		|	if (PIN_A9=>) adr |= 1 << 4;
-		|	if (PIN_A10=>) adr |= 1 << 3;
-		|	if (PIN_A11=>) adr |= 1 << 2;
-		|	if (PIN_A12=>) adr |= 1 << 1;
-		|	if (PIN_A13=>) adr |= 1 << 0;
+		|	if (PIN_A9=>) adr |= 1 << 0;
+		|	if (PIN_A8=>) adr |= 1 << 1;
+		|	if (PIN_A7=>) adr |= 1 << 2;
+		|	if (PIN_A6=>) adr |= 1 << 3;
+		|	if (PIN_A5=>) adr |= 1 << 4;
+		|	if (PIN_A4=>) adr |= 1 << 5;
+		|	if (PIN_A3=>) adr |= 1 << 6;
+		|	if (PIN_A2=>) adr |= 1 << 7;
+		|	if (PIN_A1=>) adr |= 1 << 8;
+		|	if (PIN_A0=>) adr |= 1 << 9;
 		|
-		|	if (!PIN_WE=>)
-		|		state->ram[adr] = PIN_D=>;
-		|	PIN_Q<=(state->ram[adr]);
-		|
-		|	TRACE(
-		|	    << " a "
-		|	    << PIN_A0?
-		|	    << PIN_A1?
-		|	    << PIN_A2?
-		|	    << PIN_A3?
-		|	    << PIN_A4?
-		|	    << PIN_A5?
-		|	    << PIN_A6?
-		|	    << PIN_A7?
-		|	    << PIN_A8?
-		|	    << PIN_A9?
-		|	    << PIN_A10?
-		|	    << PIN_A11?
-		|	    << PIN_A12?
-		|	    << PIN_A13?
-		|	    << " d "
-		|	    << PIN_D?
-		|	    << " w "
-		|	    << PIN_WE?
-		|	    << " cs "
-		|	    << PIN_CS?
-		|	    << " | "
-		|	    << std::hex << adr
-		|	    << " "
-		|	    << state->ram[adr]
-		|	);
+		|	if (!PIN_WE=>) {
+		|		PIN_DQ0 = sc_logic_Z;
+		|		PIN_DQ1 = sc_logic_Z;
+		|		PIN_DQ2 = sc_logic_Z;
+		|		PIN_DQ3 = sc_logic_Z;
+		|		state->ram[adr] = 0;
+		|		if (PIN_DQ0=>) state->ram[adr] |= (1<<3);
+		|		if (PIN_DQ1=>) state->ram[adr] |= (1<<2);
+		|		if (PIN_DQ2=>) state->ram[adr] |= (1<<1);
+		|		if (PIN_DQ3=>) state->ram[adr] |= (1<<0);
+		|		wrote = 1;
+		|	}
+		|	if (wrote || (state->ctx.do_trace & 2)) {
+		|		TRACE(
+		|		    << " cs " << PIN_CS?
+		|		    << " we " << PIN_WE?
+		|		    << " a " << PIN_A0? << PIN_A1? << PIN_A2?
+		|		    << PIN_A3? << PIN_A4? << PIN_A5? << PIN_A6?
+		|		    << PIN_A7? << PIN_A8? << PIN_A9?
+		|		    << " dq "
+		|		    << PIN_DQ0?
+		|		    << PIN_DQ1?
+		|		    << PIN_DQ2?
+		|		    << PIN_DQ3?
+		|		    << " | "
+		|		    << std::hex << adr
+		|		    << " "
+		|		    << std::hex << (unsigned)(state->ram[adr])
+		|		);
+		|	}
+		|	if (PIN_WE=>) {
+		|		PIN_DQ0<=(state->ram[adr] & (1<<3));
+		|		PIN_DQ1<=(state->ram[adr] & (1<<2));
+		|		PIN_DQ2<=(state->ram[adr] & (1<<1));
+		|		PIN_DQ3<=(state->ram[adr] & (1<<0));
+		|	}
 		|''')
 
-class Model_2167(PartModel):
-
-    ''' Fix Q pin to be tri-state '''
+class Model2149(PartModel):
 
     def assign(self, comp):
         if comp.nodes["CS"].net.is_pd():
-            comp.nodes["Q"].pin.role = "c_output"
+            for node in comp.iter_nodes():
+                if node.pin.name[:2] == "DQ":
+                    node.pin.role = "c_output"
         super().assign(comp)
 
 
 def register(board):
     ''' Register component model '''
 
-    board.add_part("2167", Model_2167("2167", SRAM2167))
+    board.add_part("2149", Model2149("2149", SRAM2149))

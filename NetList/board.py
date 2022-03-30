@@ -48,17 +48,29 @@ from component import ComponentSexp
 import model_nand
 import model_nor
 import model_mux2
+# import model_2149
 import model_2167
 import model_93s48
 import model_f51
 import model_f74
+import model_f86
 import model_f138
+import model_f139
+import model_f148
+import model_f151
 import model_f153
+import model_f169
 import model_f174
+import model_f175
+import model_f181
+import model_f182
 import model_f194
 import model_f280
+import model_f283
+import model_f381
 import model_f521
 import model_paxxx
+import model_xbuf
 import model_xreg
 
 from pass_planes import PassPlanes
@@ -85,17 +97,29 @@ class Board():
             model_nand.register(self)
             model_nor.register(self)
             model_mux2.register(self)
+            # model_2149.register(self)
             model_2167.register(self)
             model_93s48.register(self)
             model_f51.register(self)
             model_f74.register(self)
+            model_f86.register(self)
             model_f138.register(self)
+            model_f139.register(self)
+            model_f148.register(self)
+            model_f151.register(self)
             model_f153.register(self)
+            model_f169.register(self)
             model_f174.register(self)
+            model_f175.register(self)
+            model_f181.register(self)
+            model_f182.register(self)
             model_f194.register(self)
             model_f280.register(self)
+            model_f283.register(self)
+            model_f381.register(self)
             model_f521.register(self)
             model_paxxx.register(self)
+            model_xbuf.register(self)
             model_xreg.register(self)
 
         self.chf_sheets = SrcFile(self.dstdir + "/" + self.lname + "_sheets.h")
@@ -135,7 +159,7 @@ class Board():
             self.part_catalog[name] = part
 
     def iter_components(self):
-        yield from self.components.values()
+        yield from list(self.components.values())
 
     def iter_nets(self):
         yield from self.nets.values()

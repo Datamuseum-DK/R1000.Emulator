@@ -57,8 +57,7 @@ class PassNetConfig():
 
         self.ponder_bool()
         for i, j in sorted(self.blame.items(), key=lambda x: -x[1]):
-            if j > 8:
-                print(i, j)
+            print(i, j)
 
     def ponder_bool(self):
         for net in self.board.iter_nets():

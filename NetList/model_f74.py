@@ -42,6 +42,13 @@ class F74(PartFactory):
 
     ''' F74 (Dual) D-Type Positive Edge-Triggered Flip-Flop '''
 
+    def sensitive(self):
+        yield "PIN_CLK.pos()"
+        if not self.comp.nodes["PR_"].net.is_const():
+            yield "PIN_PR_"
+        if not self.comp.nodes["CL_"].net.is_const():
+            yield "PIN_CL_"
+
     def state(self, file):
         ''' Extra state variable '''
 

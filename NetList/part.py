@@ -196,7 +196,7 @@ class PartFactory(Part):
         self.comp = None
         yield self.scm.hh.filename
 
-    def build(self):
+    def build(self, extra=None):
         ''' Build this component (if/when used) '''
 
         self.scm = self.board.sc_mod(self.name)
@@ -206,7 +206,8 @@ class PartFactory(Part):
             self.state,
             self.init,
             self.sensitive,
-            self.doit
+            self.doit,
+            extra=extra,
         )
         self.scm.commit()
         self.board.extra_scms.append(self.scm)
@@ -241,9 +242,18 @@ class PartFactory(Part):
                 file.substitute.append(
                     (dst, "PIN_%s = " % (node.pin.name,))
                 )
+                file.substitute.append(
+                    (trc, "PIN_%s" % node.pin.name)
+                )
             elif node.pin.role == "c_output" or "tri_state" in node.pin.role:
                 file.substitute.append(
+                    (src, "IS_H(PIN_%s)" % node.pin.name)
+                )
+                file.substitute.append(
                     (dst, "PIN_%s = AS" % (node.pin.name,))
+                )
+                file.substitute.append(
+                    (trc, "PIN_%s" % node.pin.name)
                 )
             elif node.net.is_pd():
                 file.substitute.append(
@@ -269,6 +279,9 @@ class PartFactory(Part):
             else:
                 file.substitute.append(
                     (src, "IS_H(PIN_%s)" % node.pin.name)
+                )
+                file.substitute.append(
+                    (dst, "PIN_%s = AS" % node.pin.name)
                 )
                 file.substitute.append(
                     (trc, "PIN_%s" % node.pin.name)

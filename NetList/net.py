@@ -99,6 +99,9 @@ class Net():
         ''' Is this network a constant high value '''
         return self.name == "PU"
 
+    def is_const(self):
+        return self.name in ("PD", "PU") or len(self) == 1
+
     def write_decl(self, file):
         ''' Write a C declaration of this net '''
         if self.bus:

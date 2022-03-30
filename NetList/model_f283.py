@@ -29,48 +29,51 @@
 # SUCH DAMAGE.
 
 '''
-   Pins on components
-   ==================
+   F283 Binary Full Adder with Fast Carry
+   ======================================
+
+   Ref: Fairchild DS009513 April 1988 Revised January 2004
 '''
 
-import util
+from part import PartModel, PartFactory
 
-class Pin():
+class F283(PartFactory):
 
-    ''' A `pin` on a `component` '''
+    ''' F283 Binary Full Adder with Fast Carry '''
 
-    def __init__(self, pinident, pinname, pinrole):
-        self.ident = pinident	# Not always numeric!
-        self.name = pinname
-        for i, j in (
-            ("=", "eq"),
-            ("~", "not"),
-        ):
-            self.name = self.name.replace(i, j)
-        self.role = pinrole
-        if not self.name:
-            self.name = "_"
-        self.sortkey = util.sortkey(self.name)
-        if isinstance(self.sortkey[0], int):
-            self.sortkey.insert(0, "_")
-        if len(self.sortkey) >= 2:
-            self.bus = self.sortkey[:2]
-        else:
-            self.bus = None
+    def doit(self, file):
+        ''' The meat of the doit() function '''
 
-    def __repr__(self):
-        return "_".join(("Pin", self.ident, self.name, self.role))
+        super().doit(file)
 
-    def __lt__(self, other):
-        return self.sortkey < other.sortkey
+        file.fmt('''
+		|
+		|	unsigned sum = 0;
+		|
+		|	if (PIN_CI=>) sum += 1;
+		|	if (PIN_A3=>) sum += 1;
+		|	if (PIN_B3=>) sum += 1;
+		|	if (PIN_A2=>) sum += 2;
+		|	if (PIN_B2=>) sum += 2;
+		|	if (PIN_A1=>) sum += 4;
+		|	if (PIN_B1=>) sum += 4;
+		|	if (PIN_A0=>) sum += 8;
+		|	if (PIN_B0=>) sum += 8;
+		|	TRACE(
+		|	    << " a " << PIN_A0? << PIN_A1? << PIN_A2? << PIN_A3?
+		|	    << " b " << PIN_B0? << PIN_B1? << PIN_B2? << PIN_B3?
+		|	    << " ci " << PIN_CI?
+		|	    << " sum "
+		|	    << std::hex << sum
+		|	);
+		|	PIN_Y3<=(sum & 1);
+		|	PIN_Y2<=(sum & 2);
+		|	PIN_Y1<=(sum & 4);
+		|	PIN_Y0<=(sum & 8);
+		|	PIN_C0<=(sum & 16);
+		|''')
 
-class PinSexp(Pin):
+def register(board):
+    ''' Register component model '''
 
-    ''' Create `pin` from netlist-sexp '''
-
-    def __init__(self, sexp):
-        super().__init__(
-            pinident = sexp[0][0].name,
-            pinname = sexp[1][0].name,
-            pinrole = sexp[2][0].name,
-        )
+    board.add_part("F283", PartModel("F283", F283))

@@ -29,48 +29,37 @@
 # SUCH DAMAGE.
 
 '''
-   Pins on components
-   ==================
+   F86 (Quad) 2-input XOR
+   ======================
+
+   Ref: Philips IC15 1990 Feb 09
 '''
 
-import util
 
-class Pin():
+from part import PartModel, PartFactory
 
-    ''' A `pin` on a `component` '''
+class F86(PartFactory):
 
-    def __init__(self, pinident, pinname, pinrole):
-        self.ident = pinident	# Not always numeric!
-        self.name = pinname
-        for i, j in (
-            ("=", "eq"),
-            ("~", "not"),
-        ):
-            self.name = self.name.replace(i, j)
-        self.role = pinrole
-        if not self.name:
-            self.name = "_"
-        self.sortkey = util.sortkey(self.name)
-        if isinstance(self.sortkey[0], int):
-            self.sortkey.insert(0, "_")
-        if len(self.sortkey) >= 2:
-            self.bus = self.sortkey[:2]
-        else:
-            self.bus = None
+    ''' F86 (Quad) 2-input XOR '''
 
-    def __repr__(self):
-        return "_".join(("Pin", self.ident, self.name, self.role))
+    def doit(self, file):
+        ''' The meat of the doit() function '''
 
-    def __lt__(self, other):
-        return self.sortkey < other.sortkey
+        super().doit(file)
 
-class PinSexp(Pin):
+        file.fmt('''
+		|
+		|	bool s = PIN_D0=> ^ PIN_D1=>;
+		|	TRACE(
+		|	    << PIN_D0?
+		|	    << PIN_D1?
+		|	    << " | "
+		|	    << s
+		|	);
+		|	PIN_Q<=(s);
+		|''')
 
-    ''' Create `pin` from netlist-sexp '''
+def register(board):
+    ''' Register component model '''
 
-    def __init__(self, sexp):
-        super().__init__(
-            pinident = sexp[0][0].name,
-            pinname = sexp[1][0].name,
-            pinrole = sexp[2][0].name,
-        )
+    board.add_part("F86", PartModel("F86", F86))

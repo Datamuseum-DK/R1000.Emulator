@@ -29,48 +29,42 @@
 # SUCH DAMAGE.
 
 '''
-   Pins on components
-   ==================
+   F139 (Dual) 1-of-4 Decoder/Demultiplexer
+   ========================================
+
+   Ref: Fairchild DS009479 April 1988 Revised September 2000
 '''
 
-import util
 
-class Pin():
+from part import PartModel, PartFactory
 
-    ''' A `pin` on a `component` '''
+class F139(PartFactory):
 
-    def __init__(self, pinident, pinname, pinrole):
-        self.ident = pinident	# Not always numeric!
-        self.name = pinname
-        for i, j in (
-            ("=", "eq"),
-            ("~", "not"),
-        ):
-            self.name = self.name.replace(i, j)
-        self.role = pinrole
-        if not self.name:
-            self.name = "_"
-        self.sortkey = util.sortkey(self.name)
-        if isinstance(self.sortkey[0], int):
-            self.sortkey.insert(0, "_")
-        if len(self.sortkey) >= 2:
-            self.bus = self.sortkey[:2]
-        else:
-            self.bus = None
+    ''' F139 (Dual) 1-of-4 Decoder/Demultiplexer '''
 
-    def __repr__(self):
-        return "_".join(("Pin", self.ident, self.name, self.role))
+    def doit(self, file):
+        ''' The meat of the doit() function '''
 
-    def __lt__(self, other):
-        return self.sortkey < other.sortkey
+        super().doit(file)
 
-class PinSexp(Pin):
+        file.fmt('''
+		|	unsigned adr = 0;
+		|
+		|	if (PIN_B1=>) adr |= 1;
+		|	if (PIN_B0=>) adr |= 2;
+		|	if (PIN_E=>) adr |= 4;
+		|	TRACE(
+		|	    << "e " << PIN_E?
+		|	    << " i " << PIN_B0? << PIN_B1?
+		|	    << " o " << adr
+		|	);
+		|	PIN_Y0<=(adr != 0);
+		|	PIN_Y1<=(adr != 1);
+		|	PIN_Y2<=(adr != 2);
+		|	PIN_Y3<=(adr != 3);
+		|''')
 
-    ''' Create `pin` from netlist-sexp '''
+def register(board):
+    ''' Register component model '''
 
-    def __init__(self, sexp):
-        super().__init__(
-            pinident = sexp[0][0].name,
-            pinname = sexp[1][0].name,
-            pinrole = sexp[2][0].name,
-        )
+    board.add_part("F139", PartModel("F139", F139))

@@ -83,12 +83,14 @@ class SC_Mod():
         self.hh.write("\n")
         self.hh.write("#endif /* R1000_%s */\n" % module)
 
-    def std_cc(self, module, state, init, sensitive, doit):
+    def std_cc(self, module, state, init, sensitive, doit, extra=None):
         self.cc.write("#include <systemc.h>\n")
         self.cc.include("Chassis/r1000sc.h")
         self.cc.include("Infra/context.h")
         self.cc.include(self.hh)
         self.cc.write("\n")
+        if extra:
+            extra(self.cc)
         self.cc.write("struct scm_%s_state {\n" % module.lower())
         self.cc.write("\tstruct ctx ctx;\n")
         if state:

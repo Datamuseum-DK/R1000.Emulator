@@ -29,22 +29,22 @@
 # SUCH DAMAGE.
 
 '''
-   F174 Hex D-Type Flip-Flop with Master Reset
+   F175 D-Type Flip-Flop
    ===================================
 
-   Ref: Fairchild DS009489 April 1988 Revised September 2000
+   Ref: Fairchild DS009490 April 1988 Revised September 2000
 '''
 
 
 from part import PartModel, PartFactory
 
-class F174(PartFactory):
+class F175(PartFactory):
 
-    ''' F174 9-Bit Parity Generator Checker '''
+    ''' F175 D-Type Flip-Flop '''
 
     def state(self, file):
         file.fmt('''
-		|	bool dreg[6];
+		|	bool dreg[4];
 		|	int job;
 		|''')
 
@@ -65,76 +65,61 @@ class F174(PartFactory):
 
         file.fmt('''
 		|
-		|	const char *what = "";
-		|	bool nxt[6];
+		|	bool nxt[4];
 		|
-		|	TRACE(
-		|	    << what
-		|	    << " clr_" << PIN_CLR?
-		|	    << " clk " << PIN_CLK?
-		|	    << " d " << PIN_D0?
-		|	    << PIN_D1?
-		|	    << PIN_D2?
-		|	    << PIN_D3?
-		|	    << PIN_D4?
-		|	    << PIN_D5?
-		|	    << " | "
-		|	    << state->dreg[0]
-		|	    << state->dreg[1]
-		|	    << state->dreg[2]
-		|	    << state->dreg[3]
-		|	    << state->dreg[4]
-		|	    << state->dreg[5]
-		|	);
+		|	if (state->job || (state->ctx.do_trace & 2)) {
+		|		TRACE(
+		|		    << " job " << state->job
+		|		    << " clr_ " << PIN_CLR?
+		|		    << " clk " << PIN_CLK?
+		|		    << " d "
+		|		    << PIN_D0?
+		|		    << PIN_D1?
+		|		    << PIN_D2?
+		|		    << PIN_D3?
+		|		    << " | "
+		|		    << state->dreg[0]
+		|		    << state->dreg[1]
+		|		    << state->dreg[2]
+		|		    << state->dreg[3]
+		|		);
+		|	}
 		|	if (state->job) {
 		|		PIN_Q0<=(state->dreg[0]);
+		|		PIN_Q0not<=(!state->dreg[0]);
 		|		PIN_Q1<=(state->dreg[1]);
+		|		PIN_Q1not<=(!state->dreg[1]);
 		|		PIN_Q2<=(state->dreg[2]);
+		|		PIN_Q2not<=(!state->dreg[2]);
 		|		PIN_Q3<=(state->dreg[3]);
-		|		PIN_Q4<=(state->dreg[4]);
-		|		PIN_Q5<=(state->dreg[5]);
+		|		PIN_Q3not<=(!state->dreg[3]);
 		|		state->job = 0;
 		|	}
+		|	nxt[0] = state->dreg[0];
+		|	nxt[1] = state->dreg[1];
+		|	nxt[2] = state->dreg[2];
+		|	nxt[3] = state->dreg[3];
 		|	if (!PIN_CLR=>) {
 		|		nxt[0] = false;
 		|		nxt[1] = false;
 		|		nxt[2] = false;
 		|		nxt[3] = false;
-		|		nxt[4] = false;
-		|		nxt[5] = false;
-		|		what = " CLR ";
 		|	} else if (PIN_CLK.posedge()) {
 		|		nxt[0] = PIN_D0=>;
 		|		nxt[1] = PIN_D1=>;
 		|		nxt[2] = PIN_D2=>;
 		|		nxt[3] = PIN_D3=>;
-		|		nxt[4] = PIN_D4=>;
-		|		nxt[5] = PIN_D5=>;
-		|		what = " CLK ";
-		|	} else {
-		|		nxt[0] = state->dreg[0];
-		|		nxt[1] = state->dreg[1];
-		|		nxt[2] = state->dreg[2];
-		|		nxt[3] = state->dreg[3];
-		|		nxt[4] = state->dreg[4];
-		|		nxt[5] = state->dreg[5];
-		|		what = " ??? ";
 		|	}
 		|	if (
 		|	    nxt[0] != state->dreg[0] ||
 		|	    nxt[1] != state->dreg[1] ||
 		|	    nxt[2] != state->dreg[2] ||
-		|	    nxt[3] != state->dreg[3] ||
-		|	    nxt[4] != state->dreg[4] ||
-		|	    nxt[5] != state->dreg[5]
-		|	) {
-		|		state->job = 1;
+		|	    nxt[3] != state->dreg[3]) {
 		|		state->dreg[0] = nxt[0];
 		|		state->dreg[1] = nxt[1];
 		|		state->dreg[2] = nxt[2];
 		|		state->dreg[3] = nxt[3];
-		|		state->dreg[4] = nxt[4];
-		|		state->dreg[5] = nxt[5];
+		|		state->job = 1;
 		|		next_trigger(5, SC_NS);
 		|	}
 		|''')
@@ -142,4 +127,4 @@ class F174(PartFactory):
 def register(board):
     ''' Register component model '''
 
-    board.add_part("F174", PartModel("F174", F174))
+    board.add_part("F175", PartModel("F175", F175))

@@ -29,102 +29,79 @@
 # SUCH DAMAGE.
 
 '''
-   2167 CMOS Static RAM 16K x 1-Bit
-   ================================
+   F151 8-Input Multiplexer
+   ========================
 
-   Ref: Rensas DSC2981/08 February 2001
+   Ref: Fairchild DS09481 April 1988 Revised September 2000
 '''
 
 
 from part import PartModel, PartFactory
 
-class SRAM2167(PartFactory):
+class F151(PartFactory):
 
-    ''' 2167 CMOS Static RAM 16K x 1-Bit '''
-
-    def state(self, file):
-        file.fmt('''
-		|	bool ram[16384];
-		|''')
+    ''' F151 8-Input Multiplexer '''
 
     def doit(self, file):
         ''' The meat of the doit() function '''
 
         super().doit(file)
 
-        if not self.comp.nodes["CS"].net.is_pd():
+        file.fmt('''
+		|
+		|	unsigned adr = 0;
+		|
+		|	if (PIN_S2=>) adr |= 1;
+		|	if (PIN_S1=>) adr |= 2;
+		|	if (PIN_S0=>) adr |= 4;
+		|	if (PIN_Enot=>) adr |= 8;
+		|	bool s;
+		|	switch (adr) {
+		|	case 0: s = PIN_A=>; break;
+		|	case 1: s = PIN_B=>; break;
+		|	case 2: s = PIN_C=>; break;
+		|	case 3: s = PIN_D=>; break;
+		|	case 4: s = PIN_E=>; break;
+		|	case 5: s = PIN_F=>; break;
+		|	case 6: s = PIN_G=>; break;
+		|	case 7: s = PIN_H=>; break;
+		|	default:
+		|		s = false;
+		|''')
+        if not self.comp.nodes["Enot"].net.is_const():
+
             file.fmt('''
-		|	if (PIN_CS=>) {
-		|		TRACE("Z");
-		|		PIN_Q = sc_logic_Z;
-		|		next_trigger(PIN_CS.negedge_event());
-		|		return;
-		|	}
+		|		next_trigger(PIN_Enot.negedge_event());
 		|''')
 
         file.fmt('''
-		|	unsigned adr = 0;
-		|
-		|	state->ctx.activations++;
-		|	if (PIN_A0=>) adr |= 1 << 13;
-		|	if (PIN_A1=>) adr |= 1 << 12;
-		|	if (PIN_A2=>) adr |= 1 << 11;
-		|	if (PIN_A3=>) adr |= 1 << 10;
-		|	if (PIN_A4=>) adr |= 1 << 9;
-		|	if (PIN_A5=>) adr |= 1 << 8;
-		|	if (PIN_A6=>) adr |= 1 << 7;
-		|	if (PIN_A7=>) adr |= 1 << 6;
-		|	if (PIN_A8=>) adr |= 1 << 5;
-		|	if (PIN_A9=>) adr |= 1 << 4;
-		|	if (PIN_A10=>) adr |= 1 << 3;
-		|	if (PIN_A11=>) adr |= 1 << 2;
-		|	if (PIN_A12=>) adr |= 1 << 1;
-		|	if (PIN_A13=>) adr |= 1 << 0;
-		|
-		|	if (!PIN_WE=>)
-		|		state->ram[adr] = PIN_D=>;
-		|	PIN_Q<=(state->ram[adr]);
-		|
+		|		break;
+		|	}
 		|	TRACE(
-		|	    << " a "
-		|	    << PIN_A0?
-		|	    << PIN_A1?
-		|	    << PIN_A2?
-		|	    << PIN_A3?
-		|	    << PIN_A4?
-		|	    << PIN_A5?
-		|	    << PIN_A6?
-		|	    << PIN_A7?
-		|	    << PIN_A8?
-		|	    << PIN_A9?
-		|	    << PIN_A10?
-		|	    << PIN_A11?
-		|	    << PIN_A12?
-		|	    << PIN_A13?
-		|	    << " d "
+		|	    << PIN_A?
+		|	    << PIN_B?
+		|	    << PIN_C?
 		|	    << PIN_D?
-		|	    << " w "
-		|	    << PIN_WE?
-		|	    << " cs "
-		|	    << PIN_CS?
+		|	    << PIN_E?
+		|	    << PIN_F?
+		|	    << PIN_G?
+		|	    << PIN_H?
+		|	    << " s "
+		|	    << PIN_S0?
+		|	    << PIN_S1?
+		|	    << PIN_S2?
+		|	    << " e "
+		|	    << PIN_Enot?
+		|	    << " n "
+		|	    << adr
 		|	    << " | "
-		|	    << std::hex << adr
-		|	    << " "
-		|	    << state->ram[adr]
+		|	    << s
 		|	);
+		|	PIN_Y<=(s);
+		|	PIN_Ynot<=(!s);
 		|''')
-
-class Model_2167(PartModel):
-
-    ''' Fix Q pin to be tri-state '''
-
-    def assign(self, comp):
-        if comp.nodes["CS"].net.is_pd():
-            comp.nodes["Q"].pin.role = "c_output"
-        super().assign(comp)
-
 
 def register(board):
     ''' Register component model '''
 
-    board.add_part("2167", Model_2167("2167", SRAM2167))
+    board.add_part("F151", PartModel("F151", F151))

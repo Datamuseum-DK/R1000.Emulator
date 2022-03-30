@@ -125,7 +125,7 @@ class F194(PartFactory):
             i.append("PIN_S1.posedge_event()")
 
         if i:
-             file.write("\t\t\tnext_trigger(%s);\n" % (" | ".join(i)))
+            file.write("\t\t\tnext_trigger(%s);\n" % (" | ".join(i)))
 
         file.fmt('''
 		|			break;

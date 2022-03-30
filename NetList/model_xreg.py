@@ -166,14 +166,10 @@ class ModelXreg(PartModel):
             for node in comp.iter_nodes():
                 if node.pin.name[0] == "Q":
                     node.pin.role = "c_output"
+            del comp.nodes["OE"]
         super().assign(comp)
 
     def configure(self, board, comp):
-        if board.name == "VAL" and "ZREG" in comp.name:
-            comp.part = board.part_catalog["F374_O"]
-            return
-        if comp.nodes["OE"].net.is_pd():
-            del comp.nodes["OE"]
         sig = self.make_signature(comp)
         ident = board.name + "_" + self.name + "_" + sig
         if ident not in board.part_catalog:
