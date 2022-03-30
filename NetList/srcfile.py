@@ -42,7 +42,7 @@ class SrcFile():
         self.filename = filename
         self.text = []
         self.includes = set()
-        self.substitute = [
+        self.substitutions = [
             ("\t\t|", ""),
         ]
 
@@ -50,11 +50,15 @@ class SrcFile():
         ''' ... '''
         self.text.append(text)
 
+    def subst(self, find, replace):
+        ''' Add substitution pattern '''
+        self.substitutions.append((find, replace))
+
     def fmt(self, text):
         ''' Substitute things into C-source text '''
         if text[0] == '\n':
             text = text[1:]
-        for find, replace in self.substitute:
+        for find, replace in self.substitutions:
             text = text.replace(find, replace)
         if text[-2:] == '\n\n':
             text = text[:-1]

@@ -124,7 +124,11 @@ class Board():
 
         self.chf_sheets = SrcFile(self.dstdir + "/" + self.lname + "_sheets.h")
         self.scm_board = self.sc_mod(self.lname + "_board")
+        self.scm_board.subst("«bbb»", self.lname)
+        self.scm_board.subst("«BBB»", self.name)
         self.scm_globals = self.sc_mod(self.lname + "_globals")
+        self.scm_globals.subst("«bbb»", self.lname)
+        self.scm_globals.subst("«BBB»", self.name)
 
         self.sheets = {}
         for i in self.sexp.find("design.sheet"):
@@ -184,16 +188,6 @@ class Board():
         ''' ... '''
         return SC_Mod(self.dstdir + "/" + basename)
 
-    def substitute(self, text):
-        ''' Substitute things into C-source text '''
-        for find, replace in (
-            ("\t\t|", ""),
-            ("UUU", self.name),
-            ("lll", self.lname),
-        ):
-            text = text.replace(find, replace)
-        return text
-
     def produce_sheets_h(self, file):
         ''' ... '''
         file.write("#define " + self.name + "_N_SHEETS %d\n" % len(self.sheets))
@@ -207,33 +201,33 @@ class Board():
 
     def produce_board_pub_hh(self, scm):
         ''' ... '''
-        scm.write(self.substitute('''
+        scm.fmt('''
 		|struct mod_planes;
-		|struct mod_lll;
+		|struct mod_«bbb»;
 		|
-		|struct mod_lll *make_mod_lll(sc_module_name name, mod_planes &planes, const char *how);
-		|'''))
+		|struct mod_«bbb» *make_mod_«bbb»(sc_module_name name, mod_planes &planes, const char *how);
+		|''')
 
     def produce_board_hh(self, scm):
         ''' ... '''
         scm.include(self.scm_globals.hh)
         scm.include(self.chf_sheets)
-        scm.write(self.substitute('''
+        scm.fmt('''
 		|
 		|#define SHEET(upper, lower, nbr, fmt) struct mod_##lower##_##fmt;
-		|UUU_SHEETS()
+		|«BBB»_SHEETS()
 		|#undef SHEET
 		|
-		|SC_MODULE(mod_lll)
+		|SC_MODULE(mod_«bbb»)
 		|{
-		|	mod_lll_globals lll_globals;
+		|	mod_«bbb»_globals «bbb»_globals;
 		|	#define SHEET(upper, lower, nbr, fmt) mod_##lower##_##fmt *lower##_##fmt;
-		|	UUU_SHEETS()
+		|	«BBB»_SHEETS()
 		|	#undef SHEET
 		|
-		|	mod_lll(sc_module_name name, mod_planes &planes, const char *how);
+		|	mod_«bbb»(sc_module_name name, mod_planes &planes, const char *how);
 		|};
-		|'''))
+		|''')
 
     def produce_board_cc(self, scm):
         ''' ... '''
@@ -241,32 +235,32 @@ class Board():
         scm.include("Chassis/planes.hh")
         scm.include(self.scm_board.hh)
         scm.include(self.scm_board.pub)
-        scm.write(self.substitute('''
+        scm.fmt('''
 		|
-		|'''))
+		|''')
         for sheet in self.sheets.values():
             scm.include(sheet.scm.pub)
-        scm.write(self.substitute('''
+        scm.fmt('''
 		|
-		|struct mod_lll *make_mod_lll(
+		|struct mod_«bbb» *make_mod_«bbb»(
 		|    sc_module_name name,
 		|    mod_planes &planes,
 		|    const char *how
 		|)
 		|{
-		|	return new mod_lll(name, planes, how);
+		|	return new mod_«bbb»(name, planes, how);
 		|}
 		|
-		|mod_lll :: mod_lll(
+		|mod_«bbb» :: mod_«bbb»(
 		|    sc_module_name name,
 		|    mod_planes &planes,
 		|    const char *how
 		|) :
 		|	sc_module(name),
-		|	lll_globals("lll_globals")
+		|	«bbb»_globals("«bbb»_globals")
 		|{
 		|	if (how == NULL)
-		|'''))
+		|''')
         scm.write('\t\thow = "%s";\n' % ('+' * len(self.sheets)))
         scm.write('\tassert(strlen(how) == %d);\n' % len(self.sheets))
         # ... we could also use the SHEET macro ...
@@ -279,40 +273,42 @@ class Board():
 
     def produce_globals_pub_hh(self, scm):
         ''' ... '''
-        scm.write(self.substitute('''
-		|struct mod_lll_globals;
+        scm.fmt('''
+		|struct mod_«bbb»_globals;
 		|
-		|struct mod_lll_globals *make_mod_lll_globals(sc_module_name name);
-		|'''))
+		|struct mod_«bbb»_globals *make_mod_«bbb»_globals(sc_module_name name);
+		|''')
 
     def produce_globals_hh(self, scm):
         ''' ... '''
-        scm.write("\nSC_MODULE(mod_%s_globals)\n" % self.lname)
-        scm.write("{\n")
+        scm.fmt('''
+		|SC_MODULE(mod_«lll»)
+		|{
+		|''')
         for net in sorted(self.nets.values()):
             if net.is_local or net.is_plane:
                 continue
             net.write_decl(scm)
-        scm.write(self.substitute('''
+        scm.fmt('''
 		|
-		|	mod_lll_globals(sc_module_name name);
+		|	mod_«lll»(sc_module_name name);
 		|};
-		|'''))
+		|''')
 
     def produce_globals_cc(self, scm):
         ''' ... '''
         scm.write("#include <systemc.h>\n")
         scm.include(self.scm_globals.hh)
         scm.include(self.scm_globals.pub)
-        scm.write(self.substitute('''
+        scm.fmt('''
 		|
-		|struct mod_lll_globals *make_mod_lll_globals(sc_module_name name)
+		|struct mod_«bbb»_globals *make_mod_«bbb»_globals(sc_module_name name)
 		|{
-		|	return new mod_lll_globals(name);
+		|	return new mod_«bbb»_globals(name);
 		|}
 		|
-		|mod_lll_globals :: mod_lll_globals(sc_module_name name) :
-		|'''))
+		|mod_«bbb»_globals :: mod_«bbb»_globals(sc_module_name name) :
+		|''')
         scm.write("\tsc_module(name)")
         for net in sorted(self.nets.values()):
             if net.is_local or net.is_plane:

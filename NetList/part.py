@@ -200,14 +200,14 @@ class PartFactory(Part):
         ''' Build this component (if/when used) '''
 
         self.scm = self.board.sc_mod(self.name)
-        self.scm.std_hh(self.name, self.pin_iterator())
+        self.subs(self.scm.cc)
+        self.scm.std_hh(self.pin_iterator())
         self.scm.std_cc(
-            self.name,
-            self.state,
-            self.init,
-            self.sensitive,
-            self.doit,
-            extra=extra,
+            extra = extra,
+            state = self.state,
+            init = self.init,
+            sensitive = self.sensitive,
+            doit = self.doit,
         )
         self.scm.commit()
         self.board.extra_scms.append(self.scm)
@@ -231,61 +231,35 @@ class PartFactory(Part):
             if node.pin.role == "c_input":
                 yield "PIN_%s" % node.pin.name
 
-    def doit(self, file):
-        ''' The meat of the doit() function '''
-
+    def subs(self, file):
         for node in self.comp.iter_nodes():
             dst = "PIN_%s<=" % node.pin.name
             src = "PIN_%s=>" % node.pin.name
             trc = "PIN_%s?" % node.pin.name
             if node.pin.role == "c_output" and node.net.sc_type == "bool":
-                file.substitute.append(
-                    (dst, "PIN_%s = " % (node.pin.name,))
-                )
-                file.substitute.append(
-                    (trc, "PIN_%s" % node.pin.name)
-                )
+                file.subst(dst, "PIN_%s = " % node.pin.name)
+                file.subst(trc, "PIN_%s" % node.pin.name)
             elif node.pin.role == "c_output" or "tri_state" in node.pin.role:
-                file.substitute.append(
-                    (src, "IS_H(PIN_%s)" % node.pin.name)
-                )
-                file.substitute.append(
-                    (dst, "PIN_%s = AS" % (node.pin.name,))
-                )
-                file.substitute.append(
-                    (trc, "PIN_%s" % node.pin.name)
-                )
+                file.subst(src, "IS_H(PIN_%s)" % node.pin.name)
+                file.subst(dst, "PIN_%s = AS" % node.pin.name)
+                file.subst(trc, "PIN_%s" % node.pin.name)
             elif node.net.is_pd():
-                file.substitute.append(
-                    (src, "false"),
-                )
-                file.substitute.append(
-                    (trc, '"v"'),
-                )
+                file.subst(src, "false")
+                file.subst(trc, '"v"')
             elif node.net.is_pu():
-                file.substitute.append(
-                    (src, "true"),
-                )
-                file.substitute.append(
-                    (trc, '"^"'),
-                )
+                file.subst(src, "true")
+                file.subst(trc, '"^"')
             elif node.net.sc_type == "bool":
-                file.substitute.append(
-                    (src, "PIN_%s" % node.pin.name)
-                )
-                file.substitute.append(
-                    (trc, "PIN_%s" % node.pin.name)
-                )
+                file.subst(src, "PIN_%s" % node.pin.name)
+                file.subst(trc, "PIN_%s" % node.pin.name)
             else:
-                file.substitute.append(
-                    (src, "IS_H(PIN_%s)" % node.pin.name)
-                )
-                file.substitute.append(
-                    (dst, "PIN_%s = AS" % node.pin.name)
-                )
-                file.substitute.append(
-                    (trc, "PIN_%s" % node.pin.name)
-                )
+                file.subst(src, "IS_H(PIN_%s)" % node.pin.name)
+                file.subst(dst, "PIN_%s = AS" % node.pin.name)
+                file.subst(trc, "PIN_%s" % node.pin.name)
+
+    def doit(self, _file):
+        ''' The meat of the doit() function '''
+        return
 
     def pin_iterator(self):
         ''' SC pin declarations '''

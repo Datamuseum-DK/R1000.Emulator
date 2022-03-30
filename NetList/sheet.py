@@ -48,6 +48,8 @@ class Sheet():
         self.local_nets = []
 
         self.scm = self.board.sc_mod(self.mod_name)
+        self.scm.subst("«ttt»", self.mod_type)
+        self.scm.subst("«bbb»", self.board.name.lower())
 
     def __str__(self):
         return self.board.name + "_%d" % self.page
@@ -59,29 +61,19 @@ class Sheet():
         assert comp.ref not in self.components
         self.components[comp.ref] = comp
 
-    def substitute(self, text):
-        ''' Substitute things into C-source text '''
-        for find, replace in (
-            ("\t\t|", ""),
-            ("mmm", self.mod_name),
-            ("ttt", self.mod_type),
-        ):
-            text = text.replace(find, replace)
-        return self.board.substitute(text)
-
     def produce_pub_hh(self, scm):
         ''' ... '''
-        scm.write(self.substitute('''
+        scm.fmt('''
 		|struct mod_planes;
-		|struct mod_lll_globals;
-		|struct mmm;
+		|struct mod_«bbb»_globals;
+		|struct «mmm»;
 		|
-		|struct ttt *make_ttt(
+		|struct «ttt» *make_«ttt»(
 		|    sc_module_name name,
 		|    mod_planes &planes,
-		|    mod_lll_globals &lll_globals
+		|    mod_«bbb»_globals &«bbb»_globals
 		|);
-		|'''))
+		|''')
 
     def produce_hh(self, scm):
         ''' ... '''
@@ -90,25 +82,33 @@ class Sheet():
             for incl in comp.part.yield_includes(comp):
                 if incl:
                     incls.add(incl)
+
         for incl in sorted(incls):
             scm.include(incl)
-        scm.write("\n")
-        scm.write("SC_MODULE(%s)\n" % self.mod_type)
-        scm.write("{\n")
+
+        scm.fmt('''
+		|
+		|SC_MODULE(«ttt»)\n
+		|{
+		|''')
+
         for net in sorted(self.local_nets):
             net.write_decl(scm)
+
         scm.write("\n")
+
         for comp in sorted(self.components.values()):
             comp.part.instance(scm, comp)
-        scm.write("\n")
-        scm.write(self.substitute('''
-		|	ttt(
+
+        scm.fmt('''
+		|
+		|	«ttt»(
 		|	    sc_module_name name,
 		|	    mod_planes &planes,
-		|	    mod_lll_globals &lll_globals
+		|	    mod_«bbb»_globals &«bbb»_globals
 		|	);
 		|};
-		|'''))
+		|''')
 
     def produce_cc(self, scm):
         ''' ... '''
@@ -117,23 +117,23 @@ class Sheet():
         scm.include(self.board.scm_globals.hh)
         scm.include(self.scm.hh)
         scm.include(self.scm.pub)
-        scm.write(self.substitute('''
+        scm.fmt('''
 		|
-		|struct ttt *make_ttt(
+		|struct «ttt» *make_«ttt»(
 		|    sc_module_name name,
 		|    mod_planes &planes,
-		|    mod_lll_globals &lll_globals
+		|    mod_«bbb»_globals &«bbb»_globals
 		|)
 		|{
-		|	return new ttt(name, planes, lll_globals);
+		|	return new «ttt»(name, planes, «bbb»_globals);
 		|}
 		|
-		|ttt :: ttt(
+		|«ttt» :: «ttt»(
 		|    sc_module_name name,
 		|    mod_planes &planes,
-		|    mod_lll_globals &lll_globals
+		|    mod_«bbb»_globals &«bbb»_globals
 		|) :
-		|'''))
+		|''')
         scm.write("\tsc_module(name)")
         for net in sorted(self.local_nets):
             net.write_init(scm)
