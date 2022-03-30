@@ -1,5 +1,9 @@
 # See mkmk.sh
 
+OBJS += Components/tables.o
+Components/tables.o: Components/tables.c 
+	${CC} -o Components/tables.o -c Components/tables.c
+
 OBJS += Components/1489.o
 Components/1489.o: Components/1489.cc \
     Components/1489.hh \
@@ -312,6 +316,7 @@ Components/F175.o: Components/F175.cc \
 OBJS += Components/F181.o
 Components/F181.o: Components/F181.cc \
     Components/F181.hh \
+    Components/tables.h \
     Infra/context.h \
     Chassis/r1000sc.h \
     Components/F181_tbl.h
@@ -320,6 +325,7 @@ Components/F181.o: Components/F181.cc \
 OBJS += Components/F182.o
 Components/F182.o: Components/F182.cc \
     Components/F182.hh \
+    Components/tables.h \
     Infra/context.h \
     Chassis/r1000sc.h
 	${SC_CC} -o Components/F182.o Components/F182.cc

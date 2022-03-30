@@ -6,9 +6,7 @@
 // Carry Lookahead Generator
 // Fairchild DS009492 April 1988 Revised June 2002
 
-static const uint8_t lut182[512] = {
-#include "F182_tbl.h"
-};
+#include "Components/tables.h"
 
 struct scm_f182_state {
 	struct ctx ctx;

@@ -7,9 +7,7 @@
 // Fairchild DS009491 April 1988 Revised January 2004
 // http://www.righto.com/2017/03/inside-vintage-74181-alu-chip-how-it.html
 
-static const uint8_t lut181[16384] = {
-#include "F181_tbl.h"
-};
+#include "Components/tables.h"
 
 struct scm_f181_state {
 	struct ctx ctx;
