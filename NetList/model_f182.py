@@ -42,12 +42,9 @@ class F182(PartFactory):
 
     ''' F182 Carry Lookahead Generator '''
 
-    def build(self):
-        super().build(extra=self.extra)
-
     def extra(self, file):
-
         file.include("Components/tables.h")
+        super().extra(file)
 
     def doit(self, file):
         ''' The meat of the doit() function '''

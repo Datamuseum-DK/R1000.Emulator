@@ -81,12 +81,8 @@ class Xbuf(PartFactory):
 		|		tmp = ~tmp;
 		|''')
 
-        for node in self.comp:
-            if node.pin.name[0] == 'Y':
-                i = self.bits - int(node.pin.name[1:]) - 1
-                file.fmt("\n\t\t|\t\tPIN_%s<=(tmp & ((uint64_t)1 << %d));\n\n" % (node.pin.name, i))
-
         file.fmt('''
+		|		BUS_Y_WRITE(tmp);
 		|		state->job = 0;
 		|''')
 
@@ -94,47 +90,25 @@ class Xbuf(PartFactory):
             file.fmt('''
 		|	}
 		|
-		|	if (true) {
-		|		tmp = 0;
+		|	BUS_I_READ(tmp);
+		|	if (tmp != state->data || state->job < 0) {
+		|		state->data = tmp;
+		|		state->job = 1;
+		|		next_trigger(5, SC_NS);
+		|	}
 		|''')
         else:
             file.fmt('''
 		|	} else if (state->job < 0) {
-		|''')
-
-            for node in self.comp:
-                if node.pin.name[0] == 'Y':
-                    file.write("\t\tPIN_%s = sc_logic_Z;\n" % node.pin.name)
-
-            file.fmt('''
+		|		BUS_Y_Z();
 		|	}
 		|
 		|	if (PIN_OE=>) {
-		|''')
-
-            for node in self.comp:
-                if node.pin.name[0] == 'Y':
-                    file.write("\t\tPIN_%s = sc_logic_Z;\n" % node.pin.name)
-
-            file.fmt('''
+		|		BUS_Y_Z();
 		|		state->job = -1;
 		|		next_trigger(PIN_OE.negedge_event());
 		|	} else {
-		|		tmp = 0;
-		|''')
-
-        for node in self.comp:
-            if node.pin.name[0] != 'I':
-                continue
-            i = self.bits - int(node.pin.name[1:]) - 1
-            file.fmt(
-                "\n\t\t|\t\tif (PIN_%s=>) tmp |= ((uint64_t)1 << %d);\n\n" % (
-                    node.pin.name,
-                    i,
-                )
-            )
-
-        file.fmt('''
+		|		BUS_I_READ(tmp);
 		|		if (tmp != state->data || state->job < 0) {
 		|			state->data = tmp;
 		|			state->job = 1;
@@ -160,12 +134,12 @@ class ModelXbuf(PartModel):
             oenode1.remove()
             oenode0.remove()
             if oenode0.net.is_pd():
-                print("XBUF-8-PD", comp)
+                # print("XBUF-8-PD", comp)
                 for node in comp:
                     if node.pin.name[0] == 'Y':
                         node.pin.role = "c_output"
             else:
-                print("XBUF-8-VAR", comp)
+                # print("XBUF-8-VAR", comp)
                 oenode0.pin.name = "OE"
                 oenode0.insert()
             return
@@ -193,6 +167,7 @@ class ModelXbuf(PartModel):
             node = comp[src]
             node.remove()
             node.pin.name = dst
+            node.pin.update()
             node.component = comp2
             node.insert()
 
@@ -208,18 +183,14 @@ class ModelXbuf(PartModel):
         for this in (comp, comp2):
             node = this["OE"]
             if node.net.is_pd():
-                print("XBUF-4-PD", this)
                 node.remove()
                 for node in this:
                     if node.pin.name[0] == "Y":
                         node.pin.role = "c_output"
             elif len(node.net) == 1 or node.net.is_pu():
-                print("XBUF-4-NOOP", this)
                 for node in this:
                     node.remove()
                 this.remove()
-            else:
-                print("XBUF-4-VAR", this)
 
     def configure(self, board, comp):
         sig = self.make_signature(comp)

@@ -29,41 +29,36 @@
 # SUCH DAMAGE.
 
 '''
-   Various stuff
-   =============
+   F08 (Quad) 2-input AND
+   ======================
+
 '''
 
-def sortkey(word):
-    '''
-	Split input into runs of digits vs. non-digits and return
-	a list with alternating strings and ints for sorting
-    '''
-    key = list([word[0]])
-    for glyph in word[1:]:
-        i = glyph.isdigit()
-        j = key[-1][-1].isdigit()
-        if i == j:
-            key[-1] += glyph
-        else:
-            key.append(glyph)
-    for i, j in enumerate(key):
-        if j.isdigit():
-            key[i] = int(j)
-    return key
 
-def signature(elem):
-    ''' Build a signature string from elements '''
-    retval = [elem[0]]
-    i = 1
-    j = 1
-    for i in range(1, len(elem)):
-        if elem[i] == retval[-1]:
-            j += 1
-        else:
-            if j > 1:
-                retval[-1] = retval[-1] + ("%d" % j)
-            retval.append(elem[i])
-            j = 1
-    if j > 1:
-        retval[-1] = retval[-1] + ("%d" % j)
-    return "".join(retval)
+from part import PartModel, PartFactory
+
+class F08(PartFactory):
+
+    ''' F08 (Quad) 2-input AND '''
+
+    def doit(self, file):
+        ''' The meat of the doit() function '''
+
+        super().doit(file)
+
+        file.fmt('''
+		|
+		|	bool s = PIN_D0=> & PIN_D1=>;
+		|	TRACE(
+		|	    << PIN_D0?
+		|	    << PIN_D1?
+		|	    << " | "
+		|	    << s
+		|	);
+		|	PIN_Q<=(s);
+		|''')
+
+def register(board):
+    ''' Register component model '''
+
+    board.add_part("F08", PartModel("F08", F08))

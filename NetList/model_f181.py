@@ -42,12 +42,9 @@ class F181(PartFactory):
 
     ''' F181 4-bit Arithemtic Logic Unit '''
 
-    def build(self):
-        super().build(extra=self.extra)
-
     def extra(self, file):
-
         file.include("Components/tables.h")
+        super().extra(file)
 
     def doit(self, file):
         ''' The meat of the doit() function '''

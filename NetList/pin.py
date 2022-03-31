@@ -42,12 +42,18 @@ class Pin():
     def __init__(self, pinident, pinname, pinrole):
         self.ident = pinident	# Not always numeric!
         self.name = pinname
+        self.role = pinrole
+        self.bus = None
+        self.update()
+
+    def update(self):
+        ''' Things (may) have changed '''
+
         for i, j in (
             ("=", "eq"),
             ("~", "not"),
         ):
             self.name = self.name.replace(i, j)
-        self.role = pinrole
         if not self.name:
             self.name = "_"
         self.sortkey = util.sortkey(self.name)
@@ -70,3 +76,18 @@ class PinSexp(Pin):
             pinname = sexp[1][0].name,
             pinrole = sexp[2][0].name,
         )
+
+class Bus():
+    ''' A set of pins named `<prefix>[0…N]` '''
+
+    def __init__(self, busname, low):
+        self.name = busname
+        self.low = low
+        self.pins = []
+
+    def __repr__(self):
+        return "_".join(("Bus", self.busname, self.low, str(len(self.pins))))
+
+    def add_pin(self, pin):
+        self.pins.append(pin)
+        pin.bus = self

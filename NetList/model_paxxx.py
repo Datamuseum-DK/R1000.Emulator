@@ -61,15 +61,7 @@ class PAxxx(PartFactory):
         file.fmt('''
 		|	unsigned adr = 0;
 		|
-		|	if (PIN_A8=>) adr |= 1 << 0;
-		|	if (PIN_A7=>) adr |= 1 << 1;
-		|	if (PIN_A6=>) adr |= 1 << 2;
-		|	if (PIN_A5=>) adr |= 1 << 3;
-		|	if (PIN_A4=>) adr |= 1 << 4;
-		|	if (PIN_A3=>) adr |= 1 << 5;
-		|	if (PIN_A2=>) adr |= 1 << 6;
-		|	if (PIN_A1=>) adr |= 1 << 7;
-		|	if (PIN_A0=>) adr |= 1 << 8;
+		|	BUS_A_READ(adr);
 		|	unsigned data = state->prom[adr];
 		|	TRACE(
 		|''')
@@ -80,16 +72,7 @@ class PAxxx(PartFactory):
 		|''')
 
         file.fmt('''
-		|	    << " a "
-		|	    << PIN_A0=>
-		|	    << PIN_A1=>
-		|	    << PIN_A2=>
-		|	    << PIN_A3=>
-		|	    << PIN_A4=>
-		|	    << PIN_A5=>
-		|	    << PIN_A6=>
-		|	    << PIN_A7=>
-		|	    << PIN_A8=>
+		|	    << " a " BUS_A_TRACE()
 		|	    << " d "
 		|	    << AS(data & 0x80)
 		|	    << AS(data & 0x40)
@@ -105,37 +88,16 @@ class PAxxx(PartFactory):
         if 'OE' not in self.comp.nodes:
 
             file.fmt('''
-		|	PIN_Y0<=(data & 0x80);
-		|	PIN_Y1<=(data & 0x40);
-		|	PIN_Y2<=(data & 0x20);
-		|	PIN_Y3<=(data & 0x10);
-		|	PIN_Y4<=(data & 0x08);
-		|	PIN_Y5<=(data & 0x04);
-		|	PIN_Y6<=(data & 0x02);
-		|	PIN_Y7<=(data & 0x01);
+		|	BUS_Y_WRITE(data);
 		|''')
 
         else:
 
             file.fmt('''
 		|	if (!PIN_OE=>) {
-		|		PIN_Y0<=(data & 0x80);
-		|		PIN_Y1<=(data & 0x40);
-		|		PIN_Y2<=(data & 0x20);
-		|		PIN_Y3<=(data & 0x10);
-		|		PIN_Y4<=(data & 0x08);
-		|		PIN_Y5<=(data & 0x04);
-		|		PIN_Y6<=(data & 0x02);
-		|		PIN_Y7<=(data & 0x01);
+		|		BUS_Y_WRITE(data);
 		|	} else {
-		|		PIN_Y0 = sc_logic_Z;
-		|		PIN_Y1 = sc_logic_Z;
-		|		PIN_Y2 = sc_logic_Z;
-		|		PIN_Y3 = sc_logic_Z;
-		|		PIN_Y4 = sc_logic_Z;
-		|		PIN_Y5 = sc_logic_Z;
-		|		PIN_Y6 = sc_logic_Z;
-		|		PIN_Y7 = sc_logic_Z;
+		|		BUS_Y_Z();
 		|	}
 		|''')
 

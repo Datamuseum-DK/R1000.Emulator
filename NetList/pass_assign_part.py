@@ -43,3 +43,6 @@ class PassAssignPart():
             if not comp.part:
                 comp.part = board.part_catalog[comp.partname]
             comp.part.assign(comp)
+
+        for comp in board.iter_components():
+            comp.make_busses()

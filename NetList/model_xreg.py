@@ -91,23 +91,15 @@ class Xreg(PartFactory):
 		|		tmp = ~tmp;
 		|''')
 
-        for node in self.comp:
-            if node.pin.name[0] == 'Q':
-                i = self.bits - int(node.pin.name[1:]) - 1
-                file.fmt("\n\t\t|\t\tPIN_%s<=(tmp & ((uint64_t)1 << %d));\n\n" % (node.pin.name, i))
-
         file.fmt('''
+		|		BUS_Q_WRITE(tmp);
 		|		state->job = 0;
 		|''')
 
         if 'OE' in self.comp:
             file.fmt('''
 		|	} else if (state->job == -1) {
-		|''')
-            for node in self.comp:
-                if node.pin.name[0] == 'Q':
-                    file.write("\t\tPIN_%s = sc_logic_Z;\n" % node.pin.name)
-            file.fmt('''
+		|		BUS_Q_Z();
 		|		state->job = -2;
 		|''')
 
@@ -116,11 +108,9 @@ class Xreg(PartFactory):
 		|
 		|	if (PIN_CLK.posedge()) {
 		|		uint64_t tmp = 0;
+		|		BUS_D_READ(tmp);
 		|''')
-        for node in self.comp:
-            if node.pin.name[0] == 'D':
-                i = self.bits - int(node.pin.name[1:]) - 1
-                file.fmt("\n\t\t|\t\tif (PIN_%s=>) tmp |= ((uint64_t)1 << %d);\n\n" % (node.pin.name, i))
+
         if 'OE' in self.comp:
             file.fmt('''
 		|		if (tmp != state->data) {

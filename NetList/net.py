@@ -40,7 +40,7 @@ class Net():
     def __init__(self, board, netname):
         self.board = board
         self.name = netname
-        self.nodes = []
+        self.nnodes = []
         self.bus = None
         self.sheets = set()
         self.is_plane = None
@@ -50,24 +50,27 @@ class Net():
 
     def add_node(self, node):
         ''' ... '''
-        self.nodes.append(node)
+        assert node not in self.nnodes
+        self.nnodes.append(node)
 
     def del_node(self, node):
         ''' ... '''
-        self.nodes.remove(node)
+        assert node in self.nnodes
+        self.nnodes.remove(node)
 
     def iter_nodes(self):
-        yield from self.nodes
+        ''' ... '''
+        yield from self.nnodes
 
     def find_cname(self):
         ''' This is gnarly '''
         self.cname = self.name
         if self.cname[0].isdigit():
             self.cname = "z" + self.cname
-        if len(self.nodes) == 1 and "unconnected" in self.cname:
-            node = self.nodes[0]
+        if len(self.nnodes) == 1 and "unconnected" in self.cname:
+            node = self.nnodes[0]
             self.cname = "u_" + node.component.name + "_" + node.pin.ident
-            # print("ZZ", self.cname, self.nodes[0])
+            # print("ZZ", self.cname, self.nnodes[0])
         for find, replace in (
             ("Net-", ""),
             ("/Page ", "p"),
@@ -93,7 +96,7 @@ class Net():
         return self.name < other.name
 
     def __len__(self):
-        return len(self.nodes)
+        return len(self.nnodes)
 
     def is_pd(self):
         ''' Is this network a constant low value '''
@@ -104,6 +107,7 @@ class Net():
         return self.name == "PU"
 
     def is_const(self):
+        ''' Value will not change '''
         return self.name in ("PD", "PU") or len(self) == 1
 
     def write_decl(self, file):
@@ -133,7 +137,7 @@ class Net():
         if self.name[:2] in ("GB", "GF", "PD", "PU",):
             return
         census = {}
-        for node in self.nodes:
+        for node in self.nnodes:
             census[node.pin.role] = 1 + census.get(node.pin.role, 0)
         if len(census) == 1 and 'output+no_connect' in census:
             return

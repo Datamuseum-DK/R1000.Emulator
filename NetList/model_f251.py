@@ -29,41 +29,67 @@
 # SUCH DAMAGE.
 
 '''
-   Various stuff
-   =============
+   F251 8-Input Multiplexer with 3-STATE Outputs
+   ==============================================
+
+   Ref: Fairchild DS009504 April 1988 Revised September 2000
 '''
 
-def sortkey(word):
-    '''
-	Split input into runs of digits vs. non-digits and return
-	a list with alternating strings and ints for sorting
-    '''
-    key = list([word[0]])
-    for glyph in word[1:]:
-        i = glyph.isdigit()
-        j = key[-1][-1].isdigit()
-        if i == j:
-            key[-1] += glyph
-        else:
-            key.append(glyph)
-    for i, j in enumerate(key):
-        if j.isdigit():
-            key[i] = int(j)
-    return key
 
-def signature(elem):
-    ''' Build a signature string from elements '''
-    retval = [elem[0]]
-    i = 1
-    j = 1
-    for i in range(1, len(elem)):
-        if elem[i] == retval[-1]:
-            j += 1
-        else:
-            if j > 1:
-                retval[-1] = retval[-1] + ("%d" % j)
-            retval.append(elem[i])
-            j = 1
-    if j > 1:
-        retval[-1] = retval[-1] + ("%d" % j)
-    return "".join(retval)
+from part import PartModel, PartFactory
+
+class F251(PartFactory):
+
+    ''' F251 8-Input Multiplexer '''
+
+    def doit(self, file):
+        ''' The meat of the doit() function '''
+
+        super().doit(file)
+
+        if not self.comp['OE'].net.is_const():
+            file.fmt('''
+		|
+		|	if (PIN_OE=>) {
+		|		TRACE(<<"Z");
+		|		PIN_Y = sc_logic_Z;
+		|		PIN_Ynot = sc_logic_Z;
+		|		next_trigger(PIN_OE.negedge_event());
+		|		return;
+		|	}
+		|''')
+
+        file.fmt('''
+		|	unsigned adr = 0;
+		|	bool s;
+		|
+		|	BUS_S_READ(adr);
+		|	switch(adr) {
+		|	case 0: s = PIN_A=>; break;
+		|	case 1: s = PIN_B=>; break;
+		|	case 2: s = PIN_C=>; break;
+		|	case 3: s = PIN_D=>; break;
+		|	case 4: s = PIN_E=>; break;
+		|	case 5: s = PIN_F=>; break;
+		|	case 6: s = PIN_G=>; break;
+		|	case 7: s = PIN_H=>; break;
+		|	}
+		|	PIN_Y<=(s);
+		|	PIN_Ynot<=(!s);
+		|
+		|	TRACE(
+		|	    << " oe "
+		|	    << PIN_OE?
+		|	    << " i "
+		|	    << PIN_A? << PIN_B? << PIN_C? << PIN_D?
+		|	    << PIN_E? << PIN_F? << PIN_G? << PIN_H?
+		|	    << " s " BUS_S_TRACE()
+		|	    << " | "
+		|	    << s
+		|	);
+		|''')
+
+def register(board):
+    ''' Register component model '''
+
+    board.add_part("F251", PartModel("F251", F251))

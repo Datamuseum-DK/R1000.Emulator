@@ -58,10 +58,12 @@ class Sheet():
         return self.page < other.page
 
     def add_component(self, comp):
+        ''' Add component to sheet '''
         assert comp.ref not in self.components
         self.components[comp.ref] = comp
 
     def del_component(self, comp):
+        ''' Remove component to sheet '''
         assert comp.ref in self.components
         del self.components[comp.ref]
 

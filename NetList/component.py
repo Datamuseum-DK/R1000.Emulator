@@ -33,6 +33,8 @@
    =================================================
 '''
 
+import pin
+
 class Component():
     ''' A `component` from the netlist file '''
 
@@ -51,6 +53,7 @@ class Component():
         self.location = "x99"
         self.name = "X"
         self.part = None
+        self.busses = {}
 
         self.insert()
 
@@ -70,20 +73,45 @@ class Component():
         yield from list(sorted(self.nodes.values()))
 
     def insert(self):
+        ''' Insert this component '''
         self.board.components[self.ref] = self
         self.sheet.add_component(self)
 
     def remove(self):
+        ''' Remove this component '''
         del self.board.components[self.ref]
         self.sheet.del_component(self)
 
     def add_node(self, node):
         ''' Add a node to this component '''
+        assert node.pin.name not in self.nodes
         self.nodes[node.pin.name] = node
 
     def del_node(self, node):
         ''' Remove a node to this component '''
+        assert node.pin.name in self.nodes
         del self.nodes[node.pin.name]
+
+    def make_busses(self):
+        ''' Deduce busses from nodes and pins '''
+        buscand = {}
+        for node in self:
+            sortkey = node.pin.sortkey
+            if len(sortkey) == 2:
+                buscand.setdefault(sortkey[0], list()).append(node)
+        for busname, busnodes in buscand.items():
+            if not busname.isalpha():
+                continue
+            if len(busnodes) < 2:
+                continue
+            low = min(x.pin.sortkey[1] for x in busnodes)
+            high = max(x.pin.sortkey[1] for x in busnodes)
+            if 1 + high - low != len(busnodes):
+                continue
+            bus = pin.Bus(busname, low)
+            self.busses[busname] = bus
+            for node in busnodes:
+                bus.add_pin(node.pin)
 
 class ComponentSexp(Component):
 

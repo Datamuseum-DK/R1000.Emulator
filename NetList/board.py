@@ -51,6 +51,7 @@ import model_mux2
 # import model_2149
 import model_2167
 import model_93s48
+import model_f08
 import model_f51
 import model_f74
 import model_f86
@@ -65,6 +66,7 @@ import model_f175
 import model_f181
 import model_f182
 import model_f194
+import model_f251
 import model_f280
 import model_f283
 import model_f381
@@ -100,6 +102,7 @@ class Board():
             # model_2149.register(self)
             model_2167.register(self)
             model_93s48.register(self)
+            model_f08.register(self)
             model_f51.register(self)
             model_f74.register(self)
             model_f86.register(self)
@@ -114,6 +117,7 @@ class Board():
             model_f181.register(self)
             model_f182.register(self)
             model_f194.register(self)
+            model_f251.register(self)
             model_f280.register(self)
             model_f283.register(self)
             model_f381.register(self)
@@ -159,13 +163,16 @@ class Board():
         return self.name
 
     def add_part(self, name, part):
+        ''' Add a part to our catalog, if not already occupied '''
         if name not in self.part_catalog:
             self.part_catalog[name] = part
 
     def iter_components(self):
+        ''' ... '''
         yield from list(self.components.values())
 
     def iter_nets(self):
+        ''' ... '''
         yield from self.nets.values()
 
     def get_component(self, name):

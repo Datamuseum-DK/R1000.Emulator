@@ -122,7 +122,7 @@ class SRAM2149(PartFactory):
 		|''')
 
 class Model2149(PartModel):
-
+    ''' ... '''
     def assign(self, comp):
         if comp.nodes["CS"].net.is_pd():
             for node in comp:

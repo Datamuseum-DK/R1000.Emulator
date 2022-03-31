@@ -33,6 +33,59 @@
    ========================
 '''
 
+class MaybeBus():
+
+    ''' ... '''
+
+    def __init__(self, sig, net):
+        self.sig = sig
+        self.nodes = []
+        self.components = {}
+        self.nets = []
+        self.nodes = {}
+        self.failed = len(net.nnodes) < 2
+
+        if self.failed:
+            return
+        self.nets.append(net)
+        for node in net.nnodes:
+            if not node.pin.bus:
+                self.failed = True
+                return
+            self.components[node.component] = node.pin.bus
+            self.nodes[node.component] = [node]
+
+    def add_net(self, net):
+        if self.failed:
+            return
+        self.nets.append(net)
+        for node in net.nnodes:
+            i = self.components.get(node.component)
+            if not i:
+                self.failed = True
+                return
+            if i != node.pin.bus:
+                self.failed = True
+                return
+            self.nodes[node.component].append(node)
+
+    def table(self):
+        return
+        print("BUS", len(self.nets), "×", len(self.nodes), [self.sig])
+
+        i = [""]
+        for component in self.components:
+            i.append(component.name)
+        print("\t".join(i))
+
+        for net in self.nets:
+            i = [""]
+            for node in net.nnodes:
+                i.append(node.pin.name)
+            i.append(net.name)
+            print("\t".join(i))
+
+
 class PassNetConfig():
 
     ''' Pass: Configure the `net` '''
@@ -59,13 +112,15 @@ class PassNetConfig():
         for i, j in sorted(self.blame.items(), key=lambda x: -x[1]):
             print(i, j)
 
+        self.ponder_bus()
+
     def ponder_bool(self):
         for net in self.board.iter_nets():
             i = {}
             for node in net.iter_nodes():
                 i[node.pin.role] = 1 + i.setdefault(node.pin.role, 0)
             if len(i) == 1 and ('c_input' in i or 'c_output' in i):
-                print(net, '=>', "bool", "(unconnected)")
+                # print(net, '=>', "bool", "(unconnected)")
                 net.sc_type = "bool"
                 continue
             if 'c_input' not in i or 'c_output' not in i or len(i) > 2:
@@ -73,8 +128,25 @@ class PassNetConfig():
                 continue
             if i['c_output'] > 1:
                 continue
-            print(net, '=>', "bool")
+            # print(net, '=>', "bool")
             net.sc_type = "bool"
+
+    def ponder_bus(self):
+        maybe = {}
+        for net in self.board.iter_nets():
+            if len(set(net.nnodes)) != len(net.nnodes):
+                continue
+            sig = " ".join(x.component.ref for x in net.nnodes)
+            i = maybe.get(sig)
+            if i:
+                i.add_net(net)
+            else:
+                maybe[sig] = MaybeBus(sig, net)
+        for sig, maybebus in maybe.items():
+            if len(maybebus.nets) < 2:
+                maybebus.failed = True
+            if not maybebus.failed:
+                maybebus.table()
 
     def assign_blame(self, net):
         if len(net) < 2 or net.is_plane:

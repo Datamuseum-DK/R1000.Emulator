@@ -60,18 +60,22 @@ class Part():
         ''' The 'nets' are ready '''
 
     def yield_includes(self, _comp):
+        ''' ... '''
         yield from self.includes
 
     def assign(self, _comp):
         ''' When assigned to component '''
 
     def instance(self, file, comp):
+        ''' ... '''
         file.write('\t' + self.clsname + " " + comp.name + ";\n")
 
     def initialize(self, file, comp):
+        ''' ... '''
         file.write(",\n\t" + comp.name + '("' + comp.name + '", "' + comp.value + '")')
 
     def hookup_comp(self, file, comp):
+        ''' ... '''
         if self.ignore:
             return
         file.write("\n\n\t// %s" % " ".join((comp.ref, comp.name, comp.location, comp.partname)))
@@ -81,6 +85,7 @@ class Part():
         self.hookup(file, comp)
 
     def hookup(self, _file, _comp):
+        ''' ... '''
         return
 
 class NoPart(Part):
@@ -160,9 +165,9 @@ class PartModel(Part):
 
         i = []
         for node in comp:
-            if node.net.is_pu():
+            if node.pin.bus is None and node.net.is_pu():
                 i.append("U")
-            elif node.net.is_pd():
+            elif node.pin.bus is None and node.net.is_pd():
                 i.append("D")
             elif node.net.sc_type == "bool":
                 i.append("B")
@@ -196,14 +201,14 @@ class PartFactory(Part):
         self.comp = None
         yield self.scm.hh.filename
 
-    def build(self, extra=None):
+    def build(self):
         ''' Build this component (if/when used) '''
 
         self.scm = self.board.sc_mod(self.name)
         self.subs(self.scm.cc)
         self.scm.std_hh(self.pin_iterator())
         self.scm.std_cc(
-            extra = extra,
+            extra = self.extra,
             state = self.state,
             init = self.init,
             sensitive = self.sensitive,
@@ -211,6 +216,37 @@ class PartFactory(Part):
         )
         self.scm.commit()
         self.board.extra_scms.append(self.scm)
+
+    def extra(self, file):
+        ''' Extra source-code at globale level'''
+        for bus in self.comp.busses.values():
+            file.write("\n")
+            file.write("#define BUS_%s_READ(dstvar) \\\n" % bus.name)
+            file.write("\tdo { \\\n")
+            file.write("\t\tdstvar = 0; \\\n")
+            for nbr, pin in enumerate(bus.pins):
+                i = len(bus.pins) - nbr - 1
+                file.fmt("\t\tif (PIN_%s=>) dstvar |= (1ULL << %d); \\\n" % (pin.name, i))
+            file.write("\t} while(0)\n")
+
+            file.write("\n")
+            file.write("#define BUS_%s_WRITE(dstvar) \\\n" % bus.name)
+            file.write("\tdo { \\\n")
+            for nbr, pin in enumerate(bus.pins):
+                i = len(bus.pins) - nbr - 1
+                file.fmt("\t\tPIN_%s<=(dstvar & (1ULL << %d)); \\\n" % (pin.name, i))
+            file.write("\t} while(0)\n")
+
+            file.write("\n")
+            file.write("#define BUS_%s_Z() \\\n" % bus.name)
+            file.write("\tdo { \\\n")
+            for pin in bus.pins:
+                file.fmt("\t\tPIN_%s = sc_logic_Z; \\\n" % pin.name)
+            file.write("\t} while(0)\n")
+
+            file.write("\n")
+            file.write("#define BUS_%s_TRACE() \\\n\t\t<< " % bus.name)
+            file.fmt(' \\\n\t\t<< '.join("PIN_%s" % pin.name for pin in bus.pins) + '\n')
 
     def state(self, _file):
         ''' Extra state variable '''
@@ -224,9 +260,9 @@ class PartFactory(Part):
         ''' sensitivity list '''
 
         for node in self.comp:
-            if node.net.is_pu():
+            if node.pin.bus is None and node.net.is_pu():
                 continue
-            if node.net.is_pd():
+            if node.pin.bus is None and node.net.is_pd():
                 continue
             if node.pin.role == "c_input":
                 yield "PIN_%s" % node.pin.name
@@ -243,10 +279,10 @@ class PartFactory(Part):
                 file.subst(src, "IS_H(PIN_%s)" % node.pin.name)
                 file.subst(dst, "PIN_%s = AS" % node.pin.name)
                 file.subst(trc, "PIN_%s" % node.pin.name)
-            elif node.net.is_pd():
+            elif node.pin.bus is None and node.net.is_pd():
                 file.subst(src, "false")
                 file.subst(trc, '"v"')
-            elif node.net.is_pu():
+            elif node.pin.bus is None and node.net.is_pu():
                 file.subst(src, "true")
                 file.subst(trc, '"^"')
             elif node.net.sc_type == "bool":
@@ -269,9 +305,9 @@ class PartFactory(Part):
                 yield "sc_out <bool>\t\tPIN_%s;" % node.pin.name
             elif node.pin.role == "c_output":
                 yield "sc_out <sc_logic>\tPIN_%s;" % node.pin.name
-            elif node.net.is_pu():
+            elif node.pin.bus is None and node.net.is_pu():
                 continue
-            elif node.net.is_pd():
+            elif node.pin.bus is None and node.net.is_pd():
                 continue
             elif node.net.sc_type == "bool":
                 yield "sc_in <bool>\t\tPIN_%s;" % node.pin.name
@@ -285,8 +321,8 @@ class PartFactory(Part):
         ''' Hook instance into SystemC model '''
 
         for node in comp:
-            if node.net.is_pu():
+            if node.pin.bus is None and node.net.is_pu():
                 continue
-            if node.net.is_pd():
+            if node.pin.bus is None and node.net.is_pd():
                 continue
             file.write("\t%s.PIN_%s(%s);\n" % (comp.name, node.pin.name, node.net.cname))
