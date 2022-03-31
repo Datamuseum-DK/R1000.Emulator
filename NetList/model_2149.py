@@ -125,7 +125,7 @@ class Model2149(PartModel):
 
     def assign(self, comp):
         if comp.nodes["CS"].net.is_pd():
-            for node in comp.iter_nodes():
+            for node in comp:
                 if node.pin.name[:2] == "DQ":
                     node.pin.role = "c_output"
         super().assign(comp)

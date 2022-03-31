@@ -61,6 +61,10 @@ class Sheet():
         assert comp.ref not in self.components
         self.components[comp.ref] = comp
 
+    def del_component(self, comp):
+        assert comp.ref in self.components
+        del self.components[comp.ref]
+
     def produce_pub_hh(self, scm):
         ''' ... '''
         scm.fmt('''

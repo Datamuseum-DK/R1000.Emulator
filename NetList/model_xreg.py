@@ -62,7 +62,7 @@ class Xreg(PartFactory):
     def sensitive(self):
         ''' sensitivity list '''
         yield "PIN_CLK.pos()"
-        if 'OE' in self.comp.nodes:
+        if 'OE' in self.comp:
             yield "PIN_OE"
 
     def doit(self, file):
@@ -74,7 +74,7 @@ class Xreg(PartFactory):
 		|
 		|	if (state->job == -2) {
 		|''')
-        for node in self.comp.iter_nodes():
+        for node in self.comp:
             if node.pin.name[0] == 'Q':
                 file.fmt("\n\t\t|\t\tPIN_%s<=(false);\n\n" % node.pin.name)
 
@@ -91,7 +91,7 @@ class Xreg(PartFactory):
 		|		tmp = ~tmp;
 		|''')
 
-        for node in self.comp.iter_nodes():
+        for node in self.comp:
             if node.pin.name[0] == 'Q':
                 i = self.bits - int(node.pin.name[1:]) - 1
                 file.fmt("\n\t\t|\t\tPIN_%s<=(tmp & ((uint64_t)1 << %d));\n\n" % (node.pin.name, i))
@@ -100,11 +100,11 @@ class Xreg(PartFactory):
 		|		state->job = 0;
 		|''')
 
-        if 'OE' in self.comp.nodes:
+        if 'OE' in self.comp:
             file.fmt('''
 		|	} else if (state->job == -1) {
 		|''')
-            for node in self.comp.iter_nodes():
+            for node in self.comp:
                 if node.pin.name[0] == 'Q':
                     file.write("\t\tPIN_%s = sc_logic_Z;\n" % node.pin.name)
             file.fmt('''
@@ -117,11 +117,11 @@ class Xreg(PartFactory):
 		|	if (PIN_CLK.posedge()) {
 		|		uint64_t tmp = 0;
 		|''')
-        for node in self.comp.iter_nodes():
+        for node in self.comp:
             if node.pin.name[0] == 'D':
                 i = self.bits - int(node.pin.name[1:]) - 1
                 file.fmt("\n\t\t|\t\tif (PIN_%s=>) tmp |= ((uint64_t)1 << %d);\n\n" % (node.pin.name, i))
-        if 'OE' in self.comp.nodes:
+        if 'OE' in self.comp:
             file.fmt('''
 		|		if (tmp != state->data) {
 		|			state->data = tmp;
@@ -162,11 +162,12 @@ class ModelXreg(PartModel):
         if comp.board.name == "VAL" and "ZREG" in comp.name:
             comp.part = comp.board.part_catalog["F374_O"]
             return
-        if comp.nodes["OE"].net.is_pd():
-            for node in comp.iter_nodes():
+        oe_node = comp["OE"]
+        if oe_node.net.is_pd():
+            oe_node.remove()
+            for node in comp:
                 if node.pin.name[0] == "Q":
                     node.pin.role = "c_output"
-            del comp.nodes["OE"]
         super().assign(comp)
 
     def configure(self, board, comp):

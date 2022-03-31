@@ -42,7 +42,6 @@ class Component():
         self.board = board
         self.ref = compref
         self.value = compvalue
-        self.board.components[self.ref] = self
         self.nodes = {}
         self.busses = []
         self.model = None
@@ -53,13 +52,30 @@ class Component():
         self.name = "X"
         self.part = None
 
-        self.sheet.add_component(self)
+        self.insert()
 
     def __str__(self):
         return "_".join((str(self.sheet), self.ref, self.partname, self.location, self.name))
 
     def __lt__(self, other):
         return self.name < other.name
+
+    def __contains__(self, idx):
+        return self.nodes.__contains__(idx)
+
+    def __getitem__(self, idx):
+        return self.nodes.__getitem__(idx)
+
+    def __iter__(self):
+        yield from list(sorted(self.nodes.values()))
+
+    def insert(self):
+        self.board.components[self.ref] = self
+        self.sheet.add_component(self)
+
+    def remove(self):
+        del self.board.components[self.ref]
+        self.sheet.del_component(self)
 
     def add_node(self, node):
         ''' Add a node to this component '''
@@ -68,9 +84,6 @@ class Component():
     def del_node(self, node):
         ''' Remove a node to this component '''
         del self.nodes[node.pin.name]
-
-    def iter_nodes(self):
-        yield from list(sorted(self.nodes.values()))
 
 class ComponentSexp(Component):
 

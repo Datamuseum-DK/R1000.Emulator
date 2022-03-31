@@ -45,11 +45,20 @@ class Node():
         self.refname = component.name
         self.pin = pinspec
         self.sortkey = (self.component, self.pin)
-
-        self.component.add_node(self)
+        self.insert()
 
     def __lt__(self, other):
         return self.sortkey < other.sortkey
+
+    def insert(self):
+        ''' ... '''
+        self.component.add_node(self)
+        self.net.add_node(self)
+
+    def remove(self):
+        ''' ... '''
+        self.component.del_node(self)
+        self.net.del_node(self)
 
     def __repr__(self):
         return "_".join(

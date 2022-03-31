@@ -144,7 +144,7 @@ class ModelPAxxx(PartModel):
 
     def assign(self, comp):
         if comp.nodes["OE"].net.is_pd():
-            for node in comp.iter_nodes():
+            for node in comp:
                 if node.pin.name[0] == "Y":
                     node.pin.role = "c_output"
         super().assign(comp)

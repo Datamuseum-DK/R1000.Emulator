@@ -65,7 +65,7 @@ class Xbuf(PartFactory):
 
         super().doit(file)
 
-        for node in self.comp.iter_nodes():
+        for node in self.comp:
             if node.pin.name[0] == 'I':
                 self.bits += 1
 
@@ -81,7 +81,7 @@ class Xbuf(PartFactory):
 		|		tmp = ~tmp;
 		|''')
 
-        for node in self.comp.iter_nodes():
+        for node in self.comp:
             if node.pin.name[0] == 'Y':
                 i = self.bits - int(node.pin.name[1:]) - 1
                 file.fmt("\n\t\t|\t\tPIN_%s<=(tmp & ((uint64_t)1 << %d));\n\n" % (node.pin.name, i))
@@ -90,7 +90,7 @@ class Xbuf(PartFactory):
 		|		state->job = 0;
 		|''')
 
-        if 'OE' not in self.comp.nodes:
+        if "OE" not in self.comp:
             file.fmt('''
 		|	}
 		|
@@ -102,7 +102,7 @@ class Xbuf(PartFactory):
 		|	} else if (state->job < 0) {
 		|''')
 
-            for node in self.comp.iter_nodes():
+            for node in self.comp:
                 if node.pin.name[0] == 'Y':
                     file.write("\t\tPIN_%s = sc_logic_Z;\n" % node.pin.name)
 
@@ -112,7 +112,7 @@ class Xbuf(PartFactory):
 		|	if (PIN_OE=>) {
 		|''')
 
-            for node in self.comp.iter_nodes():
+            for node in self.comp:
                 if node.pin.name[0] == 'Y':
                     file.write("\t\tPIN_%s = sc_logic_Z;\n" % node.pin.name)
 
@@ -123,7 +123,7 @@ class Xbuf(PartFactory):
 		|		tmp = 0;
 		|''')
 
-        for node in self.comp.iter_nodes():
+        for node in self.comp:
             if node.pin.name[0] != 'I':
                 continue
             i = self.bits - int(node.pin.name[1:]) - 1
@@ -151,25 +151,23 @@ class ModelXbuf(PartModel):
         self.invert = invert
 
     def assign(self, comp):
-        for node in comp.iter_nodes():
+        for node in comp:
             if node.pin.name[0] != 'Y':
                 node.pin.role = "c_input"
-        if comp.nodes["OE0"].net == comp.nodes["OE1"].net:
-            oenode0 = comp.nodes["OE0"]
-            oenode1 = comp.nodes["OE1"]
-            del comp.nodes["OE0"]
-            del comp.nodes["OE1"]
-            oenode1.net.nodes.remove(oenode1)
+        oenode0 = comp["OE0"]
+        oenode1 = comp["OE1"]
+        if oenode0.net == oenode1.net:
+            oenode1.remove()
+            oenode0.remove()
             if oenode0.net.is_pd():
                 print("XBUF-8-PD", comp)
-                for node in comp.iter_nodes():
+                for node in comp:
                     if node.pin.name[0] == 'Y':
                         node.pin.role = "c_output"
-                oenode0.net.nodes.remove(oenode0)
             else:
                 print("XBUF-8-VAR", comp)
                 oenode0.pin.name = "OE"
-                comp.nodes["OE"] = oenode0
+                oenode0.insert()
             return
 
         comp2 = Component(
@@ -183,7 +181,6 @@ class ModelXbuf(PartModel):
         comp2.location = comp.location
         comp2.part = self
         for src, dst in (
-            ("OE1", "OE"),
             ("I4", "I0"),
             ("I5", "I1"),
             ("I6", "I2"),
@@ -193,31 +190,34 @@ class ModelXbuf(PartModel):
             ("Y6", "Y2"),
             ("Y7", "Y3"),
         ):
-            node = comp.nodes[src]
-            comp.del_node(node)
+            node = comp[src]
+            node.remove()
             node.pin.name = dst
-            comp2.add_node(node)
+            node.component = comp2
+            node.insert()
 
-        node = comp.nodes["OE0"]
-        comp.del_node(node)
-        node.pin.name = "OE"
-        comp.add_node(node)
+        oenode0.remove()
+        oenode0.pin.name = "OE"
+        oenode0.insert()
+
+        oenode1.remove()
+        oenode1.pin.name = "OE"
+        oenode1.component = comp2
+        oenode1.insert()
 
         for this in (comp, comp2):
-            node = this.nodes["OE"]
+            node = this["OE"]
             if node.net.is_pd():
                 print("XBUF-4-PD", this)
-                this.del_node(node)
-                for node in this.iter_nodes():
+                node.remove()
+                for node in this:
                     if node.pin.name[0] == "Y":
                         node.pin.role = "c_output"
             elif len(node.net) == 1 or node.net.is_pu():
                 print("XBUF-4-NOOP", this)
-                for node in this.iter_nodes():
-                    this.del_node(node)
-                    node.net.nodes.remove(node)
-                del this.sheet.components[this.ref]
-                del this.board.components[this.ref]
+                for node in this:
+                    node.remove()
+                this.remove()
             else:
                 print("XBUF-4-VAR", this)
 

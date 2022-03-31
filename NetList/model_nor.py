@@ -48,7 +48,7 @@ class Nor(PartFactory):
     def pin_iterator(self):
         ''' SC pin declarations '''
 
-        for node in self.comp.iter_nodes():
+        for node in self.comp:
             if node.pin.name == "Q" and node.net.sc_type == "bool":
                 yield "sc_out <bool>\t\tPIN_Q;"
             elif node.pin.name == "Q":
@@ -108,7 +108,7 @@ class Nor(PartFactory):
         file.write("\n\tif (\n\t    ")
 
         i = []
-        for node in self.comp.iter_nodes():
+        for node in self.comp:
             if node.pin.name == "Q":
                 continue
             if node.net.sc_type == "bool":
@@ -140,7 +140,7 @@ class Nor(PartFactory):
 		|			}
 		|''')
 
-        for node in self.comp.iter_nodes():
+        for node in self.comp:
             if node.pin.name == "Q":
                 continue
             if node.net.sc_type == "bool":
@@ -156,7 +156,7 @@ class Nor(PartFactory):
 
     def hookup(self, file, comp):
         pno = 0
-        for node in comp.iter_nodes():
+        for node in comp:
             if node.pin.name == "Q":
                 file.write("\t%s.PIN_Q(%s);\n" % (comp.name, node.net.cname))
             else:
@@ -168,7 +168,7 @@ class ModelNor(Part):
 
     def assign(self, comp):
         ''' Assigned to component '''
-        for node in comp.iter_nodes():
+        for node in comp:
             if node.pin.name == "Q":
                 node.pin.role = "c_output"
             else:
@@ -177,7 +177,7 @@ class ModelNor(Part):
     def configure(self, board, comp):
         i = []
         j = 0
-        for node in comp.iter_nodes():
+        for node in comp:
             if node.pin.name != "Q":
                 node.pin.name = "D%d" % j
                 j += 1

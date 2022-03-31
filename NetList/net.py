@@ -52,6 +52,10 @@ class Net():
         ''' ... '''
         self.nodes.append(node)
 
+    def del_node(self, node):
+        ''' ... '''
+        self.nodes.remove(node)
+
     def iter_nodes(self):
         yield from self.nodes
 
@@ -154,5 +158,4 @@ class NetSexp(Net):
             netname = sexp[1][0].name,
         )
         for node_sexp in sexp.find("node"):
-            node = NodeSexp(self, node_sexp)
-            self.add_node(node)
+            NodeSexp(self, node_sexp)

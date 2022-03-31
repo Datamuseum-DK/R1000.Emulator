@@ -53,10 +53,6 @@ class Pin():
         self.sortkey = util.sortkey(self.name)
         if isinstance(self.sortkey[0], int):
             self.sortkey.insert(0, "_")
-        if len(self.sortkey) >= 2:
-            self.bus = self.sortkey[:2]
-        else:
-            self.bus = None
 
     def __repr__(self):
         return "_".join(("Pin", self.ident, self.name, self.role))

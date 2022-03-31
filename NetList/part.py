@@ -143,7 +143,7 @@ class PartModel(Part):
     def assign(self, comp):
         ''' Assigned to component '''
 
-        for node in comp.iter_nodes():
+        for node in comp:
             if node.pin.role in (
                 "input",
                 "input+no_connect",
@@ -159,7 +159,7 @@ class PartModel(Part):
         ''' Produce a signature for this hookup '''
 
         i = []
-        for node in comp.iter_nodes():
+        for node in comp:
             if node.net.is_pu():
                 i.append("U")
             elif node.net.is_pd():
@@ -223,7 +223,7 @@ class PartFactory(Part):
     def sensitive(self):
         ''' sensitivity list '''
 
-        for node in self.comp.iter_nodes():
+        for node in self.comp:
             if node.net.is_pu():
                 continue
             if node.net.is_pd():
@@ -232,7 +232,7 @@ class PartFactory(Part):
                 yield "PIN_%s" % node.pin.name
 
     def subs(self, file):
-        for node in self.comp.iter_nodes():
+        for node in self.comp:
             dst = "PIN_%s<=" % node.pin.name
             src = "PIN_%s=>" % node.pin.name
             trc = "PIN_%s?" % node.pin.name
@@ -264,7 +264,7 @@ class PartFactory(Part):
     def pin_iterator(self):
         ''' SC pin declarations '''
 
-        for node in self.comp.iter_nodes():
+        for node in self.comp:
             if node.pin.role == "c_output" and node.net.sc_type == "bool":
                 yield "sc_out <bool>\t\tPIN_%s;" % node.pin.name
             elif node.pin.role == "c_output":
@@ -284,7 +284,7 @@ class PartFactory(Part):
     def hookup(self, file, comp):
         ''' Hook instance into SystemC model '''
 
-        for node in comp.iter_nodes():
+        for node in comp:
             if node.net.is_pu():
                 continue
             if node.net.is_pd():
