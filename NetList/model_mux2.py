@@ -54,7 +54,7 @@ class Mux2(PartFactory):
         super().doit(file)
 
         file.fmt('''
-		|	bool tmp[4];
+		|	unsigned tmp;
 		|
 		|''')
 
@@ -62,10 +62,7 @@ class Mux2(PartFactory):
             file.fmt('''
 		|	if (PIN_OE=>) {
 		|		TRACE( << "Z" );
-		|		PIN_Y0 = sc_logic_Z;
-		|		PIN_Y1 = sc_logic_Z;
-		|		PIN_Y2 = sc_logic_Z;
-		|		PIN_Y3 = sc_logic_Z;
+		|		BUS_Y_Z();
 		|		next_trigger(PIN_OE.negedge_event());
 		|		return;
 		|	}
@@ -74,10 +71,7 @@ class Mux2(PartFactory):
         if "E" in self.comp.nodes:
             file.fmt('''
 		|	if (PIN_E=>) {
-		|		tmp[0] = false;
-		|		tmp[1] = false;
-		|		tmp[2] = false;
-		|		tmp[3] = false;
+		|		tmp = 0;
 		|		// next_trigger(PIN_E.negedge_event());
 		|	} else if (PIN_S=>) {
 		|''')
@@ -87,15 +81,9 @@ class Mux2(PartFactory):
 		|''')
 
         file.fmt('''
-		|		tmp[0] = PIN_B0=>;
-		|		tmp[1] = PIN_B1=>;
-		|		tmp[2] = PIN_B2=>;
-		|		tmp[3] = PIN_B3=>;
+		|		BUS_B_READ(tmp);
 		|	} else {
-		|		tmp[0] = PIN_A0=>;
-		|		tmp[1] = PIN_A1=>;
-		|		tmp[2] = PIN_A2=>;
-		|		tmp[3] = PIN_A3=>;
+		|		BUS_A_READ(tmp);
 		|	}
 		|
 		|''')
@@ -103,10 +91,7 @@ class Mux2(PartFactory):
         if self.invert:
             file.fmt('''
 		|
-		|	tmp[0] = !tmp[0];
-		|	tmp[1] = !tmp[1];
-		|	tmp[2] = !tmp[2];
-		|	tmp[3] = !tmp[3];
+		|	tmp ^= 0xf;
 		|
 		|''')
 
@@ -122,15 +107,12 @@ class Mux2(PartFactory):
 
         file.fmt('''
 		|	    << " s " << PIN_S=>
-		|	    << " a " << PIN_A0=> << PIN_A1=> << PIN_A2=> << PIN_A3=>
-		|	    << " b " << PIN_B0=> << PIN_B1=> << PIN_B2=> << PIN_B3=>
-		|	    << " | " << tmp[0] << tmp[1] << tmp[2] << tmp[3]
+		|	    << " a " << BUS_A_TRACE()
+		|	    << " b " << BUS_B_TRACE()
+		|	    << " | " << std::hex << tmp
 		|	);
 		|
-		|	PIN_Y0<=(tmp[0]);
-		|	PIN_Y1<=(tmp[1]);
-		|	PIN_Y2<=(tmp[2]);
-		|	PIN_Y3<=(tmp[3]);
+		|	BUS_Y_WRITE(tmp);
 		|''')
 
 class ModelMux2(PartModel):

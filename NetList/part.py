@@ -226,7 +226,7 @@ class PartFactory(Part):
             file.write("\t\tdstvar = 0; \\\n")
             for nbr, pin in enumerate(bus.pins):
                 i = len(bus.pins) - nbr - 1
-                file.fmt("\t\tif (PIN_%s=>) dstvar |= (1ULL << %d); \\\n" % (pin.name, i))
+                file.fmt("\t\tif (PIN_%s=>) (dstvar) |= (1ULL << %d); \\\n" % (pin.name, i))
             file.write("\t} while(0)\n")
 
             file.write("\n")
@@ -234,7 +234,7 @@ class PartFactory(Part):
             file.write("\tdo { \\\n")
             for nbr, pin in enumerate(bus.pins):
                 i = len(bus.pins) - nbr - 1
-                file.fmt("\t\tPIN_%s<=(dstvar & (1ULL << %d)); \\\n" % (pin.name, i))
+                file.fmt("\t\tPIN_%s<=((dstvar) & (1ULL << %d)); \\\n" % (pin.name, i))
             file.write("\t} while(0)\n")
 
             file.write("\n")

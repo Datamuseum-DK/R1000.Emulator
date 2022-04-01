@@ -70,10 +70,7 @@ class F194(PartFactory):
 		|	unsigned nxt, mode = 0;
 		|
 		|	if (state->job) {
-		|		PIN_Q0<=(state->out & (1<<3));
-		|		PIN_Q1<=(state->out & (1<<2));
-		|		PIN_Q2<=(state->out & (1<<1));
-		|		PIN_Q3<=(state->out & (1<<0));
+		|		BUS_Q_WRITE(state->out);
 		|		state->job = 0;
 		|	}
 		|	nxt = state->out;
@@ -96,11 +93,7 @@ class F194(PartFactory):
 		|		switch (mode) {
 		|		case 3:
 		|			what = " load ";
-		|			nxt = 0;
-		|			if (PIN_D0=>) nxt |= (1<<3);
-		|			if (PIN_D1=>) nxt |= (1<<2);
-		|			if (PIN_D2=>) nxt |= (1<<1);
-		|			if (PIN_D3=>) nxt |= (1<<0);
+		|			BUS_D_READ(nxt);
 		|			break;
 		|		case 2:
 		|			what = " >> ";
@@ -138,11 +131,7 @@ class F194(PartFactory):
 		|		    << what
 		|		    << " mr_ " << PIN_CLR?
 		|		    << " rsi " << PIN_RSI?
-		|		    << " d "
-		|		    << PIN_D0?
-		|		    << PIN_D1?
-		|		    << PIN_D2?
-		|		    << PIN_D3?
+		|		    << " d " << BUS_D_TRACE()
 		|		    << " lsi " << PIN_LSI?
 		|		    << " s " << PIN_S0? << PIN_S1?
 		|		    << " cp " << PIN_CLK?

@@ -53,27 +53,18 @@ class F181(PartFactory):
 
         file.fmt('''
 		|
-		|	unsigned idx = 0;
+		|	unsigned idx = 0, tmp;
 		|
 		|	if (PIN_CI=>) idx |= 1 << 13;
 		|	if (PIN_M=>) idx |= 1 << 12;
-		|	if (PIN_A0=>) idx |= 1 << 11;
-		|	if (PIN_A1=>) idx |= 1 << 10;
-		|	if (PIN_A2=>) idx |= 1 << 9;
-		|	if (PIN_A3=>) idx |= 1 << 8;
-		|	if (PIN_B0=>) idx |= 1 << 7;
-		|	if (PIN_B1=>) idx |= 1 << 6;
-		|	if (PIN_B2=>) idx |= 1 << 5;
-		|	if (PIN_B3=>) idx |= 1 << 4;
-		|	if (PIN_S0=>) idx |= 1 << 3;
-		|	if (PIN_S1=>) idx |= 1 << 2;
-		|	if (PIN_S2=>) idx |= 1 << 1;
-		|	if (PIN_S3=>) idx |= 1 << 0;
+		|	BUS_A_READ(tmp);
+		|	idx |= (tmp << 8);
+		|	BUS_B_READ(tmp);
+		|	idx |= (tmp << 4);
+		|	BUS_S_READ(tmp);
+		|	idx |= tmp;
 		|	unsigned val = lut181[idx];
-		|	PIN_Y0<=(val & 0x80);
-		|	PIN_Y1<=(val & 0x40);
-		|	PIN_Y2<=(val & 0x20);
-		|	PIN_Y3<=(val & 0x10);
+		|	BUS_Y_WRITE(val >> 4);
 		|	if (val & 0x08)
 		|		PIN_AeqB = sc_logic_Z;
 		|	else
@@ -83,11 +74,11 @@ class F181(PartFactory):
 		|	PIN_Q<=(val & 0x01);
 		|
 		|	TRACE(
-		|	    << " s " << PIN_S0? << PIN_S1? << PIN_S2? << PIN_S3?
+		|	    << " s " << BUS_S_TRACE()
 		|	    << " m " << PIN_M?
 		|	    << " ci " << PIN_CI?
-		|	    << " a " << PIN_A0? << PIN_A1? << PIN_A2? << PIN_A3?
-		|	    << " b " << PIN_B0? << PIN_B1? << PIN_B2? << PIN_B3?
+		|	    << " a " << BUS_A_TRACE()
+		|	    << " b " << BUS_B_TRACE()
 		|	    << " idx " << std::hex << idx
 		|	    << " f " << AS(val & 0x80) << AS(val & 0x40) << AS(val & 0x20) << AS(val & 0x10)
 		|	    << " = " << AS(val & 0x08)

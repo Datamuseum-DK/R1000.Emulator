@@ -48,38 +48,23 @@ class AM93S48(PartFactory):
 
         file.fmt('''
 		|
-		|	bool s = PIN_I0=>
-		|	    ^ PIN_I1=>
-		|	    ^ PIN_I2=>
-		|	    ^ PIN_I3=>
-		|	    ^ PIN_I4=>
-		|	    ^ PIN_I5=>
-		|	    ^ PIN_I6=>
-		|	    ^ PIN_I7=>
-		|	    ^ PIN_I8=>
-		|	    ^ PIN_I9=>
-		|	    ^ PIN_I10=>
-		|	    ^ PIN_I11=>;
+		|	unsigned tmp;
+		|
+		|	BUS_I_READ(tmp);
+		|	tmp ^= tmp >> 8;
+		|	tmp ^= tmp >> 4;
+		|	tmp ^= tmp >> 2;
+		|	tmp ^= tmp >> 1;
+		|	tmp &= 1;
 		|
 		|	TRACE(
-		|	    << PIN_I0?
-		|	    << PIN_I1?
-		|	    << PIN_I2?
-		|	    << PIN_I3?
-		|	    << PIN_I4?
-		|	    << PIN_I5?
-		|	    << PIN_I6?
-		|	    << PIN_I7?
-		|	    << PIN_I8?
-		|	    << PIN_I9?
-		|	    << PIN_I10?
-		|	    << PIN_I11?
+		|	    << BUS_I_TRACE()
 		|	    << " odd "
-		|	    << s
+		|	    << tmp
 		|	);
 		|
-		|	PIN_PEV<=(!s);
-		|	PIN_POD<=(s);
+		|	PIN_PEV<=(!tmp);
+		|	PIN_POD<=(tmp);
 		|''')
 
 def register(board):

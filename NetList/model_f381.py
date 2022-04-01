@@ -51,17 +51,9 @@ class F381(PartFactory):
 		|
 		|	unsigned a = 0, b = 0, c = 0, sel = 0, r, p = 1, g = 1;
 		|
-		|	if (PIN_A3=>) a |= 1;
-		|	if (PIN_A2=>) a |= 2;
-		|	if (PIN_A1=>) a |= 4;
-		|	if (PIN_A0=>) a |= 8;
-		|	if (PIN_D3=>) b |= 1;
-		|	if (PIN_D2=>) b |= 2;
-		|	if (PIN_D1=>) b |= 4;
-		|	if (PIN_D0=>) b |= 8;
-		|	if (PIN_S2=>) sel |= 1;
-		|	if (PIN_S1=>) sel |= 2;
-		|	if (PIN_S0=>) sel |= 4;
+		|	BUS_A_READ(a);
+		|	BUS_D_READ(b);
+		|	BUS_S_READ(sel);
 		|	if (PIN_CI=>) c |= 1;
 		|
 		|	switch (sel) {
@@ -84,10 +76,7 @@ class F381(PartFactory):
 		|	else if (r > 0xf)
 		|		g = 0;
 		|
-		|	PIN_F3<=(r & 1);
-		|	PIN_F2<=(r & 2);
-		|	PIN_F1<=(r & 4);
-		|	PIN_F0<=(r & 8);
+		|	BUS_F_WRITE(r);
 		|	PIN_G<=(g);
 		|	PIN_P<=(p);
 		|

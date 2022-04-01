@@ -73,12 +73,7 @@ class Xreg(PartFactory):
         file.fmt('''
 		|
 		|	if (state->job == -2) {
-		|''')
-        for node in self.comp:
-            if node.pin.name[0] == 'Q':
-                file.fmt("\n\t\t|\t\tPIN_%s<=(false);\n\n" % node.pin.name)
-
-        file.fmt('''
+		|		BUS_Q_WRITE(0);
 		|		state->job = -1;
 		|	}
 		|

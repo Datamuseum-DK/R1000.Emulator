@@ -65,42 +65,14 @@ class SRAM2167(PartFactory):
         file.fmt('''
 		|	unsigned adr = 0;
 		|
-		|	state->ctx.activations++;
-		|	if (PIN_A0=>) adr |= 1 << 13;
-		|	if (PIN_A1=>) adr |= 1 << 12;
-		|	if (PIN_A2=>) adr |= 1 << 11;
-		|	if (PIN_A3=>) adr |= 1 << 10;
-		|	if (PIN_A4=>) adr |= 1 << 9;
-		|	if (PIN_A5=>) adr |= 1 << 8;
-		|	if (PIN_A6=>) adr |= 1 << 7;
-		|	if (PIN_A7=>) adr |= 1 << 6;
-		|	if (PIN_A8=>) adr |= 1 << 5;
-		|	if (PIN_A9=>) adr |= 1 << 4;
-		|	if (PIN_A10=>) adr |= 1 << 3;
-		|	if (PIN_A11=>) adr |= 1 << 2;
-		|	if (PIN_A12=>) adr |= 1 << 1;
-		|	if (PIN_A13=>) adr |= 1 << 0;
+		|	BUS_A_READ(adr);
 		|
 		|	if (!PIN_WE=>)
 		|		state->ram[adr] = PIN_D=>;
 		|	PIN_Q<=(state->ram[adr]);
 		|
 		|	TRACE(
-		|	    << " a "
-		|	    << PIN_A0?
-		|	    << PIN_A1?
-		|	    << PIN_A2?
-		|	    << PIN_A3?
-		|	    << PIN_A4?
-		|	    << PIN_A5?
-		|	    << PIN_A6?
-		|	    << PIN_A7?
-		|	    << PIN_A8?
-		|	    << PIN_A9?
-		|	    << PIN_A10?
-		|	    << PIN_A11?
-		|	    << PIN_A12?
-		|	    << PIN_A13?
+		|	    << " a " << BUS_A_TRACE()
 		|	    << " d "
 		|	    << PIN_D?
 		|	    << " w "

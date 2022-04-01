@@ -44,7 +44,7 @@ class F174(PartFactory):
 
     def state(self, file):
         file.fmt('''
-		|	bool dreg[6];
+		|	unsigned dreg;
 		|	int job;
 		|''')
 
@@ -66,75 +66,32 @@ class F174(PartFactory):
         file.fmt('''
 		|
 		|	const char *what = "";
-		|	bool nxt[6];
+		|	unsigned nxt;
 		|
 		|	TRACE(
 		|	    << what
 		|	    << " clr_" << PIN_CLR?
 		|	    << " clk " << PIN_CLK?
-		|	    << " d " << PIN_D0?
-		|	    << PIN_D1?
-		|	    << PIN_D2?
-		|	    << PIN_D3?
-		|	    << PIN_D4?
-		|	    << PIN_D5?
-		|	    << " | "
-		|	    << state->dreg[0]
-		|	    << state->dreg[1]
-		|	    << state->dreg[2]
-		|	    << state->dreg[3]
-		|	    << state->dreg[4]
-		|	    << state->dreg[5]
+		|	    << " d " << BUS_D_TRACE()
+		|	    << " | " << std::hex << state->dreg
 		|	);
 		|	if (state->job) {
-		|		PIN_Q0<=(state->dreg[0]);
-		|		PIN_Q1<=(state->dreg[1]);
-		|		PIN_Q2<=(state->dreg[2]);
-		|		PIN_Q3<=(state->dreg[3]);
-		|		PIN_Q4<=(state->dreg[4]);
-		|		PIN_Q5<=(state->dreg[5]);
+		|		BUS_Q_WRITE(state->dreg);
 		|		state->job = 0;
 		|	}
 		|	if (!PIN_CLR=>) {
-		|		nxt[0] = false;
-		|		nxt[1] = false;
-		|		nxt[2] = false;
-		|		nxt[3] = false;
-		|		nxt[4] = false;
-		|		nxt[5] = false;
+		|		nxt = 0;
 		|		what = " CLR ";
 		|	} else if (PIN_CLK.posedge()) {
-		|		nxt[0] = PIN_D0=>;
-		|		nxt[1] = PIN_D1=>;
-		|		nxt[2] = PIN_D2=>;
-		|		nxt[3] = PIN_D3=>;
-		|		nxt[4] = PIN_D4=>;
-		|		nxt[5] = PIN_D5=>;
+		|		BUS_D_READ(nxt);
 		|		what = " CLK ";
 		|	} else {
-		|		nxt[0] = state->dreg[0];
-		|		nxt[1] = state->dreg[1];
-		|		nxt[2] = state->dreg[2];
-		|		nxt[3] = state->dreg[3];
-		|		nxt[4] = state->dreg[4];
-		|		nxt[5] = state->dreg[5];
+		|		nxt = state->dreg;
 		|		what = " ??? ";
 		|	}
-		|	if (
-		|	    nxt[0] != state->dreg[0] ||
-		|	    nxt[1] != state->dreg[1] ||
-		|	    nxt[2] != state->dreg[2] ||
-		|	    nxt[3] != state->dreg[3] ||
-		|	    nxt[4] != state->dreg[4] ||
-		|	    nxt[5] != state->dreg[5]
-		|	) {
+		|	if (nxt != state->dreg) {
 		|		state->job = 1;
-		|		state->dreg[0] = nxt[0];
-		|		state->dreg[1] = nxt[1];
-		|		state->dreg[2] = nxt[2];
-		|		state->dreg[3] = nxt[3];
-		|		state->dreg[4] = nxt[4];
-		|		state->dreg[5] = nxt[5];
+		|		state->dreg = nxt;
 		|		next_trigger(5, SC_NS);
 		|	}
 		|''')
