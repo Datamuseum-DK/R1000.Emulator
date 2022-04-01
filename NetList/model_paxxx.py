@@ -115,7 +115,7 @@ class ModelPAxxx(PartModel):
         if comp.nodes["OE"].net.is_pd():
             del comp.nodes["OE"]
         sig = self.make_signature(comp)
-        ident = board.name + "_" + self.name + "_" + sig
+        ident = self.name + "_" + sig
         if ident not in board.part_catalog:
             board.add_part(ident, PAxxx(board, ident))
         comp.part = board.part_catalog[ident]

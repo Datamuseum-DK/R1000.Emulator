@@ -187,7 +187,7 @@ class ModelNor(Part):
                 i.append("L")
         inputs = len(comp.nodes) - 1
         sig = util.signature(i)
-        ident = board.name + "_NOR%d_" % inputs + sig
+        ident = "NOR%d_" % inputs + sig
         if ident not in board.part_catalog:
             board.add_part(ident, Nor(board, ident, inputs))
         comp.part = board.part_catalog[ident]

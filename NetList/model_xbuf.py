@@ -194,7 +194,7 @@ class ModelXbuf(PartModel):
 
     def configure(self, board, comp):
         sig = self.make_signature(comp)
-        ident = board.name + "_" + self.name + "_" + sig
+        ident = self.name + "_" + sig
         if self.invert:
             ident += "_I"
         if ident not in board.part_catalog:

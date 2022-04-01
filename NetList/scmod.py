@@ -39,8 +39,9 @@ from srcfile import SrcFile
 
 class SC_Mod():
     ''' A SystemC source module '''
-    def __init__(self, filename):
+    def __init__(self, filename, makefile=None):
         self.filename = filename
+        self.makefile = makefile
         self.basename = os.path.split(filename)[-1]
         self.cc = SrcFile(filename + ".cc")
         self.hh = SrcFile(filename + ".hh")
@@ -53,13 +54,15 @@ class SC_Mod():
         self.cc.commit()
         self.hh.commit()
         self.pub.commit()
+        if self.makefile:
+            self.makefile_entry(self.makefile)
 
     def subst(self, find, replace):
         ''' Add substituation patterns '''
         for file in (self.cc, self.hh, self.pub):
             file.subst(find, replace)
 
-    def makefile(self, file):
+    def makefile_entry(self, file):
         ''' ... '''
         file.write("\n# " + self.filename + "\n")
         obj = self.filename + ".o"

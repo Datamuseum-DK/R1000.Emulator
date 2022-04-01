@@ -92,7 +92,6 @@ class PassNetConfig():
 
     def __init__(self, board):
         self.board = board
-        self.blame = {}
 
         for net in self.board.iter_nets():
             net.is_plane = net.name in ("PU", "PD")
@@ -109,9 +108,6 @@ class PassNetConfig():
             net.find_cname()
 
         self.ponder_bool()
-        for i, j in sorted(self.blame.items(), key=lambda x: -x[1]):
-            print(i, j)
-
         self.ponder_bus()
 
     def ponder_bool(self):
@@ -164,8 +160,7 @@ class PassNetConfig():
             ):
                 continue
             k = self.board.name + "::" + node.component.part.name + "::" + node.pin.sortkey[0]
-            i[k] = 1 + i.setdefault(k, 0)
+            i[node.component.part] = 1 + i.setdefault(node.component.part, 0)
         if len(i) == 1:
-            j = list(i.keys())[0]
-            # print("BL", j, net, ",".join(x.component.name for x in net.iter_nodes()))
-            self.blame[j] = self.blame.setdefault(j, 0) + 1
+            part, _count = i.popitem()
+            part.blame.add(net)

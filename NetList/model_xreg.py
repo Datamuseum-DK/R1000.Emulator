@@ -157,7 +157,7 @@ class ModelXreg(PartModel):
 
     def configure(self, board, comp):
         sig = self.make_signature(comp)
-        ident = board.name + "_" + self.name + "_" + sig
+        ident = self.name + "_" + sig
         if ident not in board.part_catalog:
             board.add_part(ident, Xreg(board, ident, self.bits, self.invert))
         comp.part = board.part_catalog[ident]

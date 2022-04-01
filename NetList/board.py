@@ -45,36 +45,6 @@ from part import LibPartSexp, NoPart
 from net import NetSexp
 from component import ComponentSexp
 
-import model_nand
-import model_nor
-import model_mux2
-# import model_2149
-import model_2167
-import model_93s48
-import model_f08
-import model_f51
-import model_f74
-import model_f86
-import model_f138
-import model_f139
-import model_f148
-import model_f151
-import model_f153
-import model_f169
-import model_f174
-import model_f175
-import model_f181
-import model_f182
-import model_f194
-import model_f251
-import model_f280
-import model_f283
-import model_f381
-import model_f521
-import model_paxxx
-import model_xbuf
-import model_xreg
-
 from pass_planes import PassPlanes
 from pass_assign_part import PassAssignPart
 from pass_net_config import PassNetConfig
@@ -82,50 +52,19 @@ from pass_part_config import PassPartConfig
 
 class Board():
     ''' A netlist file '''
-    def __init__(self, netlist, branch):
-        self.branch = branch
+    def __init__(self, cpu, netlist):
+        self.cpu = cpu
+        self.branch = cpu.branch
         self.sexp = SExp(None)
         self.sexp.parse(open(netlist).read())
         self.find_board_name()
         print("Board", self.name)
-        self.dstdir = self.name.capitalize() + "/" + branch
+        self.dstdir = self.name.capitalize() + "/" + self.branch
         os.makedirs(self.dstdir, exist_ok=True)
         self.srcs = []
-        self.dynamic_components = {}
-        self.extra_scms = []
-        self.part_catalog = {}
+        self.part_catalog = self.cpu.part_catalog
 
-        if True:
-            model_nand.register(self)
-            model_nor.register(self)
-            model_mux2.register(self)
-            # model_2149.register(self)
-            model_2167.register(self)
-            model_93s48.register(self)
-            model_f08.register(self)
-            model_f51.register(self)
-            model_f74.register(self)
-            model_f86.register(self)
-            model_f138.register(self)
-            model_f139.register(self)
-            model_f148.register(self)
-            model_f151.register(self)
-            model_f153.register(self)
-            model_f169.register(self)
-            model_f174.register(self)
-            model_f175.register(self)
-            model_f181.register(self)
-            model_f182.register(self)
-            model_f194.register(self)
-            model_f251.register(self)
-            model_f280.register(self)
-            model_f283.register(self)
-            model_f381.register(self)
-            model_f521.register(self)
-            model_paxxx.register(self)
-            model_xbuf.register(self)
-            model_xreg.register(self)
-
+        self.makefile = SrcFile(self.dstdir + "/Makefile.inc")
         self.chf_sheets = SrcFile(self.dstdir + "/" + self.lname + "_sheets.h")
         self.scm_board = self.sc_mod(self.lname + "_board")
         self.scm_board.subst("«bbb»", self.lname)
@@ -164,8 +103,7 @@ class Board():
 
     def add_part(self, name, part):
         ''' Add a part to our catalog, if not already occupied '''
-        if name not in self.part_catalog:
-            self.part_catalog[name] = part
+        self.cpu.add_part(name, part)
 
     def iter_components(self):
         ''' ... '''
@@ -193,7 +131,7 @@ class Board():
 
     def sc_mod(self, basename):
         ''' ... '''
-        return SC_Mod(self.dstdir + "/" + basename)
+        return SC_Mod(self.dstdir + "/" + basename, self.makefile)
 
     def produce_sheets_h(self, file):
         ''' ... '''
@@ -323,15 +261,6 @@ class Board():
             net.write_init(scm)
         scm.write("\n{\n}\n")
 
-    def produce_makefile_inc(self, file):
-        ''' ... '''
-        self.scm_board.makefile(file)
-        self.scm_globals.makefile(file)
-        for sheet in self.sheets.values():
-            sheet.scm.makefile(file)
-        for scm in self.extra_scms:
-            scm.makefile(file)
-
     def produce(self):
         ''' ... '''
         os.makedirs(self.dstdir, exist_ok=True)
@@ -352,11 +281,7 @@ class Board():
         for sheet in self.sheets.values():
             sheet.produce()
 
-        chf = SrcFile(self.dstdir + "/Makefile.inc")
-        self.produce_makefile_inc(chf)
-        chf.commit()
-
-        open(self.dstdir + "/_timestamp", "w").write("\n")
+        self.makefile.commit()
 
     def pagename_to_sheet(self, text):
         ''' Convert a sheets name to (our) sheet number '''

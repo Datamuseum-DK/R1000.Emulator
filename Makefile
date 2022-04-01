@@ -61,6 +61,7 @@ include Components/Makefile.inc
 -include Seq/${SC_BRANCH}/Makefile.inc
 -include Typ/${SC_BRANCH}/Makefile.inc
 -include Val/${SC_BRANCH}/Makefile.inc
+-include Chassis/${SC_BRANCH}/Makefile.inc
 
 r1000sim.${SC_BRANCH}:	netlist ${OBJS}
 	@${CXX} -o r1000sim.${SC_BRANCH} ${CFLAGS} ${LDFLAGS} ${OBJS} \

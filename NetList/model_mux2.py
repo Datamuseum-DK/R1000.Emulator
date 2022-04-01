@@ -128,7 +128,7 @@ class ModelMux2(PartModel):
             node = comp.nodes.get(pin_name)
             if node and node.net.is_pd():
                 comp.del_node(node)
-        ident = board.name + "_" + self.name + "_" + sig
+        ident = self.name + "_" + sig
         if self.invert:
             ident += "_I"
         if "OE" in comp.nodes:

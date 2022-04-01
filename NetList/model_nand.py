@@ -214,7 +214,7 @@ class ModelNand(Part):
                 i.append("L")
         inputs = len(comp.nodes) - 1
         sig = util.signature(i)
-        ident = board.name + "_NAND%d_" % inputs + "%d_" % self.delay + sig
+        ident = "NAND%d_" % inputs + "%d_" % self.delay + sig
         if alu_zero:
             ident += "_OC"
         if ident not in board.part_catalog:

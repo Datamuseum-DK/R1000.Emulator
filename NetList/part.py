@@ -46,6 +46,8 @@ class Part():
         self.pins = {}
         self.includes = []
         self.ignore = False
+        self.uses = []
+        self.blame = set()
 
         self.clsname = "SCM_" + self.name.upper()
 
@@ -68,6 +70,7 @@ class Part():
 
     def instance(self, file, comp):
         ''' ... '''
+        self.uses.append(comp)
         file.write('\t' + self.clsname + " " + comp.name + ";\n")
 
     def initialize(self, file, comp):
@@ -175,12 +178,15 @@ class PartModel(Part):
                 i.append("L")
         return util.signature(i)
 
+    def create(self, board, ident):
+        return self.factory(board, ident)
+
     def configure(self, board, comp):
         sig = self.make_signature(comp)
-        ident = board.name + "_" + self.name + "_" + sig
-        if ident not in board.part_catalog:
-            board.add_part(ident, self.factory(board, ident))
-        comp.part = board.part_catalog[ident]
+        ident = self.name + "_" + sig
+        if ident not in board.cpu.part_catalog:
+            board.cpu.add_part(ident, self.create(board, ident))
+        comp.part = board.cpu.part_catalog[ident]
 
 class PartFactory(Part):
 
@@ -204,7 +210,7 @@ class PartFactory(Part):
     def build(self):
         ''' Build this component (if/when used) '''
 
-        self.scm = self.board.sc_mod(self.name)
+        self.scm = self.board.cpu.sc_mod(self.name)
         self.subs(self.scm.cc)
         self.scm.std_hh(self.pin_iterator())
         self.scm.std_cc(
@@ -215,7 +221,6 @@ class PartFactory(Part):
             doit = self.doit,
         )
         self.scm.commit()
-        self.board.extra_scms.append(self.scm)
 
     def extra(self, file):
         ''' Extra source-code at globale level'''

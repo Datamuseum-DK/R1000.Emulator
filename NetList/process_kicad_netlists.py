@@ -40,21 +40,118 @@ import transit
 
 from board import Board
 from srcfile import SrcFile
+from scmod import SC_Mod
+
+import models
 
 ME = os.path.basename(__file__)
 
+class R1000Cpu():
+
+    ''' A R1000 CPU '''
+
+    def __init__(self, branch, netlists):
+        ''' ... '''
+        self.branch = branch
+        self.netlists = netlists
+        self.part_catalog = {}
+        self.chassis_makefile = None
+
+        os.makedirs("Chassis", exist_ok=True)
+        os.makedirs(os.path.join("Chassis", branch), exist_ok=True)
+
+        if self.already_current():
+            print("Already up to date")
+            return
+
+        models.register(self)
+
+        self.do_build()
+        open(os.path.join("Chassis", self.branch, "_timestamp"), "w").write("\n")
+        self.report_bom()
+
+    def add_part(self, name, part):
+        ''' Add a part to our catalog, if not already occupied '''
+        if name not in self.part_catalog:
+            self.part_catalog[name] = part
+
+    def sc_mod(self, basename):
+        ''' ... '''
+        return SC_Mod(os.path.join("Chassis", self.branch, basename), self.chassis_makefile)
+
+    def already_current(self):
+        ''' Check if generated files are newer than netlists '''
+        try:
+            t_old = os.stat(os.path.join("Chassis", self.branch, "_timestamp")).st_mtime
+        except FileNotFoundError:
+            return False
+
+        if os.stat(__file__).st_mtime > t_old:
+            print(__file__, "triggers build")
+            return False
+
+        for filename in self.netlists:
+            if os.stat(filename).st_mtime > t_old:
+                print(filename, "triggers build")
+                return False
+
+        return True
+
+    def do_build(self):
+        ''' ... '''
+        chf = SrcFile("Chassis/plane_tbl.h")
+        transit.make_transit_h(chf)
+        chf.commit()
+
+        self.chassis_makefile = SrcFile(os.path.join("Chassis", self.branch, "Makefile.inc"))
+
+        for filename in self.netlists:
+            print("Processing", filename)
+            board = Board(self, filename)
+            board.produce()
+
+        self.chassis_makefile.commit()
+
+    def report_bom(self):
+        ''' Report component usage '''
+        with open("_bom.txt", "w") as file:
+            file.write("-" * 40 + '\n')
+            parts = set(self.part_catalog.values())
+            file.write("%6d         Total parts\n" % len(parts))
+            file.write("%6d         Total components\n" % sum(len(x.uses) for x in parts))
+            file.write("-" * 40 + '\n')
+            file.write("\n")
+            file.write("  Uses  Blame  Part\n")
+            file.write("-" * 40 + '\n')
+            for part in sorted(parts, key=lambda x: (-len(x.blame), len(x.uses))):
+                if not part.uses and not part.blame:
+                    continue
+                file.write("%6d " % len(part.uses))
+                if part.blame:
+                    file.write(" %6d  " % len(part.blame))
+                else:
+                    file.write("   -   ")
+                file.write(" " + part.name + "\n")
+                for i, comp in enumerate(
+                    sorted(
+                        part.uses,
+                        key=lambda x: (x.board.name, x.name)
+                    )
+                ):
+                    if i == 5:
+                        file.write("\t\t    …\n")
+                        break
+                    file.write("\t\t    " + comp.board.name + "::" + comp.name + "\n")
+            file.write("-" * 40 + '\n')
+
 def main():
     ''' ... '''
+
     try:
         open("NetList/" + os.path.basename(__file__))
     except FileNotFoundError:
         sys.stderr.write("Must run %s from root of R1000.Emulator project\n" % ME)
         sys.exit(2)
-
-    os.makedirs("Chassis", exist_ok=True)
-    chf = SrcFile("Chassis/plane_tbl.h")
-    transit.make_transit_h(chf)
-    chf.commit()
 
     if len(sys.argv) < 3:
         sys.stderr.write("Usage:\n\t%s <branch> <KiCad netlist-file> ...\n" % ME)
@@ -62,21 +159,7 @@ def main():
 
     branch = sys.argv[1]
 
-    for filename in sys.argv[2:]:
-        t_new = max(os.stat(filename).st_mtime, os.stat(__file__).st_mtime)
-        basename = os.path.basename(filename).split(".", 1)[0]
-        speculative_name = basename.capitalize() + "/" + branch
-        try:
-            t_old = os.stat(speculative_name + "/_timestamp").st_mtime
-        except FileNotFoundError:
-            t_old = 0
-        if t_new > t_old:
-            print()
-            print("Processing", filename)
-            board = Board(filename, branch)
-            board.produce()
-        else:
-            print("Skipping", filename, "is older than", speculative_name)
+    R1000Cpu(branch, sys.argv[2:])
 
 if __name__ == "__main__":
     main()
