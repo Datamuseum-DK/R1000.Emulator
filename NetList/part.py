@@ -245,7 +245,7 @@ class PartFactory(Part):
             file.write("\t} while(0)\n")
 
             file.write("\n")
-            file.write("#define BUS_%s_TRACE() \\\n\t\t<< " % bus.name)
+            file.write("#define BUS_%s_TRACE() \\\n\t\t" % bus.name)
             file.fmt(' \\\n\t\t<< '.join("PIN_%s" % pin.name for pin in bus.pins) + '\n')
 
     def state(self, _file):

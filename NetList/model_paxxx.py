@@ -72,7 +72,7 @@ class PAxxx(PartFactory):
 		|''')
 
         file.fmt('''
-		|	    << " a " BUS_A_TRACE()
+		|	    << " a " << BUS_A_TRACE()
 		|	    << " d "
 		|	    << AS(data & 0x80)
 		|	    << AS(data & 0x40)

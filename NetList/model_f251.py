@@ -83,7 +83,7 @@ class F251(PartFactory):
 		|	    << " i "
 		|	    << PIN_A? << PIN_B? << PIN_C? << PIN_D?
 		|	    << PIN_E? << PIN_F? << PIN_G? << PIN_H?
-		|	    << " s " BUS_S_TRACE()
+		|	    << " s " << BUS_S_TRACE()
 		|	    << " | "
 		|	    << s
 		|	);
