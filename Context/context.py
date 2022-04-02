@@ -20,7 +20,7 @@ class Context():
         buf = file.read(128)
         if len(buf) != 128:
             raise EOFError
-        hdr = struct.unpack("<LLQL16s92s", buf)
+        hdr = struct.unpack("<LLQL32s76s", buf)
         if not hdr[0]:
             raise EOFError
         if hdr[0] != 0x6e706c8e:
