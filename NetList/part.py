@@ -152,7 +152,13 @@ class PartModel(Part):
         ''' Assigned to component '''
 
         for node in comp:
-            if node.pin.role in (
+            if node.pin.role[:3] == "sc_":
+                continue
+            if node.pin.name[:2] == "DQ" and "tri_state" in node.pin.role:
+                node.pin.role = "sc_inout_resolved"
+            elif node.pin.name[:2] == "IO" and "tri_state" in node.pin.role:
+                node.pin.role = "sc_inout_resolved"
+            elif node.pin.role in (
                 "input",
                 "input+no_connect",
             ):
@@ -269,7 +275,7 @@ class PartFactory(Part):
                 continue
             if node.pin.bus is None and node.net.is_pd():
                 continue
-            if node.pin.role == "c_input":
+            if node.pin.role in ("c_input", "sc_inout_resolved",):
                 yield "PIN_%s" % node.pin.name
 
     def subs(self, file):
@@ -306,7 +312,9 @@ class PartFactory(Part):
         ''' SC pin declarations '''
 
         for node in self.comp:
-            if node.pin.role == "c_output" and node.net.sc_type == "bool":
+            if node.pin.role[:3] == "sc_":
+                yield "%s\tPIN_%s;" % (node.pin.role, node.pin.name)
+            elif node.pin.role == "c_output" and node.net.sc_type == "bool":
                 yield "sc_out <bool>\t\tPIN_%s;" % node.pin.name
             elif node.pin.role == "c_output":
                 yield "sc_out <sc_logic>\tPIN_%s;" % node.pin.name

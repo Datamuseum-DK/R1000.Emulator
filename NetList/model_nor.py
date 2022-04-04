@@ -196,3 +196,4 @@ def register(board):
     ''' Register component model '''
     board.add_part("F02", ModelNor("NOR"))
     board.add_part("F260", ModelNor("NOR"))
+    board.add_part("NOR4", ModelNor("NOR"))

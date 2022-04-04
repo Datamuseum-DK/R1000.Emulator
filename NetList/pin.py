@@ -50,6 +50,10 @@ class Pin():
         ''' Things (may) have changed '''
 
         for i, j in (
+            ("ECLK", "Egt"),	# F85
+            ("ACLKB", "AgtB"),	# F85
+            (">", "bg"),
+            ("<", "lt"),
             ("=", "eq"),
             ("~", "not"),
         ):

@@ -29,73 +29,45 @@
 # SUCH DAMAGE.
 
 '''
-   2167 CMOS Static RAM 16K x 1-Bit
-   ================================
+   DS8641 Quad Unified Bus Tranceiver
+   ==================================
 
-   Ref: Rensas DSC2981/08 February 2001
+   Ref: National Semiconductor TL/F/5806  RRD-B30M36  January 1996
 '''
 
 
 from part import PartModel, PartFactory
 
-class SRAM2167(PartFactory):
+class DS8641(PartFactory):
 
-    ''' 2167 CMOS Static RAM 16K x 1-Bit '''
-
-    def state(self, file):
-        file.fmt('''
-		|	bool ram[16384];
-		|''')
+    ''' DS8641 Quad Unified Bus Tranceiver '''
 
     def doit(self, file):
         ''' The meat of the doit() function '''
 
         super().doit(file)
 
-        if not self.comp.nodes["CS"].net.is_pd():
-            file.fmt('''
-		|	if (PIN_CS=>) {
-		|		TRACE("Z");
-		|		PIN_Q = sc_logic_Z;
-		|		next_trigger(PIN_CS.negedge_event());
-		|		return;
-		|	}
-		|''')
-
         file.fmt('''
-		|	unsigned adr = 0;
-		|
-		|	BUS_A_READ(adr);
-		|
-		|	if (!PIN_WE=>)
-		|		state->ram[adr] = PIN_D=>;
-		|	PIN_Q<=(state->ram[adr]);
+		|	unsigned tmp;
 		|
 		|	TRACE(
-		|	    << " a " << BUS_A_TRACE()
-		|	    << " d "
-		|	    << PIN_D?
-		|	    << " w "
-		|	    << PIN_WE?
-		|	    << " cs "
-		|	    << PIN_CS?
-		|	    << " | "
-		|	    << std::hex << adr
-		|	    << " "
-		|	    << state->ram[adr]
+		|	    << " e_ " << BUS_EN_TRACE()
+		|	    << " b " << BUS_B_TRACE()
+		|	    << " i " << BUS_IN_TRACE()
 		|	);
+		|	if (!PIN_EN0=> && !PIN_EN1=>) {
+		|		BUS_IN_READ(tmp);
+		|		tmp ^= 0x0f;
+		|		BUS_B_WRITE(tmp);
+		|	} else {
+		|		BUS_B_Z();
+		|	}
+		|	BUS_B_READ(tmp);
+		|	tmp ^= 0x0f;
+		|	BUS_OUT_WRITE(tmp);
 		|''')
-
-class Model2167(PartModel):
-    ''' Fix Q pin to be tri-state '''
-
-    def assign(self, comp):
-        if comp.nodes["CS"].net.is_pd():
-            comp.nodes["Q"].pin.role = "c_output"
-        super().assign(comp)
-
 
 def register(board):
     ''' Register component model '''
 
-    board.add_part("2167", Model2167("2167", SRAM2167))
+    board.add_part("8641", PartModel("8641", DS8641))

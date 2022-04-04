@@ -60,11 +60,8 @@ class SRAM2149(PartFactory):
         if not self.comp.nodes["CS"].net.is_pd():
             file.fmt('''
 		|	if (PIN_CS=>) {
-		|		// TRACE(<< "z");
-		|		PIN_DQ0 = sc_logic_Z;
-		|		PIN_DQ1 = sc_logic_Z;
-		|		PIN_DQ2 = sc_logic_Z;
-		|		PIN_DQ3 = sc_logic_Z;
+		|		TRACE(<< "z");
+		|		BUS_DQ_Z();
 		|		next_trigger(PIN_CS.negedge_event());
 		|		return;
 		|	}
@@ -72,41 +69,19 @@ class SRAM2149(PartFactory):
 
         file.fmt('''
 		|
-		|	if (PIN_A9=>) adr |= 1 << 0;
-		|	if (PIN_A8=>) adr |= 1 << 1;
-		|	if (PIN_A7=>) adr |= 1 << 2;
-		|	if (PIN_A6=>) adr |= 1 << 3;
-		|	if (PIN_A5=>) adr |= 1 << 4;
-		|	if (PIN_A4=>) adr |= 1 << 5;
-		|	if (PIN_A3=>) adr |= 1 << 6;
-		|	if (PIN_A2=>) adr |= 1 << 7;
-		|	if (PIN_A1=>) adr |= 1 << 8;
-		|	if (PIN_A0=>) adr |= 1 << 9;
+		|	BUS_A_READ(adr);
 		|
 		|	if (!PIN_WE=>) {
-		|		PIN_DQ0 = sc_logic_Z;
-		|		PIN_DQ1 = sc_logic_Z;
-		|		PIN_DQ2 = sc_logic_Z;
-		|		PIN_DQ3 = sc_logic_Z;
-		|		state->ram[adr] = 0;
-		|		if (PIN_DQ0=>) state->ram[adr] |= (1<<3);
-		|		if (PIN_DQ1=>) state->ram[adr] |= (1<<2);
-		|		if (PIN_DQ2=>) state->ram[adr] |= (1<<1);
-		|		if (PIN_DQ3=>) state->ram[adr] |= (1<<0);
+		|		BUS_DQ_Z();
+		|		BUS_DQ_READ(state->ram[adr]);
 		|		wrote = 1;
 		|	}
 		|	if (wrote || (state->ctx.do_trace & 2)) {
 		|		TRACE(
 		|		    << " cs " << PIN_CS?
 		|		    << " we " << PIN_WE?
-		|		    << " a " << PIN_A0? << PIN_A1? << PIN_A2?
-		|		    << PIN_A3? << PIN_A4? << PIN_A5? << PIN_A6?
-		|		    << PIN_A7? << PIN_A8? << PIN_A9?
-		|		    << " dq "
-		|		    << PIN_DQ0?
-		|		    << PIN_DQ1?
-		|		    << PIN_DQ2?
-		|		    << PIN_DQ3?
+		|		    << " a " << BUS_A_TRACE()
+		|		    << " dq " << BUS_DQ_TRACE()
 		|		    << " | "
 		|		    << std::hex << adr
 		|		    << " "
@@ -114,24 +89,11 @@ class SRAM2149(PartFactory):
 		|		);
 		|	}
 		|	if (PIN_WE=>) {
-		|		PIN_DQ0<=(state->ram[adr] & (1<<3));
-		|		PIN_DQ1<=(state->ram[adr] & (1<<2));
-		|		PIN_DQ2<=(state->ram[adr] & (1<<1));
-		|		PIN_DQ3<=(state->ram[adr] & (1<<0));
+		|		BUS_DQ_WRITE(state->ram[adr]);
 		|	}
 		|''')
-
-class Model2149(PartModel):
-    ''' ... '''
-    def assign(self, comp):
-        if comp.nodes["CS"].net.is_pd():
-            for node in comp:
-                if node.pin.name[:2] == "DQ":
-                    node.pin.role = "c_output"
-        super().assign(comp)
-
 
 def register(board):
     ''' Register component model '''
 
-    board.add_part("2149", Model2149("2149", SRAM2149))
+    board.add_part("2149", PartModel("2149", SRAM2149))

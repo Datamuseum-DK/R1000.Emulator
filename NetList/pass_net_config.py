@@ -150,6 +150,7 @@ class PassNetConfig():
         i = {}
         for node in net.iter_nodes():
             if node.pin.role in (
+                "sc_inout_resolved",
                 "tri_state",
                 "bidirectional",
             ):
@@ -159,8 +160,8 @@ class PassNetConfig():
                 "c_output",
             ):
                 continue
-            k = self.board.name + "::" + node.component.part.name + "::" + node.pin.sortkey[0]
             i[node.component.part] = 1 + i.setdefault(node.component.part, 0)
         if len(i) == 1:
             part, _count = i.popitem()
+            # print("BLAME", net, part)
             part.blame.add(net)

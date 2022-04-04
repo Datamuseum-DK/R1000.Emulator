@@ -130,7 +130,7 @@ class R1000Cpu():
                 if part.blame:
                     file.write(" %6d  " % len(part.blame))
                 else:
-                    file.write("   -   ")
+                    file.write("      -  ")
                 file.write(" " + part.name + "\n")
                 for i, comp in enumerate(
                     sorted(

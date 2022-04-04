@@ -69,6 +69,20 @@ class F74(PartFactory):
 
         super().doit(file)
 
+        events = []
+        if not self.comp.nodes["PR_"].net.is_const():
+            events.append("PIN_PR_.default_event()")
+        if not self.comp.nodes["CL_"].net.is_const():
+            events.append("PIN_CL_.default_event()")
+
+        file.subst("«pr_or_cl»", " | ".join(events))
+
+        if not self.comp.nodes["D"].net.is_const():
+            events.append("PIN_D.default_event()")
+
+        file.subst("«d_or_pr_or_cl»", " | ".join(events))
+
+        # file.write("\t\tnext_trigger(%s);\n" % (" | ".join(i)))
         file.fmt('''
 		|	bool oldreg[2], now;
 		|	const char *what = " ? ";
@@ -85,12 +99,16 @@ class F74(PartFactory):
 		|			state->dreg[0] = state->dreg[1] = true;
 		|			state->job = 1;
 		|			what = " 2L ";
+		|		} else {
+		|			next_trigger(«pr_or_cl»);
 		|		}
 		|	} else if (!(PIN_CL_=>)) {
 		|		if (state->dreg[0]) {
 		|			state->dreg[0] = false;
 		|			state->dreg[1] = true;
 		|			state->job = 1;
+		|		} else {
+		|			next_trigger(«pr_or_cl»);
 		|		}
 		|		what = " CLR ";
 		|	} else if (!(PIN_PR_=>)) {
@@ -98,6 +116,8 @@ class F74(PartFactory):
 		|			state->dreg[0] = true;
 		|			state->dreg[1] = false;
 		|			state->job = 1;
+		|		} else {
+		|			next_trigger(«pr_or_cl»);
 		|		}
 		|		what = " SET ";
 		|	} else if (PIN_CLK.posedge()) {
@@ -107,8 +127,6 @@ class F74(PartFactory):
 		|			state->dreg[1] = !now;
 		|			state->job = 1;
 		|			what = " CHG ";
-		|		} else {
-		|			what = " CLK ";
 		|		}
 		|	}
 		|	if (memcmp(oldreg, state->dreg, sizeof oldreg) || (state->ctx.do_trace & 2)) {
@@ -126,6 +144,8 @@ class F74(PartFactory):
 		|	}
 		|	if (state->job)
 		|		next_trigger(5, SC_NS);
+		|	else if (!(PIN_D=> ^ state->dreg[0]))
+		|		next_trigger(«d_or_pr_or_cl»);
 		|''')
 
 def register(board):

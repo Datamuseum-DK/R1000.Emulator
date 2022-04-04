@@ -29,73 +29,36 @@
 # SUCH DAMAGE.
 
 '''
-   2167 CMOS Static RAM 16K x 1-Bit
-   ================================
+   LS125
+   =====
 
-   Ref: Rensas DSC2981/08 February 2001
 '''
 
 
 from part import PartModel, PartFactory
 
-class SRAM2167(PartFactory):
+class LS125(PartFactory):
 
-    ''' 2167 CMOS Static RAM 16K x 1-Bit '''
-
-    def state(self, file):
-        file.fmt('''
-		|	bool ram[16384];
-		|''')
+    ''' LS125 '''
 
     def doit(self, file):
         ''' The meat of the doit() function '''
 
         super().doit(file)
 
-        if not self.comp.nodes["CS"].net.is_pd():
-            file.fmt('''
-		|	if (PIN_CS=>) {
-		|		TRACE("Z");
-		|		PIN_Q = sc_logic_Z;
-		|		next_trigger(PIN_CS.negedge_event());
-		|		return;
-		|	}
-		|''')
-
         file.fmt('''
-		|	unsigned adr = 0;
-		|
-		|	BUS_A_READ(adr);
-		|
-		|	if (!PIN_WE=>)
-		|		state->ram[adr] = PIN_D=>;
-		|	PIN_Q<=(state->ram[adr]);
 		|
 		|	TRACE(
-		|	    << " a " << BUS_A_TRACE()
-		|	    << " d "
+		|	    << PIN_E?
 		|	    << PIN_D?
-		|	    << " w "
-		|	    << PIN_WE?
-		|	    << " cs "
-		|	    << PIN_CS?
-		|	    << " | "
-		|	    << std::hex << adr
-		|	    << " "
-		|	    << state->ram[adr]
 		|	);
+		|	if (!PIN_E=>)
+		|		PIN_Q = AS(PIN_D=>);
+		|	else
+		|		PIN_Q = sc_logic_Z;
 		|''')
-
-class Model2167(PartModel):
-    ''' Fix Q pin to be tri-state '''
-
-    def assign(self, comp):
-        if comp.nodes["CS"].net.is_pd():
-            comp.nodes["Q"].pin.role = "c_output"
-        super().assign(comp)
-
 
 def register(board):
     ''' Register component model '''
 
-    board.add_part("2167", Model2167("2167", SRAM2167))
+    board.add_part("LS125", PartModel("LS125", LS125))

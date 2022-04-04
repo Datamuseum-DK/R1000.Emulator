@@ -29,17 +29,23 @@
 # SUCH DAMAGE.
 
 '''
-   F08 (Quad) 2-input AND
-   ======================
+   F189 64-Bit Random Acess Memory with 3-STATE Outputs
+   ====================================================
 
+   Ref: Fairchild DS009493 April 1988 Revised January 2004
 '''
 
 
 from part import PartModel, PartFactory
 
-class F08(PartFactory):
+class F189(PartFactory):
 
-    ''' F08 (Quad) 2-input AND '''
+    ''' F189 64-Bit Random Acess Memory with 3-STATE Outputs '''
+
+    def state(self, file):
+        file.fmt('''
+		|	unsigned ram[16];
+		|''')
 
     def doit(self, file):
         ''' The meat of the doit() function '''
@@ -47,18 +53,30 @@ class F08(PartFactory):
         super().doit(file)
 
         file.fmt('''
+		|	unsigned adr = 0;
 		|
-		|	bool s = PIN_D0=> & PIN_D1=>;
+		|	BUS_A_READ(adr);
+		|	if (!PIN_CS=> && !PIN_WE=>) {
+		|		BUS_D_READ(state->ram[adr]);
+		|	}
 		|	TRACE(
-		|	    << PIN_D0?
-		|	    << PIN_D1?
+		|	    << " a " << BUS_A_TRACE()
+		|	    << " d " << BUS_D_TRACE()
 		|	    << " | "
-		|	    << s
+		|	    << std::hex << adr
+		|	    << " "
+		|	    << std::hex << state->ram[adr]
 		|	);
-		|	PIN_Q<=(s);
+		|	if (!PIN_CS=> && PIN_WE=>) {
+		|		BUS_Q_WRITE(state->ram[adr] ^ 0xf);
+		|	} else {
+		|		BUS_Q_Z();
+		|	}
+		|	if (PIN_CS=>)
+		|		next_trigger(PIN_CS.negedge_event());
 		|''')
 
 def register(board):
     ''' Register component model '''
 
-    board.add_part("F08", PartModel("F08", F08))
+    board.add_part("F189", PartModel("F189", F189))

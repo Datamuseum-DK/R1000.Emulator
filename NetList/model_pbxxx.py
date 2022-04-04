@@ -29,73 +29,76 @@
 # SUCH DAMAGE.
 
 '''
-   2167 CMOS Static RAM 16K x 1-Bit
-   ================================
+   256-bit TTL bipolar PROM (32x8)
+   ===============================
 
-   Ref: Rensas DSC2981/08 February 2001
+   Ref: Signetics 82S123A, product specification, June 6 1985
 '''
 
 
 from part import PartModel, PartFactory
 
-class SRAM2167(PartFactory):
+class PBxxx(PartFactory):
 
-    ''' 2167 CMOS Static RAM 16K x 1-Bit '''
+    ''' 256-bit TTL bipolar PROM (32x8) '''
 
     def state(self, file):
+        ''' Extra state variable '''
+
+        file.write("\tuint8_t prom[32];\n")
+
+    def init(self, file):
+        ''' Extra initialization '''
+
         file.fmt('''
-		|	bool ram[16384];
-		|''')
+		|	load_programmable(this->name(), state->prom, sizeof state->prom, arg);
+		''')
 
     def doit(self, file):
         ''' The meat of the doit() function '''
 
         super().doit(file)
 
-        if not self.comp.nodes["CS"].net.is_pd():
+        if 'OE' in self.comp and not self.comp["OE"].net.is_const():
             file.fmt('''
-		|	if (PIN_CS=>) {
-		|		TRACE("Z");
-		|		PIN_Q = sc_logic_Z;
-		|		next_trigger(PIN_CS.negedge_event());
+		|	if (!PIN_OE=>) {
+		|		BUS_Y_WRITE(data);
+		|		next_trigger(PIN_OE.negedge_event());
 		|		return;
-		|	}
+		|	} 
 		|''')
 
         file.fmt('''
 		|	unsigned adr = 0;
 		|
 		|	BUS_A_READ(adr);
-		|
-		|	if (!PIN_WE=>)
-		|		state->ram[adr] = PIN_D=>;
-		|	PIN_Q<=(state->ram[adr]);
-		|
+		|	unsigned data = state->prom[adr];
 		|	TRACE(
 		|	    << " a " << BUS_A_TRACE()
 		|	    << " d "
-		|	    << PIN_D?
-		|	    << " w "
-		|	    << PIN_WE?
-		|	    << " cs "
-		|	    << PIN_CS?
-		|	    << " | "
-		|	    << std::hex << adr
-		|	    << " "
-		|	    << state->ram[adr]
+		|	    << AS(data & 0x80)
+		|	    << AS(data & 0x40)
+		|	    << AS(data & 0x20)
+		|	    << AS(data & 0x10)
+		|	    << AS(data & 0x08)
+		|	    << AS(data & 0x04)
+		|	    << AS(data & 0x02)
+		|	    << AS(data & 0x01)
 		|	);
+		|	BUS_Y_WRITE(data);
 		|''')
 
-class Model2167(PartModel):
-    ''' Fix Q pin to be tri-state '''
+class ModelPBxxx(PartModel):
+    ''' PBxxx Rom '''
 
     def assign(self, comp):
-        if comp.nodes["CS"].net.is_pd():
-            comp.nodes["Q"].pin.role = "c_output"
+        if comp.nodes["OE"].net.is_pd():
+            for node in comp:
+                if node.pin.name[0] == "Y":
+                    node.pin.role = "c_output"
         super().assign(comp)
-
 
 def register(board):
     ''' Register component model '''
 
-    board.add_part("2167", Model2167("2167", SRAM2167))
+    board.add_part("PBxxx", ModelPBxxx("PBXXX", PBxxx))

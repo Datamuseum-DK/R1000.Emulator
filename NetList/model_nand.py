@@ -41,13 +41,14 @@ class Nand(PartFactory):
 
     ''' A generic N-input NAND component '''
 
-    def __init__(self, board, ident, inputs, delay):
+    def __init__(self, board, ident, inputs, delay, invert):
         super().__init__(board, ident)
         self.board = board
         self.inputs = inputs
         self.scm = False
         self.comp = None
         self.delay = delay
+        self.invert = invert
 
     def pin_iterator(self):
         ''' SC pin declarations '''
@@ -102,6 +103,8 @@ class Nand(PartFactory):
 
         super().doit(file)
 
+        file.write("\tconst int active = %d;\n" % (not self.invert))
+
         file.fmt('''
 		|
 		|	TRACE(
@@ -138,8 +141,8 @@ class Nand(PartFactory):
         file.fmt('''
 		|
 		|	) {
-		|		if (state->out != 0) {
-		|			state->out = 0;
+		|		if (state->out != active) {
+		|			state->out = active;
 		|			if (state->dly == 0) {
 		|				PIN_Q<=(state->out);
 		|			} else {
@@ -148,8 +151,8 @@ class Nand(PartFactory):
 		|			}
 		|		}
 		|	} else {
-		|		if (state->out != 1) {
-		|			state->out = 1;
+		|		if (state->out != !active) {
+		|			state->out = !active;
 		|			if (state->dly == 0) {
 		|				PIN_Q<=(state->out);
 		|			} else {
@@ -186,9 +189,10 @@ class Nand(PartFactory):
 class ModelNand(Part):
     ''' Model NAND components '''
 
-    def __init__(self, delay):
+    def __init__(self, delay, invert):
         super().__init__("NAND")
         self.delay = delay
+        self.invert = invert
 
     def assign(self, comp):
         ''' Assigned to component '''
@@ -214,21 +218,27 @@ class ModelNand(Part):
                 i.append("L")
         inputs = len(comp.nodes) - 1
         sig = util.signature(i)
-        ident = "NAND%d_" % inputs + "%d_" % self.delay + sig
+        ident = "AND%d_" % inputs + "%d_" % self.delay + sig
+        if self.invert:
+            ident = "N" + ident
         if alu_zero:
             ident += "_OC"
         if ident not in board.part_catalog:
-            board.add_part(ident, Nand(board, ident, inputs, self.delay))
+            board.add_part(ident, Nand(board, ident, inputs, self.delay, self.invert))
         comp.part = board.part_catalog[ident]
 
 def register(board):
     ''' Register component model '''
 
-    board.add_part("F00", ModelNand(0))
-    board.add_part("F04", ModelNand(5))	# Inverters are juvenile NAND gates
-    board.add_part("F37", ModelNand(5))
-    board.add_part("F10", ModelNand(0))
-    board.add_part("F20", ModelNand(0))   ### Not: OC-thing with ALU-ZERO outputs
-    board.add_part("F30", ModelNand(0))
-    board.add_part("F40", ModelNand(0))
-    board.add_part("F133", ModelNand(0))
+    board.add_part("F00", ModelNand(0, True))
+    board.add_part("F04", ModelNand(5, True))	# Inverters are juvenile NAND gates
+    board.add_part("F08", ModelNand(0, False))
+    board.add_part("F37", ModelNand(5, True))
+    board.add_part("F10", ModelNand(0, True))
+    board.add_part("F20", ModelNand(0, True))   ### Not: OC-thing with ALU-ZERO outputs
+    board.add_part("F30", ModelNand(0, True))
+    board.add_part("F40", ModelNand(0, True))
+    board.add_part("F133", ModelNand(0, True))
+    board.add_part("AND4", ModelNand(0, False))
+    board.add_part("AND3", ModelNand(0, False))
+    board.add_part("AND2", ModelNand(0, False))

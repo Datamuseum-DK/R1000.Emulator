@@ -30,7 +30,7 @@
 
 '''
    F174 Hex D-Type Flip-Flop with Master Reset
-   ===================================
+   ===========================================
 
    Ref: Fairchild DS009489 April 1988 Revised September 2000
 '''

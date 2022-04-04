@@ -29,73 +29,79 @@
 # SUCH DAMAGE.
 
 '''
-   2167 CMOS Static RAM 16K x 1-Bit
-   ================================
+   F113 (Dual) JK Negative Edge-Triggered Flip-Flop
+   ================================================
 
-   Ref: Rensas DSC2981/08 February 2001
+   Ref: Fairchild DS009473 April 1988 Revised September 2000
 '''
 
 
 from part import PartModel, PartFactory
 
-class SRAM2167(PartFactory):
+class F113(PartFactory):
 
-    ''' 2167 CMOS Static RAM 16K x 1-Bit '''
+    ''' F113 (Dual) JK Negative Edge-Triggered Flip-Flop '''
+
+    def sensitive(self):
+        yield "PIN_CLK_.neg()"
+        if not self.comp.nodes["PR_"].net.is_const():
+            yield "PIN_PR_"
 
     def state(self, file):
-        file.fmt('''
-		|	bool ram[16384];
-		|''')
+        ''' Extra state variable '''
+
+        file.write("\tbool dreg;\n")
+        file.write("\tint job;\n")
 
     def doit(self, file):
         ''' The meat of the doit() function '''
 
         super().doit(file)
 
-        if not self.comp.nodes["CS"].net.is_pd():
-            file.fmt('''
-		|	if (PIN_CS=>) {
-		|		TRACE("Z");
-		|		PIN_Q = sc_logic_Z;
-		|		next_trigger(PIN_CS.negedge_event());
-		|		return;
-		|	}
-		|''')
-
         file.fmt('''
-		|	unsigned adr = 0;
-		|
-		|	BUS_A_READ(adr);
-		|
-		|	if (!PIN_WE=>)
-		|		state->ram[adr] = PIN_D=>;
-		|	PIN_Q<=(state->ram[adr]);
+		|	const char *what;
+		|	bool nxt = state->dreg;
 		|
 		|	TRACE(
-		|	    << " a " << BUS_A_TRACE()
-		|	    << " d "
-		|	    << PIN_D?
-		|	    << " w "
-		|	    << PIN_WE?
-		|	    << " cs "
-		|	    << PIN_CS?
-		|	    << " | "
-		|	    << std::hex << adr
-		|	    << " "
-		|	    << state->ram[adr]
+		|	    << state->job
+		|	    << " clk " << PIN_CLK_?
+		|	    << " k " << PIN_K?
+		|	    << " j " << PIN_J?
+		|	    << " pr " << PIN_PR_?
+		|	    << " q "
+		|	    << state->dreg
 		|	);
+		|	if (state->job) {
+		|		PIN_Q<=(state->dreg);
+		|		PIN_Q_<=(!state->dreg);
+		|		state->job = 0;
+		|	}
+		|
+		|	if (!PIN_PR_=>) {
+		|		what = " PR ";
+		|		nxt = true;
+		|	} else if (!PIN_CLK_.negedge()) {
+		|		what = " ? ";
+		|	} else if (PIN_J=> && PIN_K=>) {
+		|		what = " inv ";
+		|		nxt = !state->dreg;
+		|	} else if (!PIN_J=> && PIN_K=>) {
+		|		what = " clr ";
+		|		nxt = false;
+		|	} else if (PIN_J=> && !PIN_K=>) {
+		|		what = " set ";
+		|		nxt = true;
+		|	} else {
+		|		what = " nop ";
+		|	}
+		|	if (nxt != state->dreg) {
+		|		state->job = 1;
+		|		state->dreg = nxt;
+		|		next_trigger(5, SC_NS);
+		|	}
 		|''')
-
-class Model2167(PartModel):
-    ''' Fix Q pin to be tri-state '''
-
-    def assign(self, comp):
-        if comp.nodes["CS"].net.is_pd():
-            comp.nodes["Q"].pin.role = "c_output"
-        super().assign(comp)
-
 
 def register(board):
     ''' Register component model '''
 
-    board.add_part("2167", Model2167("2167", SRAM2167))
+    board.add_part("F113", PartModel("F113", F113))

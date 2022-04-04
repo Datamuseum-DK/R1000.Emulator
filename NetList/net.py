@@ -48,6 +48,12 @@ class Net():
         self.sc_type = "sc_logic"
         self.cname = None
 
+        self.insert()
+
+    def insert(self):
+        ''' ... '''
+        self.board.add_net(self)
+
     def add_node(self, node):
         ''' ... '''
         assert node not in self.nnodes

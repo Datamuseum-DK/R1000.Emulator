@@ -29,22 +29,21 @@
 # SUCH DAMAGE.
 
 '''
-   2167 CMOS Static RAM 16K x 1-Bit
-   ================================
+   2Kx8 SRAM
+   =========
 
-   Ref: Rensas DSC2981/08 February 2001
 '''
 
 
 from part import PartModel, PartFactory
 
-class SRAM2167(PartFactory):
+class SRAM2KX8(PartFactory):
 
-    ''' 2167 CMOS Static RAM 16K x 1-Bit '''
+    ''' 2Kx8 SRAM '''
 
     def state(self, file):
         file.fmt('''
-		|	bool ram[16384];
+		|	uint8_t ram[1<<11];
 		|''')
 
     def doit(self, file):
@@ -52,50 +51,45 @@ class SRAM2167(PartFactory):
 
         super().doit(file)
 
-        if not self.comp.nodes["CS"].net.is_pd():
-            file.fmt('''
-		|	if (PIN_CS=>) {
-		|		TRACE("Z");
-		|		PIN_Q = sc_logic_Z;
-		|		next_trigger(PIN_CS.negedge_event());
-		|		return;
-		|	}
-		|''')
-
         file.fmt('''
 		|	unsigned adr = 0;
-		|
-		|	BUS_A_READ(adr);
-		|
-		|	if (!PIN_WE=>)
-		|		state->ram[adr] = PIN_D=>;
-		|	PIN_Q<=(state->ram[adr]);
+		|	unsigned data = 0;
 		|
 		|	TRACE(
 		|	    << " a " << BUS_A_TRACE()
-		|	    << " d "
-		|	    << PIN_D?
-		|	    << " w "
-		|	    << PIN_WE?
-		|	    << " cs "
-		|	    << PIN_CS?
-		|	    << " | "
-		|	    << std::hex << adr
-		|	    << " "
-		|	    << state->ram[adr]
+		|	    << " d " << BUS_IO_TRACE()
+		|	    << " cs " << PIN_CS?
+		|	    << " oe " << PIN_OE?
+		|	    << " we " << PIN_WE?
 		|	);
+		|
+		|	if (PIN_CS=> || PIN_OE=> || !PIN_WE=>) {
+		|		BUS_IO_Z();
+		|	}
+		|
+		|	BUS_A_READ(adr);
+		|
+		|	if (!PIN_CS=> && PIN_WE.posedge()) {
+		|		BUS_IO_READ(data);
+		|		state->ram[adr] = data;
+		|		TRACE(<< " write " << std::hex << adr << " " << std::hex << data);
+		|	} else if (!PIN_CS=> && PIN_WE=> && !PIN_OE=>) {
+		|		data = state->ram[adr];
+		|		BUS_IO_WRITE(data);
+		|		TRACE(<< " read " << std::hex << adr << " " << std::hex << data);
 		|''')
 
-class Model2167(PartModel):
-    ''' Fix Q pin to be tri-state '''
+        if not self.comp["CS"].net.is_const():
+            file.fmt('''
+		|	} else if (PIN_CS=>) {
+		|		next_trigger(PIN_CS.negedge_event());
+		|''')
 
-    def assign(self, comp):
-        if comp.nodes["CS"].net.is_pd():
-            comp.nodes["Q"].pin.role = "c_output"
-        super().assign(comp)
-
+        file.fmt('''
+		|	}
+		|''')
 
 def register(board):
     ''' Register component model '''
 
-    board.add_part("2167", Model2167("2167", SRAM2167))
+    board.add_part("2KX8", PartModel("2KX8", SRAM2KX8))

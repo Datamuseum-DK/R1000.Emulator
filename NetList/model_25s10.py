@@ -29,73 +29,91 @@
 # SUCH DAMAGE.
 
 '''
-   2167 CMOS Static RAM 16K x 1-Bit
-   ================================
+   25S10 Four-Bit Shifter with Three-State Outputs
+   ===============================================
 
-   Ref: Rensas DSC2981/08 February 2001
+   Ref: Am25s10 03611B
 '''
 
 
 from part import PartModel, PartFactory
 
-class SRAM2167(PartFactory):
+class Am25S10(PartFactory):
 
-    ''' 2167 CMOS Static RAM 16K x 1-Bit '''
-
-    def state(self, file):
-        file.fmt('''
-		|	bool ram[16384];
-		|''')
+    ''' 25S10 Four-Bit Shifter with Three-State Outputs '''
 
     def doit(self, file):
         ''' The meat of the doit() function '''
 
         super().doit(file)
 
-        if not self.comp.nodes["CS"].net.is_pd():
+        file.fmt('''
+		|	bool output[4];
+		|	unsigned sel;
+		|''')
+
+        if not self.comp["OE"].net.is_const():
             file.fmt('''
-		|	if (PIN_CS=>) {
+		|
+		|	if (PIN_OE=>) {
 		|		TRACE("Z");
-		|		PIN_Q = sc_logic_Z;
-		|		next_trigger(PIN_CS.negedge_event());
+		|		BUS_Y_Z();
+		|		next_trigger(PIN_OE.negedge_event());
 		|		return;
 		|	}
 		|''')
 
         file.fmt('''
-		|	unsigned adr = 0;
-		|
-		|	BUS_A_READ(adr);
-		|
-		|	if (!PIN_WE=>)
-		|		state->ram[adr] = PIN_D=>;
-		|	PIN_Q<=(state->ram[adr]);
-		|
+		|	BUS_S_READ(sel);
+		|	switch(sel) {
+		|	case 0:
+		|		output[0] = PIN_I0=>;
+		|		output[1] = PIN_I1=>;
+		|		output[2] = PIN_I2=>;
+		|		output[3] = PIN_I3=>;
+		|		break;
+		|	case 1:
+		|		output[0] = PIN_IM1=>;
+		|		output[1] = PIN_I0=>;
+		|		output[2] = PIN_I1=>;
+		|		output[3] = PIN_I2=>;
+		|		break;
+		|	case 2:
+		|		output[0] = PIN_IM2=>;
+		|		output[1] = PIN_IM1=>;
+		|		output[2] = PIN_I0=>;
+		|		output[3] = PIN_I1=>;
+		|		break;
+		|	case 3:
+		|		output[0] = PIN_IM3=>;
+		|		output[1] = PIN_IM2=>;
+		|		output[2] = PIN_IM1=>;
+		|		output[3] = PIN_I0=>;
+		|		break;
+		|	}
 		|	TRACE(
-		|	    << " a " << BUS_A_TRACE()
-		|	    << " d "
-		|	    << PIN_D?
-		|	    << " w "
-		|	    << PIN_WE?
-		|	    << " cs "
-		|	    << PIN_CS?
-		|	    << " | "
-		|	    << std::hex << adr
-		|	    << " "
-		|	    << state->ram[adr]
+		|	    << " s " << BUS_S_TRACE()
+		|	    << " oe_ " << PIN_OE?
+		|	    << " i " << PIN_IM3? << PIN_IM2? << PIN_IM1? << BUS_I_TRACE()
+		|	    << "|"
+		|	    << output[0] << output[1] << output[2] << output[3]
 		|	);
+		|	PIN_Y0<=(output[0]);
+		|	PIN_Y1<=(output[1]);
+		|	PIN_Y2<=(output[2]);
+		|	PIN_Y3<=(output[3]);
 		|''')
 
-class Model2167(PartModel):
-    ''' Fix Q pin to be tri-state '''
+class Model25S10(PartModel):
+    ''' Am25S10 '''
 
     def assign(self, comp):
-        if comp.nodes["CS"].net.is_pd():
-            comp.nodes["Q"].pin.role = "c_output"
+        for node in comp:
+            if node.pin.name[:2] == "I-":
+                node.pin.name = "IM" + node.pin.name[2:]
         super().assign(comp)
-
 
 def register(board):
     ''' Register component model '''
 
-    board.add_part("2167", Model2167("2167", SRAM2167))
+    board.add_part("25S10", Model25S10("25S10", Am25S10))

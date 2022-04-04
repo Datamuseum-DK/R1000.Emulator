@@ -90,8 +90,7 @@ class Board():
 
         self.nets = {}
         for netsexp in self.sexp.find("nets.net"):
-            net = NetSexp(self, netsexp)
-            self.nets[net.name] = net
+            NetSexp(self, netsexp)
 
         PassPlanes(self)
         PassAssignPart(self)
@@ -104,6 +103,10 @@ class Board():
     def add_part(self, name, part):
         ''' Add a part to our catalog, if not already occupied '''
         self.cpu.add_part(name, part)
+
+    def add_net(self, net):
+        ''' ... '''
+        self.nets[net.name] = net
 
     def iter_components(self):
         ''' ... '''

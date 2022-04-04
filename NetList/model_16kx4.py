@@ -29,22 +29,21 @@
 # SUCH DAMAGE.
 
 '''
-   2167 CMOS Static RAM 16K x 1-Bit
-   ================================
+   2Kx8 SRAM
+   =========
 
-   Ref: Rensas DSC2981/08 February 2001
 '''
 
 
 from part import PartModel, PartFactory
 
-class SRAM2167(PartFactory):
+class SRAM16KX4(PartFactory):
 
-    ''' 2167 CMOS Static RAM 16K x 1-Bit '''
+    ''' 2Kx8 SRAM '''
 
     def state(self, file):
         file.fmt('''
-		|	bool ram[16384];
+		|	uint8_t ram[1<<14];
 		|''')
 
     def doit(self, file):
@@ -52,50 +51,55 @@ class SRAM2167(PartFactory):
 
         super().doit(file)
 
-        if not self.comp.nodes["CS"].net.is_pd():
-            file.fmt('''
-		|	if (PIN_CS=>) {
+        file.fmt('''
+		|	unsigned adr = 0;
+		|	unsigned data;
+		|	const char *what = NULL;
+		|
+		|	BUS_A_READ(adr);
+		|	data = state->ram[adr];
+		|	if (PIN_CS.posedge()) {
+		|		BUS_IO_Z();
 		|		TRACE("Z");
-		|		PIN_Q = sc_logic_Z;
 		|		next_trigger(PIN_CS.negedge_event());
 		|		return;
 		|	}
+		|	if (PIN_CS.negedge()) {
+		|		if (!PIN_WE=>) {
+		|			BUS_IO_Z();
+		|			what = " Ew ";
+		|		} else {
+		|			what = " Er ";
+		|		}
+		|	}
+		|	if (PIN_WE.negedge()) {
+		|		BUS_IO_Z();
+		|		what = " w ";
+		|	}
+		|	if (PIN_WE.posedge()) {
+		|		BUS_IO_READ(data);
+		|		state->ram[adr] = data;
+		|		what = " W ";
+		|	}
+		|	if (!PIN_CS=> && PIN_WE=>) {
+		|		BUS_IO_WRITE(data);
+		|		if (state->ctx.do_trace & 2)
+		|			what = " R ";
+		|	}
+		|	if (what != NULL) {
+		|		TRACE(
+		|		    << what
+		|		    << " cs_ " << PIN_CS?
+		|		    << " we_ " << PIN_WE?
+		|		    << " a " << BUS_A_TRACE()
+		|		    << " d " << BUS_IO_TRACE()
+		|		    << " A " << std::hex << adr
+		|		    << " D " << std::hex << data
+		|		);
+		|	}
 		|''')
-
-        file.fmt('''
-		|	unsigned adr = 0;
-		|
-		|	BUS_A_READ(adr);
-		|
-		|	if (!PIN_WE=>)
-		|		state->ram[adr] = PIN_D=>;
-		|	PIN_Q<=(state->ram[adr]);
-		|
-		|	TRACE(
-		|	    << " a " << BUS_A_TRACE()
-		|	    << " d "
-		|	    << PIN_D?
-		|	    << " w "
-		|	    << PIN_WE?
-		|	    << " cs "
-		|	    << PIN_CS?
-		|	    << " | "
-		|	    << std::hex << adr
-		|	    << " "
-		|	    << state->ram[adr]
-		|	);
-		|''')
-
-class Model2167(PartModel):
-    ''' Fix Q pin to be tri-state '''
-
-    def assign(self, comp):
-        if comp.nodes["CS"].net.is_pd():
-            comp.nodes["Q"].pin.role = "c_output"
-        super().assign(comp)
-
 
 def register(board):
     ''' Register component model '''
 
-    board.add_part("2167", Model2167("2167", SRAM2167))
+    board.add_part("16KX4", PartModel("16KX4", SRAM16KX4))

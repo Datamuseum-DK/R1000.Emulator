@@ -29,73 +29,58 @@
 # SUCH DAMAGE.
 
 '''
-   2167 CMOS Static RAM 16K x 1-Bit
-   ================================
+   F85 4-bit magnitude comparator
+   ===================================
 
-   Ref: Rensas DSC2981/08 February 2001
+   Ref: Philips IC15 1994 Sep 27
 '''
-
 
 from part import PartModel, PartFactory
 
-class SRAM2167(PartFactory):
+class F85(PartFactory):
 
-    ''' 2167 CMOS Static RAM 16K x 1-Bit '''
-
-    def state(self, file):
-        file.fmt('''
-		|	bool ram[16384];
-		|''')
+    ''' F85 4-bit magnitude comparator '''
 
     def doit(self, file):
         ''' The meat of the doit() function '''
 
         super().doit(file)
 
-        if not self.comp.nodes["CS"].net.is_pd():
-            file.fmt('''
-		|	if (PIN_CS=>) {
-		|		TRACE("Z");
-		|		PIN_Q = sc_logic_Z;
-		|		next_trigger(PIN_CS.negedge_event());
-		|		return;
-		|	}
-		|''')
-
         file.fmt('''
-		|	unsigned adr = 0;
+		|	unsigned a = 0, b = 0, o = 0;
 		|
-		|	BUS_A_READ(adr);
-		|
-		|	if (!PIN_WE=>)
-		|		state->ram[adr] = PIN_D=>;
-		|	PIN_Q<=(state->ram[adr]);
-		|
+		|	BUS_A_READ(a);
+		|	BUS_B_READ(b);
+		|	if (a > b) {
+		|		o = 0x4;
+		|	} else if (a < b) {
+		|		o = 0x1;
+		|	} else {
+		|		if (!PIN_Elt=> && !PIN_Eeq=>)
+		|			o |= 0x4;
+		|		if (PIN_Eeq=>)
+		|			o |= 0x2;
+		|		if (!PIN_Eeq=> && !PIN_Egt=>)
+		|			o |= 0x1;
+		|	}
 		|	TRACE(
-		|	    << " a " << BUS_A_TRACE()
-		|	    << " d "
-		|	    << PIN_D?
-		|	    << " w "
-		|	    << PIN_WE?
-		|	    << " cs "
-		|	    << PIN_CS?
-		|	    << " | "
-		|	    << std::hex << adr
-		|	    << " "
-		|	    << state->ram[adr]
+		|	    << " a " << a
+		|	    << " " << BUS_A_TRACE()
+		|	    << " b " << b
+		|	    << " " << BUS_B_TRACE()
+		|	    << " e< " << PIN_Elt?
+		|	    << " e= " << PIN_Eeq?
+		|	    << " e> " << PIN_Egt?
+		|	    << " | " << (o & 4 ? ">" : "")
+		|	    << (o & 2 ? "=" : "")
+		|	    << (o & 1 ? "<" : "")
 		|	);
+		|	PIN_AgtB<=(o & 4);
+		|	PIN_AeqB<=(o & 2);
+		|	PIN_AltB<=(o & 1);
 		|''')
-
-class Model2167(PartModel):
-    ''' Fix Q pin to be tri-state '''
-
-    def assign(self, comp):
-        if comp.nodes["CS"].net.is_pd():
-            comp.nodes["Q"].pin.role = "c_output"
-        super().assign(comp)
-
 
 def register(board):
     ''' Register component model '''
 
-    board.add_part("2167", Model2167("2167", SRAM2167))
+    board.add_part("F85", PartModel("F85", F85))
