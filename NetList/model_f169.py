@@ -123,7 +123,7 @@ class F169(PartFactory):
 		|	PIN_Q2<=(state->count & 2);
 		|	PIN_Q1<=(state->count & 4);
 		|	PIN_Q0<=(state->count & 8);
-		|	PIN_C0<=(carry);
+		|	PIN_CO<=(carry);
 		|''')
 
 def register(board):

@@ -56,7 +56,7 @@ class F182(PartFactory):
 		|	unsigned adr = 0;
 		|
 		|	state->ctx.activations++;
-		|	if (PIN_C1=>) adr |= 1 << 8;
+		|	if (PIN_CI=>) adr |= 1 << 8;
 		|	if (PIN_G3=>) adr |= 1 << 7;
 		|	if (PIN_P3=>) adr |= 1 << 6;
 		|	if (PIN_G2=>) adr |= 1 << 5;
@@ -67,7 +67,7 @@ class F182(PartFactory):
 		|	if (PIN_P0=>) adr |= 1 << 0;
 		|	unsigned val = lut182[adr];
 		|	TRACE(
-		|	    << PIN_C1?
+		|	    << PIN_CI?
 		|	    << PIN_G3?
 		|	    << PIN_P3?
 		|	    << PIN_G2?

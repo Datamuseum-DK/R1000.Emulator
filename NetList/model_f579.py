@@ -103,11 +103,11 @@ class F579(PartFactory):
 		|	}
 		|
 		|	if (PIN_CET=>) 
-		|		PIN_C0<=(1);
+		|		PIN_CO<=(1);
 		|	else if (PIN_UD=>)
-		|		PIN_C0<=(state->reg != 0xff);
+		|		PIN_CO<=(state->reg != 0xff);
 		|	else
-		|		PIN_C0<=(state->reg != 0x00);
+		|		PIN_CO<=(state->reg != 0x00);
 		|
 		|	if (!PIN_CS=> && PIN_LD=> && !PIN_OE=>) {
 		|		BUS_IO_WRITE(state->reg);

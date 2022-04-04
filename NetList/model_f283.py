@@ -70,7 +70,7 @@ class F283(PartFactory):
 		|	PIN_Y2<=(sum & 2);
 		|	PIN_Y1<=(sum & 4);
 		|	PIN_Y0<=(sum & 8);
-		|	PIN_C0<=(sum & 16);
+		|	PIN_CO<=(sum & 16);
 		|''')
 
 def register(board):

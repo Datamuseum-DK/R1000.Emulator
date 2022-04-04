@@ -77,7 +77,7 @@ class F163(PartFactory):
 		|	    << state->state
 		|	);
 		|	BUS_Q_WRITE(state->state);
-		|	PIN_C0<=((state->state == 0xf) && PIN_ENT=>);
+		|	PIN_CO<=((state->state == 0xf) && PIN_ENT=>);
 		|''')
 
 def register(board):

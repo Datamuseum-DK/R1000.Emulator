@@ -71,7 +71,7 @@ class F181(PartFactory):
 		|		PIN_AeqB = sc_logic_0;
 		|	PIN_P<=(val & 0x04);
 		|	PIN_CO<=(val & 0x02);
-		|	PIN_Q<=(val & 0x01);
+		|	PIN_G<=(val & 0x01);
 		|
 		|	TRACE(
 		|	    << " s " << BUS_S_TRACE()
