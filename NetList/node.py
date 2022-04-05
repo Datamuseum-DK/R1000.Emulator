@@ -52,6 +52,7 @@ class Node():
 
     def insert(self):
         ''' ... '''
+        self.pin.update()
         self.component.add_node(self)
         self.net.add_node(self)
 

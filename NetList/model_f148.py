@@ -84,9 +84,7 @@ class F148(PartFactory):
 		|	    << " | "
 		|	    << std::hex << s
 		|	);
-		|	PIN_Y2<=(!(s & 1));
-		|	PIN_Y1<=(!(s & 2));
-		|	PIN_Y0<=(!(s & 4));
+		|	BUS_Y_WRITE(~s);
 		|	PIN_GS<=(s & 16);
 		|	PIN_EZ<=(!(s & 8));
 		|''')

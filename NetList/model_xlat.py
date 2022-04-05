@@ -85,12 +85,9 @@ class Xlat(PartFactory):
 		|	if (PIN_OE=>) {
 		|		TRACE(" Z ");
 		|		BUS_Q_Z();
-		|		return;
-		|	} 
-		|''')
-
-        file.fmt('''
-		|	BUS_Q_WRITE(state->data);
+		|	} else {
+		|		BUS_Q_WRITE(state->data);
+		|	}
 		|''')
 
 

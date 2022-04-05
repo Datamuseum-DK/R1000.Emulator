@@ -44,7 +44,13 @@ class SRAM2149(PartFactory):
     def state(self, file):
         file.fmt('''
 		|	uint8_t ram[1024];
+		|	bool writing;
 		|''')
+
+    def sensitive(self):
+        for node in self.comp:
+            if node.pin.name[0] != 'D' and not node.net.is_const():
+                yield "PIN_" + node.pin.name
 
     def doit(self, file):
         ''' The meat of the doit() function '''
@@ -52,8 +58,11 @@ class SRAM2149(PartFactory):
         super().doit(file)
 
         file.fmt('''
-		|	unsigned adr = 0, wrote = 0;
+		|	unsigned adr = 0;
 		|
+		|	BUS_A_READ(adr);
+		|	if (state->writing)
+		|		BUS_DQ_READ(state->ram[adr]);
 		|
 		|''')
 
@@ -63,34 +72,31 @@ class SRAM2149(PartFactory):
 		|		TRACE(<< "z");
 		|		BUS_DQ_Z();
 		|		next_trigger(PIN_CS.negedge_event());
+		|		state->writing = false;
 		|		return;
 		|	}
 		|''')
 
         file.fmt('''
 		|
-		|	BUS_A_READ(adr);
 		|
 		|	if (!PIN_WE=>) {
 		|		BUS_DQ_Z();
-		|		BUS_DQ_READ(state->ram[adr]);
-		|		wrote = 1;
-		|	}
-		|	if (wrote || (state->ctx.do_trace & 2)) {
-		|		TRACE(
-		|		    << " cs " << PIN_CS?
-		|		    << " we " << PIN_WE?
-		|		    << " a " << BUS_A_TRACE()
-		|		    << " dq " << BUS_DQ_TRACE()
-		|		    << " | "
-		|		    << std::hex << adr
-		|		    << " "
-		|		    << std::hex << (unsigned)(state->ram[adr])
-		|		);
-		|	}
-		|	if (PIN_WE=>) {
+		|		state->writing = true;
+		|	} else {
+		|		state->writing = false;
 		|		BUS_DQ_WRITE(state->ram[adr]);
 		|	}
+		|	TRACE(
+		|	    << " cs " << PIN_CS?
+		|	    << " we " << PIN_WE?
+		|	    << " a " << BUS_A_TRACE()
+		|	    << " dq " << BUS_DQ_TRACE()
+		|	    << " | "
+		|	    << std::hex << adr
+		|	    << " "
+		|	    << std::hex << (unsigned)(state->ram[adr])
+		|	);
 		|''')
 
 def register(board):

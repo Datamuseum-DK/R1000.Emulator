@@ -44,92 +44,77 @@ from net import Net
 class ModelAOI(PartModel):
     ''' And-Or-Invert '''
 
-    def assign(self, comp):
+    def __init__(self, partname, inputs):
+        super().__init__(partname)
+        self.inputs = inputs
+        self.ctr = 0
 
-        and1 = Component(
+    def and_input(self, comp, inputs):
+        ''' Do one of the input AND gates '''
+        nodes = []
+        nets = set()
+        for pinname in inputs:
+            node = comp[pinname]
+            if node.net.is_pd():
+                break
+            if node.net.is_pu():
+                continue
+            if node.net in nets:
+                continue
+            nodes.append(node)
+            nets.add(node.net)
+        if len(nodes) < 2:
+            return nodes
+        self.ctr += 1
+        and_gate = Component(
             board = comp.board,
-            compref = comp.ref + "_1",
+            compref = comp.ref + "_AND_%d" % self.ctr,
             compvalue = comp.value,
             compsheet = comp.sheet,
-            comppart = "AND2",
+            comppart = "AND%d" % len(nodes),
         )
-        and1.name = comp.name + "_1"
-        and2 = Component(
-            board = comp.board,
-            compref = comp.ref + "_2",
-            compvalue = comp.value,
-            compsheet = comp.sheet,
-            comppart = "AND2",
-        )
-        and2.name = comp.name + "_2"
-        and3 = Component(
-            board = comp.board,
-            compref = comp.ref + "_3",
-            compvalue = comp.value,
-            compsheet = comp.sheet,
-            comppart = "AND3",
-        )
-        and3.name = comp.name + "_3"
-        and4 = Component(
-            board = comp.board,
-            compref = comp.ref + "_4",
-            compvalue = comp.value,
-            compsheet = comp.sheet,
-            comppart = "AND4",
-        )
-        and4.name = comp.name + "_4"
+        and_gate.name = comp.name + "_%d" % self.ctr
+        and_gate.part = comp.board.part_catalog[and_gate.partname]
+        and_gate.part.assign(and_gate)
+
+        net = Net(comp.board, self.name + "_" + comp.name + "_%d" % self.ctr)
+        for pnum, node in enumerate(nodes):
+            pin = Pin("d", "D%d" % pnum, "c_input")
+            node = Node(node.net, and_gate, pin)
+
+        pin = Pin("q", "Q", "c_output")
+        node = Node(net, and_gate, pin)
+        return [ node ]
+
+    def assign(self, comp):
+        self.ctr = 0
+        nor_nodes = []
+        for i in self.inputs:
+            nor_nodes += self.and_input(comp, i)
+
         nor = Component(
             board = comp.board,
-            compref = comp.ref + "_5",
+            compref = comp.ref + "_NOR",
             compvalue = comp.value,
             compsheet = comp.sheet,
-            comppart = "NOR4",
+            comppart = "NOR%d" % len(nor_nodes),
         )
-        nor.name = comp.name + "_5"
+        nor.name = comp.name + "_NOR"
 
-        for fmname, tocomp, toname in (
-            ("A0", and1, "D0"),
-            ("A1", and1, "D1"),
-            ("B0", and2, "D0"),
-            ("B1", and2, "D1"),
-            ("C0", and3, "D0"),
-            ("C1", and3, "D1"),
-            ("C2", and3, "D2"),
-            ("D0", and4, "D0"),
-            ("D1", and4, "D1"),
-            ("D2", and4, "D2"),
-            ("D3", and4, "D3"),
-            ("Q", nor, "Q"),
-        ):
-            node = comp[fmname]
-            node.remove()
-            node.pin.name = toname
-            node.component = tocomp
-            node.insert()
-
-        for andcomp, netsuf, norpin in (
-            (and1, "_0", "D0"),
-            (and2, "_1", "D1"),
-            (and3, "_2", "D2"),
-            (and4, "_3", "D3"),
-        ):
-            net = Net(comp.board, "AOI_" + comp.name + netsuf)
-            pin1 = Pin(
-                "q",
-                "Q",
-                "c_output",
-            )
-            pin2 = Pin(
+        for dnum, node in enumerate(nor_nodes):
+            net = node.net
+            pin = Pin(
                 "d",
-                norpin,
+                "D%d" % dnum,
                 "c_input",
             )
-            Node(net, andcomp, pin1)
-            Node(net, nor, pin2)
+            Node(net, nor, pin)
 
-        for comp2 in (and1, and2, and3, and4, nor):
-            comp2.part = comp.board.part_catalog[comp2.partname]
-            comp2.part.assign(comp2)
+        pin = Pin("q", "Q", "c_output")
+        node = Node(comp["Q"].net, nor, pin)
+
+        nor.part = comp.board.part_catalog[nor.partname]
+        nor.part.assign(nor)
 
         for node in comp:
             node.remove()
@@ -138,4 +123,25 @@ class ModelAOI(PartModel):
 def register(board):
     ''' Register component model '''
 
-    board.add_part("F64", ModelAOI("AOI"))
+    board.add_part(
+        "__F51",
+        ModelAOI(
+            "F51",
+            (
+                 ("A1", "A2", "A3"),
+                 ("B1", "B2", "B3"),
+            )
+        )
+    )
+    board.add_part(
+        "F64",
+        ModelAOI(
+            "F64",
+            (
+                 ("A0", "A1"),
+                 ("B0", "B1"),
+                 ("C0", "C1", "C2"),
+                 ("D0", "D1", "D2", "D3"),
+            )
+        )
+    )

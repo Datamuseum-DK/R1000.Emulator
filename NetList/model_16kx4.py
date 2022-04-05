@@ -39,7 +39,7 @@ from part import PartModel, PartFactory
 
 class SRAM16KX4(PartFactory):
 
-    ''' 2Kx8 SRAM '''
+    ''' 16Kx8 SRAM '''
 
     def state(self, file):
         file.fmt('''

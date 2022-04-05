@@ -142,11 +142,12 @@ class SC_Mod():
         self.cc.fmt('''
 		|
 		|	SC_METHOD(doit);
-		|	sensitive
 		|''')
 
-        self.cc.write("\t    << ")
-        self.cc.write("\n\t    << ".join(sensitive()) + ";\n")
+        i = list(sensitive())
+        if i:
+            self.cc.write("\tsensitive\n\t    << ")
+            self.cc.write("\n\t    << ".join(sensitive()) + ";\n")
 
         self.cc.fmt('''
 		|}
