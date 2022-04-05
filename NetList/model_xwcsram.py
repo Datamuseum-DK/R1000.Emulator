@@ -29,18 +29,22 @@
 # SUCH DAMAGE.
 
 '''
-   F521 8-Bit Identity Comparator
-   ==============================
+   16Kx8 SRAM
+   ==========
 
-   Ref: Fairchild DS009545 April 1988 Revised October 2000
 '''
 
 
 from part import PartModel, PartFactory
 
-class F521(PartFactory):
+class XWCSRAM(PartFactory):
 
-    ''' F521 8-Bit Identity Comparator '''
+    ''' 16Kx8 SRAM '''
+
+    def state(self, file):
+        file.fmt('''
+		|	uint8_t ram[1<<14];
+		|''')
 
     def doit(self, file):
         ''' The meat of the doit() function '''
@@ -48,29 +52,56 @@ class F521(PartFactory):
         super().doit(file)
 
         file.fmt('''
-		|	bool s = PIN_E=> ||
-		|	    PIN_A0=> != PIN_B0=> ||
-		|	    PIN_A1=> != PIN_B1=> ||
-		|	    PIN_A2=> != PIN_B2=> ||
-		|	    PIN_A3=> != PIN_B3=> ||
-		|	    PIN_A4=> != PIN_B4=> ||
-		|	    PIN_A5=> != PIN_B5=> ||
-		|	    PIN_A6=> != PIN_B6=> ||
-		|	    PIN_A7=> != PIN_B7=>;
-		|	TRACE(
-		|	    << " Ia=b " << PIN_E?
-		|	    << " a " << PIN_A0? << PIN_A1? << PIN_A2? << PIN_A3?
-		|		<< PIN_A4? << PIN_A5? << PIN_A6? << PIN_A7?
+		|	unsigned adr;
+		|	BUS_A_READ(adr);
 		|
-		|	    << " b " << PIN_B0? << PIN_B1? << PIN_B2? << PIN_B3?
-		|		<< PIN_B4? << PIN_B5? << PIN_B6? << PIN_B7?
-		|	    << " = "
-		|	    << s
-		|	);
-		|	PIN_AeqB<=(s);
+		|	if (!PIN_WE=>) {
+		|		BUS_D_READ(state->ram[adr]);
+		|		TRACE(
+		|		    << " w a " << BUS_A_TRACE()
+		|		    << " d " << BUS_D_TRACE()
+		|		    << " we "
+		|		    << PIN_WE?
+		|		    << " adr "
+		|		    << std::hex << adr
+		|		    << " data "
+		|		    << std::hex << (unsigned)state->ram[adr]
+		|		);
+		|		next_trigger(
+		|		    PIN_WE.posedge_event() |
+		|		    PIN_D0.default_event() |
+		|		    PIN_D1.default_event() |
+		|		    PIN_D2.default_event() |
+		|		    PIN_D3.default_event() |
+		|		    PIN_D4.default_event() |
+		|		    PIN_D5.default_event() |
+		|		    PIN_D6.default_event() |
+		|		    PIN_D7.default_event()
+		|		);
+		|	} else {
+		|		TRACE(
+		|		    << " r a " << BUS_A_TRACE()
+		|		    << " d "
+		|		    <<AS(state->ram[adr] & 0x80)
+		|		    <<AS(state->ram[adr] & 0x40)
+		|		    <<AS(state->ram[adr] & 0x20)
+		|		    <<AS(state->ram[adr] & 0x10)
+		|		    <<AS(state->ram[adr] & 0x08)
+		|		    <<AS(state->ram[adr] & 0x04)
+		|		    <<AS(state->ram[adr] & 0x02)
+		|		    <<AS(state->ram[adr] & 0x01)
+		|		    << " we "
+		|		    << PIN_WE?
+		|		    << " adr "
+		|		    << std::hex << adr
+		|		    << " data "
+		|		    << std::hex << (unsigned)state->ram[adr]
+		|		);
+		|	}
+		|	BUS_Q_WRITE(state->ram[adr]);
 		|''')
 
 def register(board):
     ''' Register component model '''
 
-    board.add_part("F521", PartModel("F521", F521))
+    board.add_part("XWCSRAM", PartModel("XWCSRAM", XWCSRAM))

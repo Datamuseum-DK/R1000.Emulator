@@ -41,10 +41,8 @@ class Xreg(PartFactory):
 
     ''' F374 Octal D-Type Flip-Flop with 3-STATE Outputs '''
 
-    def __init__(self, board, ident, bits, invert):
+    def __init__(self, board, ident):
         super().__init__(board, ident)
-        self.bits = bits
-        self.invert = invert
 
     def state(self, file):
         ''' Extra state variable '''
@@ -81,7 +79,7 @@ class Xreg(PartFactory):
 		|		uint64_t tmp = state->data;
 		|''')
 
-        if self.invert:
+        if self.name[-2:] == "_I":
             file.fmt('''
 		|		tmp = ~tmp;
 		|''')
@@ -138,15 +136,13 @@ class Xreg(PartFactory):
 class ModelXreg(PartModel):
     ''' Xreg registers '''
 
-    def __init__(self, bits, invert):
-        super().__init__("XREG")
-        self.bits = bits
-        self.invert = invert
-
     def assign(self, comp):
+
         if comp.board.name == "VAL" and "ZREG" in comp.name:
+	    # TEST_Z_CNTR_FILLING.VAL
             comp.part = comp.board.part_catalog["F374_O"]
             return
+
         oe_node = comp["OE"]
         if oe_node.net.is_pd():
             oe_node.remove()
@@ -158,11 +154,17 @@ class ModelXreg(PartModel):
     def configure(self, board, comp):
         sig = self.make_signature(comp)
         ident = self.name + "_" + sig
+        if "INV" in comp and comp["INV"].net.is_pd():
+            ident += "_I"
         if ident not in board.part_catalog:
-            board.add_part(ident, Xreg(board, ident, self.bits, self.invert))
+            board.add_part(ident, Xreg(board, ident))
         comp.part = board.part_catalog[ident]
 
 def register(board):
     ''' Register component model '''
 
-    board.add_part("F374", ModelXreg(8, False))
+    board.add_part("F374", ModelXreg("F374"))
+    board.add_part("XREG16", ModelXreg("XREG16"))
+    board.add_part("XREG20", ModelXreg("XREG20"))
+    board.add_part("XREG32", ModelXreg("XREG32"))
+    board.add_part("XREG64", ModelXreg("XREG64"))

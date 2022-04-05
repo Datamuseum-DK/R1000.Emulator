@@ -120,7 +120,60 @@ class ModelPAxxx(PartModel):
             board.add_part(ident, PAxxx(board, ident))
         comp.part = board.part_catalog[ident]
 
+class XPAxxxL(PartFactory):
+
+    ''' 4096 (512 Words by 8 bits) PROM '''
+
+    def state(self, file):
+        ''' Extra state variable '''
+
+        file.write("\tuint8_t prom[512], data;\n")
+        file.write("\tint job;\n")
+
+    def sensitive(self):
+        yield "PIN_CLK.pos()"
+
+    def init(self, file):
+        ''' Extra initialization '''
+
+        file.fmt('''
+		|	load_programmable(this->name(), state->prom, sizeof state->prom, arg);
+		''')
+
+    def doit(self, file):
+        ''' The meat of the doit() function '''
+
+        super().doit(file)
+
+        file.fmt('''
+		|	unsigned adr = 0;
+		|
+		|	if (state->job) {
+		|		BUS_Y_WRITE(state->data);
+		|		state->job = 0;
+		|	}
+		|	BUS_A_READ(adr);
+		|	unsigned data = state->prom[adr];
+		|	if (data == state->data)
+		|		return;
+		|	TRACE( << "a" << BUS_A_TRACE()
+		|	    << " d "
+		|	    << AS(data & 0x80)
+		|	    << AS(data & 0x40)
+		|	    << AS(data & 0x20)
+		|	    << AS(data & 0x10)
+		|	    << AS(data & 0x08)
+		|	    << AS(data & 0x04)
+		|	    << AS(data & 0x02)
+		|	    << AS(data & 0x01)
+		|	);
+		|	state->data = data;
+		|	state->job = 1;
+		|	next_trigger(5, SC_NS);
+		|''')
+
 def register(board):
     ''' Register component model '''
 
     board.add_part("PAxxx", ModelPAxxx("PAXXX"))
+    board.add_part("XPAXXXL", PartModel("PAXXXL", XPAxxxL))

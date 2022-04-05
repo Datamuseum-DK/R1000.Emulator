@@ -232,6 +232,8 @@ class PartFactory(Part):
         ''' Extra source-code at globale level'''
         for bus in self.comp.busses.values():
             file.write("\n")
+            file.write("#define BUS_%s_WIDTH %d \\\n" % (bus.name, len(bus.pins)))
+            file.write("\n")
             file.write("#define BUS_%s_READ(dstvar) \\\n" % bus.name)
             file.write("\tdo { \\\n")
             file.write("\t\tdstvar = 0; \\\n")

@@ -56,7 +56,7 @@ class F194(PartFactory):
         ''' Extra initialization '''
 
         file.fmt('''
-		|	state->out = 0xf;
+		|	state->out = ((1<<BUS_D_WIDTH) - 1);
 		|	state->job = 1;
 		''')
 
@@ -98,12 +98,12 @@ class F194(PartFactory):
 		|		case 2:
 		|			what = " >> ";
 		|			nxt >>= 1;
-		|			if (PIN_RSI=>) nxt |= (1<<3);
+		|			if (PIN_RSI=>) nxt |= (1<<(BUS_D_WIDTH-1));
 		|			break;
 		|		case 1:
 		|			what = " <<ft ";
 		|			nxt <<= 1;
-		|			nxt &= 0xf;
+		|			nxt &= ((1<<BUS_D_WIDTH) - 1);
 		|			if (PIN_LSI=>) nxt |= (1<<0);
 		|			break;
 		|		case 0:
@@ -152,3 +152,6 @@ def register(board):
     ''' Register component model '''
 
     board.add_part("F194", PartModel("F194", F194))
+    board.add_part("XSR8", PartModel("XSR8", F194))
+    board.add_part("XSR12", PartModel("XSR12", F194))
+    board.add_part("XSR16", PartModel("XSR12", F194))

@@ -29,78 +29,40 @@
 # SUCH DAMAGE.
 
 '''
-   F174 Hex D-Type Flip-Flop with Master Reset
-   ===========================================
+   F521 8-Bit Identity Comparator (and multiples)
+   ==============================================
 
-   Ref: Fairchild DS009489 April 1988 Revised September 2000
+   Ref: Fairchild DS009545 April 1988 Revised October 2000
 '''
 
 
 from part import PartModel, PartFactory
 
-class F174(PartFactory):
+class XEQ(PartFactory):
 
-    ''' F174 9-Bit Parity Generator Checker '''
-
-    def state(self, file):
-        file.fmt('''
-		|	unsigned dreg;
-		|	int job;
-		|''')
-
-    def init(self, file):
-        file.fmt('''
-		|	state->job = 1;
-		|''')
-
-    def sensitive(self):
-        if self.comp["CLK"].net.is_const():
-            return
-        yield "PIN_CLK.pos()"
-        if not self.comp.nodes["CLR"].net.is_pu():
-            yield "PIN_CLR"
+    ''' F521 8-Bit Identity Comparator (and multiples) '''
 
     def doit(self, file):
         ''' The meat of the doit() function '''
 
-        if self.comp["CLK"].net.is_const():
-            return
         super().doit(file)
 
         file.fmt('''
-		|
-		|	const char *what = "";
-		|	unsigned nxt;
-		|
-		|	TRACE(
-		|	    << what
-		|	    << " clr_" << PIN_CLR?
-		|	    << " clk " << PIN_CLK?
-		|	    << " d " << BUS_D_TRACE()
-		|	    << " | " << std::hex << state->dreg
-		|	);
-		|	if (state->job) {
-		|		BUS_Q_WRITE(state->dreg);
-		|		state->job = 0;
-		|	}
-		|	if (!PIN_CLR=>) {
-		|		nxt = 0;
-		|		what = " CLR ";
-		|	} else if (PIN_CLK.posedge()) {
-		|		BUS_D_READ(nxt);
-		|		what = " CLK ";
+		|	if (PIN_E=>) {
+		|		PIN_AeqB<=(true);
 		|	} else {
-		|		nxt = state->dreg;
-		|		what = " ??? ";
-		|	}
-		|	if (nxt != state->dreg) {
-		|		state->job = 1;
-		|		state->dreg = nxt;
-		|		next_trigger(5, SC_NS);
+		|		uint64_t a, b;
+		|		BUS_A_READ(a);
+		|		BUS_B_READ(b);
+		|		PIN_AeqB<=((a != b));
 		|	}
 		|''')
 
 def register(board):
     ''' Register component model '''
 
-    board.add_part("F174", PartModel("F174", F174))
+    board.add_part("F521", PartModel("F521", XEQ))
+    board.add_part("XEQ16", PartModel("XEQ16", XEQ))
+    board.add_part("XEQ20", PartModel("XEQ20", XEQ))
+    board.add_part("XEQ32", PartModel("XEQ32", XEQ))
+    board.add_part("XEQ40", PartModel("XEQ40", XEQ))

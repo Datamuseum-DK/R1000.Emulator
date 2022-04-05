@@ -42,9 +42,8 @@ class Xbuf(PartFactory):
 
     ''' F24[04] Octal buffers (3-state) '''
 
-    def __init__(self, board, ident, invert):
+    def __init__(self, board, ident):
         super().__init__(board, ident)
-        self.invert = invert
         self.bits = 0
 
     def state(self, file):
@@ -76,7 +75,7 @@ class Xbuf(PartFactory):
 		|		tmp = state->data;
 		|''')
 
-        if self.invert:
+        if self.name[-2:] == "_I":
             file.fmt('''
 		|		tmp = ~tmp;
 		|''')
@@ -128,18 +127,28 @@ class ModelXbuf(PartModel):
         for node in comp:
             if node.pin.name[0] != 'Y':
                 node.pin.role = "c_input"
+        if "OE0" in comp:
+            self.f24x(comp)
+        else:
+            oe_node = comp["OE"]
+            if oe_node.net.is_pd():
+                oe_node.remove()
+                for node in comp:
+                    if node.pin.name[0] == "Y":
+                        node.pin.role = "c_output"
+            super().assign(comp)
+
+    def f24x(self, comp):
         oenode0 = comp["OE0"]
         oenode1 = comp["OE1"]
         if oenode0.net == oenode1.net:
             oenode1.remove()
             oenode0.remove()
             if oenode0.net.is_pd():
-                # print("XBUF-8-PD", comp)
                 for node in comp:
                     if node.pin.name[0] == 'Y':
                         node.pin.role = "c_output"
             else:
-                # print("XBUF-8-VAR", comp)
                 oenode0.pin.name = "OE"
                 oenode0.insert()
             return
@@ -197,8 +206,10 @@ class ModelXbuf(PartModel):
         ident = self.name + "_" + sig
         if self.invert:
             ident += "_I"
+        if "INV" in comp and comp["INV"].net.is_pd():
+            ident += "_I"
         if ident not in board.part_catalog:
-            board.add_part(ident, Xbuf(board, ident, self.invert))
+            board.add_part(ident, Xbuf(board, ident))
         comp.part = board.part_catalog[ident]
 
 def register(board):
@@ -206,3 +217,8 @@ def register(board):
 
     board.add_part("F244", ModelXbuf(False))
     board.add_part("F240", ModelXbuf(True))
+    board.add_part("XBUF16", ModelXbuf(False))
+    board.add_part("XBUF20", ModelXbuf(False))
+    board.add_part("XBUF32", ModelXbuf(False))
+    board.add_part("XBUF48", ModelXbuf(False))
+    board.add_part("XBUF64", ModelXbuf(False))

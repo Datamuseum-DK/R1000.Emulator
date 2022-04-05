@@ -29,78 +29,84 @@
 # SUCH DAMAGE.
 
 '''
-   F174 Hex D-Type Flip-Flop with Master Reset
-   ===========================================
+   1KX64 SRAM
+   ==========
 
-   Ref: Fairchild DS009489 April 1988 Revised September 2000
 '''
 
 
 from part import PartModel, PartFactory
 
-class F174(PartFactory):
+class XRFRAM(PartFactory):
 
-    ''' F174 9-Bit Parity Generator Checker '''
+    ''' 1KX64 SRAM '''
 
     def state(self, file):
         file.fmt('''
-		|	unsigned dreg;
-		|	int job;
+		|	uint64_t ram[1<<10];
+		|	uint64_t last;
+		|	const char *what;
 		|''')
 
-    def init(self, file):
+    def extra(self, file):
+        super().extra(file)
         file.fmt('''
-		|	state->job = 1;
+		|static const char *READING = "r";
+		|static const char *WRITING = "w";
+		|static const char *ZZZING = "z";
 		|''')
-
-    def sensitive(self):
-        if self.comp["CLK"].net.is_const():
-            return
-        yield "PIN_CLK.pos()"
-        if not self.comp.nodes["CLR"].net.is_pu():
-            yield "PIN_CLR"
 
     def doit(self, file):
         ''' The meat of the doit() function '''
 
-        if self.comp["CLK"].net.is_const():
-            return
         super().doit(file)
 
         file.fmt('''
+		|	unsigned adr = 0;
+		|	uint64_t data = 0;
 		|
-		|	const char *what = "";
-		|	unsigned nxt;
+		|	state->ctx.activations++;
+		|
+		|	BUS_A_READ(adr);
+		|
+		|	if (PIN_CS=>) {
+		|		if (state->what == READING) {
+		|			BUS_DQ_Z();
+		|		} else if (state->what == WRITING) {
+		|			BUS_DQ_READ(data);
+		|			state->ram[adr] = data;
+		|		}
+		|		next_trigger(PIN_CS.negedge_event());
+		|		state->what = ZZZING;
+		|	} else if (!PIN_WE=>) {
+		|		if (state->what == READING)
+		|			BUS_DQ_Z();
+		|		BUS_DQ_READ(data);
+		|		state->ram[adr] = data;
+		|		state->what = WRITING;
+		|	} else {
+		|		if (state->what == WRITING) {
+		|			BUS_DQ_READ(data);
+		|			state->ram[adr] = data;
+		|		}
+		|		data = state->ram[adr];
+		|		if (state->what != READING || data != state->last) {
+		|			BUS_DQ_WRITE(data);
+		|			state->last = data;
+		|		}
+		|		state->what = READING;
+		|	}
 		|
 		|	TRACE(
-		|	    << what
-		|	    << " clr_" << PIN_CLR?
-		|	    << " clk " << PIN_CLK?
-		|	    << " d " << BUS_D_TRACE()
-		|	    << " | " << std::hex << state->dreg
+		|	    << state->what
+		|	    << " we " << PIN_WE?
+		|	    << " cs " << PIN_CS?
+		|	    << " a " << BUS_A_TRACE()
+		|	    << " d " << BUS_DQ_TRACE()
 		|	);
-		|	if (state->job) {
-		|		BUS_Q_WRITE(state->dreg);
-		|		state->job = 0;
-		|	}
-		|	if (!PIN_CLR=>) {
-		|		nxt = 0;
-		|		what = " CLR ";
-		|	} else if (PIN_CLK.posedge()) {
-		|		BUS_D_READ(nxt);
-		|		what = " CLK ";
-		|	} else {
-		|		nxt = state->dreg;
-		|		what = " ??? ";
-		|	}
-		|	if (nxt != state->dreg) {
-		|		state->job = 1;
-		|		state->dreg = nxt;
-		|		next_trigger(5, SC_NS);
-		|	}
 		|''')
 
 def register(board):
     ''' Register component model '''
 
-    board.add_part("F174", PartModel("F174", F174))
+    board.add_part("XRFRAM", PartModel("XRFRAM", XRFRAM))

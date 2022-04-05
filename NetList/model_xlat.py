@@ -41,12 +41,6 @@ class Xlat(PartFactory):
 
     ''' F374 Octal D-Type Flip-Flop with 3-STATE Outputs '''
 
-    def __init__(self, board, ident, bits, invert):
-        super().__init__(board, ident)
-        self.bits = bits
-        self.invert = invert
-        assert not invert
-
     def state(self, file):
         ''' Extra state variable '''
 
@@ -94,11 +88,6 @@ class Xlat(PartFactory):
 class ModelXlat(PartModel):
     ''' Xlat registers '''
 
-    def __init__(self, bits, invert):
-        super().__init__("XLAT")
-        self.bits = bits
-        self.invert = invert
-
     def assign(self, comp):
         oe_node = comp["OE"]
         if oe_node.net.is_pd():
@@ -112,10 +101,12 @@ class ModelXlat(PartModel):
         sig = self.make_signature(comp)
         ident = self.name + "_" + sig
         if ident not in board.part_catalog:
-            board.add_part(ident, Xlat(board, ident, self.bits, self.invert))
+            board.add_part(ident, Xlat(board, ident))
         comp.part = board.part_catalog[ident]
 
 def register(board):
     ''' Register component model '''
 
-    board.add_part("F373", ModelXlat(8, False))
+    board.add_part("F373", ModelXlat("F373"))
+    board.add_part("XLAT16", ModelXlat("XLAT16"))
+    board.add_part("XLAT64", ModelXlat("XLAT64"))

@@ -67,7 +67,6 @@ import model_f280
 import model_f283
 import model_f299
 import model_f381
-import model_f521
 import model_f579
 import model_ls125
 import model_mux2
@@ -77,8 +76,11 @@ import model_novram
 import model_paxxx
 import model_pbxxx
 import model_xbuf
+import model_xeq
 import model_xlat
 import model_xreg
+import model_xrfram
+import model_xwcsram
 
 
 def register(where):
@@ -117,7 +119,6 @@ def register(where):
     model_f283.register(where)
     model_f299.register(where)
     model_f381.register(where)
-    model_f521.register(where)
     model_f579.register(where)
     model_ls125.register(where)
     model_mux2.register(where)
@@ -127,5 +128,8 @@ def register(where):
     model_paxxx.register(where)
     model_pbxxx.register(where)
     model_xbuf.register(where)
+    model_xeq.register(where)
     model_xlat.register(where)
     model_xreg.register(where)
+    model_xrfram.register(where)
+    model_xwcsram.register(where)

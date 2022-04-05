@@ -43,6 +43,8 @@ class F74(PartFactory):
     ''' F74 (Dual) D-Type Positive Edge-Triggered Flip-Flop '''
 
     def sensitive(self):
+        if self.comp["CLK"].net.is_const():
+            return
         yield "PIN_CLK.pos()"
         if not self.comp.nodes["PR_"].net.is_const():
             yield "PIN_PR_"
@@ -67,6 +69,8 @@ class F74(PartFactory):
     def doit(self, file):
         ''' The meat of the doit() function '''
 
+        if self.comp["CLK"].net.is_const():
+            return
         super().doit(file)
 
         events = []

@@ -53,22 +53,22 @@ class NOVRAM(PartFactory):
 		|	int i, j;
 		|	should_i_trace(this->name(), &state->ctx.do_trace);
 		|
-		|	if (strstr(arg, "FIU")) {
+		|	if (strstr(this->name(), "FIU")) {
 		|		load_programmable(arg, state->ram, sizeof state->ram,
 		|		    "R1000_FIU_NOVRAM");
-		|	} else if (strstr(arg, "VAL")) {
+		|	} else if (strstr(this->name(), "VAL")) {
 		|		load_programmable(arg, state->ram, sizeof state->ram,
 		|		    "R1000_VAL_NOVRAM");
-		|	} else if (strstr(arg, "TYP")) {
+		|	} else if (strstr(this->name(), "TYP")) {
 		|		load_programmable(arg, state->ram, sizeof state->ram,
 		|		    "R1000_TYP_NOVRAM");
-		|	} else if (strstr(arg, "SEQ")) {
+		|	} else if (strstr(this->name(), "SEQ")) {
 		|		load_programmable(arg, state->ram, sizeof state->ram,
 		|		    "R1000_SEQ_NOVRAM");
-		|	} else if (strstr(arg, "MEM0")) {
+		|	} else if (strstr(this->name(), "MEM0")) {
 		|		load_programmable(arg, state->ram, sizeof state->ram,
 		|		    "R1000_MEM0_NOVRAM");
-		|	} else if (strstr(arg, "MEM2")) {
+		|	} else if (strstr(this->name(), "MEM2")) {
 		|		load_programmable(arg, state->ram, sizeof state->ram,
 		|		    "R1000_MEM2_NOVRAM");
 		|	} else {

@@ -69,21 +69,20 @@ class MaybeBus():
                 return
             self.nodes[node.component].append(node)
 
-    def table(self):
-        return
-        print("BUS", len(self.nets), "×", len(self.nodes), [self.sig])
+    def table(self, file):
+        file.write("BUS %d×%d\n" % (len(self.nets), len(self.nodes)))
 
         i = [""]
         for component in self.components:
             i.append(component.name)
-        print("\t".join(i))
+        file.write("\t".join(i) + "\n")
 
         for net in self.nets:
             i = [""]
             for node in net.nnodes:
                 i.append(node.pin.name)
             i.append(net.name)
-            print("\t".join(i))
+            file.write("\t".join(i) + "\n")
 
 
 class PassNetConfig():
@@ -128,21 +127,22 @@ class PassNetConfig():
             net.sc_type = "bool"
 
     def ponder_bus(self):
-        maybe = {}
-        for net in self.board.iter_nets():
-            if len(set(net.nnodes)) != len(net.nnodes):
-                continue
-            sig = " ".join(x.component.ref for x in net.nnodes)
-            i = maybe.get(sig)
-            if i:
-                i.add_net(net)
-            else:
-                maybe[sig] = MaybeBus(sig, net)
-        for sig, maybebus in maybe.items():
-            if len(maybebus.nets) < 2:
-                maybebus.failed = True
-            if not maybebus.failed:
-                maybebus.table()
+        with open("_bus.txt", "w") as file:
+            maybe = {}
+            for net in self.board.iter_nets():
+                if len(set(net.nnodes)) != len(net.nnodes):
+                    continue
+                sig = " ".join(x.component.ref for x in net.nnodes)
+                i = maybe.get(sig)
+                if i:
+                    i.add_net(net)
+                else:
+                    maybe[sig] = MaybeBus(sig, net)
+            for sig, maybebus in maybe.items():
+                if len(maybebus.nets) < 2:
+                    maybebus.failed = True
+                if not maybebus.failed:
+                    maybebus.table(file)
 
     def assign_blame(self, net):
         if len(net) < 2 or net.is_plane:
