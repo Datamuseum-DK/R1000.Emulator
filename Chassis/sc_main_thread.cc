@@ -8,7 +8,7 @@
 double
 sc_now(void)
 {
-	return (sc_time_stamp().to_seconds());
+	return (sc_time_stamp().to_double());
 }
 
 #include "Chassis/planes.hh"
