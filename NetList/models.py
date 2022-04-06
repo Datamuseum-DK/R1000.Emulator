@@ -75,12 +75,14 @@ import model_nor
 import model_novram
 import model_paxxx
 import model_pbxxx
+import model_xalu
 import model_xbuf
 import model_xeq
 import model_xlat
 import model_xreg
 import model_xrfram
 import model_xwcsram
+import model_xzcnt
 
 
 def register(where):
@@ -127,9 +129,11 @@ def register(where):
     model_novram.register(where)
     model_paxxx.register(where)
     model_pbxxx.register(where)
+    model_xalu.register(where)
     model_xbuf.register(where)
     model_xeq.register(where)
     model_xlat.register(where)
     model_xreg.register(where)
     model_xrfram.register(where)
     model_xwcsram.register(where)
+    model_xzcnt.register(where)

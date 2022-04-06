@@ -29,22 +29,24 @@
 # SUCH DAMAGE.
 
 '''
-   F374 Octal D-Type Flip-Flop with 3-STATE Outputs
-   ================================================
+   Zero bit counter
+   ================
 
-   Ref: Fairchild DS009524 May 1988 Revised September 2000
 '''
+
 
 from part import PartModel, PartFactory
 
-class Xlat(PartFactory):
+class XZCNT(PartFactory):
 
-    ''' F374 Octal D-Type Flip-Flop with 3-STATE Outputs '''
+    ''' Zero bit counter'''
 
     def state(self, file):
-        ''' Extra state variable '''
+        file.write("\tunsigned count;\n")
 
-        file.write("\tuint64_t data;\n")
+    def sensitive(self):
+        yield 'PIN_OE'
+        yield 'PIN_CLK.pos()'
 
     def doit(self, file):
         ''' The meat of the doit() function '''
@@ -52,62 +54,32 @@ class Xlat(PartFactory):
         super().doit(file)
 
         file.fmt('''
-		|	const char *what = NULL;
+		|	uint64_t data = 0, probe = (1ULL<<63);
 		|
-		|	if (PIN_LE=>) {
-		|		uint64_t tmp;
-		|		BUS_D_READ(tmp);
-		|		if (tmp != state->data) {
-		|			what = "new ";
-		|			state->data = tmp;
+		|	if (PIN_CLK.posedge()) {
+		|		BUS_I_READ(data);
+		|		for (state->count = 0; state->count < 65; state->count++) {
+		|			if (!(data & probe))
+		|				break;
+		|			probe >>= 1;
 		|		}
-		|	} else {
-		|''')
-
-        i = [ "PIN_LE.posedge_event()"]
-        if "OE" in self.comp and not self.comp["OE"].net.is_const():
-            i.append("PIN_OE.default_event()")
-
-        file.write("\t\tnext_trigger(%s);\n" % (" | ".join(i)))
-
-        file.fmt('''
 		|	}
-		|''')
-
-        if 'OE' in self.comp:
-            file.fmt('''
+		|
+		|	TRACE(
+		|	   << " clk " << PIN_CLK.posedge()
+		|	   << " oe " << PIN_OE?
+		|	   << " i " << BUS_I_TRACE()
+		|	   << " reg " << std::hex << state->count
+		|	);
+		|
 		|	if (PIN_OE=>) {
-		|		TRACE(" Z ");
-		|		BUS_Q_Z();
+		|		BUS_Z_Z();
 		|	} else {
-		|		BUS_Q_WRITE(state->data);
+		|		BUS_Z_WRITE(~state->count);
 		|	}
 		|''')
-
-
-class ModelXlat(PartModel):
-    ''' Xlat registers '''
-
-    def assign(self, comp):
-        oe_node = comp["OE"]
-        if oe_node.net.is_pd():
-            oe_node.remove()
-            for node in comp:
-                if node.pin.name[0] == "Q":
-                    node.pin.role = "c_output"
-        super().assign(comp)
-
-    def configure(self, board, comp):
-        sig = self.make_signature(comp)
-        ident = self.name + "_" + sig
-        if ident not in board.part_catalog:
-            board.add_part(ident, Xlat(board, ident))
-        comp.part = board.part_catalog[ident]
 
 def register(board):
     ''' Register component model '''
 
-    board.add_part("F373", ModelXlat("F373"))
-    board.add_part("XLAT16", ModelXlat("XLAT16"))
-    board.add_part("XLAT32", ModelXlat("XLAT32"))
-    board.add_part("XLAT64", ModelXlat("XLAT64"))
+    board.add_part("XZCNT", PartModel("XZCNT", XZCNT))

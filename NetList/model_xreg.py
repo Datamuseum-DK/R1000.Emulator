@@ -75,16 +75,33 @@ class Xreg(PartFactory):
 		|		state->job = -1;
 		|	}
 		|
+		|	if (state->ctx.do_trace & 2) {
+		|		TRACE(
+		|			<< " job " << state->job
+		|			<< " clk " << PIN_CLK.posedge()
+		|''')
+        if 'OE' in self.comp:
+            file.fmt('''
+		|			<< " oe " << PIN_OE?
+		|''')
+
+        file.fmt('''
+		|			<< " in " << BUS_D_TRACE()
+		|			<< " reg " << std::hex << state->data
+		|		);
+		|	}
+		|
 		|	if (state->job > 0) {
 		|		uint64_t tmp = state->data;
 		|''')
 
         if self.name[-2:] == "_I":
             file.fmt('''
-		|		tmp = ~tmp;
+		|		tmp ^= BUS_Q_MASK;
 		|''')
 
         file.fmt('''
+		|		TRACE(<< " out " << std::hex << tmp);
 		|		BUS_Q_WRITE(tmp);
 		|		state->job = 0;
 		|''')

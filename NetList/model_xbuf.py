@@ -44,7 +44,6 @@ class Xbuf(PartFactory):
 
     def __init__(self, board, ident):
         super().__init__(board, ident)
-        self.bits = 0
 
     def state(self, file):
         ''' Extra state variable '''
@@ -64,23 +63,34 @@ class Xbuf(PartFactory):
 
         super().doit(file)
 
-        for node in self.comp:
-            if node.pin.name[0] == 'I':
-                self.bits += 1
-
         file.fmt('''
 		|	uint64_t tmp;
 		|
+		|	if (state->ctx.do_trace & 2) {
+		|		TRACE(
+		|			<< " job " << state->job
+		|''')
+
+        if "OE" in self.comp:
+            file.fmt('''
+		|			<< " oe " << PIN_OE?
+		|''')
+
+        file.fmt('''
+		|			<< " i " << BUS_I_TRACE()
+		|		);
+		|	}
 		|	if (state->job > 0) {
 		|		tmp = state->data;
 		|''')
 
         if self.name[-2:] == "_I":
             file.fmt('''
-		|		tmp = ~tmp;
+		|		tmp ^= BUS_I_MASK;
 		|''')
 
         file.fmt('''
+		|		TRACE(<< " out " << std::hex << tmp);
 		|		BUS_Y_WRITE(tmp);
 		|		state->job = 0;
 		|''')
