@@ -846,7 +846,7 @@ MCS51_SingleStep(struct mcs51 *mcs51)
 		break;
 	case 0xb3: // CPL C
 		mcs51_trace(mcs51, "CPL\tC");
-		mcs51_carry(mcs51, ~mcs51_carry(mcs51, -1));
+		mcs51_carry(mcs51, !mcs51_carry(mcs51, -1));
 		break;
 	case 0xb4: // CJNE A,#data,rel
 		arg = mcs51->progmem[mcs51->npc++];
