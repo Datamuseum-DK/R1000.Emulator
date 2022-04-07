@@ -37,23 +37,13 @@
 
 from part import PartModel, PartFactory
 
-class XRFRAM(PartFactory):
+class XSTKRAM(PartFactory):
 
     ''' 1KX64 SRAM '''
 
     def state(self, file):
         file.fmt('''
-		|	uint64_t ram[1<<10];
-		|	uint64_t last;
-		|	const char *what;
-		|''')
-
-    def extra(self, file):
-        super().extra(file)
-        file.fmt('''
-		|static const char *READING = "r";
-		|static const char *WRITING = "w";
-		|static const char *ZZZING = "z";
+		|	uint16_t ram[1<<4];
 		|''')
 
     def doit(self, file):
@@ -62,49 +52,43 @@ class XRFRAM(PartFactory):
         super().doit(file)
 
         file.fmt('''
-		|	unsigned adr = 0;
-		|	uint64_t data = 0;
-		|
+		|	unsigned adr;
 		|	BUS_A_READ(adr);
 		|
-		|	if (PIN_CS=>) {
-		|		if (state->what == READING) {
-		|			BUS_DQ_Z();
-		|		} else if (state->what == WRITING) {
-		|			BUS_DQ_READ(data);
-		|			state->ram[adr] = data;
-		|		}
+		|	if (PIN_CS.posedge()) {
+		|		TRACE(<<"Z");
+		|		BUS_Q_Z();
 		|		next_trigger(PIN_CS.negedge_event());
-		|		state->what = ZZZING;
-		|	} else if (!PIN_WE=>) {
-		|		if (state->what == READING)
-		|			BUS_DQ_Z();
-		|		BUS_DQ_READ(data);
-		|		state->ram[adr] = data;
-		|		state->what = WRITING;
-		|	} else {
-		|		if (state->what == WRITING) {
-		|			BUS_DQ_READ(data);
-		|			state->ram[adr] = data;
-		|		}
-		|		data = state->ram[adr];
-		|		if (state->what != READING || data != state->last) {
-		|			BUS_DQ_WRITE(data);
-		|			state->last = data;
-		|		}
-		|		state->what = READING;
+		|		return;
 		|	}
-		|
-		|	TRACE(
-		|	    << state->what
-		|	    << " we " << PIN_WE?
-		|	    << " cs " << PIN_CS?
-		|	    << " a " << BUS_A_TRACE()
-		|	    << " d " << BUS_DQ_TRACE()
-		|	);
+		|	if (!PIN_WE=>) {
+		|		BUS_D_READ(state->ram[adr]);
+		|		TRACE(
+		|		    << " we "
+		|		    << PIN_WE?
+		|		    << " a " << BUS_A_TRACE()
+		|		    << " d " << BUS_D_TRACE()
+		|		    << " adr "
+		|		    << std::hex << adr
+		|		    << " data "
+		|		    << std::hex << state->ram[adr]
+		|		);
+		|	} else {
+		|		TRACE(
+		|		    << " we "
+		|		    << PIN_WE?
+		|		    << " a " << BUS_A_TRACE()
+		|		    << " d " << BUS_D_TRACE()
+		|		    << " adr "
+		|		    << std::hex << adr
+		|		    << " data "
+		|		    << std::hex << state->ram[adr]
+		|		);
+		|	}
+		|	BUS_Q_WRITE(~state->ram[adr]);
 		|''')
 
 def register(board):
     ''' Register component model '''
 
-    board.add_part("XRFRAM", PartModel("XRFRAM", XRFRAM))
+    board.add_part("XSTKRAM", PartModel("XSTKRAM", XSTKRAM))

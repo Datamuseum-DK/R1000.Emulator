@@ -131,7 +131,7 @@ class F299(PartFactory):
 		|		    << " rsi " << PIN_RSI?
 		|		    << " lsi " << PIN_LSI?
 		|		    << " dq " << BUS_DQ_TRACE()
-		|		    << " | " << std::hex << state->reg
+		|		    << " | " << std::hex << (unsigned)state->reg
 		|		);
 		|	}
 		|''')

@@ -96,7 +96,6 @@ class F74(PartFactory):
 		|		PIN_Q_<=(state->dreg[1]);
 		|		state->job = 0;
 		|	}
-		|	state->ctx.activations++;
 		|	memcpy(oldreg, state->dreg, sizeof oldreg);
 		|	if (!(PIN_CL_=>) && !(PIN_PR_=>)) {
 		|		if (!state->dreg[0] || !state->dreg[1]) {

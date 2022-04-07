@@ -100,6 +100,11 @@ class Mux2(PartFactory):
 		|	TRACE (
 		|''')
 
+        if "OE" in self.comp.nodes:
+            file.fmt('''
+		|	    << " oe " << PIN_OE=>
+		|''')
+
         if "E" in self.comp.nodes:
             file.fmt('''
 		|	    << " e " << PIN_E=>

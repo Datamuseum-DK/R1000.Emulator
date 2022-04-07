@@ -81,6 +81,7 @@ import model_xeq
 import model_xlat
 import model_xreg
 import model_xrfram
+import model_xstkram
 import model_xwcsram
 import model_xzcnt
 
@@ -135,5 +136,6 @@ def register(where):
     model_xlat.register(where)
     model_xreg.register(where)
     model_xrfram.register(where)
+    model_xstkram.register(where)
     model_xwcsram.register(where)
     model_xzcnt.register(where)

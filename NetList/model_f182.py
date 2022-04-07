@@ -55,7 +55,6 @@ class F182(PartFactory):
 		|
 		|	unsigned adr = 0;
 		|
-		|	state->ctx.activations++;
 		|	if (PIN_CI=>) adr |= 1 << 8;
 		|	if (PIN_G3=>) adr |= 1 << 7;
 		|	if (PIN_P3=>) adr |= 1 << 6;
