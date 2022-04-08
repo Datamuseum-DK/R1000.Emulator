@@ -91,7 +91,7 @@ class Mux2(PartFactory):
         if self.invert:
             file.fmt('''
 		|
-		|	tmp ^= 0xf;
+		|	tmp ^= BUS_A_MASK;
 		|
 		|''')
 
@@ -128,18 +128,25 @@ class ModelMux2(PartModel):
         self.invert = invert
 
     def configure(self, board, comp):
-        sig = self.make_signature(comp)
         for pin_name in ("E", "OE"):
             node = comp.nodes.get(pin_name)
             if node and node.net.is_pd():
                 comp.del_node(node)
+        if "OE" not in comp.nodes:
+           for node in comp:
+               if node.pin.name[0] == "Y":
+                   node.pin.role = 'c_output'
+        sig = self.make_signature(comp)
         ident = self.name + "_" + sig
-        if self.invert:
+        invert = self.invert
+        if self.invert is None and comp["INV"].net.is_pd():
+           invert = True
+        if invert is True:
             ident += "_I"
         if "OE" in comp.nodes:
             ident += "_Z"
         if ident not in board.part_catalog:
-            board.add_part(ident, Mux2(board, ident, self.invert))
+            board.add_part(ident, Mux2(board, ident, invert))
         comp.part = board.part_catalog[ident]
 
 def register(board):
@@ -149,3 +156,7 @@ def register(board):
     board.add_part("F158", ModelMux2(invert=True))
     board.add_part("F257", ModelMux2(invert=False))
     board.add_part("F258", ModelMux2(invert=True))
+    board.add_part("XMUX16", ModelMux2(invert=None))
+    board.add_part("XMUX20", ModelMux2(invert=None))
+    board.add_part("XMUX24", ModelMux2(invert=None))
+    board.add_part("XMUX32", ModelMux2(invert=None))

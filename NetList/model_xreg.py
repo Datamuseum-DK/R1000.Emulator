@@ -183,5 +183,6 @@ def register(board):
     board.add_part("F374", ModelXreg("F374"))
     board.add_part("XREG16", ModelXreg("XREG16"))
     board.add_part("XREG20", ModelXreg("XREG20"))
+    board.add_part("XREG24", ModelXreg("XREG24"))
     board.add_part("XREG32", ModelXreg("XREG32"))
     board.add_part("XREG64", ModelXreg("XREG64"))
