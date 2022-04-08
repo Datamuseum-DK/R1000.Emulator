@@ -87,42 +87,30 @@ class Nor(PartFactory):
 
         file.fmt('''
 		|
-		|	TRACE(
-		|	    << " j " << state->job
-		|	    << " out " << state->out
-		|''')
-
-        for i in range(self.inputs):
-            file.write("\t    << PIN_D%d\n" % i)
-
-        file.fmt('''
-		|	);
+		|	if (state->dly) {
+		|		TRACE(
+		|		    << " job " << state->job
+		|		    << " d " << BUS_D_TRACE()
+		|		    << " out " << state->out
+		|		);
+		|	}
 		|
 		|	if (state->job) {
 		|		PIN_Q<=(state->out);
 		|		state->job = false;
 		|	}
 		|
-		|''')
-
-        file.write("\n\tif (\n\t    ")
-
-        i = []
-        for node in self.comp:
-            if node.pin.name == "Q":
-                continue
-            if node.net.sc_type == "bool":
-                i.append("(!PIN_%s.read())" % node.pin.name)
-            else:
-                i.append("IS_L(PIN_%s.read())" % node.pin.name)
-        file.write(" &&\n\t    ".join(i))
-
-        file.fmt('''
-		|
-		|	) {
+		|	unsigned tmp;
+		|	BUS_D_READ(tmp);
+		|	if (!tmp) {
 		|		if (state->out != 1) {
 		|			state->out = 1;
 		|			if (state->dly == 0) {
+		|				TRACE(
+		|				    << " job " << state->job
+		|				    << " d " << BUS_D_TRACE()
+		|				    << " out " << state->out
+		|				);
 		|				PIN_Q<=(state->out);
 		|			} else {
 		|				state->job = true;
@@ -133,6 +121,11 @@ class Nor(PartFactory):
 		|		if (state->out != 0) {
 		|			state->out = 0;
 		|			if (state->dly == 0) {
+		|				TRACE(
+		|				    << " job " << state->job
+		|				    << " d " << BUS_D_TRACE()
+		|				    << " out " << state->out
+		|				);
 		|				PIN_Q<=(state->out);
 		|			} else {
 		|				state->job = true;
