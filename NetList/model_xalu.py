@@ -76,10 +76,11 @@ class XALU(PartFactory):
 		|	    << " s " << BUS_S_TRACE()
 		|	    << " m " << PIN_M?
 		|	    << " ci " << PIN_CI?
-		|	    << " a " << BUS_A_TRACE()
-		|	    << " b " << BUS_B_TRACE()
+		|	    << " a " << BUS_A_TRACE() << " " << std::hex << a
+		|	    << " b " << BUS_B_TRACE() << " " << std::hex << b
 		|	    << " = " << eq
 		|	    << " co " << ci
+		|	    << " y " << std::hex << y
 		|	);
 		|	PIN_AeqB<=(eq);
 		|	PIN_CO<=(ci);
@@ -90,3 +91,5 @@ def register(board):
     ''' Register component model '''
 
     board.add_part("XALU8", PartModel("XALU8", XALU))
+    board.add_part("XALU16", PartModel("XALU8", XALU))
+    board.add_part("XALU20", PartModel("XALU8", XALU))

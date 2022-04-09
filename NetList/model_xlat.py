@@ -29,17 +29,18 @@
 # SUCH DAMAGE.
 
 '''
-   F374 Octal D-Type Flip-Flop with 3-STATE Outputs
-   ================================================
+   F373 Octal Transparant Latch with 3-STATE Outputs
+   =================================================
 
-   Ref: Fairchild DS009524 May 1988 Revised September 2000
+   Ref: Fairchild DS009523, May 1988, Revised September 2000
+
 '''
 
 from part import PartModel, PartFactory
 
 class Xlat(PartFactory):
 
-    ''' F374 Octal D-Type Flip-Flop with 3-STATE Outputs '''
+    ''' F373 Octal Transparant Latch with 3-STATE Outputs '''
 
     def state(self, file):
         ''' Extra state variable '''
@@ -79,9 +80,17 @@ class Xlat(PartFactory):
 		|	if (PIN_OE=>) {
 		|		TRACE(" Z ");
 		|		BUS_Q_Z();
-		|	} else {
-		|		BUS_Q_WRITE(state->data);
+		|		return;
 		|	}
+		|''')
+
+        if self.comp.part.name[-2:] == "_I":
+            file.fmt('''
+		|	BUS_Q_WRITE(state->data ^ BUS_Q_MASK);
+		|''')
+        else:
+            file.fmt('''
+		|	BUS_Q_WRITE(state->data);
 		|''')
 
 
@@ -100,6 +109,8 @@ class ModelXlat(PartModel):
     def configure(self, board, comp):
         sig = self.make_signature(comp)
         ident = self.name + "_" + sig
+        if 'INV' in comp and comp['INV'].net.is_pd():
+            ident += "_I"
         if ident not in board.part_catalog:
             board.add_part(ident, Xlat(board, ident))
         comp.part = board.part_catalog[ident]
