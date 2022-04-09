@@ -127,7 +127,7 @@ class PassNetConfig():
             net.sc_type = "bool"
 
     def ponder_bus(self):
-        with open("_bus.txt", "w") as file:
+        with open("_bus_%s.txt" % self.board.name.lower(), "w") as file:
             maybe = {}
             for net in self.board.iter_nets():
                 if len(set(net.nnodes)) != len(net.nnodes):

@@ -79,6 +79,8 @@ import model_xalu
 import model_xbuf
 import model_xeq
 import model_xlat
+import model_xmux16_1
+import model_xpar64
 import model_xreg
 import model_xrfram
 import model_xstkram
@@ -134,6 +136,8 @@ def register(where):
     model_xbuf.register(where)
     model_xeq.register(where)
     model_xlat.register(where)
+    model_xmux16_1.register(where)
+    model_xpar64.register(where)
     model_xreg.register(where)
     model_xrfram.register(where)
     model_xstkram.register(where)

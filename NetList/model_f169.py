@@ -35,7 +35,6 @@
    Ref: Fairchild DS009469 April 1988 Revised September 2000
 '''
 
-
 from part import PartModel, PartFactory
 
 class F169(PartFactory):
@@ -66,18 +65,14 @@ class F169(PartFactory):
 		|	if (PIN_CLK.posedge()) {
 		|		if (!PIN_LD=>) {
 		|			what = " ld ";
-		|			state->count = 0;
-		|			if (PIN_D3=>) state->count |= 1;
-		|			if (PIN_D2=>) state->count |= 2;
-		|			if (PIN_D1=>) state->count |= 4;
-		|			if (PIN_D0=>) state->count |= 8;
+		|			BUS_D_READ(state->count);
 		|		} else if (!PIN_ENP=> && !PIN_ENT=>) {
 		|			if (PIN_UP=>) {
 		|				what = " up ";
-		|				state->count = (state->count + 0x1) & 0xf;
+		|				state->count = (state->count + 0x1) & BUS_D_MASK;
 		|			} else {
 		|				what = " dn ";
-		|				state->count = (state->count + 0xf) & 0xf;
+		|				state->count = (state->count + BUS_D_MASK) & BUS_D_MASK;
 		|			}
 		|		} else {
 		|''')
@@ -96,7 +91,7 @@ class F169(PartFactory):
 		|	}
 		|	if (PIN_ENT=>)
 		|		carry = true;
-		|	else if (PIN_UP=> && state->count == 0xf)
+		|	else if (PIN_UP=> && state->count == BUS_D_MASK)
 		|		carry = false;
 		|	else if (!PIN_UP=> && state->count == 0x0)
 		|		carry = false;
@@ -109,7 +104,7 @@ class F169(PartFactory):
 		|		    << what
 		|		    << " up " << PIN_UP?
 		|		    << " clk " << PIN_CLK?
-		|		    << " d " << PIN_D0? << PIN_D1? << PIN_D2? << PIN_D3?
+		|		    << " d " << BUS_D_TRACE()
 		|		    << " enp " << PIN_ENP?
 		|		    << " load " << PIN_LD?
 		|		    << " ent " << PIN_ENT?
@@ -119,10 +114,7 @@ class F169(PartFactory):
 		|		    << carry
 		|		);
 		|	}
-		|	PIN_Q3<=(state->count & 1);
-		|	PIN_Q2<=(state->count & 2);
-		|	PIN_Q1<=(state->count & 4);
-		|	PIN_Q0<=(state->count & 8);
+		|	BUS_Q_WRITE(state->count);
 		|	PIN_CO<=(carry);
 		|''')
 
@@ -130,3 +122,7 @@ def register(board):
     ''' Register component model '''
 
     board.add_part("F169", PartModel("F169", F169))
+    board.add_part("F169X2", PartModel("F169X2", F169))
+    board.add_part("F169X3", PartModel("F169X3", F169))
+    board.add_part("F169X4", PartModel("F169X4", F169))
+    board.add_part("F169X5", PartModel("F169X5", F169))
