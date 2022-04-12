@@ -39,7 +39,7 @@ class Chain():
             else:
                 dst = board.mem[adr + 2]
             txt += "0x%02x: " % dst
-            data = board.data_after[dst - 0x10:][:self.length]
+            data = board.data_after[dst:][:self.length]
             txt += " ".join("%02x" % x for x in data)
             print(txt)
         else:
@@ -203,7 +203,7 @@ class Board():
             for n, i in enumerate(self.expins[10:]):
                 self.mem[n + 0x10] = int(i, 16)
             if next:
-                self.data_after = [int(x, 16) for x in next[10:]]
+                self.data_after = [-1] * 16 + [int(x, 16) for x in next[10:]]
             else:
                 self.data_after = []
             try:
