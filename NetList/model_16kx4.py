@@ -43,7 +43,7 @@ class SRAM16KX4(PartFactory):
 
     def state(self, file):
         file.fmt('''
-		|	uint8_t ram[1<<14];
+		|	uint64_t ram[1<<14];
 		|''')
 
     def doit(self, file):
@@ -53,7 +53,7 @@ class SRAM16KX4(PartFactory):
 
         file.fmt('''
 		|	unsigned adr = 0;
-		|	unsigned data;
+		|	uint64_t data;
 		|	const char *what = NULL;
 		|
 		|	BUS_A_READ(adr);
@@ -103,3 +103,5 @@ def register(board):
     ''' Register component model '''
 
     board.add_part("16KX4", PartModel("16KX4", SRAM16KX4))
+    board.add_part("XTAGRAM", PartModel("XTAGRAM", SRAM16KX4))
+    board.add_part("16KX8", PartModel("16KX8", SRAM16KX4))
