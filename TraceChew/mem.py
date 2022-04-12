@@ -1,6 +1,45 @@
-from board import Board
+from board import Board, Chain
+import scan_chains
+
+MEM_DFSM = {
+    "DIPROC",
+    "DFSM0",
+    "DFSM1",
+    "DFSM2",
+    "DFSM3",
+    "DFSM4",
+    "DFSM5",
+    "DFSM6",
+}
+
+class ChainMemDregFull(Chain):
+
+    def __init__(self):
+        super().__init__("M.DREG_VAL_PAR", 19)
+        self.SUPRESS |= MEM_DFSM
+        self.SUPRESS |= { "DREGC0", "DREGC1", "DREGVP", }
+        for i in "TV":
+            for j in range(8):
+                self.SUPRESS |= { "DREG" + i + "%d" %j, }
+        self.chain = scan_chains.MemDregFull()
+
+class ChainMemDregValPar(Chain):
+
+    def __init__(self):
+        super().__init__("M.DREG_VAL_PAR", 9)
+        self.SUPRESS |= MEM_DFSM
+        self.SUPRESS |= { "DREGC0", "DREGC1", "DREGVP", }
+        for i in "TV":
+            for j in range(8):
+                self.SUPRESS |= { "DREG" + i + "%d" %j, }
+        self.chain = scan_chains.MemDregValPar()
 
 class MEM_Board(Board):
+
+    CHAINS = {
+        0x01: ChainMemDregFull(),
+        0x02: ChainMemDregValPar(),
+    }
 
     DFSM0_BITS = (
         "FSM_DONE~",
@@ -76,52 +115,6 @@ class MEM_Board(Board):
 
     def __init__(self, unit):
         super().__init__("MEM%d" % unit, 14 - unit)
-
-    def Ins_da(self, adr, lines):
-
-        if self.mem[adr+1] == 0x00 and self.mem[adr + 3] == 0x03:
-            p = self.mem[adr+2]
-            l = ["%02x" % self.mem[x] for x in range(p, p + 9)]
-            print("    MAR <= @%02x: " % p + " ".join(l))
-            regs = {}
-            for i in lines:
-                if ".MAR" in i[1]:
-                    regs[i[1]] = i
-            for i, j in sorted(
-                regs.items(),
-                key=lambda x: int(x[1][1].split("MAR")[-1])
-            ):
-                print("    ", j)
-            return True
-
-        if self.mem[adr+1] == 0x02 and self.mem[adr + 3] == 0x83:
-            p = self.mem[adr+2]
-            print("    MAR => @%02x " % p)
-            for i in lines:
-                if ".MAR" in i[1]:
-                    print("    ", i)
-            return True
-
-        if self.mem[adr+1] == 0x20 and self.mem[adr + 3] == 0x05:
-            p = self.mem[adr+2]
-            l = ["%02x" % self.mem[x] for x in range(p, p + 8)]
-            print("    DREG(V?) <= @%02x: " % p + " ".join(l))
-            regs = {}
-            for i in lines:
-                if ".DREG" in i[1]:
-                    regs[i[1]] = i
-            for i, j in sorted(regs.items()):
-                print("    ", j)
-            return True
-
-        if self.mem[adr+1] == 0x22 and self.mem[adr + 3] == 0x85:
-            p = self.mem[adr+2]
-            print("    DREG => @%02x " % p)
-            if False:
-                for i in lines:
-                    if ".DREG" in i[1]:
-                        print("    ", i)
-            return True
 
     def Ins_c0(self, adr, lines):
 
