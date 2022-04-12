@@ -80,6 +80,7 @@ void elastic_inject(struct elastic *ep, const void *ptr, ssize_t len);
 
 /* "input" side */
 void elastic_put(struct elastic *ep, const void *ptr, ssize_t len);
+int elastic_drain(struct elastic *ep);
 ssize_t elastic_get(struct elastic *ep, void *ptr, ssize_t len);
 int elastic_empty(const struct elastic *ep);
 

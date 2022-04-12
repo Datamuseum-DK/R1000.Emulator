@@ -73,8 +73,10 @@ elastic_subscriber_fetch(struct elastic_subscriber **espp,
 	AN(ep);
 
 	AZ(pthread_mutex_lock(&ep->mtx));
-	while (!esp->die && VTAILQ_EMPTY(&esp->chunks))
+	while (!esp->die && VTAILQ_EMPTY(&esp->chunks)) {
+		AZ(pthread_cond_signal(&esp->ep->cond_out));
 		AZ(pthread_cond_wait(&esp->cond, &ep->mtx));
+	}
 	cp = VTAILQ_FIRST(&esp->chunks);
 	if (cp != NULL)
 		VTAILQ_REMOVE(&esp->chunks, cp, next);
@@ -222,6 +224,27 @@ elastic_put(struct elastic *ep, const void *ptr, ssize_t len)
 		}
 	}
 	AZ(pthread_mutex_unlock(&ep->mtx));
+}
+
+int
+elastic_drain(struct elastic *ep)
+{
+	struct elastic_subscriber *esp;
+	int busy = 0;
+
+	if (VTAILQ_EMPTY(&ep->subscribers))
+		return (-1);
+	do {
+		AZ(pthread_mutex_lock(&ep->mtx));
+		busy = 0;
+		VTAILQ_FOREACH(esp, &ep->subscribers, next)
+			if (!VTAILQ_EMPTY(&esp->chunks))
+				busy = 1;
+		if (busy)
+			AZ(pthread_cond_wait(&ep->cond_out, &ep->mtx));
+		AZ(pthread_mutex_unlock(&ep->mtx));
+	} while(busy);
+	return (0);
 }
 
 ssize_t
