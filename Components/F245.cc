@@ -67,14 +67,14 @@ SC_MODULE(SCM_F245_5)
 			pin_y7 = sc_logic_Z;
 			next_trigger(pin_dir.default_event());
 		} else {
-			pin_y0 = pin_d0;
-			pin_y1 = pin_d1;
-			pin_y2 = pin_d2;
-			pin_y3 = pin_d3;
-			pin_y4 = pin_d4;
-			pin_y5 = pin_d5;
-			pin_y6 = pin_d6;
-			pin_y7 = pin_d7;
+			pin_y0 = AS(IS_H(pin_d0));
+			pin_y1 = AS(IS_H(pin_d1));
+			pin_y2 = AS(IS_H(pin_d2));
+			pin_y3 = AS(IS_H(pin_d3));
+			pin_y4 = AS(IS_H(pin_d4));
+			pin_y5 = AS(IS_H(pin_d5));
+			pin_y6 = AS(IS_H(pin_d6));
+			pin_y7 = AS(IS_H(pin_d7));
 		}
 	}
 };
