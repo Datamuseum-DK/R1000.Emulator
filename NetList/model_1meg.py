@@ -36,6 +36,57 @@
 
 from part import PartModel, PartFactory
 
+class DRAM1MEGWIDE(PartFactory):
+
+    ''' 1MEGxN DRAM '''
+
+    def state(self, file):
+        file.fmt('''
+		|	unsigned ras, cas;
+		|	uint64_t bits[(1<<20)];
+		|''')
+
+    def sensitive(self):
+        yield "PIN_RAS.neg()"
+        yield "PIN_CAS"
+        yield "PIN_WE"
+
+    def doit(self, file):
+        ''' The meat of the doit() function '''
+
+        super().doit(file)
+
+        file.fmt('''
+		|	uint32_t adr = 0;
+		|
+		|	BUS_A_READ(adr);
+		|
+		|	if (PIN_RAS.negedge())
+		|		state->ras = adr;
+		|	if (PIN_CAS.negedge()) {
+		|		state->cas = adr;
+		|		adr = (state->cas << 10) | state->ras;
+		|		if (!PIN_WE=>) {
+		|			BUS_DQ_Z();
+		|			BUS_DQ_READ(state->bits[adr]);
+		|		} else {
+		|			BUS_DQ_WRITE(state->bits[adr]);
+		|		}
+		|	}
+		|	if (PIN_RAS.posedge() || PIN_CAS.posedge()) {
+		|		BUS_DQ_Z();
+		|	}
+		|	TRACE(
+		|	    << " ras " << PIN_RAS?
+		|	    << " cas " << PIN_CAS?
+		|	    << " we " << PIN_WE?
+		|	    << " a " << BUS_A_TRACE()
+		|	    << " dq " << BUS_DQ_TRACE()
+		|	);
+		|
+		|''')
+
+
 class DRAM1MEG(PartFactory):
 
     ''' 1MEG DRAM '''
@@ -111,3 +162,5 @@ def register(board):
     ''' Register component model '''
 
     board.add_part("1MEG", Model1Meg("1MEG", DRAM1MEG))
+    board.add_part("XDRAM", PartModel("XDRAM", DRAM1MEGWIDE))
+    board.add_part("XERAM", PartModel("XERAM", DRAM1MEGWIDE))
