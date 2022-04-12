@@ -140,3 +140,5 @@ def register(board):
     ''' Register component model '''
 
     board.add_part("F652", ModelF652("F652", F652))
+    board.add_part("F652_9", ModelF652("F652_9", F652))
+    board.add_part("F652_64", ModelF652("F652_64", F652))
