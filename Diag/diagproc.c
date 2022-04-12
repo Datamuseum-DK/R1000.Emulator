@@ -262,7 +262,8 @@ diagproc_istep(struct diagproc_ctrl *dc, struct diagproc_context *dctx)
 	struct diagproc_priv *dp;
 	uint16_t opc, npc;
 	char buf[BUFSIZ], *p;
-	uint8_t ptr, flags;
+	unsigned ptr;
+	uint8_t flags;
 
 	assert(dc != NULL);
 	assert(dc->priv != NULL);
@@ -304,7 +305,7 @@ diagproc_istep(struct diagproc_ctrl *dc, struct diagproc_context *dctx)
 	if (dp->flags[npc] & FLAG_DUMP_MEM) {
 		dctx->executions++;
 		p = buf;
-		for (ptr = 0x10; ptr < dp->pc0 + 16; ptr++) {
+		for (ptr = 0x10; ptr < dp->pc0 + 16U && ptr < 0x100U; ptr++) {
 			if (!(ptr & 3))
 				*p++ = ' ';
 			sprintf(p, " %02x", dp->mcs51->iram[ptr]);

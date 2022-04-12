@@ -180,8 +180,12 @@ cli_dummy_diproc(struct cli *cli)
 			i8052_start(0x7, "i8052.VAL.7");
 		else if (!strcmp(cli->av[i], "mem0"))
 			i8052_start(0xc, "i8052.MEM0.e");
+		else if (!strcmp(cli->av[i], "mem1"))
+			i8052_start(0xc, "i8052.MEM1.d");
 		else if (!strcmp(cli->av[i], "mem2"))
 			i8052_start(0xe, "i8052.MEM2.c");
+		else if (!strcmp(cli->av[i], "mem3"))
+			i8052_start(0xc, "i8052.MEM3.f");
 		else
 			cli_printf(cli,
 			    "Usage: dummy_diproc "
