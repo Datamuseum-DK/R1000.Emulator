@@ -55,6 +55,9 @@ class MaybeBus():
             self.components[node.component] = node.pin.bus
             self.nodes[node.component] = [node]
 
+    def __repr__(self):
+        return "<MBUS %d×%d>" % (len(self.nets), len(self.nodes))
+
     def add_net(self, net):
         if self.failed:
             return
@@ -80,7 +83,7 @@ class MaybeBus():
         for net in self.nets:
             i = [""]
             for node in net.nnodes:
-                i.append(node.pin.name)
+                i.append(node.pin.name + "/" + node.pin.role)
             i.append(net.name)
             file.write("\t".join(i) + "\n")
 
@@ -132,7 +135,7 @@ class PassNetConfig():
             for net in self.board.iter_nets():
                 if len(set(net.nnodes)) != len(net.nnodes):
                     continue
-                sig = " ".join(x.component.ref for x in net.nnodes)
+                sig = " ".join(sorted(x.component.ref for x in net.nnodes))
                 i = maybe.get(sig)
                 if i:
                     i.add_net(net)
