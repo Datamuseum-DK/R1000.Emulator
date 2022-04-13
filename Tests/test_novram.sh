@@ -1,22 +1,17 @@
 
-EXPMON_LAUNCH="ioc seq fiu val typ mem0"
-EXPMON_DURATION=1
-EXPMON_COMMAND="NOVRAM"
-
-if [ "x$EXPMON_TEST_NAME" = "x" ] ; then
-	EXPMON_TEST_NAME=`echo $EXPMON_COMMAND | tr '[A-Z]' '[a-z]'`
-fi
+EXPMON_TEST_NAME=novram
 
 ./r1000sim \
 	-T /critter/_r1000 \
 	-f Tests/cli_prompt.cli \
 	"console > Tests/_${EXPMON_TEST_NAME}.console" \
 	'trace +systemc' \
-	"sc launch ${EXPMON_LAUNCH}"\
-	"dummy_diproc mem2" \
+	"trace +diagbus_bytes" \
+	"dummy_diproc -TIMEOUT mem1 mem2 mem3" \
+	"sc launch ioc seq fiu val typ mem0"\
 	'sc trace "DI*PROC" 4' \
 	'sc q exit' \
-	"sc q ${EXPMON_DURATION}" \
+	"sc q 1" \
 	'console << "dir novram.*"' \
 	'console match expect "CLI>"' \
 	'console << "x novram"' \
