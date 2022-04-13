@@ -158,6 +158,8 @@ class PartModel(Part):
                 node.pin.role = "sc_inout_resolved"
             elif node.pin.name[:2] == "IO" and "tri_state" in node.pin.role:
                 node.pin.role = "sc_inout_resolved"
+            elif "open_collector" in node.pin.role:
+                node.pin.role = "sc_out <sc_logic>"
             elif node.pin.role in (
                 "input",
                 "input+no_connect",
