@@ -1,12 +1,33 @@
+#ifndef DIAG_DIAG_H
+#define DIAG_DIAG_H
 
-#define BOARD_TABLE \
-	BOARD("SEQ", "seq", 2) \
-	BOARD("FIU", "fiu", 3) \
-	BOARD("IOC", "ioc", 4) \
-	BOARD("TYP", "typ", 6) \
-	BOARD("VAL", "val", 7) \
-	BOARD("MEM0", "mem0", 12) \
-	BOARD("MEM2", "mem2", 14)
+#define BOARD_TABLE(macro) \
+	macro(SEQ, seq, 2) \
+	macro(FIU, fiu, 3) \
+	macro(IOC, ioc, 4) \
+	macro(TYP, typ, 6) \
+	macro(VAL, val, 7) \
+	macro(MEM0, mem0, 12) \
+	macro(MEM1, mem1, 13) \
+	macro(MEM2, mem2, 14) \
+	macro(MEM3, mem3, 15)
+
+#define RESPONSE_TABLE(macro) \
+	macro(1, OK) \
+	macro(2, LOOPING) \
+	macro(3, PAUSED) \
+	macro(4, ERROR) \
+	macro(5, RESET) \
+	macro(6, RUNNING) \
+	macro(7, RESERVED1) \
+	macro(8, RESERVED2) \
+	macro(9, TIMEOUT)
+
+enum diproc_response {
+#define RESPONSE(num, name)	DIPROC_RESPONSE_##name = num,
+RESPONSE_TABLE(RESPONSE)
+#undef RESPONSE
+};
 
 struct elastic;
 struct experiment;
@@ -21,10 +42,11 @@ struct diproc {
 };
 
 extern struct diproc diprocs[16];
-void DiagBus_Send(struct diproc *dp, unsigned u);
+void DiagBus_Send(const struct diproc *dp, unsigned u);
 
-struct experiment;
 struct experiment *Load_Experiment_File(struct cli *, const char *filename);
 
 cli_func_f cli_diag_experiment;
 cli_func_f cli_diag_check;
+
+#endif /* DIAG_DIAG_H */

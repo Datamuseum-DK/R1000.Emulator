@@ -45,12 +45,13 @@ struct i8052 {
 	uint8_t				ram[256];
 	struct elastic_subscriber	*esp;
 	pthread_t			thread;
+	unsigned			response;
 };
 
 static void
 i8052_tx_diagbus(const struct i8052 *i52, uint8_t x)
 {
-	Trace(trace_diagbus_bytes, "%s TX %02x", i52->name, x);
+	Trace(trace_diagbus_bytes, "DIAGBUS %s TX %02x", i52->name, x);
 	elastic_inject(diag_elastic, &x, 1);
 }
 
@@ -96,12 +97,12 @@ i8052_thread(void *priv)
 		u8 = u & 0xff;
 		switch (u8 >> 4) {
 		case 0x0:
-			if (reply) {
+			if (reply && i52->response != DIPROC_RESPONSE_TIMEOUT) {
 				i8052_tx_diagbus(i52, reply);
-				reply = 0;
 			} else {
-				i8052_tx_diagbus(i52, 1);
+				i8052_tx_diagbus(i52, i52->response);
 			}
+			reply = 0;
 			break;
 		case 0x2:
 			pointer = i8052_rx_diagbus(i52);
@@ -121,10 +122,10 @@ i8052_thread(void *priv)
 			i8052_tx_diagbus(i52, csum);
 			AZ(VSB_finish(vsb));
 			Trace(trace_diagbus_upload,
-			    "%s UL%s", i52->name, VSB_data(vsb));
+			    "DIAGBUS %s UL%s", i52->name, VSB_data(vsb));
 			break;
 		case 0x8:
-			reply = 5;
+			reply = DIPROC_RESPONSE_RESET;
 			break;
 		case 0xa:
 			pointer = 0x10;
@@ -140,7 +141,7 @@ i8052_thread(void *priv)
 			}
 			AZ(VSB_finish(vsb));
 			Trace(trace_diagbus_download,
-			    "%s DL%s", i52->name, VSB_data(vsb));
+			    "DIAGBUS %s DL%s", i52->name, VSB_data(vsb));
 			assert (csum == i8052_rx_diagbus(i52));
 			break;
 		default:
@@ -150,7 +151,7 @@ i8052_thread(void *priv)
 }
 
 static void
-i8052_start(unsigned unit, const char *name)
+i8052_start(unsigned unit, const char *name, unsigned response)
 {
 	struct i8052 *i52;
 
@@ -158,37 +159,58 @@ i8052_start(unsigned unit, const char *name)
 	AN(i52);
 	i52->name = name;
 	i52->unit = unit;
+	i52->response = response;
 	i52->esp = elastic_subscribe(diag_elastic, NULL, NULL);
 	AZ(pthread_create(&i52->thread, NULL, i8052_thread, i52));
+}
+
+static void
+cli_dummy_diproc_usage(struct cli *cli)
+{
+	cli_printf(cli,
+	    "Usage: dummy_diproc [-response]"
+	    "[seq|fiu|ioc|typ|val|mem0|mem2]…\n");
+	cli_printf(cli, "    possible responses:\n");
+#define RESPONSE(num, name) cli_printf(cli, "\t-%s\n", #name);
+	RESPONSE_TABLE(RESPONSE)
+#undef RESPONSE
 }
 
 void v_matchproto_(cli_func_f)
 cli_dummy_diproc(struct cli *cli)
 {
 	int i;
+	unsigned response = DIPROC_RESPONSE_OK;
 
+	if (cli->help) {
+		cli_dummy_diproc_usage(cli);
+		return;
+	}
 	for (i = 1; i < cli->ac; i++) {
-		if (!strcmp(cli->av[i], "seq"))
-			i8052_start(0x2, "i8052.SEQ.2");
-		else if (!strcmp(cli->av[i], "fiu"))
-			i8052_start(0x3, "i8052.FIU.3");
-		else if (!strcmp(cli->av[i], "ioc"))
-			i8052_start(0x4, "i8052.IOC.4");
-		else if (!strcmp(cli->av[i], "typ"))
-			i8052_start(0x6, "i8052.TYP.6");
-		else if (!strcmp(cli->av[i], "val"))
-			i8052_start(0x7, "i8052.VAL.7");
-		else if (!strcmp(cli->av[i], "mem0"))
-			i8052_start(0xc, "i8052.MEM0.e");
-		else if (!strcmp(cli->av[i], "mem1"))
-			i8052_start(0xc, "i8052.MEM1.d");
-		else if (!strcmp(cli->av[i], "mem2"))
-			i8052_start(0xe, "i8052.MEM2.c");
-		else if (!strcmp(cli->av[i], "mem3"))
-			i8052_start(0xc, "i8052.MEM3.f");
-		else
-			cli_printf(cli,
-			    "Usage: dummy_diproc "
-			    "[seq|fiu|ioc|typ|val|mem0|mem2]…\n");
+		if (cli->av[i][0] == '-') {
+#define RESPONSE(num, name) \
+			if (!strcasecmp(#name, cli->av[i] + 1)) { \
+				response = num; \
+				continue; \
+			}
+			RESPONSE_TABLE(RESPONSE)
+#undef RESPONSE
+			cli_printf(cli, "Unknown response: \"%s\"\n",
+			    cli->av[i]);
+			cli_dummy_diproc_usage(cli);
+			cli_error(cli, "");
+			return;
+		}
+#define BOARD(upper, lower, address) \
+		if (!strcasecmp(cli->av[i], #lower)) { \
+			i8052_start(address, "DUMMY_" #upper, response); \
+			continue; \
+		}
+		BOARD_TABLE(BOARD)
+#undef BOARD
+		cli_printf(cli, "Unknown diproc: \"%s\"\n", cli->av[i]);
+		cli_dummy_diproc_usage(cli);
+		cli_error(cli, "");
+		return;
 	}
 }

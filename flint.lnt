@@ -31,6 +31,7 @@
 -esym(534, printf)
 -esym(534, sprintf)
 -esym(534, strcpy)
+-esym(534, strcat)
 -esym(534, fprintf)
 -esym(534, vsnprintf)
 -esym(534, vfprintf)
@@ -83,19 +84,17 @@
 -esym(765, elastic_*)
 
 // 785 Too few initializers for aggregate '___' of type '___'
--esym(785, scsi_disk_funcs)
--esym(785, scsi_tape_funcs)
--esym(785, struct irq_vector)
--esym(785, scsi_funcs)
--esym(785, scsi_cmd_name)
--esym(785, mem_desc_*)
--esym(785, pseudo_number)
+-e785
 
 // 826 Suspicious pointer-to-pointer conversion (area too small)
 -emacro((826), VTAILQ_LAST)
 
 // 835     A zero has been given as ___ argument to operator '___'
 -emacro(835,TRACE_68K)
+
+// 123: Macro 'BOARD' defined with arguments at line 23 -- this is just a warning
+-esym(123, BOARD)
+-esym(123, RESPONSE)
 
 ///////////////////////////////////////////////////////////////////////
 

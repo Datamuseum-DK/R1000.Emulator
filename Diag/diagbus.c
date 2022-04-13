@@ -21,12 +21,12 @@ struct diproc diprocs[16] = {
 		.address = a,\
 		.status = 0,\
 	 },
-BOARD_TABLE
+BOARD_TABLE(BOARD)
 #undef BOARD
 };
 
 void
-DiagBus_Send(struct diproc *dp, unsigned u)
+DiagBus_Send(const struct diproc *dp, unsigned u)
 {
 	AN(dp);
 	AN(dp->upper);
@@ -39,7 +39,7 @@ DiagBus_Send(struct diproc *dp, unsigned u)
 }
 
 static void
-diagbus_tx(struct diproc *dp, struct cli *cli)
+diagbus_tx(const struct diproc *dp, struct cli *cli)
 {
 	unsigned nonet;
 	unsigned sum = 0;
@@ -113,9 +113,9 @@ cli_diag(struct cli *cli)
 
 	cli->priv = 255;
 #define BOARD(upper, lower, address) \
-	if (!strcasecmp(cli->av[0], upper)) \
+	if (!strcasecmp(cli->av[0], #upper)) \
 		cli->priv = address;
-BOARD_TABLE
+BOARD_TABLE(BOARD)
 #undef BOARD
 	if (cli->priv > 0xf) {
 		cli_error(cli, "Unknown board (0x%jx)\n", cli->priv);
