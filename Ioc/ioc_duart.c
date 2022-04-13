@@ -195,13 +195,14 @@ ioc_duart_tx_callback(void *priv)
 	struct chan *chp = priv;
 
 	if (chp->txshift_valid == 1) {
-		Trace(trace_diagbus_bytes, "%s TX %02x",
+		Trace(trace_diagbus_bytes, "%s IOC TX %02x",
 		    chp->name, chp->txshift[0]);
 	} else {
-		Trace(trace_diagbus_bytes, "%s TX %x%02x",
+		Trace(trace_diagbus_bytes, "%s IOC TX %x%02x",
 		    chp->name, chp->txshift[0], chp->txshift[1]);
 	}
 	elastic_put(chp->ep, chp->txshift, chp->txshift_valid);
+	elastic_drain(chp->ep);
 	chp->txshift_valid = 0;
 	chp->sr |= 4;
 	chp->sr |= 8;
