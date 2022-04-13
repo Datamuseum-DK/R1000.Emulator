@@ -41,7 +41,7 @@
 
 struct i8052 {
 	const char			*name;
-	uint8_t				unit;
+	uint8_t				address;
 	uint8_t				ram[256];
 	struct elastic_subscriber	*esp;
 	pthread_t			thread;
@@ -91,7 +91,7 @@ i8052_thread(void *priv)
 		u = i8052_rx_diagbus(i52);
 		if (!(u & 0x100))
 			continue;
-		me = (u & 0x1f) == i52->unit;
+		me = (u & 0x1f) == i52->address;
 		if (!me)
 			continue;
 		u8 = u & 0xff;
@@ -151,14 +151,14 @@ i8052_thread(void *priv)
 }
 
 static void
-i8052_start(unsigned unit, const char *name, unsigned response)
+i8052_start(unsigned address, const char *name, unsigned response)
 {
 	struct i8052 *i52;
 
 	i52 = calloc(sizeof *i52, 1);
 	AN(i52);
 	i52->name = name;
-	i52->unit = unit;
+	i52->address = address;
 	i52->response = response;
 	i52->esp = elastic_subscribe(diag_elastic, NULL, NULL);
 	AZ(pthread_create(&i52->thread, NULL, i8052_thread, i52));
