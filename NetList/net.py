@@ -40,6 +40,13 @@ class Net():
     def __init__(self, board, netname):
         self.board = board
         self.name = netname
+        for i, j in (
+            (">", "gt"),
+            ("<", "lt"),
+            ("=", "eq"),
+            ("~", "not"),
+        ):
+            self.name = self.name.replace(i, j)
         self.nnodes = []
         self.bus = None
         self.sheets = set()
