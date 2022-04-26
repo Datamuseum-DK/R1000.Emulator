@@ -40,6 +40,8 @@
 #include "Infra/vav.h"
 #include "Ioc/ioc.h"
 
+static int cli_echo = 1;
+
 static void
 cli_exit(struct cli *cli)
 {
@@ -243,7 +245,7 @@ cli_dispatch(struct cli *cli, const struct cli_cmds *cmds)
 int
 cli_exec(const char *s)
 {
-	int ac;
+	int ac, i;
 	char **av;
 	struct cli cli;
 
@@ -257,6 +259,16 @@ cli_exec(const char *s)
 	if (av[1] == NULL) {
 		VAV_Free(av);
 		return (0);
+	}
+	if (cli_echo) {
+		printf("CLI «");
+                for (i = 1; i < ac; i++) {
+			if (strchr(av[i], ' ') != NULL)
+				printf(" \"%s\"", av[i]);
+			else
+				printf(" %s", av[i]);
+		}
+		printf(" »\n");
 	}
 	memset(&cli, 0, sizeof cli);
 	cli.ac = ac - 1;
@@ -280,7 +292,6 @@ cli_from_file(FILE *fi, int fatal)
 		p = strchr(buf, '\n');
 		if (p != NULL)
 			*p = '\0';
-		printf("cli <%s>\n", buf);
 		rv = cli_exec(buf);
 		if (rv < 0 || (rv && fatal))
 			break;
