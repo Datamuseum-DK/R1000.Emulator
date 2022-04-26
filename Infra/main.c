@@ -50,6 +50,8 @@ volatile nanosec simclock;
 volatile nanosec systemc_t_zero;
 volatile int systemc_clock;
 
+const char *tracefilename;
+
 static struct timespec t0;
 
 void
@@ -145,6 +147,7 @@ main(int argc, char **argv)
 			// handled in second pass
 			break;
 		case 'T':
+			tracefilename = optarg;
 			trace_fd =
 			    open(optarg, O_WRONLY|O_CREAT|O_TRUNC, 0644);
 			if (trace_fd < 0) {
@@ -185,9 +188,22 @@ main(int argc, char **argv)
 
 	printf("ARGC %d\n", argc);
 	for (i = 0; i < argc; i++) {
-		printf("CLI <%s>\n", argv[i]);
-		if (cli_exec(argv[i]))
-			exit(2);
+                if (!strcmp(argv[i], "-f")) {
+			i++;
+			fi = fopen(argv[i], "r");
+			if (fi == NULL) {
+				fprintf(stderr, "Cannot open %s: %s\n",
+				    argv[i], strerror(errno));
+				exit(2);
+			}
+			if (cli_from_file(fi, 1))
+				exit(2);
+			AZ(fclose(fi));
+		} else {
+			printf("CLI <%s>\n", argv[i]);
+			if (cli_exec(argv[i]))
+				exit(2);
+		}
 	}
 
 	printf("CLI open\n");
