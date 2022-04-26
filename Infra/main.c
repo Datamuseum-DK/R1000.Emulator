@@ -139,7 +139,6 @@ main(int argc, char **argv)
 	mem_init();
 	ioc_init();
 
-	printf("ARGC %d\n", argc);
 
 	while ((ch = getopt(argc, argv, ARG_SPEC)) != -1) {
 		switch (ch) {
@@ -162,7 +161,6 @@ main(int argc, char **argv)
 		}
 	}
 
-	printf("ARGC %d\n", argc);
 	optind = 1;
 	optreset = 1;
 	while ((ch = getopt(argc, argv, ARG_SPEC)) != -1) {
@@ -186,7 +184,6 @@ main(int argc, char **argv)
 	argc -= optind;
 	argv += optind;
 
-	printf("ARGC %d\n", argc);
 	for (i = 0; i < argc; i++) {
                 if (!strcmp(argv[i], "-f")) {
 			i++;
