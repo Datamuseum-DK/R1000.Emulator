@@ -22,6 +22,7 @@ double sc_main_get_quota(void);
 double sc_when(void);
 
 extern int sc_boards;
+extern const char *tracefilename;
 
 #ifndef __cplusplus
 cli_func_f cli_sc_watchdog;
