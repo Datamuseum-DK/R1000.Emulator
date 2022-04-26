@@ -325,7 +325,7 @@ cli_scsi_disk(struct cli *cli)
 	unsigned unit;
 
 	if (cli->help) {
-		cli_io_help(cli, "scsi_disk 0 filename", 0, 0);
+		cli_io_help(cli, "scsi_disk <unit> <filename>", 0, 0);
 		return;
 	}
 

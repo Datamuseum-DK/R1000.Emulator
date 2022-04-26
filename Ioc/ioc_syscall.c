@@ -165,8 +165,8 @@ static struct sc_def sc_defs[] = {
 	},
 	{ 0x10280, "StartProg", ".A7", supress },
 
-	{ 0x1028c, "?muls_d3_d4_to_d3", ".D3 , .D4", ".D3 , .D4" },
-	{ 0x10290, "?mulu_d3_d4_to_d3", ".D3 , .D4", ".D3 , .D4" },
+	{ 0x1028c, "?muls_d3_d4_to_d4", ".D3 , .D4", ".D3 , .D4" },
+	{ 0x10290, "?mulu_d3_d4_to_d4", ".D3 , .D4", ".D3 , .D4" },
 	{ 0x10294, "?divs_d3_d4", ".D3 , .D4", ".D3 , .D4" },
 	{ 0x10298, "?divu_d3_d4", ".D3 , .D4", ".D3 , .D4" },
 
@@ -415,6 +415,7 @@ static struct sc_def sc_defs[] = {
 	    ""
 	},
 	{ 0x10592, "ReadConfig", "sp+2 @L .L ", "sp+0 @L .L , sp+2 @W .W" },
+
 	{ 1U<<31, NULL, NULL, NULL },
 };
 
