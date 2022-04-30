@@ -54,6 +54,7 @@ class ChainSeqMisc(Chain):
     def __init__(self):
         super().__init__("S.MISC", 9)
         self.SUPRESS |= SEQ_DUIRG
+        # self.SUPRESS |= { "UADR", }
         self.chain = scan_chains.SeqMisc()
 
 class SEQ_Board(Board):
@@ -149,7 +150,7 @@ class SEQ_Board(Board):
     def Ins_cb(self, adr, lines):
 
         if self.mem[adr+1] == 0x31:
-            print("    SEQDG.L => @R3 (0x%02x)" % self.mem[0x13])
+            print("    SEQDG.L => @R3 (@0x%02x) = 0x%02x" % (self.mem[0x13], self.data_after[self.mem[0x13]]))
             return True
 
     def Ins_c4(self, adr, lines):

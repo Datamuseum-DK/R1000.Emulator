@@ -165,6 +165,10 @@ class Nand(PartFactory):
             for node in self.comp:
                 if node.pin.name == "Q":
                     continue
+                else:
+                    file.fmt("\t\t} else if (!PIN_%s=>) {\n" % node.pin.name)
+                    file.fmt("\t\t\tnext_trigger(PIN_%s.default_event());\n" % node.pin.name)
+                    continue
                 if node.net.sc_type == "bool":
                     file.write("\t\t} else if (!PIN_%s.read()) {\n" % node.pin.name)
                     file.write("\t\t\tnext_trigger(PIN_%s.posedge_event());\n" % node.pin.name)

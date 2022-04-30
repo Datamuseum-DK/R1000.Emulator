@@ -1,3 +1,4 @@
+SC_BRANCH ?= megacomp2
 SC_BRANCH ?= main
 NETLISTS ?= /critter/R1K/R1000.HwDoc/${SC_BRANCH}/Schematics/*/*.net
 
@@ -45,6 +46,9 @@ R1000DEP = Infra/r1000.h Infra/vqueue.h Infra/trace.h
 
 all:	netlist
 	${MAKE} r1000sim
+
+branchname:
+	@echo ${SC_BRANCH}
 
 netlist:
 	python3 -u NetList/process_kicad_netlists.py ${SC_BRANCH} ${NETLISTS}
@@ -222,6 +226,7 @@ test_seq:	r1000sim.${SC_BRANCH}
 
 
 MEM_TEST=TEST_PARALLEL_SERIAL.M32
+MEM_TEST=TEST_TAGSTORE_PARITY_2.M32
 
 test_mem:	r1000sim.${SC_BRANCH}
 	./r1000sim.${SC_BRANCH} \
