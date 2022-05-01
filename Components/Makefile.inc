@@ -156,13 +156,6 @@ Components/MUXLPAL.o: Components/MUXLPAL.cc \
     Chassis/r1000sc.h
 	${SC_CC} -o Components/MUXLPAL.o Components/MUXLPAL.cc
 
-OBJS += Components/P2K8R.o
-Components/P2K8R.o: Components/P2K8R.cc \
-    Components/P2K8R.hh \
-    Infra/context.h \
-    Chassis/r1000sc.h
-	${SC_CC} -o Components/P2K8R.o Components/P2K8R.cc
-
 OBJS += Components/PHITPAL.o
 Components/PHITPAL.o: Components/PHITPAL.cc \
     Components/PHITPAL.hh \
