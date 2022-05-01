@@ -74,6 +74,7 @@ import model_mux2
 import model_nand
 import model_nor
 import model_novram
+import model_p2k8r
 import model_paxxx
 import model_pbxxx
 import model_xalu
@@ -132,6 +133,7 @@ def register(where):
     model_nand.register(where)
     model_nor.register(where)
     model_novram.register(where)
+    model_p2k8r.register(where)
     model_paxxx.register(where)
     model_pbxxx.register(where)
     model_xalu.register(where)
