@@ -24,12 +24,12 @@ SCM_DLY_35 :: doit(void)
 	state->ctx.activations++;
 	if (state->next >= 0) {
 		state->state = state->next;
-		pin8 = AS(state->state);
+		pin6 = AS(state->state);
 		state->next = -1;
 	}
 	TRACE( << pin1 );
 	if (IS_H(pin1) != state->state) {
 		state->next = IS_H(pin1);
-		next_trigger(35, SC_NS);
+		next_trigger(28, SC_NS);
 	}
 }
