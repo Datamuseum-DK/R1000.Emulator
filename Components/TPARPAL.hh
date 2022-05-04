@@ -16,6 +16,7 @@ SC_MODULE(SCM_TPARPAL)
 	sc_in <sc_logic>	pin8;
 	sc_in <sc_logic>	pin9;
 	sc_in <sc_logic>	pin11;
+	sc_in <sc_logic>	pin17;
 
 	sc_out <sc_logic>	pin12;
 	sc_out <sc_logic>	pin13;

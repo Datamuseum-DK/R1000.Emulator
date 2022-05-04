@@ -212,3 +212,21 @@ Components/TSXXPAL.o: Components/TSXXPAL.cc \
     Chassis/r1000sc.h
 	${SC_CC} -o Components/TSXXPAL.o Components/TSXXPAL.cc
 
+Components/XADD8.hh:: Components/XADD8_pins.hh
+	@touch Components/XADD8.hh
+OBJS += Components/XADD8.o
+Components/XADD8.o: Components/XADD8.cc Components/xbuf_doit.h \
+    Components/XADD8.hh \
+    Infra/context.h \
+    Chassis/r1000sc.h
+	${SC_CC} -o Components/XADD8.o Components/XADD8.cc
+
+Components/XMUX232.hh:: Components/XMUX232_pins.hh
+	@touch Components/XMUX232.hh
+
+OBJS += Components/XMUX232.o
+Components/XMUX232.o: Components/XMUX232.cc \
+    Components/XMUX232.hh \
+    Infra/context.h \
+    Chassis/r1000sc.h
+	${SC_CC} -o Components/XMUX232.o Components/XMUX232.cc
