@@ -49,7 +49,6 @@ class DRAM1MEGWIDE(PartFactory):
     def sensitive(self):
         yield "PIN_RAS.neg()"
         yield "PIN_CAS"
-        yield "PIN_WE"
 
     def doit(self, file):
         ''' The meat of the doit() function '''
@@ -100,7 +99,6 @@ class DRAM1MEG(PartFactory):
     def sensitive(self):
         yield "PIN_RAS.neg()"
         yield "PIN_CAS"
-        yield "PIN_WE"
 
     def doit(self, file):
         ''' The meat of the doit() function '''
@@ -108,7 +106,7 @@ class DRAM1MEG(PartFactory):
         super().doit(file)
 
         file.fmt('''
-		|	uint32_t adr = 0, data, mask;
+		|	uint32_t adr = 0, data = 0, mask = 0;
 		|
 		|	BUS_A_READ(adr);
 		|
@@ -117,7 +115,7 @@ class DRAM1MEG(PartFactory):
 		|	if (PIN_CAS.negedge()) {
 		|		state->cas = adr;
 		|		adr = (state->cas << 10) | state->ras;
-		|		mask = adr & 0x1f;
+		|		mask = 1 << (adr & 0x1f);
 		|		adr >>= 5;
 		|		if (!PIN_WE=>) {
 		|			PIN_DQ = sc_logic_Z;
@@ -126,20 +124,26 @@ class DRAM1MEG(PartFactory):
 		|			else
 		|				state->bits[adr] &= ~mask;
 		|		} else {
-		|			data = state->bits[adr] & mask;
+		|			data = (state->bits[adr] & mask) != 0;
 		|			PIN_DQ = AS(data);
 		|		}
 		|	}
 		|	if (PIN_RAS.posedge() || PIN_CAS.posedge()) {
 		|		PIN_DQ = sc_logic_Z;
 		|	}
-		|	TRACE(
-		|	    << " ras " << PIN_RAS?
-		|	    << " cas " << PIN_CAS?
-		|	    << " we " << PIN_WE?
-		|	    << " a " << BUS_A_TRACE()
-		|	    << " dq " << PIN_DQ?
-		|	);
+		|	if (!PIN_CAS=> || (state->ctx.do_trace & 2)) {
+		|		TRACE(
+		|		    << " ras " << PIN_RAS?
+		|		    << " cas " << PIN_CAS?
+		|		    << " we " << PIN_WE?
+		|		    << " a " << BUS_A_TRACE()
+		|		    << " dq " << PIN_DQ?
+		|		    << " ras " << std::hex << state->ras
+		|		    << " cas " << std::hex << state->cas
+		|		    << " data " << std::hex << data
+		|		    << " mask " << std::hex << mask
+		|		);
+		|	}
 		|
 		|''')
 
