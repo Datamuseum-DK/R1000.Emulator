@@ -43,11 +43,11 @@ class DRAM1MEGWIDE(PartFactory):
     def state(self, file):
         file.fmt('''
 		|	unsigned ras, cas;
-		|	uint64_t bits[(1<<20)];
+		|	uint64_t bits[1 << 20];
 		|''')
 
     def sensitive(self):
-        yield "PIN_RAS.neg()"
+        yield "PIN_RAS"
         yield "PIN_CAS"
 
     def doit(self, file):
@@ -75,13 +75,15 @@ class DRAM1MEGWIDE(PartFactory):
 		|	if (PIN_RAS.posedge() || PIN_CAS.posedge()) {
 		|		BUS_DQ_Z();
 		|	}
-		|	TRACE(
-		|	    << " ras " << PIN_RAS?
-		|	    << " cas " << PIN_CAS?
-		|	    << " we " << PIN_WE?
-		|	    << " a " << BUS_A_TRACE()
-		|	    << " dq " << BUS_DQ_TRACE()
-		|	);
+		|	if (!PIN_CAS=> || (state->ctx.do_trace & 2)) {
+		|		TRACE(
+		|		    << " ras " << PIN_RAS?
+		|		    << " cas " << PIN_CAS?
+		|		    << " we " << PIN_WE?
+		|		    << " a " << BUS_A_TRACE()
+		|		    << " dq " << BUS_DQ_TRACE()
+		|		);
+		|	}
 		|
 		|''')
 
@@ -97,7 +99,7 @@ class DRAM1MEG(PartFactory):
 		|''')
 
     def sensitive(self):
-        yield "PIN_RAS.neg()"
+        yield "PIN_RAS"
         yield "PIN_CAS"
 
     def doit(self, file):
