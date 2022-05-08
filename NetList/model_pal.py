@@ -218,7 +218,12 @@ class GAL(PartFactory):
             if out.disabled:
                 continue
             pin = out.pin
-            if out.output_enable == "true":
+            if "DIBR" in self.name and pin.var in ("p17", "p18"):
+                # Ugly hack:  SystemC does not handle two tri-state outputs tied together on
+                # a single component, so we need to special-case DIBRPAL
+                file.fmt('\t\t|\t\tif (state->%s > 1)\n' % pin.var)
+                file.fmt('\t\t|\t\t\tPIN_D0 = outs[state->%s];\n' % pin.var)
+            elif out.output_enable == "true":
                 file.fmt('\t\t|\t\t%s<=(state->%s);\n' % (pin.name, pin.var))
             else:
                 file.fmt('\t\t|\t\t%s = outs[state->%s];\n' % (pin.name, pin.var))
