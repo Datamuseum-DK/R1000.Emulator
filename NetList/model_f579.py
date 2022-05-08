@@ -148,7 +148,7 @@ class ModelF579(PartModel):
         for node in comp:
             if node.pin.name[:2] == "IO":
                 node.pin.role = "sc_inout_resolved"
-            if node.pin.name == "U/Bnot":
+            if node.pin.name == "UslashBnot":
                 node.pin.name = "UD"
         super().assign(comp)
 

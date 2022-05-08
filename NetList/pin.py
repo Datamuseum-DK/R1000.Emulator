@@ -53,6 +53,7 @@ class Pin():
             (">", "gt"),
             ("<", "lt"),
             ("=", "eq"),
+            ("/", "slash"),
             ("~", "not"),
         ):
             self.name = self.name.replace(i, j)
