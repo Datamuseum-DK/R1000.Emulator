@@ -55,27 +55,6 @@ Components/8051.o: Components/8051.cc \
     Diag/diagproc.h
 	${SC_CC} -o Components/8051.o Components/8051.cc
 
-OBJS += Components/CMDPAL.o
-Components/CMDPAL.o: Components/CMDPAL.cc \
-    Components/CMDPAL.hh \
-    Infra/context.h \
-    Chassis/r1000sc.h
-	${SC_CC} -o Components/CMDPAL.o Components/CMDPAL.cc
-
-OBJS += Components/DIBRPAL.o
-Components/DIBRPAL.o: Components/DIBRPAL.cc \
-    Components/DIBRPAL.hh \
-    Infra/context.h \
-    Chassis/r1000sc.h
-	${SC_CC} -o Components/DIBRPAL.o Components/DIBRPAL.cc
-
-OBJS += Components/DISTPAL.o
-Components/DISTPAL.o: Components/DISTPAL.cc \
-    Components/DISTPAL.hh \
-    Infra/context.h \
-    Chassis/r1000sc.h
-	${SC_CC} -o Components/DISTPAL.o Components/DISTPAL.cc
-
 OBJS += Components/DLY_35.o
 Components/DLY_35.o: Components/DLY_35.cc \
     Components/DLY_35.hh \
@@ -106,41 +85,6 @@ Components/F38.o: Components/F38.cc \
     Infra/context.h \
     Chassis/r1000sc.h
 	${SC_CC} -o Components/F38.o Components/F38.cc
-
-OBJS += Components/MARPAL.o
-Components/MARPAL.o: Components/MARPAL.cc \
-    Components/MARPAL.hh \
-    Infra/context.h \
-    Chassis/r1000sc.h
-	${SC_CC} -o Components/MARPAL.o Components/MARPAL.cc
-
-OBJS += Components/MUXLPAL.o
-Components/MUXLPAL.o: Components/MUXLPAL.cc \
-    Components/MUXLPAL.hh \
-    Infra/context.h \
-    Chassis/r1000sc.h
-	${SC_CC} -o Components/MUXLPAL.o Components/MUXLPAL.cc
-
-OBJS += Components/PHITPAL.o
-Components/PHITPAL.o: Components/PHITPAL.cc \
-    Components/PHITPAL.hh \
-    Infra/context.h \
-    Chassis/r1000sc.h
-	${SC_CC} -o Components/PHITPAL.o Components/PHITPAL.cc
-
-OBJS += Components/RDRPAL.o
-Components/RDRPAL.o: Components/RDRPAL.cc \
-    Components/RDRPAL.hh \
-    Infra/context.h \
-    Chassis/r1000sc.h
-	${SC_CC} -o Components/RDRPAL.o Components/RDRPAL.cc
-
-OBJS += Components/TPARPAL.o
-Components/TPARPAL.o: Components/TPARPAL.cc \
-    Components/TPARPAL.hh \
-    Infra/context.h \
-    Chassis/r1000sc.h
-	${SC_CC} -o Components/TPARPAL.o Components/TPARPAL.cc
 
 Components/XADD8.hh:: Components/XADD8_pins.hh
 	@touch Components/XADD8.hh

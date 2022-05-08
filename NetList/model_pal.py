@@ -156,6 +156,7 @@ class GAL(PartFactory):
         self.palsig = []
         self.palsyn = None
         self.palac0 = None
+        self.palac1 = None
         self.palsensitive = set()
         self.palparse()
 
@@ -220,14 +221,16 @@ class GAL(PartFactory):
             if out.output_enable == "true":
                 file.fmt('\t\t|\t\t%s<=(state->%s);\n' % (pin.name, pin.var))
             else:
-                file.fmt('\t\t|\t\t%s<=(outs[state->%s]);\n' % (pin.name, pin.var))
+                file.fmt('\t\t|\t\t%s = outs[state->%s];\n' % (pin.name, pin.var))
         file.write('\t}\n')
 
         for pin in sorted(self.palinputs):
-            if pin.output is None:
-                file.fmt('\t\t|\tbool %s = %s=>;\n' % (pin.var, pin.name))
-            else:
+            if pin.output is not None and not pin.output.disabled:
                 pin.output.feedback(file)
+            elif self.comp.nodes[pin.name[4:]].net.is_pd():
+                file.fmt('\t\t|\tbool %s = false;\n' % pin.var)
+            else:
+                file.fmt('\t\t|\tbool %s = %s=>;\n' % (pin.var, pin.name))
 
         for out in self.palolmc:
             if out.disabled:
@@ -271,9 +274,113 @@ class GAL(PartFactory):
         file.write("\t\tnext_trigger(5, SC_NS);\n")
         file.write('\t}\n')
 
+class PalMacroCell16(PalMacroCell):
+    ''' GAL16V8 Output Logic Macro Cell '''
+
+    def __init__(self, up, pin, regd, rows, xor, ac1):
+        super().__init__(up, pin, regd, rows)
+        self.xor = xor
+        self.ac1 = ac1
+        if self.ac1:
+            self.ands = self.rows[1:]
+        else:
+            self.ands = self.rows
+        self.disabled = min(i.disabled for i in rows)
+        if not self.regd:
+            self.output_enable = rows[0].cond()
+        else:
+            p11 = self.up.palpins.get(11)
+            if p11 is None:
+                p11 = PalPin(11)
+                self.up.palpins[11] = p11
+            self.output_enable = "!" + p11.var
+            self.inputs.add(p11)
+        for i in rows:
+            self.inputs |= i.inputs
+
+    def dump(self):
+        ''' ... '''
+        print(self)
+        if self.ac1:
+            print("\tOE = ", self.rows[0].cond())
+        else:
+            print("\tOE = pin11")
+        cond = self.cond()
+        print("\t%s =\n\t   " % self.pin, cond + ";")
+        for i in self.rows:
+            print(i)
+
+    def write_code_regd_ac01(self, file):
+        ''' Write code for registered mode '''
+        if self.ac1:
+            print("FIXME (ac1)", self.up, self)
+        file.write("\t%s =\n\t    " % self.pin.out)
+        file.write(self.cond("\t") + ";\n")
+
+    def write_code_comb_ac01(self, file):
+        ''' Write code for combinatorial mode '''
+        assert self.ac1
+        file.write("\t%s =\n\t    " % self.pin.out)
+        file.write(self.cond() + ";\n")
+
+    def write_code(self, file):
+        ''' Write code for this output '''
+        if self.disabled:
+            return
+        if self.regd and self.up.palac0:
+            self.write_code_regd_ac01(file)
+        else:
+            self.write_code_comb_ac01(file)
+
+    def __str__(self):
+        return "OLMC:%d regd %d ac1 %d xor %d" % (self.pin.nbr, self.regd, self.ac1, self.xor)
 
 class GAL16V8(GAL):
     ''' Lattice GAL16V8 '''
+
+    def palparse(self):
+
+        self.palsyn = self.palbits[2192]
+        self.palac0 = self.palbits[2193]
+
+        for i in range(1, 20):
+            if i != 10:
+                self.palpins[i] = PalPin(i)
+
+        if not self.palsyn:
+            for nbr in range(8):
+                self.palterms.append(self.palpins[2 + nbr])
+                self.palterms.append(self.palpins[19 - nbr])
+        else:
+            for nbr in range(8):
+                self.palterms.append(self.palpins[2 + nbr])
+                if nbr == 0:
+                    self.palterms.append(self.palpins[1])
+                elif nbr < 7:
+                    self.palterms.append(self.palpins[19 - nbr])
+                else:
+                    self.palterms.append(self.palpins[11])
+
+        for nbr, start in enumerate(range(0, 2048, 32)):
+            self.palrows.append(PalRow(self, self.palbits[start:start+32]))
+            assert self.palbits[2128 + nbr] # PTD bit
+
+        for nbr in range(8):
+            self.palolmc.append(
+                PalMacroCell16(
+                    self,
+                    self.palpins[19 - nbr],
+                    not self.palsyn,
+                    self.palrows[nbr * 8: nbr * 8 + 8],
+                    not self.palbits[2048 + nbr],
+                    self.palbits[2120 + nbr],
+                )
+            )
+
+        for nbr in range(8):
+            i = ''.join("%d" % i for i in self.palbits[2056+nbr*8:2056+8+nbr*8])
+            self.palsig.append(i)
+
 
 class PalMacroCell22(PalMacroCell):
     ''' GAL22V10 Output Logic Macro Cell '''
@@ -369,15 +476,22 @@ class PALModel(PartModel):
     def __init__(self, name, filename):
         self.filename = filename
         fsiz = os.stat(filename).st_size
-        cls = {
+        self.cls = {
             2194: GAL16V8,
             5892: GAL22V10,
         }.get(fsiz)
-        assert cls
-        super().__init__(name, cls)
+        assert self.cls
+        super().__init__(name, self.cls)
 
     def create(self, board, ident):
         return self.factory(board, ident, self.filename)
+
+    def assign(self, comp):
+        for node in comp:
+            # NB: For now make all outputs sc_logic
+            if "output" in node.pin.role:
+                node.pin.role = "sc_out <sc_logic>"
+        super().assign(comp)
 
 def register(board):
     ''' Register component models '''
@@ -387,6 +501,5 @@ def register(board):
         palname = palname.split('-')[0]
         palname = palname.replace("GAL", "PAL")
         fsiz = os.stat(filename).st_size
-        if fsiz != 5892:
-            continue
-        board.add_part(palname, PALModel(palname, filename))
+        if fsiz in (2194, 5892):
+            board.add_part(palname, PALModel(palname, filename))
