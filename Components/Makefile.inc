@@ -5,41 +5,6 @@ OBJS += Components/tables.o
 Components/tables.o: Components/tables.c 
 	${CC} -o Components/tables.o -c Components/tables.c
 
-OBJS += Components/1489.o
-Components/1489.o: Components/1489.cc \
-    Components/1489.hh \
-    Infra/context.h \
-    Chassis/r1000sc.h
-	${SC_CC} -o Components/1489.o Components/1489.cc
-
-OBJS += Components/2661B.o
-Components/2661B.o: Components/2661B.cc \
-    Components/2661B.hh \
-    Infra/context.h \
-    Chassis/r1000sc.h
-	${SC_CC} -o Components/2661B.o Components/2661B.cc
-
-OBJS += Components/2681.o
-Components/2681.o: Components/2681.cc \
-    Components/2681.hh \
-    Infra/context.h \
-    Chassis/r1000sc.h
-	${SC_CC} -o Components/2681.o Components/2681.cc
-
-OBJS += Components/28256.o
-Components/28256.o: Components/28256.cc \
-    Components/28256.hh \
-    Infra/context.h \
-    Chassis/r1000sc.h
-	${SC_CC} -o Components/28256.o Components/28256.cc
-
-OBJS += Components/58167.o
-Components/58167.o: Components/58167.cc \
-    Components/58167.hh \
-    Infra/context.h \
-    Chassis/r1000sc.h
-	${SC_CC} -o Components/58167.o Components/58167.cc
-
 OBJS += Components/68020.o
 Components/68020.o: Components/68020.cc \
     Components/68020.hh \
