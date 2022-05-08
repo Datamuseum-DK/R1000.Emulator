@@ -55,26 +55,12 @@ Components/8051.o: Components/8051.cc \
     Diag/diagproc.h
 	${SC_CC} -o Components/8051.o Components/8051.cc
 
-OBJS += Components/BUSPAL.o
-Components/BUSPAL.o: Components/BUSPAL.cc \
-    Components/BUSPAL.hh \
-    Infra/context.h \
-    Chassis/r1000sc.h
-	${SC_CC} -o Components/BUSPAL.o Components/BUSPAL.cc
-
 OBJS += Components/CMDPAL.o
 Components/CMDPAL.o: Components/CMDPAL.cc \
     Components/CMDPAL.hh \
     Infra/context.h \
     Chassis/r1000sc.h
 	${SC_CC} -o Components/CMDPAL.o Components/CMDPAL.cc
-
-OBJS += Components/CNTRPAL.o
-Components/CNTRPAL.o: Components/CNTRPAL.cc \
-    Components/CNTRPAL.hh \
-    Infra/context.h \
-    Chassis/r1000sc.h
-	${SC_CC} -o Components/CNTRPAL.o Components/CNTRPAL.cc
 
 OBJS += Components/DIBRPAL.o
 Components/DIBRPAL.o: Components/DIBRPAL.cc \
@@ -96,20 +82,6 @@ Components/DLY_35.o: Components/DLY_35.cc \
     Infra/context.h \
     Chassis/r1000sc.h
 	${SC_CC} -o Components/DLY_35.o Components/DLY_35.cc
-
-OBJS += Components/DRADPAL.o
-Components/DRADPAL.o: Components/DRADPAL.cc \
-    Components/DRADPAL.hh \
-    Infra/context.h \
-    Chassis/r1000sc.h
-	${SC_CC} -o Components/DRADPAL.o Components/DRADPAL.cc
-
-OBJS += Components/DRCPAL.o
-Components/DRCPAL.o: Components/DRCPAL.cc \
-    Components/DRCPAL.hh \
-    Infra/context.h \
-    Chassis/r1000sc.h
-	${SC_CC} -o Components/DRCPAL.o Components/DRCPAL.cc
 
 OBJS += Components/F245.o
 Components/F245.o: Components/F245.cc \
@@ -134,13 +106,6 @@ Components/F38.o: Components/F38.cc \
     Infra/context.h \
     Chassis/r1000sc.h
 	${SC_CC} -o Components/F38.o Components/F38.cc
-
-OBJS += Components/LUXXPAL.o
-Components/LUXXPAL.o: Components/LUXXPAL.cc \
-    Components/LUXXPAL.hh \
-    Infra/context.h \
-    Chassis/r1000sc.h
-	${SC_CC} -o Components/LUXXPAL.o Components/LUXXPAL.cc
 
 OBJS += Components/MARPAL.o
 Components/MARPAL.o: Components/MARPAL.cc \
@@ -170,47 +135,12 @@ Components/RDRPAL.o: Components/RDRPAL.cc \
     Chassis/r1000sc.h
 	${SC_CC} -o Components/RDRPAL.o Components/RDRPAL.cc
 
-OBJS += Components/SETPAL.o
-Components/SETPAL.o: Components/SETPAL.cc \
-    Components/SETPAL.hh \
-    Infra/context.h \
-    Chassis/r1000sc.h
-	${SC_CC} -o Components/SETPAL.o Components/SETPAL.cc
-
-OBJS += Components/TAGAPAL.o
-Components/TAGAPAL.o: Components/TAGAPAL.cc \
-    Components/TAGAPAL.hh \
-    Infra/context.h \
-    Chassis/r1000sc.h
-	${SC_CC} -o Components/TAGAPAL.o Components/TAGAPAL.cc
-
 OBJS += Components/TPARPAL.o
 Components/TPARPAL.o: Components/TPARPAL.cc \
     Components/TPARPAL.hh \
     Infra/context.h \
     Chassis/r1000sc.h
 	${SC_CC} -o Components/TPARPAL.o Components/TPARPAL.cc
-
-OBJS += Components/TRACPAL.o
-Components/TRACPAL.o: Components/TRACPAL.cc \
-    Components/TRACPAL.hh \
-    Infra/context.h \
-    Chassis/r1000sc.h
-	${SC_CC} -o Components/TRACPAL.o Components/TRACPAL.cc
-
-OBJS += Components/TSCPAL.o
-Components/TSCPAL.o: Components/TSCPAL.cc \
-    Components/TSCPAL.hh \
-    Infra/context.h \
-    Chassis/r1000sc.h
-	${SC_CC} -o Components/TSCPAL.o Components/TSCPAL.cc
-
-OBJS += Components/TSXXPAL.o
-Components/TSXXPAL.o: Components/TSXXPAL.cc \
-    Components/TSXXPAL.hh \
-    Infra/context.h \
-    Chassis/r1000sc.h
-	${SC_CC} -o Components/TSXXPAL.o Components/TSXXPAL.cc
 
 Components/XADD8.hh:: Components/XADD8_pins.hh
 	@touch Components/XADD8.hh
