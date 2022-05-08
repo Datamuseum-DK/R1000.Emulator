@@ -1,0 +1,392 @@
+#!/usr/local/bin/python3
+#
+# Copyright (c) 2021 Poul-Henning Kamp
+# All rights reserved.
+#
+# Author: Poul-Henning Kamp <phk@phk.freebsd.dk>
+#
+# SPDX-License-Identifier: BSD-2-Clause
+#
+# Redistribution and use in source and binary forms, with or without
+# modification, are permitted provided that the following conditions
+# are met:
+# 1. Redistributions of source code must retain the above copyright
+#    notice, this list of conditions and the following disclaimer.
+# 2. Redistributions in binary form must reproduce the above copyright
+#    notice, this list of conditions and the following disclaimer in the
+#    documentation and/or other materials provided with the distribution.
+#
+# THIS SOFTWARE IS PROVIDED BY THE AUTHOR AND CONTRIBUTORS ``AS IS'' AND
+# ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+# IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+# ARE DISCLAIMED.  IN NO EVENT SHALL AUTHOR OR CONTRIBUTORS BE LIABLE
+# FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+# DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
+# OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
+# HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
+# LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
+# OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
+# SUCH DAMAGE.
+
+'''
+   PAL chips
+   =========
+'''
+
+import os
+import glob
+
+from part import PartModel, PartFactory
+
+class PalPin():
+    ''' One pin '''
+    def __init__(self, nbr):
+        self.nbr = nbr
+        self.name = None
+        self.var = "p%02d" % nbr
+        self.pin = "pin%d" % nbr
+        self.out = "out%d" % nbr
+        self.olmc = None
+        self.output = None
+        self.inverted = False
+
+    def __lt__(self, other):
+        return self.nbr < other.nbr
+
+    def __str__(self):
+        if self.inverted:
+            return "^" + self.pin
+        return self.pin
+
+    def inv(self):
+        ''' invert as necessay '''
+        if self.inverted:
+            return self.var
+        return "(!" + self.var + ")"
+
+    def buf(self):
+        ''' invert as necessay '''
+        if self.inverted:
+            return "(!" + self.var + ")"
+        return self.var
+
+class PalRow():
+    ''' One row of fuses '''
+    def __init__(self, up, bits):
+        self.up = up
+        self.bits = bits
+        self.disabled = False
+        self.inputs = set()
+        self.terms = []
+
+        for nbr, term in enumerate(self.up.palterms):
+            fuses = self.bits[nbr * 2:nbr * 2 + 2]
+            if min(fuses):
+                continue
+            if not max(fuses):
+                self.disabled = True
+                return
+            self.inputs.add(term)
+            if fuses[1]:
+                self.terms.append(term.buf)
+            elif fuses[0]:
+                self.terms.append(term.inv)
+
+    def cond(self):
+        ''' C++ condition string for this row '''
+        if self.disabled:
+            return "false"
+        if not self.terms:
+            return "true"
+        return " && ".join(i() for i in self.terms)
+
+    def __str__(self):
+        return "".join("%d" % i for i in self.bits)
+
+class PalMacroCell():
+    ''' Output Logic Macro Cell '''
+    def __init__(self, up, pin, regd, rows):
+        self.up = up
+        self.pin = pin
+        pin.olmc = self
+        pin.output = self
+        self.regd = regd
+        self.rows = rows
+        self.disabled = None
+        self.inputs = set()
+        self.output_enable = "true"
+        self.xor = False
+        self.ands = []
+        for row in rows:
+            self.inputs |= row.inputs
+
+    def __lt__(self, other):
+        return self.pin < other.pin
+
+    def __str__(self):
+        return "OLMC:%d" % self.pin.nbr
+
+    def cond(self, nls = ""):
+        ''' C++ condition for this output '''
+        sep = " ||\n" + nls + "\t    "
+        if not self.xor:
+            return sep.join("(" + i.cond() + ")" for i in self.ands if not i.disabled)
+        return "!(" + sep.join("(" + i.cond() + ")" for i in self.ands if not i.disabled) + ")"
+
+    def feedback(self, file):
+        ''' Get the feedback value '''
+        if not self.regd:
+            file.fmt("\t\t|\tbool %s = %s=>;\n" % (self.pin.var, self.pin.name))
+        else:
+            file.write("\tbool %s = state->%s %% 2;\n" % (self.pin.var, self.pin.var))
+
+
+class GAL(PartFactory):
+    ''' A generic GAL/PAL chip '''
+
+    def __init__(self, board, ident, jedecfile):
+        super().__init__(board, ident)
+
+        with open(jedecfile, "rb") as file:
+            self.palbits = file.read()
+        self.palpins = {}
+        self.palterms = []
+        self.palrows = []
+        self.palolmc = []
+        self.palsig = []
+        self.palsyn = None
+        self.palac0 = None
+        self.palsensitive = set()
+        self.palparse()
+
+        self.palinputs = set()
+        self.paloutputs = set()
+        for out in self.palolmc:
+            if not out.disabled:
+                self.paloutputs.add(out.pin)
+            self.palinputs |= out.inputs
+
+    def palparse(self):
+        ''' ... '''
+        assert False
+
+    def extra(self, file):
+        file.fmt('''
+		|static const sc_logic outs[4] = {
+		|	sc_logic_Z,
+		|	sc_logic_Z,
+		|	sc_logic_0,
+		|	sc_logic_1,
+		|};
+		|static const char traces[5] = "ZZ01";
+		''')
+
+    def state(self, file):
+        file.write('\tint job;\n')
+        for out in sorted(self.palolmc):
+            if not out.disabled:
+                file.write('\tint %s;\n' % out.pin.var)
+
+    def doit(self, file):
+        ''' The meat of the doit() function '''
+
+        super().doit(file)
+
+        for node in self.comp:
+            nbr = int(node.pin.ident)
+            self.palpins[nbr].name = "PIN_" + node.pin.name
+
+        for i in sorted(self.paloutputs):
+            file.write("\tassert(0 <= state->%s);\n" % i.var)
+            file.write("\tassert(3 >= state->%s);\n" % i.var)
+
+        file.fmt('''
+		|
+		|	if (state->job) {
+		|		TRACE(
+		|''')
+
+        for pin in sorted(self.palinputs - self.paloutputs):
+            file.fmt('\t\t|\t\t    << %s?\n' % pin.name)
+        file.write('\t\t    << " | "\n')
+        for pin in sorted(self.paloutputs):
+            file.write('\t\t    << traces[state->%s]\n' % pin.var)
+        file.write('\t\t);\n')
+
+        for out in self.palolmc:
+            if out.disabled:
+                continue
+            pin = out.pin
+            if out.output_enable == "true":
+                file.fmt('\t\t|\t\t%s<=(state->%s);\n' % (pin.name, pin.var))
+            else:
+                file.fmt('\t\t|\t\t%s<=(outs[state->%s]);\n' % (pin.name, pin.var))
+        file.write('\t}\n')
+
+        for pin in sorted(self.palinputs):
+            if pin.output is None:
+                file.fmt('\t\t|\tbool %s = %s=>;\n' % (pin.var, pin.name))
+            else:
+                pin.output.feedback(file)
+
+        for out in self.palolmc:
+            if out.disabled:
+                continue
+            if out.regd:
+                file.write("\tint %s = state->%s & 1;\n" % (out.pin.out, out.pin.var))
+            else:
+                file.write("\tint %s;\n" % out.pin.out)
+
+        for out in self.palolmc:
+            if not out.regd:
+                out.write_code(file)
+
+        if max(out.regd for out in self.palolmc):
+            file.write("\tif (%s.posedge()) {\n" % self.palpins[1].name)
+            for out in self.palolmc:
+                if out.regd:
+                    out.write_code(file)
+            file.write("\t}\n")
+
+        file.write("\n")
+        for out in self.palolmc:
+            if out.disabled:
+                continue
+            file.write("\tassert(0 <= %s && %s <= 1);\n" % (out.pin.out, out.pin.out))
+            if out.output_enable != "true":
+                file.write("\tif(%s)\n" % out.output_enable)
+                file.write("\t\t%s += 2;\n" % out.pin.out)
+
+        file.write('\n')
+        i = []
+        j = []
+        for out in self.palolmc:
+            if out.disabled:
+                continue
+            i.append("(" + out.pin.out + " != state->" + out.pin.var + ")")
+            j.append("\t\tstate->%s = %s;" % (out.pin.var, out.pin.out))
+        file.write('\tif (\n\t    %s) {\n' % (" ||\n\t    ".join(i)))
+        file.write("\n".join(j) + "\n")
+        file.write("\t\tstate->job = 1;\n")
+        file.write("\t\tnext_trigger(5, SC_NS);\n")
+        file.write('\t}\n')
+
+
+class GAL16V8(GAL):
+    ''' Lattice GAL16V8 '''
+
+class PalMacroCell22(PalMacroCell):
+    ''' GAL22V10 Output Logic Macro Cell '''
+
+    def __init__(self, up, pin, rows, s0, s1):
+        super().__init__(up, pin, not s1, rows)
+        self.s1 = s1
+        self.xor = not s0
+        if s0 and not s1:
+            pin.inverted = True
+        self.disabled = min(i.disabled for i in rows)
+        self.output_enable = rows[0].cond()
+        self.ands = self.rows[1:]
+        for i in rows:
+            self.inputs |= i.inputs
+
+    def write_code(self, file):
+        ''' Write C++ code to evaluate this output '''
+        if self.disabled:
+            return
+        if self.regd:
+            # dst = "state->" + self.pin.var
+            esp = "\t"
+        else:
+            esp = ""
+        dst = self.pin.out
+
+        file.write("\t" + esp + dst + " =\n\t" + esp + "    ")
+        file.write(self.cond(esp) + ";\n")
+
+    def dump(self):
+        ''' ... '''
+        print(self)
+        if self.s1:
+            print("\tOE = ", self.rows[0].cond())
+        else:
+            print("\tOE = pin11")
+        cond = self.cond()
+        print("\t%s =\n\t   " % self.pin, cond + ";")
+
+    def __str__(self):
+        return "OLMC:%d xor %d s1 %d" % (self.pin.nbr, self.xor, self.s1)
+
+class GAL22V10(GAL):
+
+    ''' Lattice GAL22V10 '''
+
+    def palparse(self):
+
+        for i in range(24):
+            if i not in (0, 12):
+                self.palpins[i] = PalPin(i)
+
+        for nbr in range(11):
+            self.palterms.append(self.palpins[1 + nbr])
+            if nbr < 10:
+                self.palterms.append(self.palpins[23 - nbr])
+            else:
+                self.palterms.append(self.palpins[13])
+
+        for start in range(0, 5808, 44):
+            self.palrows.append(PalRow(self, self.palbits[start:start+44]))
+
+        nxr = 1
+        for nbr, rows in enumerate(
+            (
+                8, 10, 12, 14, 16, 16, 14, 12, 10, 8
+            )
+        ):
+            self.palolmc.append(
+                PalMacroCell22(
+                    self,
+                    self.palpins[23 - nbr],
+                    self.palrows[nxr: nxr + rows + 1],
+                    self.palbits[5808 + nbr * 2],
+                    self.palbits[5809 + nbr * 2],
+                )
+            )
+            nxr += rows + 1
+
+        for nbr in range(8):
+            i = ''.join("%d" % i for i in self.palbits[5828+nbr*8:5828+8+nbr*8])
+            self.palsig.append(i)
+
+        # Async reset not implemented
+        assert self.palrows[0].cond() == "false"
+        # Sync preset not implemented
+        assert self.palrows[-1].cond() == "false"
+
+class PALModel(PartModel):
+    ''' ... '''
+
+    def __init__(self, name, filename):
+        self.filename = filename
+        fsiz = os.stat(filename).st_size
+        cls = {
+            2194: GAL16V8,
+            5892: GAL22V10,
+        }.get(fsiz)
+        assert cls
+        super().__init__(name, cls)
+
+    def create(self, board, ident):
+        return self.factory(board, ident, self.filename)
+
+def register(board):
+    ''' Register component models '''
+
+    for filename in glob.glob("_Firmware/*GAL*BIN"):
+        palname = filename.split('/')[-1]
+        palname = palname.split('-')[0]
+        palname = palname.replace("GAL", "PAL")
+        fsiz = os.stat(filename).st_size
+        if fsiz != 5892:
+            continue
+        board.add_part(palname, PALModel(palname, filename))
