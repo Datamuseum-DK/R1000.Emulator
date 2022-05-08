@@ -39,6 +39,10 @@ class Null(PartFactory):
 
     ''' Null component model '''
 
+    def sensitive(self):
+        for a in range(0):
+            yield a
+
     def doit(self, file):
         ''' The meat of the doit() function '''
 
