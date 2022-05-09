@@ -182,6 +182,23 @@ class GAL(PartFactory):
 		|static const char traces[5] = "ZZ01";
 		''')
 
+    def sensitive(self):
+        for node in self.comp:
+            nbr = int(node.pin.ident)
+            self.palpins[nbr].name = "PIN_" + node.pin.name
+
+        want = set()
+        for out in self.paloutputs:
+            if not out.olmc:
+                continue
+            if out.olmc.regd:
+                want.add(self.palpins[1].name + ".pos()")
+            else:
+                for inp in out.olmc.inputs:
+                    if not inp.output:
+                        want.add(inp.name)
+        yield from want
+
     def state(self, file):
         file.write('\tint job;\n')
         for out in sorted(self.palolmc):
@@ -192,10 +209,6 @@ class GAL(PartFactory):
         ''' The meat of the doit() function '''
 
         super().doit(file)
-
-        for node in self.comp:
-            nbr = int(node.pin.ident)
-            self.palpins[nbr].name = "PIN_" + node.pin.name
 
         for i in sorted(self.paloutputs):
             file.write("\tassert(0 <= state->%s);\n" % i.var)
