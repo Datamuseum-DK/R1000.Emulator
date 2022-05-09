@@ -128,17 +128,10 @@ class PalMacroCell():
 
     def cond(self, nls = ""):
         ''' C++ condition for this output '''
-        sep = " ||\n" + nls + "\t    "
+        sep = " ||\n" + nls
         if not self.xor:
             return sep.join("(" + i.cond() + ")" for i in self.ands if not i.disabled)
         return "!(" + sep.join("(" + i.cond() + ")" for i in self.ands if not i.disabled) + ")"
-
-    def feedback(self, file):
-        ''' Get the feedback value '''
-        if not self.regd:
-            file.fmt("\t\t|\tbool %s = %s=>;\n" % (self.pin.var, self.pin.name))
-        else:
-            file.write("\tbool %s = state->%s %% 2;\n" % (self.pin.var, self.pin.var))
 
 
 class GAL(PartFactory):
@@ -157,7 +150,6 @@ class GAL(PartFactory):
         self.palsyn = None
         self.palac0 = None
         self.palac1 = None
-        self.palsensitive = set()
         self.palparse()
 
         self.palinputs = set()
@@ -197,7 +189,7 @@ class GAL(PartFactory):
                 for inp in out.olmc.inputs:
                     if not inp.output:
                         want.add(inp.name)
-        yield from want
+        yield from sorted(want)
 
     def state(self, file):
         file.write('\tint job;\n')
@@ -242,31 +234,71 @@ class GAL(PartFactory):
                 file.fmt('\t\t|\t\t%s = outs[state->%s];\n' % (pin.name, pin.var))
         file.write('\t}\n')
 
+        # Set up the input variables to the equations
+        # input pins are read, outputs are set later
         for pin in sorted(self.palinputs):
-            if pin.output is not None and not pin.output.disabled:
-                pin.output.feedback(file)
+            out = pin.output
+            if out is not None and not out.disabled:
+                file.fmt('\t\t|\tbool %s;\n' % pin.var)
             elif self.comp.nodes[pin.name[4:]].net.is_pd():
                 file.fmt('\t\t|\tbool %s = false;\n' % pin.var)
             else:
                 file.fmt('\t\t|\tbool %s = %s=>;\n' % (pin.var, pin.name))
 
+        # Set up the output variables from the equations
+        # registered outputs read their register
+        # combinatorial outputs are set later
         for out in self.palolmc:
             if out.disabled:
-                continue
-            if out.regd:
+                pass
+            elif out.regd:
                 file.write("\tint %s = state->%s & 1;\n" % (out.pin.out, out.pin.var))
             else:
                 file.write("\tint %s;\n" % out.pin.out)
 
+        has_combinatorial = False
         for out in self.palolmc:
-            if not out.regd:
-                out.write_code(file)
+            if not out.regd and not out.disabled:
+                has_combinatorial = True
+
+        if has_combinatorial:
+            # Set inputs from outputs
+            for pin in sorted(self.palinputs):
+                out = pin.output
+                if out is not None and not out.disabled:
+                    file.write("\t%s = %s;\n" % (pin.var, out.pin.out))
+
+            # Calculate combinatorial outputs
+            for out in self.palolmc:
+                if not out.regd:
+                    out.write_code(file)
 
         if max(out.regd for out in self.palolmc):
+
             file.write("\tif (%s.posedge()) {\n" % self.palpins[1].name)
+
+            # Set inputs from outputs, again
+            for pin in sorted(self.palinputs):
+                out = pin.output
+                if out is not None and not out.disabled:
+                    file.write("\t\t%s = %s;\n" % (pin.var, out.pin.out))
+
+            # Calculate registered outputs
             for out in self.palolmc:
                 if out.regd:
-                    out.write_code(file)
+                    out.write_code(file, "\t")
+
+            if has_combinatorial:
+                # Set inputs from outputs, again
+                for pin in sorted(self.palinputs):
+                    out = pin.output
+                    if out is not None and not out.disabled:
+                        file.write("\t\t%s = %s;\n" % (pin.var, out.pin.out))
+
+                # Recalculate combinatorial outputs
+                for out in self.palolmc:
+                    if not out.regd:
+                        out.write_code(file, "\t")
             file.write("\t}\n")
 
         file.write("\n")
@@ -328,27 +360,27 @@ class PalMacroCell16(PalMacroCell):
         for i in self.rows:
             print(i)
 
-    def write_code_regd_ac01(self, file):
+    def write_code_regd_ac01(self, file, pfx):
         ''' Write code for registered mode '''
-        if self.ac1:
-            print("FIXME (ac1)", self.up, self)
-        file.write("\t%s =\n\t    " % self.pin.out)
-        file.write(self.cond("\t") + ";\n")
+        assert not self.ac1
+        file.write(pfx + self.pin.out + " =\n" + pfx + "    ")
+        file.write(self.cond(pfx + "    ") + ";\n")
 
-    def write_code_comb_ac01(self, file):
+    def write_code_comb_ac01(self, file, pfx):
         ''' Write code for combinatorial mode '''
         assert self.ac1
-        file.write("\t%s =\n\t    " % self.pin.out)
-        file.write(self.cond() + ";\n")
+        file.write(pfx + self.pin.out + " =\n" + pfx + "    ")
+        file.write(self.cond(pfx + "    ") + ";\n")
 
-    def write_code(self, file):
+    def write_code(self, file, pfx=""):
         ''' Write code for this output '''
         if self.disabled:
             return
+        pfx = pfx + "\t"
         if self.regd and self.up.palac0:
-            self.write_code_regd_ac01(file)
+            self.write_code_regd_ac01(file, pfx)
         else:
-            self.write_code_comb_ac01(file)
+            self.write_code_comb_ac01(file, pfx)
 
     def __str__(self):
         return "OLMC:%d regd %d ac1 %d xor %d" % (self.pin.nbr, self.regd, self.ac1, self.xor)
@@ -415,19 +447,14 @@ class PalMacroCell22(PalMacroCell):
         for i in rows:
             self.inputs |= i.inputs
 
-    def write_code(self, file):
+    def write_code(self, file, pfx=""):
         ''' Write C++ code to evaluate this output '''
         if self.disabled:
             return
-        if self.regd:
-            # dst = "state->" + self.pin.var
-            esp = "\t"
-        else:
-            esp = ""
+        pfx = pfx + "\t"
         dst = self.pin.out
-
-        file.write("\t" + esp + dst + " =\n\t" + esp + "    ")
-        file.write(self.cond(esp) + ";\n")
+        file.write(pfx + dst + " =\n" + pfx + "    ")
+        file.write(self.cond(pfx + "    ") + ";\n")
 
     def dump(self):
         ''' ... '''
