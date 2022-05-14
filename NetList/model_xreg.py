@@ -54,7 +54,7 @@ class Xreg(PartFactory):
         ''' Extra initialization '''
 
         file.fmt('''
-		|	state->job = -2;
+		|	state->job = -3;
 		''')
 
     def sensitive(self):
@@ -70,7 +70,7 @@ class Xreg(PartFactory):
 
         file.fmt('''
 		|
-		|	if (state->job == -2) {
+		|	if (state->job == -3) {
 		|		BUS_Q_WRITE(0);
 		|		state->job = -1;
 		|	}
