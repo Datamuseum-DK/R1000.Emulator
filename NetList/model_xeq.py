@@ -56,6 +56,11 @@ class XEQ(PartFactory):
 		|		BUS_B_READ(b);
 		|		PIN_AeqB<=((a != b));
 		|	}
+		|	TRACE (
+		|	    << "a " << BUS_A_TRACE()
+		|	    << " b " << BUS_B_TRACE()
+		|	    << " e " << PIN_E?
+		|	);
 		|''')
 
 def register(board):

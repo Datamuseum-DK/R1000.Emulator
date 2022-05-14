@@ -47,34 +47,33 @@ class XPAR64(PartFactory):
         super().doit(file)
 
         file.fmt('''
-		|	uint64_t tmp, total = 0;
+		|	uint64_t tmp, total = 0, par = 0;
 		|
 		|	BUS_I_READ(tmp);
-		|	tmp ^= (tmp >> 4) &  0x0f0f0f0f0f0f0f0f;
-		|	tmp ^= (tmp >> 2) &  0x0303030303030303;
-		|	tmp ^= (tmp >> 1) &  0x0101010101010101;
+		|	tmp = (tmp ^ (tmp >> 4)) & 0x0f0f0f0f0f0f0f0f;
+		|	tmp = (tmp ^ (tmp >> 2)) & 0x0303030303030303;
+		|	tmp = (tmp ^ (tmp >> 1)) & 0x0101010101010101;
 		|
 		|	if (!PIN_ODD=>)
 		|		tmp ^= 0x0101010101010101;
-		|	tmp &= 0x0101010101010101;
-
-		|	PIN_P0<= (tmp >> 56) & 1;
-		|	PIN_P1<= (tmp >> 48) & 1;
-		|	PIN_P2<= (tmp >> 40) & 1;
-		|	PIN_P3<= (tmp >> 32) & 1;
-		|	PIN_P4<= (tmp >> 24) & 1;
-		|	PIN_P5<= (tmp >> 16) & 1;
-		|	PIN_P6<= (tmp >>  8) & 1;
-		|	PIN_P7<= (tmp >>  0) & 1;
 		|
-		|	total = tmp ^ (tmp >> 32);
-		|	total ^= (total >> 16);
-		|	total ^= (total >> 8);
-		|	total &= 1;
+		|	if (tmp & (1ULL<<56)) par |= 0x80;
+		|	if (tmp & (1ULL<<48)) par |= 0x40;
+		|	if (tmp & (1ULL<<40)) par |= 0x20;
+		|	if (tmp & (1ULL<<32)) par |= 0x10;
+		|	if (tmp & (1ULL<<24)) par |= 0x8;
+		|	if (tmp & (1ULL<<16)) par |= 0x4;
+		|	if (tmp & (1ULL<<8)) par |= 0x2;
+		|	if (tmp & (1ULL<<0)) par |= 0x1;
+		|	BUS_P_WRITE(par);
+		|
+		|	total = (tmp ^ (tmp >> 32)) & 0x01010101;
+		|	total = (total ^ (total >> 16)) & 0x0101;
+		|	total = (total ^ (total >> 8)) & 0x01;
 		|
 		|	TRACE(
 		|	    << " i " << BUS_I_TRACE()
-		|	    << " p " << std::hex << tmp
+		|	    << " p " << std::hex << par
 		|	    << " a " << total
 		|	);
 		|
