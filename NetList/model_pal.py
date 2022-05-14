@@ -215,8 +215,14 @@ class GAL(PartFactory):
         for pin in sorted(self.palinputs - self.paloutputs):
             file.fmt('\t\t|\t\t    << %s?\n' % pin.name)
         file.write('\t\t    << " | "\n')
-        for pin in sorted(self.paloutputs):
-            file.write('\t\t    << traces[state->%s]\n' % pin.var)
+        for out in self.palolmc:
+            if out.disabled:
+                continue
+            pin = out.pin
+            if out.output_enable == "true":
+                file.write('\t\t    << state->%s\n' % pin.var)
+            else:
+                file.write('\t\t    << traces[state->%s]\n' % pin.var)
         file.write('\t\t);\n')
 
         for out in self.palolmc:
