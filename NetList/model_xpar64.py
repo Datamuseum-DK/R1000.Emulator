@@ -54,7 +54,7 @@ class XPAR64(PartFactory):
 		|	tmp = (tmp ^ (tmp >> 2)) & 0x0303030303030303;
 		|	tmp = (tmp ^ (tmp >> 1)) & 0x0101010101010101;
 		|
-		|	if (!PIN_ODD=>)
+		|	if (PIN_ODD=>)
 		|		tmp ^= 0x0101010101010101;
 		|
 		|	if (tmp & (1ULL<<56)) par |= 0x80;
@@ -77,7 +77,7 @@ class XPAR64(PartFactory):
 		|	    << " a " << total
 		|	);
 		|
-		|	if (!PIN_ODD=>)
+		|	if (PIN_ODD=>)
 		|		total ^= 0x1;
 		|	PIN_PALL<= total & 1;
 		|

@@ -29,7 +29,7 @@
 # SUCH DAMAGE.
 
 '''
-   1KX64 SRAM
+   NXM SRAM
    ==========
 
 '''
@@ -39,11 +39,11 @@ from part import PartModel, PartFactory
 
 class XRFRAM(PartFactory):
 
-    ''' 1KX64 SRAM '''
+    ''' NXM SRAM '''
 
     def state(self, file):
         file.fmt('''
-		|	uint64_t ram[1<<10];
+		|	uint64_t ram[1<<BUS_A_WIDTH];
 		|	uint64_t last;
 		|	const char *what;
 		|''')
@@ -104,7 +104,20 @@ class XRFRAM(PartFactory):
 		|	);
 		|''')
 
+class ThisRam(PartModel):
+    ''' ... '''
+
+    def assign(self, comp):
+        for node in comp:
+            if node.pin.name[:2] == "IO":
+                node.pin.name = "DQ" + node.pin.name[2:]
+                node.pin.update()
+        super().assign(comp)
+
 def register(board):
     ''' Register component model '''
 
     board.add_part("XRFRAM", PartModel("XRFRAM", XRFRAM))
+    board.add_part("XTAGRAM", ThisRam("XTAGRAM", XRFRAM))
+    board.add_part("16KX4", ThisRam("16KX4", XRFRAM))
+    board.add_part("16KX8", ThisRam("16KX8", XRFRAM))

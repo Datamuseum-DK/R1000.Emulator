@@ -34,7 +34,6 @@
 '''
 
 import model_1meg
-import model_16kx4
 import model_2149
 import model_2167
 import model_25s10
@@ -95,7 +94,6 @@ import model_xzcnt
 def register(where):
     ''' Register all component models '''
     model_1meg.register(where)
-    model_16kx4.register(where)
     model_2149.register(where)
     model_2167.register(where)
     model_25s10.register(where)
