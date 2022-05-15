@@ -71,14 +71,15 @@ class XPAR64(PartFactory):
 		|	total = (total ^ (total >> 16)) & 0x0101;
 		|	total = (total ^ (total >> 8)) & 0x01;
 		|
+		|	if (PIN_ODD=>)
+		|		total ^= 0x1;
+		|
 		|	TRACE(
 		|	    << " i " << BUS_I_TRACE()
 		|	    << " p " << std::hex << par
 		|	    << " a " << total
 		|	);
 		|
-		|	if (PIN_ODD=>)
-		|		total ^= 0x1;
 		|	PIN_PALL<= total & 1;
 		|
 		|''')
