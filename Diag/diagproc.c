@@ -16,13 +16,14 @@
 #include "Infra/elastic.h"
 #include "Diag/diag.h"
 
-#define FLAG_RX_SPIN	(1<<0)
-#define FLAG_DOWNLOAD	(1<<1)
-#define FLAG_RX_DISABLE	(1<<2)
-#define FLAG_IDLE	(1<<3)
-#define FLAG_WAIT_DFSM	(1<<4)
-#define FLAG_NOT_CODE	(1<<5)
-#define FLAG_DUMP_MEM	(1<<6)
+#define FLAG_RX_SPIN		(1<<0)
+#define FLAG_DOWNLOAD		(1<<1)
+#define FLAG_RX_DISABLE		(1<<2)
+#define FLAG_IDLE		(1<<3)
+#define FLAG_WAIT_DFSM		(1<<4)
+#define FLAG_NOT_CODE		(1<<5)
+#define FLAG_DUMP_MEM		(1<<6)
+#define FLAG_LONGWAIT_DFSM	(1<<7)
 
 struct diagproc_priv {
 	char *name;
@@ -35,6 +36,7 @@ struct diagproc_priv {
 	struct elastic_subscriber *diag_bus;
 	pthread_mutex_t mtx;
 	int did_io;
+	int longwait;
 
 	int8_t pc0;
 	uint8_t flags[0x2000];
@@ -357,6 +359,11 @@ DiagProcStep(struct diagproc_ctrl *dc, struct diagproc_context *dctx)
 
 	MCS51_TimerTick(dp->mcs51);
 
+	if (dp->longwait > 0) {
+		dp->longwait--;
+		return;
+	}
+
 	do {
 		flags = dp->flags[dp->mcs51->pc];
 		if ((dc->p3val & 0x08) && (flags & FLAG_WAIT_DFSM))
@@ -366,6 +373,10 @@ DiagProcStep(struct diagproc_ctrl *dc, struct diagproc_context *dctx)
 		dctx->profile[retval]++;
 		assert(pthread_mutex_unlock(&dp->mtx) == 0);
 		flags = dp->flags[retval];
+		if (flags & FLAG_LONGWAIT_DFSM) {
+			dp->longwait = 5;
+			break;
+		}
 	} while(!(flags & (FLAG_IDLE | FLAG_RX_SPIN)) && !dp->did_io);
 
 	i = dp->mcs51->iram[3];
@@ -456,6 +467,7 @@ DiagProcCreate(const char *name, const char *arg, uint32_t *do_trace)
 		dp->flags[0x1251] |= FLAG_WAIT_DFSM;    // TEST_INC_MAR.FIU
 		dp->flags[0x1259] |= FLAG_WAIT_DFSM;    // TEST_INC_MAR.FIU
 		dp->flags[0x1262] |= FLAG_WAIT_DFSM;    // TEST_INC_MAR.FIU
+		dp->flags[0x1262] |= FLAG_LONGWAIT_DFSM;    // LATCHED_STACK_BIT_1_FRU.SEQ
 		dp->flags[0x12c6] |= FLAG_WAIT_DFSM;
 		dp->flags[0x12d9] |= FLAG_WAIT_DFSM;
 		dp->flags[0x12e5] |= FLAG_WAIT_DFSM;    // TEST_UIR.FIU
