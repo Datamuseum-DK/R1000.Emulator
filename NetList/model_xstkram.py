@@ -43,7 +43,7 @@ class XSTKRAM(PartFactory):
 
     def state(self, file):
         file.fmt('''
-		|	uint16_t ram[1<<4];
+		|	uint32_t ram[1<<4];
 		|''')
 
     def doit(self, file):
@@ -92,3 +92,5 @@ def register(board):
     ''' Register component model '''
 
     board.add_part("XSTKRAM", PartModel("XSTKRAM", XSTKRAM))
+    board.add_part("XSTKRAM20", PartModel("XSTKRAM20", XSTKRAM))
+    board.add_part("XSTKRAM32", PartModel("XSTKRAM32", XSTKRAM))
