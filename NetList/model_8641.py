@@ -57,13 +57,13 @@ class DS8641(PartFactory):
 		|	);
 		|	if (!PIN_EN0=> && !PIN_EN1=>) {
 		|		BUS_IN_READ(tmp);
-		|		tmp ^= 0x0f;
+		|		tmp ^= BUS_B_MASK;
 		|		BUS_B_WRITE(tmp);
 		|	} else {
 		|		BUS_B_Z();
 		|	}
 		|	BUS_B_READ(tmp);
-		|	tmp ^= 0x0f;
+		|	tmp ^= BUS_B_MASK;
 		|	BUS_OUT_WRITE(tmp);
 		|''')
 
@@ -71,3 +71,4 @@ def register(board):
     ''' Register component model '''
 
     board.add_part("8641", PartModel("8641", DS8641))
+    board.add_part("8641X2", PartModel("8641X2", DS8641))

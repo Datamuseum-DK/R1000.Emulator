@@ -37,13 +37,13 @@
 
 from part import PartModel, PartFactory
 
-class SRAM64KX1(PartFactory):
+class SRAM64KXN(PartFactory):
 
     ''' 64Kx1 SRAM '''
 
     def state(self, file):
         file.fmt('''
-		|	bool ram[1<<16];
+		|	uint16_t ram[1<<16];
 		|''')
 
     def doit(self, file):
@@ -56,21 +56,21 @@ class SRAM64KX1(PartFactory):
 		|
 		|	BUS_A_READ(adr);
 		|	if (!PIN_CS=> && !PIN_WE=>)
-		|		state->ram[adr] = PIN_D=>;
+		|		BUS_D_READ(state->ram[adr]);
 		|	TRACE(
 		|	    << " a " << BUS_A_TRACE()
 		|	    << " CS# " << PIN_CS?
 		|	    << " WE# " << PIN_WE?
-		|	    << " D " << PIN_D?
+		|	    << " D " << BUS_D_TRACE()
 		|	    << " adr "
 		|	    << std::hex << adr
 		|	    << " data "
 		|	    << state->ram[adr]
 		|	);
 		|	if (!PIN_CS=>) {
-		|		PIN_Q<=(state->ram[adr]);
+		|		BUS_Q_WRITE(state->ram[adr]);
 		|	} else {
-		|		PIN_Q = sc_logic_Z;
+		|		BUS_Q_Z();
 		|		next_trigger(PIN_CS.negedge_event());
 		|	}
 		|''')
@@ -78,4 +78,5 @@ class SRAM64KX1(PartFactory):
 def register(board):
     ''' Register component model '''
 
-    board.add_part("64KX1", PartModel("64KX1", SRAM64KX1))
+    board.add_part("64KX1", PartModel("64KX1", SRAM64KXN))
+    board.add_part("64KX9", PartModel("64KX9", SRAM64KXN))
