@@ -52,6 +52,8 @@ class F169(PartFactory):
             yield "PIN_ENP"
         if not self.comp.nodes["ENT"].net.is_const():
             yield "PIN_ENT"
+        if not self.comp.nodes["UP"].net.is_const():
+            yield "PIN_UP"
 
     def doit(self, file):
         ''' The meat of the doit() function '''
@@ -91,9 +93,9 @@ class F169(PartFactory):
 		|	}
 		|	if (PIN_ENT=>)
 		|		carry = true;
-		|	else if (PIN_UP=> && state->count == BUS_D_MASK)
+		|	else if (PIN_UP=> && (state->count == BUS_D_MASK))
 		|		carry = false;
-		|	else if (!PIN_UP=> && state->count == 0x0)
+		|	else if (!PIN_UP=> && (state->count == 0x0))
 		|		carry = false;
 		|	else
 		|		carry = true;
@@ -103,7 +105,7 @@ class F169(PartFactory):
 		|		TRACE(
 		|		    << what
 		|		    << " up " << PIN_UP?
-		|		    << " clk " << PIN_CLK?
+		|		    << " clk " << PIN_CLK.posedge()
 		|		    << " d " << BUS_D_TRACE()
 		|		    << " enp " << PIN_ENP?
 		|		    << " load " << PIN_LD?
