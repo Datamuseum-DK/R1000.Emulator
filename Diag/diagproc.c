@@ -304,7 +304,7 @@ diagproc_istep(struct diagproc_ctrl *dc, struct diagproc_context *dctx)
 		    dp->mcs51->pc, dp->mcs51->progmem[dp->mcs51->pc],
 		    dp->mcs51->tracebuf, npc, dp->idle
 		);
-	if (dp->flags[npc] & FLAG_DUMP_MEM) {
+	if ((*dp->do_trace & 4) && (dp->flags[npc] & FLAG_DUMP_MEM)) {
 		dctx->executions++;
 		p = buf;
 		for (ptr = 0x10; ptr < dp->pc0 + 16U && ptr < 0x100U; ptr++) {
