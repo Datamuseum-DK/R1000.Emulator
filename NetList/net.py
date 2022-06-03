@@ -33,6 +33,7 @@
    =================================================
 '''
 
+import util
 from node import NodeSexp
 
 class Net():
@@ -47,6 +48,7 @@ class Net():
             ("~", "not"),
         ):
             self.name = self.name.replace(i, j)
+        self.sortkey = util.sortkey(self.name)
         self.nnodes = []
         self.bus = None
         self.sheets = set()
@@ -106,7 +108,11 @@ class Net():
         return "_".join(("Net", self.name))
 
     def __lt__(self, other):
-        return self.name < other.name
+        try:
+            return self.sortkey < other.sortkey
+        except:
+            pass
+        return str(self.sortkey) < str(other.sortkey)
 
     def __len__(self):
         return len(self.nnodes)
