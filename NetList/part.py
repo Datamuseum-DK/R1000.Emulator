@@ -48,6 +48,7 @@ class Part():
         self.ignore = False
         self.uses = []
         self.blame = set()
+        self.busable = False
 
         self.clsname = "SCM_" + self.name.upper()
 
@@ -147,6 +148,7 @@ class PartModel(Part):
     def __init__(self, partname, factory = None):
         super().__init__(partname)
         self.factory = factory
+        self.busable = True
 
     def assign(self, comp):
         ''' Assigned to component '''

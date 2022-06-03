@@ -38,7 +38,6 @@ import pin
 class Component():
     ''' A `component` from the netlist file '''
 
-    busable = True
 
     def __init__(self, board, compref, compvalue, compsheet, comppart):
         self.board = board
@@ -108,7 +107,7 @@ class Component():
             high = max(x.pin.sortkey[1] for x in busnodes)
             if 1 + high - low != len(busnodes):
                 continue
-            bus = pin.Bus(busname, low)
+            bus = pin.PinBus(busname, low)
             self.busses[busname] = bus
             for node in busnodes:
                 bus.add_pin(node.pin)

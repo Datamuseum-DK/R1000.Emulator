@@ -33,7 +33,10 @@
    ========================
 '''
 
-class MaybeBus():
+import util
+import sys
+
+class NetBus():
 
     ''' ... '''
 
@@ -43,49 +46,55 @@ class MaybeBus():
         self.components = {}
         self.nets = []
         self.nodes = {}
-        self.failed = len(net.nnodes) < 2
 
-        if self.failed:
-            return
         self.nets.append(net)
         for node in net.nnodes:
-            if not node.pin.bus:
-                self.failed = True
-                return
-            self.components[node.component] = node.pin.bus
-            self.nodes[node.component] = [node]
+            self.components[node.component] = [node]
+            self.nodes[node.component] = {node.net: node}
 
     def __repr__(self):
         return "<MBUS %d×%d>" % (len(self.nets), len(self.nodes))
 
     def add_net(self, net):
-        if self.failed:
-            return
         self.nets.append(net)
         for node in net.nnodes:
-            i = self.components.get(node.component)
-            if not i:
-                self.failed = True
-                return
-            if i != node.pin.bus:
-                self.failed = True
-                return
-            self.nodes[node.component].append(node)
+            self.components[node.component].append(node)
+            self.nodes[node.component][node.net] = node
 
-    def table(self, file):
-        file.write("BUS %d×%d\n" % (len(self.nets), len(self.nodes)))
+    def sort_nets(self):
+        pivot_node = self.nets[0].nnodes[0]
+        nodes = self.components[pivot_node.component]
+        nodes.sort(key=lambda x: x.pin.sortkey)
+        self.nets = list(x.net for x in nodes)
 
+    def invalid(self):
+        self.sort_nets()
+        for comp in self.components:
+            sks = list(self.nodes[comp][net].pin.sortkey for net in self.nets)
+            spread = 1 + sks[-1][-1] - sks[0][-1]
+            if spread != len(self.nets):
+                print("Bus pins out of order", comp.board.name, comp.name)
+                print("   ", spread, len(self.nets), sks[0], sks[-1])
+                self.table(sys.stdout, "\t")
+                return True
+        return False
+
+    def table(self, file, pfx=""):
+        file.write(pfx + "BUS %d×%d\n" % (len(self.nets), len(self.nodes)))
+        file.write(pfx + "   [" + self.sig + "]\n")
+
+        # self.nets.sort()
         i = [""]
         for component in self.components:
             i.append(component.name)
-        file.write("\t".join(i) + "\n")
+        file.write(pfx + "\t".join(i) + "\n")
 
         for net in self.nets:
             i = [""]
             for node in net.nnodes:
                 i.append(node.pin.name + "/" + node.pin.role)
             i.append(net.name)
-            file.write("\t".join(i) + "\n")
+            file.write(pfx + "\t".join(i) + "\n")
 
 
 class PassNetConfig():
@@ -94,6 +103,7 @@ class PassNetConfig():
 
     def __init__(self, board):
         self.board = board
+        self.netbusses = {}
 
         for net in self.board.iter_nets():
             net.is_plane = net.name in ("PU", "PD")
@@ -110,7 +120,8 @@ class PassNetConfig():
             net.find_cname()
 
         self.ponder_bool()
-        self.ponder_bus()
+        self.bus_candidates()
+        self.bus_schedule()
 
     def ponder_bool(self):
         for net in self.board.iter_nets():
@@ -129,23 +140,42 @@ class PassNetConfig():
             # print(net, '=>', "bool")
             net.sc_type = "bool"
 
-    def ponder_bus(self):
+    def bus_candidates(self):
+        for net in self.board.iter_nets():
+
+            if len(net.nnodes) < 2:
+                continue
+
+            busable = set(x.component.part.busable for x in net.nnodes)
+            if True not in busable or len(busable) > 1:
+                continue
+
+            uniq_comps = set(x.component.ref for x in net.nnodes)
+            if len(uniq_comps) != len(net.nnodes):
+                # Signals which connect multiple times to a single component
+                # are disqualified, because we cannot (easily) figure out
+                # which of the multiple connections to assign where in the bus.
+                continue
+
+            if None in (x.pin.bus for x in net.nnodes):
+                continue
+
+            sig = " ".join(str(x) for x in net.sortkey[:-1]) + " "
+            sig += " ".join(sorted(x.component.ref + ":" + x.pin.bus.name for x in net.nnodes))
+            i = self.netbusses.get(sig)
+            if i:
+                i.add_net(net)
+            else:
+                self.netbusses[sig] = NetBus(sig, net)
+
+        for sig, maybebus in list(self.netbusses.items()):
+            if len(maybebus.nets) < 2 or maybebus.invalid():
+                del self.netbusses[sig]
+
+    def bus_schedule(self):
         with open("_bus_%s.txt" % self.board.name.lower(), "w") as file:
-            maybe = {}
-            for net in self.board.iter_nets():
-                if len(set(net.nnodes)) != len(net.nnodes):
-                    continue
-                sig = " ".join(sorted(x.component.ref for x in net.nnodes))
-                i = maybe.get(sig)
-                if i:
-                    i.add_net(net)
-                else:
-                    maybe[sig] = MaybeBus(sig, net)
-            for sig, maybebus in maybe.items():
-                if len(maybebus.nets) < 2:
-                    maybebus.failed = True
-                if not maybebus.failed:
-                    maybebus.table(file)
+            for maybebus in self.netbusses.values():
+                maybebus.table(file)
 
     def assign_blame(self, net):
         if len(net) < 2 or net.is_plane:

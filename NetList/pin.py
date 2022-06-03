@@ -80,7 +80,7 @@ class PinSexp(Pin):
             pinrole = sexp[2][0].name,
         )
 
-class Bus():
+class PinBus():
     ''' A set of pins named `<prefix>[0…N]` '''
 
     def __init__(self, busname, low):
@@ -89,7 +89,7 @@ class Bus():
         self.pins = []
 
     def __repr__(self):
-        return "_".join(("Bus", self.busname, self.low, str(len(self.pins))))
+        return "_".join(("PinBus", self.name, str(self.low), str(len(self.pins))))
 
     def add_pin(self, pin):
         self.pins.append(pin)
