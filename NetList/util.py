@@ -36,7 +36,12 @@
 def sortkey(word):
     '''
 	Split input into runs of digits vs. non-digits and return
-	a list with alternating strings and ints for sorting
+	a list with alternating strings and numbers ready for
+        lexicograhic sorting:
+
+            "/Page 2/IO.DO8" => ['/Page ', 2, '/IO.DO', 8]
+            "/Page 21/IO.DO8" => ['/Page ', 21, '/IO.DO', 8]
+
     '''
     key = list([word[0]])
     for glyph in word[1:]:
