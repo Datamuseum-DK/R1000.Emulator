@@ -43,7 +43,7 @@ class Pin():
         self.ident = pinident	# Not always numeric!
         self.name = pinname
         self.role = pinrole
-        self.bus = None
+        self.pinbus = None
         self.netbus = None
         self.update()
 
@@ -94,4 +94,4 @@ class PinBus():
 
     def add_pin(self, pin):
         self.pins.append(pin)
-        pin.bus = self
+        pin.pinbus = self

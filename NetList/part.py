@@ -178,9 +178,9 @@ class PartModel(Part):
 
         i = []
         for node in comp:
-            if node.pin.bus is None and node.net.is_pu():
+            if node.pin.pinbus is None and node.net.is_pu():
                 i.append("U")
-            elif node.pin.bus is None and node.net.is_pd():
+            elif node.pin.pinbus is None and node.net.is_pd():
                 i.append("D")
             elif node.netbus:
                 if node.netbus.nets[0] == node.net:
@@ -286,9 +286,9 @@ class PartFactory(Part):
         ''' sensitivity list '''
 
         for node in self.comp:
-            if node.pin.bus is None and node.net.is_pu():
+            if node.pin.pinbus is None and node.net.is_pu():
                 continue
-            if node.pin.bus is None and node.net.is_pd():
+            if node.pin.pinbus is None and node.net.is_pd():
                 continue
             if node.pin.role in ("c_input", "sc_inout_resolved",):
                 yield "PIN_%s" % node.pin.name
@@ -307,10 +307,10 @@ class PartFactory(Part):
                 file.subst(src, "IS_H(PIN_%s)" % node.pin.name)
                 file.subst(dst, "PIN_%s = AS" % node.pin.name)
                 file.subst(trc, "PIN_%s" % node.pin.name)
-            elif node.pin.bus is None and node.net.is_pd():
+            elif node.pin.pinbus is None and node.net.is_pd():
                 file.subst(src, "false")
                 file.subst(trc, '"v"')
-            elif node.pin.bus is None and node.net.is_pu():
+            elif node.pin.pinbus is None and node.net.is_pu():
                 file.subst(src, "true")
                 file.subst(trc, '"^"')
             elif node.net.sc_type == "bool":
@@ -341,9 +341,9 @@ class PartFactory(Part):
                 yield "sc_out <bool>\t\tPIN_%s;" % node.pin.name
             elif node.pin.role == "c_output":
                 yield "sc_out <sc_logic>\tPIN_%s;" % node.pin.name
-            elif node.pin.bus is None and node.net.is_pu():
+            elif node.pin.pinbus is None and node.net.is_pu():
                 continue
-            elif node.pin.bus is None and node.net.is_pd():
+            elif node.pin.pinbus is None and node.net.is_pd():
                 continue
             elif node.net.sc_type == "bool":
                 yield "sc_in <bool>\t\tPIN_%s;" % node.pin.name
@@ -357,9 +357,9 @@ class PartFactory(Part):
         ''' Hook instance into SystemC model '''
 
         for node in comp:
-            if node.pin.bus is None and node.net.is_pu():
+            if node.pin.pinbus is None and node.net.is_pu():
                 continue
-            if node.pin.bus is None and node.net.is_pd():
+            if node.pin.pinbus is None and node.net.is_pd():
                 continue
             if not node.netbus:
                 file.write("\t%s.PIN_%s(%s);\n" % (comp.name, node.pin.name, node.net.cname))
