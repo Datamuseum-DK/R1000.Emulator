@@ -138,7 +138,7 @@ class LibPartSexp(Part):
         ''' Emit the SystemC code to hook this component up '''
         for pin in sorted(self.pins.values()):
             node = comp.nodes[pin.name]
-            if not node.net.bus:
+            if not node.netbus:
                 self.hookup_pin(file, comp, "pin" + pin.ident, node, cmt=str(pin))
 
 class PartModel(Part):
@@ -148,7 +148,7 @@ class PartModel(Part):
     def __init__(self, partname, factory = None):
         super().__init__(partname)
         self.factory = factory
-        self.busable = True
+        self.busable = False
 
     def assign(self, comp):
         ''' Assigned to component '''
@@ -182,6 +182,9 @@ class PartModel(Part):
                 i.append("U")
             elif node.pin.bus is None and node.net.is_pd():
                 i.append("D")
+            elif node.netbus:
+                if node.netbus.nets[0] == node.net:
+                    i.append("I%d" % len(node.netbus))
             elif node.net.sc_type == "bool":
                 i.append("B")
             else:
@@ -234,6 +237,8 @@ class PartFactory(Part):
 
     def extra(self, file):
         ''' Extra source-code at globale level'''
+        for node in self.comp:
+            node.pin.netbus = node.netbus
         for bus in self.comp.busses.values():
             file.write("\n")
             file.write("#define BUS_%s_WIDTH %d\n" % (bus.name, len(bus.pins)))
@@ -243,23 +248,26 @@ class PartFactory(Part):
             file.write("\tdo { \\\n")
             file.write("\t\tdstvar = 0; \\\n")
             for nbr, pin in enumerate(bus.pins):
-                i = len(bus.pins) - nbr - 1
-                file.fmt("\t\tif (PIN_%s=>) (dstvar) |= (1ULL << %d); \\\n" % (pin.name, i))
+                if not pin.netbus:
+                    i = len(bus.pins) - nbr - 1
+                    file.fmt("\t\tif (PIN_%s=>) (dstvar) |= (1ULL << %d); \\\n" % (pin.name, i))
             file.write("\t} while(0)\n")
 
             file.write("\n")
             file.write("#define BUS_%s_WRITE(dstvar) \\\n" % bus.name)
             file.write("\tdo { \\\n")
             for nbr, pin in enumerate(bus.pins):
-                i = len(bus.pins) - nbr - 1
-                file.fmt("\t\tPIN_%s<=((dstvar) & (1ULL << %d)); \\\n" % (pin.name, i))
+                if not pin.netbus:
+                    i = len(bus.pins) - nbr - 1
+                    file.fmt("\t\tPIN_%s<=((dstvar) & (1ULL << %d)); \\\n" % (pin.name, i))
             file.write("\t} while(0)\n")
 
             file.write("\n")
             file.write("#define BUS_%s_Z() \\\n" % bus.name)
             file.write("\tdo { \\\n")
             for pin in bus.pins:
-                file.fmt("\t\tPIN_%s = sc_logic_Z; \\\n" % pin.name)
+                if not pin.netbus:
+                    file.fmt("\t\tPIN_%s = sc_logic_Z; \\\n" % pin.name)
             file.write("\t} while(0)\n")
 
             file.write("\n")
@@ -287,6 +295,8 @@ class PartFactory(Part):
 
     def subs(self, file):
         for node in self.comp:
+            if node.netbus:
+                continue
             dst = "PIN_%s<=" % node.pin.name
             src = "PIN_%s=>" % node.pin.name
             trc = "PIN_%s?" % node.pin.name
@@ -319,7 +329,13 @@ class PartFactory(Part):
         ''' SC pin declarations '''
 
         for node in self.comp:
-            if node.pin.role[:3] == "sc_":
+            if node.netbus:
+                if node.netbus.nets[0] == node.net:
+                    if node.pin.role == "c_output":
+                        yield "%s\tPINB_%s;" % ("sc_out <uint64_t>", node.pin.name)
+                    else:
+                        yield "%s\tPINB_%s;" % ("sc_in <uint64_t>", node.pin.name)
+            elif node.pin.role[:3] == "sc_":
                 yield "%s\tPIN_%s;" % (node.pin.role, node.pin.name)
             elif node.pin.role == "c_output" and node.net.sc_type == "bool":
                 yield "sc_out <bool>\t\tPIN_%s;" % node.pin.name
@@ -345,4 +361,7 @@ class PartFactory(Part):
                 continue
             if node.pin.bus is None and node.net.is_pd():
                 continue
-            file.write("\t%s.PIN_%s(%s);\n" % (comp.name, node.pin.name, node.net.cname))
+            if not node.netbus:
+                file.write("\t%s.PIN_%s(%s);\n" % (comp.name, node.pin.name, node.net.cname))
+            elif node.netbus.nets[0] == node.net:
+                file.write("\t%s.PINB_%s(%s);\n" % (comp.name, node.pin.name, node.netbus.cname))

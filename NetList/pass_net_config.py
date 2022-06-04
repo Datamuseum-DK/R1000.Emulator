@@ -46,6 +46,7 @@ class NetBus():
         self.components = {}
         self.nets = []
         self.nodes = {}
+        self.cname = None
 
         self.nets.append(net)
         for node in net.nnodes:
@@ -54,6 +55,9 @@ class NetBus():
 
     def __repr__(self):
         return "<MBUS %d×%d>" % (len(self.nets), len(self.nodes))
+
+    def __len__(self):
+        return len(self.nets)
 
     def add_net(self, net):
         self.nets.append(net)
@@ -80,10 +84,10 @@ class NetBus():
         return False
 
     def table(self, file, pfx=""):
-        file.write(pfx + "BUS %d×%d\n" % (len(self.nets), len(self.nodes)))
+        self.decide_cname()
+        file.write(pfx + "BUS %d×%d\t%s\n" % (len(self.nets), len(self.nodes), str(self.cname)))
         file.write(pfx + "   [" + self.sig + "]\n")
 
-        # self.nets.sort()
         i = [""]
         for component in self.components:
             i.append(component.name)
@@ -96,6 +100,30 @@ class NetBus():
             i.append(net.name)
             file.write(pfx + "\t".join(i) + "\n")
 
+    def decide_cname(self):
+        i = list(x.sortkey[:-1] for x in self.nets)
+        while len(i) > 1 and i[0] == i[1]:
+            i.pop(1)
+        if len(i) == 1:
+            self.cname = self.nets[0].cname + "_to_" + str(self.nets[-1].sortkey[-1])
+        else:
+            print("BAD DCN", i)
+
+    def register(self):
+        self.decide_cname()
+        self.sort_nets()
+        for net in self.nets:
+            net.netbus = self
+            for node in net.nnodes:
+                node.netbus = self
+
+    def write_decl(self, net, file):
+        if net == self.nets[0]:
+            file.write("\tsc_signal <uint64_t> %s;\n" % self.cname)
+
+    def write_init(self, net, file):
+        if net == self.nets[0]:
+            file.write(",\n\t%s(\"%s\", (1ULL << %d) - 1)" % (self.cname, self.cname, len(self.nets)))
 
 class PassNetConfig():
 
@@ -141,9 +169,15 @@ class PassNetConfig():
             net.sc_type = "bool"
 
     def bus_candidates(self):
+        return
+        if self.board.name != "FIU":
+            return
         for net in self.board.iter_nets():
 
             if len(net.nnodes) < 2:
+                continue
+
+            if net.sc_type != "bool":
                 continue
 
             busable = set(x.component.part.busable for x in net.nnodes)
@@ -171,6 +205,9 @@ class PassNetConfig():
         for sig, maybebus in list(self.netbusses.items()):
             if len(maybebus.nets) < 2 or maybebus.invalid():
                 del self.netbusses[sig]
+
+        for netbus in self.netbusses.values():
+            netbus.register()
 
     def bus_schedule(self):
         with open("_bus_%s.txt" % self.board.name.lower(), "w") as file:

@@ -50,7 +50,7 @@ class Net():
             self.name = self.name.replace(i, j)
         self.sortkey = util.sortkey(self.name)
         self.nnodes = []
-        self.bus = None
+        self.netbus = None
         self.sheets = set()
         self.is_plane = None
         self.is_local = None
@@ -131,8 +131,8 @@ class Net():
 
     def write_decl(self, file):
         ''' Write a C declaration of this net '''
-        if self.bus:
-            self.bus.write_decl(self, file)
+        if self.netbus:
+            self.netbus.write_decl(self, file)
         else:
             if self.sc_type == "bool":
                 text = "\tsc_signal <bool> " + self.bcname + ";\t"
@@ -144,8 +144,8 @@ class Net():
 
     def write_init(self, file):
         ''' Write a C initialization of this net '''
-        if self.bus:
-            self.bus.write_init(self, file)
+        if self.netbus:
+            self.netbus.write_init(self, file)
         elif self.sc_type == "bool":
             file.write(",\n\t" + self.bcname + '("' + self.bcname + '", true)')
         else:

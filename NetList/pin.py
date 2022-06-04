@@ -44,6 +44,7 @@ class Pin():
         self.name = pinname
         self.role = pinrole
         self.bus = None
+        self.netbus = None
         self.update()
 
     def update(self):

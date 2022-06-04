@@ -41,6 +41,7 @@ class Node():
 
     def __init__(self, net, component, pinspec):
         self.net = net
+        self.netbus = None
         self.component = component
         self.refname = component.name
         self.pin = pinspec
