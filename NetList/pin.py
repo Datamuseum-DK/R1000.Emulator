@@ -42,7 +42,7 @@ class Pin():
     def __init__(self, pinident, pinname, pinrole):
         self.ident = pinident	# Not always numeric!
         self.name = pinname
-        self.role = pinrole
+        self.role = pinrole.replace("+no_connect", "")
         self.pinbus = None
         self.netbus = None
         self.update()
@@ -88,6 +88,7 @@ class PinBus():
         self.name = busname
         self.low = low
         self.pins = []
+        self.width = 0
 
     def __repr__(self):
         return "_".join(("PinBus", self.name, str(self.low), str(len(self.pins))))
@@ -95,3 +96,81 @@ class PinBus():
     def add_pin(self, pin):
         self.pins.append(pin)
         pin.pinbus = self
+        self.width += 1
+
+    def write_extra(self, file, comp):
+        file.write("\n")
+        sigtype = set()
+        direction = set()
+        nodes = []
+        for node in comp:
+            if node.pin in self.pins:
+                nodes.append(node)
+                assert node.pin.role in (
+                    "c_input",
+                    "c_output",
+                    "sc_inout_resolved",
+                    "tri_state",
+                )
+                file.write("// QQQ " + str(node.pin.role) + " " + str(node) + "\n")
+                sigtype.add(node.net.sc_type)
+                direction.add(node.pin.role)
+
+        is_bool = len(sigtype) == 1 and "bool" in sigtype
+
+        file.write("\n")
+        file.write("#define BUS_%s_WIDTH %d\n" % (self.name, self.width))
+        file.write("#define BUS_%s_MASK 0x%xULL\n" % (self.name, (1 << self.width) - 1))
+
+        for i in (
+            "c_input",
+            "sc_inout_resolved",
+        ):
+            if i in direction:
+                self.write_extra_read(file, nodes)
+                break
+        
+        for i in (
+            "c_output",
+            "sc_inout_resolved",
+            "tri_state",
+        ):
+            if i in direction:
+                self.write_extra_write(file, nodes)
+                if not is_bool:
+                    self.write_extra_z(file, nodes)
+                break
+
+        file.write("\n")
+        file.write("#define BUS_%s_TRACE() \\\n\t\t" % self.name)
+        file.fmt(' \\\n\t\t<< '.join("PIN_%s" % pin.name for pin in self.pins) + '\n')
+
+    def write_extra_read(self, file, _nodes):
+        file.write("\n")
+        file.write("#define BUS_%s_READ(dstvar) \\\n" % self.name)
+        file.write("\tdo { \\\n")
+        file.write("\t\tdstvar = 0; \\\n")
+        for nbr, pin in enumerate(self.pins):
+            if not pin.netbus:
+                i = self.width - nbr - 1
+                file.fmt("\t\tif (PIN_%s=>) (dstvar) |= (1ULL << %d); \\\n" % (pin.name, i))
+        file.write("\t} while(0)\n")
+
+    def write_extra_write(self, file, _nodes):
+        file.write("\n")
+        file.write("#define BUS_%s_WRITE(dstvar) \\\n" % self.name)
+        file.write("\tdo { \\\n")
+        for nbr, pin in enumerate(self.pins):
+            if not pin.netbus:
+                i = self.width - nbr - 1
+                file.fmt("\t\tPIN_%s<=((dstvar) & (1ULL << %d)); \\\n" % (pin.name, i))
+        file.write("\t} while(0)\n")
+
+    def write_extra_z(self, file, _nodes):
+        file.write("\n")
+        file.write("#define BUS_%s_Z() \\\n" % self.name)
+        file.write("\tdo { \\\n")
+        for pin in self.pins:
+            if not pin.netbus:
+                file.fmt("\t\tPIN_%s = sc_logic_Z; \\\n" % pin.name)
+        file.write("\t} while(0)\n")

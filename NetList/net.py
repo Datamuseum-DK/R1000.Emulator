@@ -151,27 +151,6 @@ class Net():
         else:
             file.write(",\n\t" + self.bcname + '("' + self.bcname + '", sc_logic_1)')
 
-    def ponder(self):
-        ''' post-parsing work '''
-        if self.name[:2] in ("GB", "GF", "PD", "PU",):
-            return
-        census = {}
-        for node in self.nnodes:
-            census[node.pin.role] = 1 + census.get(node.pin.role, 0)
-        if len(census) == 1 and 'output+no_connect' in census:
-            return
-        if len(census) == 1 and 'input+no_connect' in census:
-            return
-        if len(census) == 1 and 'tri_state+no_connect' in census:
-            return
-        if sum(census.values()) > 1 and 'tri_state' in census:
-            return
-        if 'input' in census and 'tri_state' in census:
-            return
-        if 'input' in census and 'output' in census:
-            return
-        print("    ", self, census)
-
 class NetSexp(Net):
     ''' ... '''
 

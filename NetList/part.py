@@ -156,21 +156,13 @@ class PartModel(Part):
         for node in comp:
             if node.pin.role[:3] == "sc_":
                 continue
-            if node.pin.name[:2] == "DQ" and "tri_state" in node.pin.role:
+            if node.pin.role == "bidirectional":
                 node.pin.role = "sc_inout_resolved"
-            elif node.pin.name[:2] == "IO" and "tri_state" in node.pin.role:
-                node.pin.role = "sc_inout_resolved"
-            elif "open_collector" in node.pin.role:
+            elif node.pin.role == "open_collector":
                 node.pin.role = "sc_out <sc_logic>"
-            elif node.pin.role in (
-                "input",
-                "input+no_connect",
-            ):
+            elif node.pin.role == "input":
                 node.pin.role = "c_input"
-            elif node.pin.role in (
-                "output",
-                "output+no_connect",
-            ):
+            elif node.pin.role == "output":
                 node.pin.role = "c_output"
 
     def make_signature(self, comp):
@@ -240,39 +232,7 @@ class PartFactory(Part):
         for node in self.comp:
             node.pin.netbus = node.netbus
         for bus in self.comp.busses.values():
-            file.write("\n")
-            file.write("#define BUS_%s_WIDTH %d\n" % (bus.name, len(bus.pins)))
-            file.write("#define BUS_%s_MASK 0x%xULL\n" % (bus.name, ((1 << len(bus.pins)) - 1)))
-            file.write("\n")
-            file.write("#define BUS_%s_READ(dstvar) \\\n" % bus.name)
-            file.write("\tdo { \\\n")
-            file.write("\t\tdstvar = 0; \\\n")
-            for nbr, pin in enumerate(bus.pins):
-                if not pin.netbus:
-                    i = len(bus.pins) - nbr - 1
-                    file.fmt("\t\tif (PIN_%s=>) (dstvar) |= (1ULL << %d); \\\n" % (pin.name, i))
-            file.write("\t} while(0)\n")
-
-            file.write("\n")
-            file.write("#define BUS_%s_WRITE(dstvar) \\\n" % bus.name)
-            file.write("\tdo { \\\n")
-            for nbr, pin in enumerate(bus.pins):
-                if not pin.netbus:
-                    i = len(bus.pins) - nbr - 1
-                    file.fmt("\t\tPIN_%s<=((dstvar) & (1ULL << %d)); \\\n" % (pin.name, i))
-            file.write("\t} while(0)\n")
-
-            file.write("\n")
-            file.write("#define BUS_%s_Z() \\\n" % bus.name)
-            file.write("\tdo { \\\n")
-            for pin in bus.pins:
-                if not pin.netbus:
-                    file.fmt("\t\tPIN_%s = sc_logic_Z; \\\n" % pin.name)
-            file.write("\t} while(0)\n")
-
-            file.write("\n")
-            file.write("#define BUS_%s_TRACE() \\\n\t\t" % bus.name)
-            file.fmt(' \\\n\t\t<< '.join("PIN_%s" % pin.name for pin in bus.pins) + '\n')
+            bus.write_extra(file, self.comp)
 
     def state(self, _file):
         ''' Extra state variable '''

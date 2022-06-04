@@ -127,18 +127,9 @@ class F652(PartFactory):
 		|
 		|''')
 
-class ModelF652(PartModel):
-    ''' F652 model '''
-
-    def assign(self, comp):
-        for node in comp:
-            if node.pin.name[:1] in ("A", "B"):
-                node.pin.role = "sc_inout_resolved"
-        super().assign(comp)
-
 def register(board):
     ''' Register component model '''
 
-    board.add_part("F652", ModelF652("F652", F652))
-    board.add_part("F652_9", ModelF652("F652_9", F652))
-    board.add_part("F652_64", ModelF652("F652_64", F652))
+    board.add_part("F652", PartModel("F652", F652))
+    board.add_part("F652_9", PartModel("F652_9", F652))
+    board.add_part("F652_64", PartModel("F652_64", F652))

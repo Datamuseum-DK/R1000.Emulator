@@ -90,7 +90,7 @@ class F579(PartFactory):
 		|			what = "pl ";
 		|		} else if (PIN_CEP=> || PIN_CET=>) {
 		|			// Hold
-		|		} else if (PIN_UD=>) {
+		|		} else if (PIN_UslashBnot=>) {
 		|			// Count Up
 		|			state->reg += 1;
 		|			what = "up ";
@@ -104,7 +104,7 @@ class F579(PartFactory):
 		|
 		|	if (PIN_CET=>) 
 		|		PIN_CO<=(1);
-		|	else if (PIN_UD=>)
+		|	else if (PIN_UslashBnot=>)
 		|		PIN_CO<=(state->reg != 0xff);
 		|	else
 		|		PIN_CO<=(state->reg != 0x00);
@@ -131,7 +131,7 @@ class F579(PartFactory):
 		|		    << " oe_ " << PIN_OE?
 		|		    << " cs_ " << PIN_CS?
 		|		    << " pe_ " << PIN_LD?
-		|		    << " u/d_ " << PIN_UD?
+		|		    << " u/d_ " << PIN_UslashBnot?
 		|		    << " cet_ " << PIN_CET?
 		|		    << " cep_ " << PIN_CEP?
 		|		    << " sr_ " << PIN_SR?
@@ -141,18 +141,7 @@ class F579(PartFactory):
 		|	}
 		|''')
 
-class ModelF579(PartModel):
-    ''' F579 model '''
-
-    def assign(self, comp):
-        for node in comp:
-            if node.pin.name[:2] == "IO":
-                node.pin.role = "sc_inout_resolved"
-            if node.pin.name == "UslashBnot":
-                node.pin.name = "UD"
-        super().assign(comp)
-
 def register(board):
     ''' Register component model '''
 
-    board.add_part("F579", ModelF579("F579", F579))
+    board.add_part("F579", PartModel("F579", F579))
