@@ -71,4 +71,5 @@ def register(board):
     ''' Register component model '''
 
     board.add_part("8641", PartModel("8641", DS8641))
-    board.add_part("8641X2", PartModel("8641X2", DS8641))
+    board.add_part("8641X8", PartModel("8641X8", DS8641))
+    board.add_part("8641X17", PartModel("8641X17", DS8641))

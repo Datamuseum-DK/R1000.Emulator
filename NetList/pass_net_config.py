@@ -71,21 +71,24 @@ class NetBus():
         nodes.sort(key=lambda x: x.pin.sortkey)
         self.nets = list(x.net for x in nodes)
 
-    def invalid(self):
+    def invalid(self, file):
         self.sort_nets()
         for comp in self.components:
             sks = list(self.nodes[comp][net].pin.sortkey for net in self.nets)
             spread = 1 + sks[-1][-1] - sks[0][-1]
             if sks != sorted(sks):
-                print("Bus pins out of order", comp.board.name, comp.name)
-                print("   ", spread, len(self.nets), sks[0], sks[-1])
-                self.table(sys.stdout, "\t")
+                file.write("\nBus pins out of order " + comp.name + "\n")
+                self.table(file, "\t")
                 return True
             if spread != len(self.nets):
-                print("Bus pins out of order", comp.board.name, comp.name)
-                print("   ", spread, len(self.nets), sks[0], sks[-1])
-                self.table(sys.stdout, "\t")
+                file.write("\nBus pins out of order " + comp.name + "\n")
+                self.table(file, "\t")
                 return True
+        sc_type = set(x.sc_type for x in self.nets)
+        if len(sc_type) > 1 or "bool" not in sc_type:
+            file.write("\nBus is not boolen \n")
+            self.table(file, "\t")
+            return True
         return False
 
     def table(self, file, pfx=""):
@@ -98,10 +101,22 @@ class NetBus():
             i.append(component.name)
         file.write(pfx + "\t".join(i) + "\n")
 
+        i = [""]
+        for node in self.nets[0].nnodes:
+            i.append(
+                {
+                "c_output": "out",
+                "c_input": "in",
+                "tri_state": "zo",
+                "sc_inout_resolved": "zio",
+                }[node.pin.role]
+            )
+        file.write(pfx + "\t".join(i) + "\n")
+
         for net in self.nets:
             i = [""]
             for node in net.nnodes:
-                i.append(node.pin.name + "/" + node.pin.role)
+                i.append(node.pin.name)
             i.append(net.name)
             file.write(pfx + "\t".join(i) + "\n")
 
@@ -150,8 +165,8 @@ class PassNetConfig():
             net.find_cname()
 
         self.ponder_bool()
-        self.bus_candidates()
-        self.bus_schedule()
+        with open("_bus_%s.txt" % self.board.name.lower(), "w") as file:
+            self.bus_candidates(file)
 
     def ponder_bool(self):
         for net in self.board.iter_nets():
@@ -170,13 +185,10 @@ class PassNetConfig():
             # print(net, '=>', "bool")
             net.sc_type = "bool"
 
-    def bus_candidates(self):
+    def bus_candidates(self, file):
         for net in self.board.iter_nets():
 
             if len(net.nnodes) < 2:
-                continue
-
-            if net.sc_type != "bool":
                 continue
 
             busable = set(x.component.part.busable for x in net.nnodes)
@@ -202,16 +214,16 @@ class PassNetConfig():
                 self.netbusses[sig] = NetBus(sig, net)
 
         for sig, maybebus in list(self.netbusses.items()):
-            if len(maybebus.nets) < 2 or maybebus.invalid():
+            if len(maybebus.nets) < 2 or maybebus.invalid(file):
                 del self.netbusses[sig]
 
+        file.write("\n")
+        file.write("Accepted busses\n")
+        file.write("===============\n")
         for netbus in self.netbusses.values():
             netbus.register()
-
-    def bus_schedule(self):
-        with open("_bus_%s.txt" % self.board.name.lower(), "w") as file:
-            for maybebus in self.netbusses.values():
-                maybebus.table(file)
+            file.write("\n")
+            netbus.table(file)
 
     def assign_blame(self, net):
         if len(net) < 2 or net.is_plane:
