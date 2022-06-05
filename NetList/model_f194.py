@@ -151,7 +151,7 @@ class F194(PartFactory):
 def register(board):
     ''' Register component model '''
 
-    board.add_part("F194", PartModel("F194", F194))
-    board.add_part("XSR8", PartModel("XSR8", F194))
-    board.add_part("XSR12", PartModel("XSR12", F194))
-    board.add_part("XSR16", PartModel("XSR12", F194))
+    board.add_part("F194", PartModel("F194", F194, busable=False))
+    board.add_part("XSR8", PartModel("XSR8", F194, busable=False))
+    board.add_part("XSR12", PartModel("XSR12", F194, busable=False))
+    board.add_part("XSR16", PartModel("XSR16", F194, busable=False))

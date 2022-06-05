@@ -48,20 +48,17 @@ class F139(PartFactory):
         super().doit(file)
 
         file.fmt('''
-		|	unsigned adr = 0;
+		|	unsigned adr = 0, out=0xf;
 		|
-		|	if (PIN_B1=>) adr |= 1;
-		|	if (PIN_B0=>) adr |= 2;
+		|	BUS_B_READ(adr);
 		|	if (PIN_E=>) adr |= 4;
 		|	TRACE(
 		|	    << "e " << PIN_E?
-		|	    << " i " << PIN_B0? << PIN_B1?
+		|	    << " i " << BUS_B_TRACE()
 		|	    << " o " << adr
 		|	);
-		|	PIN_Y0<=(adr != 0);
-		|	PIN_Y1<=(adr != 1);
-		|	PIN_Y2<=(adr != 2);
-		|	PIN_Y3<=(adr != 3);
+		|	out &= ~(0x08 >> adr);
+		|	BUS_Y_WRITE(out);
 		|''')
 
 def register(board):

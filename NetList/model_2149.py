@@ -102,4 +102,5 @@ class SRAM2149(PartFactory):
 def register(board):
     ''' Register component model '''
 
-    board.add_part("2149", PartModel("2149", SRAM2149))
+    board.add_part("2149", PartModel("2149", SRAM2149, busable=False))
+    board.add_part("2149X2", PartModel("2149X2", SRAM2149, busable=False))

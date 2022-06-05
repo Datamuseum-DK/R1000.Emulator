@@ -67,7 +67,7 @@ class F299(PartFactory):
 		|
 		|	if (mode == 0) {
 		|		next_trigger(
-		|		    PIN_S0.default_event() | PIN_S1.default_event() |
+		|		    BUS_S_SENSITIVE() |
 		|		    PIN_G1.default_event() | PIN_G2.default_event()
 		|		);
 		|	}
@@ -118,7 +118,7 @@ class F299(PartFactory):
 		|		TRACE(
 		|		    << what
 		|		    << "clk " << PIN_CLK.posedge()
-		|		    << " s " << PIN_S0? << PIN_S1?
+		|		    << " s " << BUS_S_TRACE()
 		|		    << " g " << PIN_G1? << PIN_G2?
 		|''')
 

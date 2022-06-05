@@ -76,6 +76,11 @@ class NetBus():
         for comp in self.components:
             sks = list(self.nodes[comp][net].pin.sortkey for net in self.nets)
             spread = 1 + sks[-1][-1] - sks[0][-1]
+            if sks != sorted(sks):
+                print("Bus pins out of order", comp.board.name, comp.name)
+                print("   ", spread, len(self.nets), sks[0], sks[-1])
+                self.table(sys.stdout, "\t")
+                return True
             if spread != len(self.nets):
                 print("Bus pins out of order", comp.board.name, comp.name)
                 print("   ", spread, len(self.nets), sks[0], sks[-1])
@@ -101,13 +106,8 @@ class NetBus():
             file.write(pfx + "\t".join(i) + "\n")
 
     def decide_cname(self):
-        i = list(x.sortkey[:-1] for x in self.nets)
-        while len(i) > 1 and i[0] == i[1]:
-            i.pop(1)
-        if len(i) == 1:
-            self.cname = self.nets[0].cname + "_to_" + str(self.nets[-1].sortkey[-1])
-        else:
-            print("BAD DCN", i)
+        b = str(util.sortkey(self.nets[-1].cname)[-1]).split(".")[-1]
+        self.cname = self.nets[0].cname + "_to_" + b
 
     def register(self):
         self.decide_cname()
@@ -119,11 +119,13 @@ class NetBus():
 
     def write_decl(self, net, file):
         if net == self.nets[0]:
-            file.write("\tsc_signal <uint64_t> %s;\n" % self.cname)
+            lname = self.cname.split(".")[-1]
+            file.write("\tsc_signal <uint64_t> %s;\n" % lname)
 
     def write_init(self, net, file):
         if net == self.nets[0]:
-            file.write(",\n\t%s(\"%s\", (1ULL << %d) - 1)" % (self.cname, self.cname, len(self.nets)))
+            lname = self.cname.split(".")[-1]
+            file.write(",\n\t%s(\"%s\", (1ULL << %d) - 1)" % (lname, lname, len(self.nets)))
 
 class PassNetConfig():
 
@@ -169,9 +171,6 @@ class PassNetConfig():
             net.sc_type = "bool"
 
     def bus_candidates(self):
-        return
-        if self.board.name != "FIU":
-            return
         for net in self.board.iter_nets():
 
             if len(net.nnodes) < 2:
@@ -191,11 +190,11 @@ class PassNetConfig():
                 # which of the multiple connections to assign where in the bus.
                 continue
 
-            if None in (x.pin.bus for x in net.nnodes):
+            if None in (x.pin.pinbus for x in net.nnodes):
                 continue
 
             sig = " ".join(str(x) for x in net.sortkey[:-1]) + " "
-            sig += " ".join(sorted(x.component.ref + ":" + x.pin.bus.name for x in net.nnodes))
+            sig += " ".join(sorted(x.component.ref + ":" + x.pin.pinbus.name for x in net.nnodes))
             i = self.netbusses.get(sig)
             if i:
                 i.add_net(net)

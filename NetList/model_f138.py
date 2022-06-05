@@ -48,19 +48,17 @@ class F138(PartFactory):
         super().doit(file)
 
         file.fmt('''
-		|	unsigned adr = 0;
+		|	unsigned adr, ena;
 		|
-		|	if (PIN_S2=>) adr |= 1;
-		|	if (PIN_S1=>) adr |= 2;
-		|	if (PIN_S0=>) adr |= 4;
-		|	if (!PIN_D0=>) adr |= 8;
-		|	if (PIN_D1=>) adr |= 8;
-		|	if (PIN_D2=>) adr |= 8;
+		|	BUS_S_READ(adr);
+		|	BUS_D_READ(ena);
+		|	if (ena != 4)
+		|		adr |= 8;
 		|	TRACE(
 		|	    << " s "
-		|	    << PIN_S0? << PIN_S1? << PIN_S2?
+		|	    << BUS_S_TRACE()
 		|	    << " e "
-		|	    << PIN_D0? << PIN_D1? << PIN_D2?
+		|	    << BUS_D_TRACE()
 		|	    << " | "
 		|	    << std::hex << adr
 		|	);

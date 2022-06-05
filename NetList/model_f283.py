@@ -76,4 +76,4 @@ class F283(PartFactory):
 def register(board):
     ''' Register component model '''
 
-    board.add_part("F283", PartModel("F283", F283))
+    board.add_part("F283", PartModel("F283", F283, busable=False))

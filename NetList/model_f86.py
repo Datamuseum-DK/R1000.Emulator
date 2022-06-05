@@ -62,4 +62,4 @@ class F86(PartFactory):
 def register(board):
     ''' Register component model '''
 
-    board.add_part("F86", PartModel("F86", F86))
+    board.add_part("F86", PartModel("F86", F86, busable=False))

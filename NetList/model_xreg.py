@@ -181,6 +181,7 @@ def register(board):
     ''' Register component model '''
 
     board.add_part("F374", ModelXreg("F374"))
+    board.add_part("XREG10", ModelXreg("XREG10"))
     board.add_part("XREG16", ModelXreg("XREG16"))
     board.add_part("XREG20", ModelXreg("XREG20"))
     board.add_part("XREG24", ModelXreg("XREG24"))

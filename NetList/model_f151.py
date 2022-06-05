@@ -51,9 +51,7 @@ class F151(PartFactory):
 		|
 		|	unsigned adr = 0;
 		|
-		|	if (PIN_S2=>) adr |= 1;
-		|	if (PIN_S1=>) adr |= 2;
-		|	if (PIN_S0=>) adr |= 4;
+		|	BUS_S_READ(adr);
 		|	if (PIN_Enot=>) adr |= 8;
 		|	bool s;
 		|	switch (adr) {
@@ -87,9 +85,7 @@ class F151(PartFactory):
 		|	    << PIN_G?
 		|	    << PIN_H?
 		|	    << " s "
-		|	    << PIN_S0?
-		|	    << PIN_S1?
-		|	    << PIN_S2?
+		|	    << BUS_S_TRACE()
 		|	    << " e "
 		|	    << PIN_Enot?
 		|	    << " n "

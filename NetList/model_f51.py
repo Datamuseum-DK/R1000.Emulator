@@ -65,4 +65,4 @@ class F51(PartFactory):
 def register(board):
     ''' Register component model '''
 
-    board.add_part("F51", PartModel("F51", F51))
+    board.add_part("F51", PartModel("F51", F51, busable=False))

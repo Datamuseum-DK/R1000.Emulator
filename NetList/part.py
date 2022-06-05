@@ -145,10 +145,10 @@ class PartModel(Part):
 
     ''' Parts with a python model '''
 
-    def __init__(self, partname, factory = None):
+    def __init__(self, partname, factory = None, busable=True):
         super().__init__(partname)
         self.factory = factory
-        self.busable = False
+        self.busable = busable
 
     def assign(self, comp):
         ''' Assigned to component '''
@@ -251,7 +251,10 @@ class PartFactory(Part):
             if node.pin.pinbus is None and node.net.is_pd():
                 continue
             if node.pin.role in ("c_input", "sc_inout_resolved",):
-                yield "PIN_%s" % node.pin.name
+                if not node.netbus:
+                    yield "PIN_%s" % node.pin.name
+                elif node.netbus.nets[0] == node.net:
+                    yield "PINB_%s" % node.pin.name
 
     def subs(self, file):
         for node in self.comp:

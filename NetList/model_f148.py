@@ -49,37 +49,31 @@ class F148(PartFactory):
 
         file.fmt('''
 		|
-		|	unsigned s;
+		|	unsigned s, i;
 		|
-		|	if (!PIN_I0=>)
+		|	BUS_I_READ(i);
+		|	if (!(i & 0x80))
 		|		s = 7;
-		|	else if (!PIN_I1=>)
+		|	else if (!(i & 0x40))
 		|		s = 6;
-		|	else if (!PIN_I2=>)
+		|	else if (!(i & 0x20))
 		|		s = 5;
-		|	else if (!PIN_I3=>)
+		|	else if (!(i & 0x10))
 		|		s = 4;
-		|	else if (!PIN_I4=>)
+		|	else if (!(i & 0x08))
 		|		s = 3;
-		|	else if (!PIN_I5=>)
+		|	else if (!(i & 0x04))
 		|		s = 2;
-		|	else if (!PIN_I6=>)
+		|	else if (!(i & 0x02))
 		|		s = 1;
-		|	else if (!PIN_I7=>)
+		|	else if (!(i & 0x01))
 		|		s = 0;
 		|	else
 		|		s = 8|16;
 		|	if (PIN_E=>)
 		|		s = 16;
 		|	TRACE(
-		|	    << " i " << PIN_I0?
-		|	    << PIN_I1?
-		|	    << PIN_I2?
-		|	    << PIN_I3?
-		|	    << PIN_I4?
-		|	    << PIN_I5?
-		|	    << PIN_I6?
-		|	    << PIN_I7?
+		|	    << " i " << BUS_I_TRACE()
 		|	    << " e " << PIN_E?
 		|	    << " | "
 		|	    << std::hex << s

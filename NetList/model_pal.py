@@ -533,6 +533,7 @@ class PALModel(PartModel):
         }.get(fsiz)
         assert self.cls
         super().__init__(name, self.cls)
+        self.busable = False
 
     def create(self, board, ident):
         return self.factory(board, ident, self.filename)

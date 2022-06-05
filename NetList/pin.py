@@ -102,17 +102,16 @@ class PinBus():
         file.write("\n")
         sigtype = set()
         direction = set()
-        nodes = []
-        for node in comp:
+        nodes = {}
+        for node in sorted(comp):
             if node.pin in self.pins:
-                nodes.append(node)
+                nodes[node.pin] = node
                 assert node.pin.role in (
                     "c_input",
                     "c_output",
                     "sc_inout_resolved",
                     "tri_state",
                 )
-                file.write("// QQQ " + str(node.pin.role) + " " + str(node) + "\n")
                 sigtype.add(node.net.sc_type)
                 direction.add(node.pin.role)
 
@@ -128,6 +127,7 @@ class PinBus():
         ):
             if i in direction:
                 self.write_extra_read(file, nodes)
+                self.write_extra_sensitive(file, nodes)
                 break
         
         for i in (
@@ -143,27 +143,55 @@ class PinBus():
 
         file.write("\n")
         file.write("#define BUS_%s_TRACE() \\\n\t\t" % self.name)
-        file.fmt(' \\\n\t\t<< '.join("PIN_%s" % pin.name for pin in self.pins) + '\n')
+        j = []
+        for nbr, pin in enumerate(self.pins):
+            node = nodes[pin]
+            if not pin.netbus:
+                j.append("PIN_%s" % pin.name)
+            elif node.net.netbus.nets[0] == node.net:
+                j.append("PINB_%s" % pin.name)
+        file.fmt(' \\\n\t\t<< '.join(j) + '\n')
 
-    def write_extra_read(self, file, _nodes):
+    def write_extra_read(self, file, nodes):
         file.write("\n")
         file.write("#define BUS_%s_READ(dstvar) \\\n" % self.name)
         file.write("\tdo { \\\n")
-        file.write("\t\tdstvar = 0; \\\n")
+        file.write("\t\t(dstvar) = 0; \\\n")
         for nbr, pin in enumerate(self.pins):
+            node = nodes[pin]
             if not pin.netbus:
                 i = self.width - nbr - 1
                 file.fmt("\t\tif (PIN_%s=>) (dstvar) |= (1ULL << %d); \\\n" % (pin.name, i))
+            elif node.net.netbus.nets[0] == node.net:
+                shift = self.width - (nbr + len(node.net.netbus))
+                file.write("\t\t(dstvar) |= PINB_%s << %d; \\\n" % (pin.name, shift))
+                
         file.write("\t} while(0)\n")
 
-    def write_extra_write(self, file, _nodes):
+    def write_extra_sensitive(self, file, nodes):
+        file.write("\n")
+        file.write("#define BUS_%s_SENSITIVE() \\\n\t" % self.name)
+        j = []
+        for nbr, pin in enumerate(self.pins):
+            node = nodes[pin]
+            if not pin.netbus:
+                j.append("PIN_%s.default_event()" % pin.name)
+            elif node.net.netbus.nets[0] == node.net:
+                j.append("PINB_%s.default_event()" % pin.name)
+        file.write("| \\\n\t".join(j) + "\n")
+
+    def write_extra_write(self, file, nodes):
         file.write("\n")
         file.write("#define BUS_%s_WRITE(dstvar) \\\n" % self.name)
         file.write("\tdo { \\\n")
         for nbr, pin in enumerate(self.pins):
+            node = nodes[pin]
             if not pin.netbus:
                 i = self.width - nbr - 1
                 file.fmt("\t\tPIN_%s<=((dstvar) & (1ULL << %d)); \\\n" % (pin.name, i))
+            elif node.net.netbus.nets[0] == node.net:
+                shift = self.width - (nbr + len(node.net.netbus))
+                file.write("\t\tPINB_%s = ((dstvar) >> %d) & 0x%x; \\\n" % (pin.name, shift, (1<<len(node.net.netbus)) - 1))
         file.write("\t} while(0)\n")
 
     def write_extra_z(self, file, _nodes):

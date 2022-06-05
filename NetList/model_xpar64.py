@@ -80,7 +80,7 @@ class XPAR64(PartFactory):
 		|	    << " a " << total
 		|	);
 		|
-		|	PIN_PALL<= total & 1;
+		|	PIN_PALL<=(total & 1);
 		|
 		|''')
 

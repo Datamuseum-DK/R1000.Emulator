@@ -73,10 +73,7 @@ class F175(PartFactory):
 		|		    << " clr_ " << PIN_CLR?
 		|		    << " clk " << PIN_CLK?
 		|		    << " d "
-		|		    << PIN_D0?
-		|		    << PIN_D1?
-		|		    << PIN_D2?
-		|		    << PIN_D3?
+		|		    << BUS_D_TRACE()
 		|		    << " | "
 		|		    << state->dreg[0]
 		|		    << state->dreg[1]
@@ -127,4 +124,4 @@ class F175(PartFactory):
 def register(board):
     ''' Register component model '''
 
-    board.add_part("F175", PartModel("F175", F175))
+    board.add_part("F175", PartModel("F175", F175, busable=False))
