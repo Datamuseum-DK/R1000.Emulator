@@ -127,6 +127,7 @@ class PinBus():
         ):
             if i in direction:
                 self.write_extra_read(file, nodes)
+                self.write_extra_events(file, nodes)
                 self.write_extra_sensitive(file, nodes)
                 break
         
@@ -169,6 +170,17 @@ class PinBus():
         file.write("\t} while(0)\n")
 
     def write_extra_sensitive(self, file, nodes):
+        file.write("\n")
+        file.write("#define BUS_%s_SENSITIVE() \\\n\t" % self.name)
+        j = []
+        for nbr, pin in enumerate(self.pins):
+            node = nodes[pin]
+            if not pin.netbus:
+                j.append("PIN_%s" % pin.name)
+            elif node.net.netbus.nets[0] == node.net:
+                j.append("PINB_%s" % pin.name)
+        file.write(" << \\\n\t".join(j) + "\n")
+    def write_extra_events(self, file, nodes):
         file.write("\n")
         file.write("#define BUS_%s_EVENTS() \\\n\t" % self.name)
         j = []

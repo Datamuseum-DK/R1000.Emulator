@@ -48,9 +48,10 @@ class SRAM2149(PartFactory):
 		|''')
 
     def sensitive(self):
-        for node in self.comp:
-            if node.pin.name[0] != 'D' and not node.net.is_const():
-                yield "PIN_" + node.pin.name
+        yield "BUS_A_SENSITIVE()"
+        yield "PIN_WE"
+        if not self.comp.nodes["CS"].net.is_pd():
+            yield "PIN_CS"
 
     def doit(self, file):
         ''' The meat of the doit() function '''
@@ -102,5 +103,5 @@ class SRAM2149(PartFactory):
 def register(board):
     ''' Register component model '''
 
-    board.add_part("2149", PartModel("2149", SRAM2149, busable=False))
-    board.add_part("2149X2", PartModel("2149X2", SRAM2149, busable=False))
+    board.add_part("2149", PartModel("2149", SRAM2149))
+    board.add_part("2149X2", PartModel("2149X2", SRAM2149))
