@@ -180,6 +180,7 @@ class PinBus():
             elif node.net.netbus.nets[0] == node.net:
                 j.append("PINB_%s" % pin.name)
         file.write(" << \\\n\t".join(j) + "\n")
+
     def write_extra_events(self, file, nodes):
         file.write("\n")
         file.write("#define BUS_%s_EVENTS() \\\n\t" % self.name)

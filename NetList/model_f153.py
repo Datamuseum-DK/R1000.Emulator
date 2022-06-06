@@ -48,48 +48,41 @@ class F153(PartFactory):
         super().doit(file)
 
         file.fmt('''
-		|	bool s[2];
-		|	uint tmp = 0;
+		|	uint tmp = 0, val, ena;
 		|
-		|	if (PIN_S0=>) tmp |= 2;
-		|	if (PIN_S1=>) tmp |= 1;
+		|	BUS_S_READ(tmp);
 		|
 		|	switch (tmp) {
 		|	case 0:
-		|		s[0] = PIN_A0=>;
-		|		s[1] = PIN_A1=>;
+		|		BUS_A_READ(val);
 		|		break;
 		|	case 1:
-		|		s[0] = PIN_B0=>;
-		|		s[1] = PIN_B1=>;
+		|		BUS_B_READ(val);
 		|		break;
 		|	case 2:
-		|		s[0] = PIN_C0=>;
-		|		s[1] = PIN_C1=>;
+		|		BUS_C_READ(val);
 		|		break;
 		|	case 3:
-		|		s[0] = PIN_D0=>;
-		|		s[1] = PIN_D1=>;
+		|		BUS_D_READ(val);
 		|		break;
 		|	}
-		|	if (PIN_E0=>)
-		|		s[0] = false;
-		|	if (PIN_E1=>)
-		|		s[1] = false;
+		|
+		|	BUS_E_READ(ena);
+		|	val &= ~ena;
+		|
 		|	TRACE(
-		|	    << " a " << PIN_A0? << PIN_A1?
-		|	    << " b " << PIN_B0? << PIN_B1?
-		|	    << " c " << PIN_C0? << PIN_C1?
-		|	    << " d " << PIN_D0? << PIN_D1?
-		|	    << " e " << PIN_E0? << PIN_E1?
-		|	    << " s " << PIN_S0? << PIN_S1?
-		|	    << " | " << s[0] << s[1]
+		|	    << " a " << BUS_A_TRACE()
+		|	    << " b " << BUS_B_TRACE()
+		|	    << " c " << BUS_C_TRACE()
+		|	    << " d " << BUS_D_TRACE()
+		|	    << " e " << BUS_E_TRACE()
+		|	    << " s " << BUS_S_TRACE()
+		|	    << " | " << val
 		|	);
-		|	PIN_Y0<=(s[0]);
-		|	PIN_Y1<=(s[1]);
+		|	BUS_Y_WRITE(val);
 		|''')
 
 def register(board):
     ''' Register component model '''
 
-    board.add_part("F153", PartModel("F153", F153, busable=False))
+    board.add_part("F153", PartModel("F153", F153))
