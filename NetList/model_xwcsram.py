@@ -68,7 +68,7 @@ class XWCSRAM(PartFactory):
 		|		    << std::hex << (unsigned)state->ram[adr]
 		|		);
 		|		next_trigger(
-		|		    PIN_WE.posedge_event() | BUS_D_SENSITIVE()
+		|		    PIN_WE.posedge_event() | BUS_D_EVENTS()
 		|		);
 		|	} else {
 		|		TRACE(

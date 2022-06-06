@@ -67,7 +67,7 @@ class F299(PartFactory):
 		|
 		|	if (mode == 0) {
 		|		next_trigger(
-		|		    BUS_S_SENSITIVE() |
+		|		    BUS_S_EVENTS() |
 		|		    PIN_G1.default_event() | PIN_G2.default_event()
 		|		);
 		|	}

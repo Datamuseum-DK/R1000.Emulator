@@ -88,8 +88,7 @@ class F194(PartFactory):
 
         file.fmt('''
 		|	} else if (PIN_CLK.posedge()) {
-		|		if (PIN_S0=>) mode |= 2;
-		|		if (PIN_S1=>) mode |= 1;
+		|		BUS_S_READ(mode);
 		|		switch (mode) {
 		|		case 3:
 		|			what = " load ";
@@ -112,10 +111,7 @@ class F194(PartFactory):
         i = []
         if not self.comp.nodes["CLR"].net.is_pu():
             i.append("PIN_CLR.negedge_event()")
-        if not self.comp.nodes["S0"].net.is_pu():
-            i.append("PIN_S0.posedge_event()")
-        if not self.comp.nodes["S1"].net.is_pu():
-            i.append("PIN_S1.posedge_event()")
+        i.append("BUS_S_EVENTS()")
 
         if i:
             file.write("\t\t\tnext_trigger(%s);\n" % (" | ".join(i)))
@@ -133,7 +129,7 @@ class F194(PartFactory):
 		|		    << " rsi " << PIN_RSI?
 		|		    << " d " << BUS_D_TRACE()
 		|		    << " lsi " << PIN_LSI?
-		|		    << " s " << PIN_S0? << PIN_S1?
+		|		    << " s " << BUS_S_TRACE()
 		|		    << " cp " << PIN_CLK?
 		|		    << " r "
 		|		    << std::hex << state->out
@@ -151,7 +147,7 @@ class F194(PartFactory):
 def register(board):
     ''' Register component model '''
 
-    board.add_part("F194", PartModel("F194", F194, busable=False))
-    board.add_part("XSR8", PartModel("XSR8", F194, busable=False))
-    board.add_part("XSR12", PartModel("XSR12", F194, busable=False))
-    board.add_part("XSR16", PartModel("XSR16", F194, busable=False))
+    board.add_part("F194", PartModel("F194", F194))
+    board.add_part("XSR8", PartModel("XSR8", F194))
+    board.add_part("XSR12", PartModel("XSR12", F194))
+    board.add_part("XSR16", PartModel("XSR16", F194))

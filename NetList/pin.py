@@ -170,7 +170,7 @@ class PinBus():
 
     def write_extra_sensitive(self, file, nodes):
         file.write("\n")
-        file.write("#define BUS_%s_SENSITIVE() \\\n\t" % self.name)
+        file.write("#define BUS_%s_EVENTS() \\\n\t" % self.name)
         j = []
         for nbr, pin in enumerate(self.pins):
             node = nodes[pin]
@@ -178,7 +178,7 @@ class PinBus():
                 j.append("PIN_%s.default_event()" % pin.name)
             elif node.net.netbus.nets[0] == node.net:
                 j.append("PINB_%s.default_event()" % pin.name)
-        file.write("| \\\n\t".join(j) + "\n")
+        file.write(" | \\\n\t".join(j) + "\n")
 
     def write_extra_write(self, file, nodes):
         file.write("\n")

@@ -74,6 +74,10 @@ class NetBus():
     def invalid(self, file):
         self.sort_nets()
         for comp in self.components:
+            if not comp.part.busable:
+                file.write("\nComponent not busable " + comp.part.name + "\n")
+                self.table(file, "\t")
+                return True
             sks = list(self.nodes[comp][net].pin.sortkey for net in self.nets)
             spread = 1 + sks[-1][-1] - sks[0][-1]
             if sks != sorted(sks):
@@ -86,7 +90,7 @@ class NetBus():
                 return True
         sc_type = set(x.sc_type for x in self.nets)
         if len(sc_type) > 1 or "bool" not in sc_type:
-            file.write("\nBus is not boolen \n")
+            file.write("\nBus is not boolen " + str(sc_type) + "\n")
             self.table(file, "\t")
             return True
         return False
@@ -105,10 +109,14 @@ class NetBus():
         for node in self.nets[0].nnodes:
             i.append(
                 {
+                "output": "out",
                 "c_output": "out",
+                "input": "in",
                 "c_input": "in",
                 "tri_state": "zo",
+                "bidirectional": "zio",
                 "sc_inout_resolved": "zio",
+                "sc_out <sc_logic>": "zo",
                 }[node.pin.role]
             )
         file.write(pfx + "\t".join(i) + "\n")
@@ -189,10 +197,6 @@ class PassNetConfig():
         for net in self.board.iter_nets():
 
             if len(net.nnodes) < 2:
-                continue
-
-            busable = set(x.component.part.busable for x in net.nnodes)
-            if True not in busable or len(busable) > 1:
                 continue
 
             uniq_comps = set(x.component.ref for x in net.nnodes)
