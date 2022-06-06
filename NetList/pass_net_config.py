@@ -65,6 +65,9 @@ class NetBus():
             self.components[node.component].append(node)
             self.nodes[node.component][node.net] = node
 
+    def remove_node(self, node):
+       del self.nodes[node.component][node.net]
+
     def sort_nets(self):
         pivot_node = self.nets[0].nnodes[0]
         nodes = self.components[pivot_node.component]

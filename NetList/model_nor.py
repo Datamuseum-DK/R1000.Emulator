@@ -161,11 +161,30 @@ class ModelNor(Part):
 
     def assign(self, comp):
         ''' Assigned to component '''
+        seen = set()
+        n_inputs = 0
         for node in comp:
+            if node.net.is_pd():
+                # print("NOR with PD", node)
+                node.remove()
+                continue
+            if node.net in seen:
+                # print("NOR multiple", node)
+                node.remove()
+                continue
+            seen.add(node.net)
             if node.pin.name == "Q":
                 node.pin.role = "c_output"
             else:
+                node.pin.name = "D%d" % n_inputs
                 node.pin.role = "c_input"
+                n_inputs += 1
+        assert n_inputs > 0
+        if n_inputs == 1:
+            # print("NOR -> INV", comp)
+            comp.partname = "F37"
+            comp.part = comp.board.part_catalog[comp.partname]
+            comp.part.assign(comp)
 
     def configure(self, board, comp):
         i = []

@@ -61,3 +61,4 @@ def register(board):
 
     board.add_part("XVNAND12", PartModel("XVNAND12", XVNAND))
     board.add_part("XVNAND14", PartModel("XVNAND14", XVNAND))
+    board.add_part("XVNAND16", PartModel("XVNAND16", XVNAND))

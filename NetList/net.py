@@ -73,6 +73,8 @@ class Net():
         ''' ... '''
         assert node in self.nnodes
         self.nnodes.remove(node)
+        if self.netbus:
+            self.netbus.remove_node(node)
 
     def iter_nodes(self):
         ''' ... '''

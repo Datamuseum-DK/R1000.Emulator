@@ -200,17 +200,36 @@ class ModelNand(Part):
 
     def assign(self, comp):
         ''' Assigned to component '''
-        for node in comp:
+        seen = set()
+        ninputs = 0
+        rnodes = list(comp)
+        for node in rnodes:
+            # > 2 is special case for IOC::IPNOR0C etc.
+            if node.net.is_pu() and len(rnodes) > 2:
+                # print("Eliminating NAND PU input", node)
+                node.remove()
+                continue
+            if node.net in seen:
+                # print("Eliminating NAND input", node)
+                node.remove()
+                continue
+            seen.add(node.net)
             if node.pin.name == "Q":
                 node.pin.role = "c_output"
             else:
                 node.pin.role = "c_input"
+                ninputs += 1
+        if not ninputs:
+            print("NAND with no inputs left", ninputs, comp)
+            for i in rnodes:
+                print("   ", i)
+            assert ninputs
 
     def configure(self, board, comp):
         i = []
         j = 0
         alu_zero = False
-        for node in comp:
+        for node in list(comp):
             if "ALU.ZERO" in node.net.name:
                 alu_zero = True
             if node.pin.name != "Q":

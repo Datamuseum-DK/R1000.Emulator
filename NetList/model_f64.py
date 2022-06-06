@@ -56,13 +56,14 @@ class ModelAOI(PartModel):
         for pinname in inputs:
             node = comp[pinname]
             if node.net.is_pd():
-                break
+                return list()
             if node.net.is_pu():
                 continue
             if node.net in nets:
                 continue
             nodes.append(node)
             nets.add(node.net)
+        assert len(nodes) > 0
         if len(nodes) < 2:
             return nodes
         self.ctr += 1
@@ -75,7 +76,6 @@ class ModelAOI(PartModel):
         )
         and_gate.name = comp.name + "_%d" % self.ctr
         and_gate.part = comp.board.part_catalog[and_gate.partname]
-        and_gate.part.assign(and_gate)
 
         net = Net(comp.board, self.name + "_" + comp.name + "_%d" % self.ctr)
         for pnum, node in enumerate(nodes):
@@ -84,6 +84,7 @@ class ModelAOI(PartModel):
 
         pin = Pin("q", "Q", "c_output")
         node = Node(net, and_gate, pin)
+        and_gate.part.assign(and_gate)
         return [ node ]
 
     def assign(self, comp):
@@ -124,7 +125,7 @@ def register(board):
     ''' Register component model '''
 
     board.add_part(
-        "__F51",
+        "F51",
         ModelAOI(
             "F51",
             (
