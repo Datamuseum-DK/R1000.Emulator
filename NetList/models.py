@@ -61,6 +61,7 @@ import model_f181
 import model_f182
 import model_f189
 import model_f194
+import model_f245
 import model_f251
 import model_f280
 import model_f283
@@ -122,6 +123,7 @@ def register(where):
     model_f182.register(where)
     model_f189.register(where)
     model_f194.register(where)
+    model_f245.register(where)
     model_f251.register(where)
     model_f280.register(where)
     model_f283.register(where)

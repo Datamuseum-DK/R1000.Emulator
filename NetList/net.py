@@ -55,6 +55,7 @@ class Net():
         self.is_plane = None
         self.is_local = None
         self.sc_type = "sc_logic"
+        self.no_bool = False
         self.cname = None
 
         self.insert()

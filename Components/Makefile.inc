@@ -27,13 +27,6 @@ Components/DLY_35.o: Components/DLY_35.cc \
     Chassis/r1000sc.h
 	${SC_CC} -o Components/DLY_35.o Components/DLY_35.cc
 
-OBJS += Components/F245.o
-Components/F245.o: Components/F245.cc \
-    Components/F245.hh \
-    Infra/context.h \
-    Chassis/r1000sc.h
-	${SC_CC} -o Components/F245.o Components/F245.cc
-
 Components/F374.hh:: Components/F374_pins.hh
 	@touch Components/F374.hh
 

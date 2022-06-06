@@ -178,6 +178,8 @@ class PassNetConfig():
 
     def ponder_bool(self):
         for net in self.board.iter_nets():
+            if net.no_bool:
+                continue
             i = {}
             for node in net.iter_nodes():
                 i[node.pin.role] = 1 + i.setdefault(node.pin.role, 0)

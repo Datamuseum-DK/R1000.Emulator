@@ -42,9 +42,6 @@ class Xbuf(PartFactory):
 
     ''' F24[04] Octal buffers (3-state) '''
 
-    def __init__(self, board, ident):
-        super().__init__(board, ident)
-
     def state(self, file):
         ''' Extra state variable '''
 
