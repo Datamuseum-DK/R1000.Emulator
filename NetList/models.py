@@ -78,6 +78,7 @@ import model_p2k8r
 import model_pal
 import model_paxxx
 import model_pbxxx
+import model_xadd8
 import model_xalu
 import model_xbuf
 import model_xeq
@@ -139,6 +140,7 @@ def register(where):
     model_pal.register(where)
     model_paxxx.register(where)
     model_pbxxx.register(where)
+    model_xadd8.register(where)
     model_xalu.register(where)
     model_xbuf.register(where)
     model_xeq.register(where)

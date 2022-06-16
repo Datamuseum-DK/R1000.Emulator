@@ -44,15 +44,6 @@ Components/F38.o: Components/F38.cc \
     Chassis/r1000sc.h
 	${SC_CC} -o Components/F38.o Components/F38.cc
 
-Components/XADD8.hh:: Components/XADD8_pins.hh
-	@touch Components/XADD8.hh
-OBJS += Components/XADD8.o
-Components/XADD8.o: Components/XADD8.cc Components/xbuf_doit.h \
-    Components/XADD8.hh \
-    Infra/context.h \
-    Chassis/r1000sc.h
-	${SC_CC} -o Components/XADD8.o Components/XADD8.cc
-
 Components/XMUX232.hh:: Components/XMUX232_pins.hh
 	@touch Components/XMUX232.hh
 
