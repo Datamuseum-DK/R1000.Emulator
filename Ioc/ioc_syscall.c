@@ -153,11 +153,11 @@ static struct sc_def sc_defs[] = {
 	    "' ' sp+5 @L sp+2 @W hexdump",
 	    supress
 	},
-	{ 0x1023a, "AdrSpaceCopy",
+	{ 0x1023a, "SpaceRead",
 	    "'src=' sp+7 @L .L , "
-	    "sp+6 @W .W , "
+	    "'sfc=' sp+6 @W .W , "
 	    "'dst=' sp+4 @L .L , "
-	    "sp+3 @W .W , "
+	    "'dfc=' sp+3 @W .W , "
 	    "'len=' sp+2 @W .W "
 	    "sp+7 @L sp+2 @W hexdump"
 	    ,
@@ -415,6 +415,7 @@ static struct sc_def sc_defs[] = {
 	    ""
 	},
 	{ 0x10592, "ReadConfig", "sp+2 @L .L ", "sp+0 @L .L , sp+2 @W .W" },
+	{ 0x105ce, "ReadKeySwitch", "", "sp+0 @B .B" },
 
 	{ 1U<<31, NULL, NULL, NULL },
 };
