@@ -5,13 +5,6 @@ OBJS += Components/tables.o
 Components/tables.o: Components/tables.c 
 	${CC} -o Components/tables.o -c Components/tables.c
 
-OBJS += Components/68020.o
-Components/68020.o: Components/68020.cc \
-    Components/68020.hh \
-    Infra/context.h \
-    Chassis/r1000sc.h
-	${SC_CC} -o Components/68020.o Components/68020.cc
-
 OBJS += Components/8051.o
 Components/8051.o: Components/8051.cc \
     Components/8051.hh \
