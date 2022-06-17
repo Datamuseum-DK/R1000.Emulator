@@ -41,7 +41,7 @@ class MC68020(PartFactory):
     ''' MC68020 CPU'''
 
     def sensitive(self):
-        yield "PIN_HALT"
+        yield "PIN_CLK.pos()"
 
     def extra(self, file):
         super().extra(file)
