@@ -34,7 +34,6 @@
 
 '''
 
-
 from part import PartModel, PartFactory
 
 class MC68020(PartFactory):
@@ -44,14 +43,21 @@ class MC68020(PartFactory):
     def sensitive(self):
         yield "PIN_HALT"
 
+    def extra(self, file):
+        super().extra(file)
+        # The meat of the doit() function lives in a separate file so
+        # that fidling with it does not require a rerun of the python code.
+        self.scm.cc.include("Ioc/ioc_systemc.hh")
+
     def doit(self, file):
         ''' The meat of the doit() function '''
 
         super().doit(file)
 
-        file.fmt('''
-		|	BUS_SIZ_WRITE(0);
-		|''')
+        # The meat of the doit() function lives in a separate file so
+        # that fidling with it does not require a rerun of the python code.
+
+        self.scm.cc.include("Ioc/ioc_systemc.cc")
 
 def register(board):
     ''' Register component model '''
