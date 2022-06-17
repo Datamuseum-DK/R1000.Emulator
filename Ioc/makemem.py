@@ -49,7 +49,7 @@ def main():
     ioc += Range("fifo_response_latch", 0xfffff100, 0x3)
 
     # IO_FRONT_PANEL_LED_p27
-    ioc += Range("f200", 0xfffff200, 0x3)
+    ioc += Range("plnreg", 0xfffff200, 0x3, post_write = True)
 
     # IO_SENREG_p25
     ioc += Range("f300", 0xfffff300, 0x3)
