@@ -89,6 +89,13 @@ Ioc/ioc_rtc.o: \
     Ioc/memspace.h \
     ${R1000DEP}
 
+OBJS += Ioc/ioc_sc.o
+Ioc/ioc_sc.o: \
+    Ioc/ioc_sc.c \
+    Ioc/ioc_sc_68k20.hh \
+    Ioc/ioc.h \
+    ${R1000DEP}
+
 OBJS += Ioc/ioc_scsi_ctl.o
 Ioc/ioc_scsi_ctl.o: \
     Ioc/ioc_scsi_ctl.c \
