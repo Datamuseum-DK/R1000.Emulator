@@ -66,13 +66,19 @@ class NetBus():
             self.nodes[node.component][node.net] = node
 
     def remove_node(self, node):
-       del self.nodes[node.component][node.net]
+        del self.nodes[node.component][node.net]
+
+    def first_node(self, comp):
+        return self.nodes[comp][self.nets[0]]
 
     def sort_nets(self):
         pivot_node = self.nets[0].nnodes[0]
         nodes = self.components[pivot_node.component]
         nodes.sort(key=lambda x: x.pin.sortkey)
         self.nets = list(x.net for x in nodes)
+        for idx, net in enumerate(self.nets):
+            for node in net.nnodes:
+                node.pin.netbusidx = idx
 
     def invalid(self, file):
         self.sort_nets()
@@ -92,8 +98,8 @@ class NetBus():
                 self.table(file, "\t")
                 return True
         sc_type = set(x.sc_type for x in self.nets)
-        if len(sc_type) > 1 or "bool" not in sc_type:
-            file.write("\nBus is not boolen " + str(sc_type) + "\n")
+        if len(sc_type) > 1:
+            file.write("\nMixed bus " + str(sc_type) + "\n")
             self.table(file, "\t")
             return True
         return False
@@ -148,12 +154,18 @@ class NetBus():
     def write_decl(self, net, file):
         if net == self.nets[0]:
             lname = self.cname.split(".")[-1]
-            file.write("\tsc_signal <uint64_t> %s;\n" % lname)
+            if net.sc_type == "bool":
+                file.write("\tsc_signal <uint64_t> %s;\n" % lname)
+            else:
+                file.write("\tsc_signal_rv <%d> %s;\n" % (len(self.nets), lname))
 
     def write_init(self, net, file):
         if net == self.nets[0]:
             lname = self.cname.split(".")[-1]
-            file.write(",\n\t%s(\"%s\", (1ULL << %d) - 1)" % (lname, lname, len(self.nets)))
+            if net.sc_type == "bool":
+                file.write(',\n\t%s("%s", (1ULL << %d) - 1)' % (lname, lname, len(self.nets)))
+            else:
+                file.write(',\n\t%s("%s", "%s")' % (lname, lname, "z" * len(self.nets)))
 
 class PassNetConfig():
 

@@ -84,10 +84,11 @@ class Range():
     def produce_data(self, fo):
         ''' Produce the data parts of .c '''
 
+        peglength = (self.length + 1) // 2
         fo.write("uint8_t %s[0x%x];\n" % (self.rd_space, self.length))
         if not self.bidir:
             fo.write("uint8_t %s[0x%x];\n" % (self.wr_space, self.length))
-        fo.write("static uint8_t %s[0x%x];\n" % (self.pegs, (self.length + 1) // 2))
+        fo.write("static uint8_t %s[0x%x];\n" % (self.pegs, peglength))
         fo.write("struct memdesc %s = {\n" % self.struct_name)
         fo.write('\t.name = "%s",\n' % self.name)
         fo.write('\t.lo = 0x%x,\n' % self.lo)
@@ -100,8 +101,8 @@ class Range():
         fo.write('\t.rd_space = %s,\n' % self.rd_space)
         fo.write('\t.wr_space = %s,\n' % self.wr_space)
         fo.write('\t.pegs = %s,\n' % (self.pegs))
-        fo.write('\t.space_length = sizeof(%s),\n' % self.rd_space)
-        fo.write('\t.pegs_length = sizeof(%s),\n' % self.pegs)
+        fo.write('\t.space_length = 0x%x,\n' % self.length)
+        fo.write('\t.pegs_length = 0x%x,\n' % peglength)
         fo.write('};\n')
 
     def peg_check(self, fo, what, val, width):

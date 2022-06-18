@@ -175,8 +175,10 @@ class PartModel(Part):
             elif node.pin.pinbus is None and node.net.is_pd():
                 i.append("D")
             elif node.netbus:
-                if node.netbus.nets[0] == node.net:
+                if node.netbus.nets[0] == node.net and node.net.sc_type == "bool":
                     i.append("I%d" % len(node.netbus))
+                elif node.netbus.nets[0] == node.net:
+                    i.append("S%d" % len(node.netbus))
             elif node.net.sc_type == "bool":
                 i.append("B")
             else:
@@ -294,10 +296,21 @@ class PartFactory(Part):
         for node in self.comp:
             if node.netbus:
                 if node.netbus.nets[0] == node.net:
-                    if node.pin.role == "c_output":
-                        yield "%s\tPINB_%s;" % ("sc_out <uint64_t>", node.pin.name)
+
+                    pbname = "\tPINB_%s;" % node.pin.name
+
+                    if node.net.sc_type == "bool":
+                        sctype = " <uint64_t>"
                     else:
-                        yield "%s\tPINB_%s;" % ("sc_in <uint64_t>", node.pin.name)
+                        sctype = "_rv <%d>" % len(node.netbus.nets)
+
+                    if node.pin.role in ("c_output", "tri_state"):
+                        yield "sc_out" + sctype + pbname
+                    elif node.pin.role == "sc_inout_resolved":
+                        yield "sc_inout" + sctype + pbname
+                    else:
+                        yield "sc_in" + sctype + pbname
+
             elif node.pin.role[:3] == "sc_":
                 yield "%s\tPIN_%s;" % (node.pin.role, node.pin.name)
             elif node.pin.role == "c_output" and node.net.sc_type == "bool":
