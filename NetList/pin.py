@@ -158,6 +158,8 @@ class PinBus():
             node = nodes[pin]
             if not pin.netbus:
                 j.append("PIN_%s" % pin.name)
+            elif node.net.netbus.nets[0] == node.net and node.net.sc_type == "bool":
+                j.append("std::bitset<%d>(PINB_%s)" % (len(pin.netbus.nets), pin.name))
             elif node.net.netbus.nets[0] == node.net:
                 j.append("PINB_%s" % pin.name)
         file.fmt(' \\\n\t\t<< '.join(j) + '\n')
@@ -231,8 +233,10 @@ class PinBus():
         file.write("\tdo { \\\n")
         for pin in self.pins:
             node = nodes[pin]
-            if not pin.netbus:
+            if not pin.netbus and node.net.sc_type != "bool":
                 file.fmt("\t\tPIN_%s = sc_logic_Z; \\\n" % pin.name)
+            elif not pin.netbus:
+                pass
             elif pin.netbus.nets[0] != node.net:
                 pass
             elif pin.netbus.nets[0].sc_type != "bool":
