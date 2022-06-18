@@ -235,10 +235,9 @@ sc_main(int argc, char *argv[])
 	bpclock.clk_q3_(planes.GB_CLK_Q3_);
 	bpclock.clk_q4_(planes.GB_CLK_Q4_);
 
-	/* EXT.ID[0..2] */
-	planes.GB014 = sc_logic_0;
-	planes.GB018 = sc_logic_1;
-	planes.GB028 = sc_logic_0;
+	planes.GB_EXT_ID0 = sc_logic_0;
+	planes.GB_EXT_ID1 = sc_logic_1;
+	planes.GB_EXT_ID2 = sc_logic_0;
 
 	if (0) {
 		sc_trace(planes.tf, planes.GB_BP_CLK_2X_, "GB.BP_CLK_2X~");
