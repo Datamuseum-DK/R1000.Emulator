@@ -77,7 +77,7 @@ static struct sc_def sc_kernel[] = {
 	    "'ticks=' D0 .W , 'func=' A2 .L",
 	    supress
 	},
-	{ 0x09e00, "Timeout_Cancal",
+	{ 0x09e00, "Timeout_Cancel",
 	    "'func=' A2 .L",
 	    supress
 	},
