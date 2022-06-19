@@ -16,6 +16,7 @@ class Range():
         post_write=None,
         read_only=False,
         write_only=False,
+        sc_write=False,
     ):
         self.name = name
         self.lo = lo
@@ -26,6 +27,7 @@ class Range():
         self.post_write = post_write
         self.read_only = read_only
         self.write_only = write_only
+        self.sc_write = sc_write
 
         if not (1 + self.hi) & self.hi and self.hi < self.lo:
             self.hi = self.lo + self.hi + 1
@@ -181,6 +183,8 @@ class Range():
         else:
             assert False, "Bogo Width"
 
+        if self.sc_write:
+            fo.write("\t\tioc_bus_xact_schedule(address, value, %d, 1, 1);\n" % width)
         if self.post_write:
             j = "\t\t" + self.name + "_post_write" + "("
             if 'debug' in what:
@@ -231,8 +235,10 @@ class System():
         fo = open(filename + ".c", "w")
         fo.write('#include <stdint.h>\n')
         fo.write('#include <stdio.h>\n')
+        fo.write('\n')
         fo.write('#include "Infra/vend.h"\n')
         fo.write('#include "Infra/vqueue.h"\n')
+        fo.write('#include "Ioc/ioc_sc_68k20.hh"\n')
         fo.write('#include "Ioc/memspace.h"\n')
         self.produce_data(fo)
         for i in (1, 2, 4):

@@ -88,9 +88,6 @@ void Ioc_HotFix_Resha(void);
 
 void ioc_bus_xact_init(void);
 
-uint32_t ioc_bus_xact_schedule(uint32_t adr, uint32_t data, int width,
-    int is_write, int is_sync);
-
 /**********************************************************************/
 
 /*

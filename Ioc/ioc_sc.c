@@ -72,13 +72,15 @@ ioc_sc_bus_get_xact(void)
 }
 
 void
-ioc_sc_bus_done(struct ioc_sc_bus_xact *bxpa)
+ioc_sc_bus_done(struct ioc_sc_bus_xact **bxpa)
 {
 	struct bus_xact *bxp;
 
+	AN(bxpa);
 	AZ(pthread_mutex_lock(&bus_xact_mtx));
 	bxp = VTAILQ_FIRST(&bus_xact_head);
-	assert(bxp->xact == bxpa);
+	assert(bxp->xact == *bxpa);
+	*bxpa = NULL;
 	VTAILQ_REMOVE(&bus_xact_head, bxp, list);
 	bxp->is_done = 1;
 	if (bxp->is_sync)
