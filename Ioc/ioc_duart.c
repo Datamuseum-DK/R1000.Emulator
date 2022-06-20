@@ -191,6 +191,33 @@ io_duart_rx_readh_cb(void *priv)
 }
 
 static void
+ioc_duart_pace_downloads(struct chan *chp)
+{
+	/*
+	 * Bulk downloads of ucode and regfile are not flow-controlled,
+	 * because the DIPROCs can keep pace with the IOP+DISK+DIAGBUS.
+	 * Our speed-mix is different, so hold downloads back if the
+	 * DIPROC is still in state running
+	 */
+	uint8_t adr, cmd;
+
+	cmd = chp->txshift[1] & 0xe0;
+	if (cmd == 0xa0) {
+		adr = chp->txshift[1] & 0x1f;
+		while (diprocs[adr].status == DIPROC_RESPONSE_RUNNING) {
+			Trace(
+			    trace_diagbus_bytes,
+			    "%s Holding Download (%x%02x)",
+			    chp->name,
+			    chp->txshift[0],
+			    chp->txshift[1]
+			);
+			usleep(100000);
+		}
+	}
+}
+
+static void
 ioc_duart_tx_callback(void *priv)
 {
 	struct chan *chp = priv;
@@ -199,6 +226,8 @@ ioc_duart_tx_callback(void *priv)
 		Trace(trace_diagbus_bytes, "%s IOC TX %02x",
 		    chp->name, chp->txshift[0]);
 	} else {
+		if (chp->txshift[0])
+			ioc_duart_pace_downloads(chp);
 		Trace(trace_diagbus_bytes, "%s IOC TX %x%02x",
 		    chp->name, chp->txshift[0], chp->txshift[1]);
 	}
