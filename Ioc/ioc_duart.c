@@ -149,7 +149,8 @@ ioc_duart_pit_callback(void *priv)
 void
 pit_clock(void)
 {
-	ioc_duart_pit_tick();
+	if (systemc_clock)
+		ioc_duart_pit_tick();
 }
 
 /**********************************************************************/
