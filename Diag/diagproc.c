@@ -199,14 +199,14 @@ Explain_Diag_Byte(char msgbuf[1024], uint8_t serbuf[2])
 		return (msgbuf);
 	}
 	switch(serbuf[1] & 0xe0) {
-	case 0x00: strcat(msgbuf, " CMD_0"); break;
-	case 0x20: strcat(msgbuf, " UPLOAD"); break;
-	case 0x40: strcat(msgbuf, " CMD_4"); break;
-	case 0x60: strcat(msgbuf, " CMD_6"); break;
-	case 0x80: strcat(msgbuf, " CMD_8"); break;
-	case 0xa0: strcat(msgbuf, " DOWNLOAD"); break;
-	case 0xc0: strcat(msgbuf, " CMD_c"); break;
-	case 0xe0: strcat(msgbuf, " CMD_e"); break;
+	case 0x00: strcat(msgbuf, " 0_STATUS"); break;
+	case 0x20: strcat(msgbuf, " 2_UPLOAD"); break;
+	case 0x40: strcat(msgbuf, " 4_DISABLE"); break;
+	case 0x60: strcat(msgbuf, " 6_ENABLE"); break;
+	case 0x80: strcat(msgbuf, " 8_RESET"); break;
+	case 0xa0: strcat(msgbuf, " A_DOWNLOAD"); break;
+	case 0xc0: strcat(msgbuf, " C_UNPAUSE"); break;
+	case 0xe0: strcat(msgbuf, " E_UNLOOP"); break;
 	}
 	switch(serbuf[1] & 0x1f) {
 	case 0x02: strcat(msgbuf, " SEQ"); break;
@@ -253,9 +253,10 @@ diagproc_busrx(void *priv, const void *ptr, size_t len)
 	}
 	MCS51_Rx(dp->mcs51, serbuf[1], serbuf[0]);
 	assert(pthread_mutex_unlock(&dp->mtx) == 0);
-	if (*dp->do_trace & 4)
-		sc_tracef(dp->name, "DIAGBUS RX %s [%d]",
-		    Explain_Diag_Byte(dp->scratch, serbuf), dp->mcs51->irq_state);
+	if ((*dp->do_trace & 4) && (dp->mcs51->irq_state || serbuf[0])) {
+		sc_tracef(dp->name, "DIAGBUS RX %s",
+		    Explain_Diag_Byte(dp->scratch, serbuf));
+	}
 }
 
 static uint16_t
