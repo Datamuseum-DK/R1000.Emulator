@@ -215,7 +215,7 @@ class Board():
             handler = getattr(self, ins_hdl, None)
             if not handler or not handler(adr, self.explines):
                 for i in self.explines:
-                    print("   ", i)
+                    print("   ", " ".join(str(x) for x in i))
         self.expins = None
         self.explines = []
 

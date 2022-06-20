@@ -49,6 +49,11 @@ class MC68020(PartFactory):
         # that fidling with it does not require a rerun of the python code.
         self.scm.cc.include("Ioc/ioc_sc_68k20.hh")
 
+    def state(self, file):
+        ''' Extra state variable '''
+
+        file.write("\tstruct ioc_sc_bus_xact *xact;\n")
+
     def doit(self, file):
         ''' The meat of the doit() function '''
 
