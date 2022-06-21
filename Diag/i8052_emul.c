@@ -1183,7 +1183,7 @@ MCS51_TimerTick(struct mcs51 *mcs51)
 
 /*---------------------------------------------------------------------*/
 
-static void
+void
 MCS51_Reset(struct mcs51 *mcs51)
 {
 	// Intel 272383-002, Feb 94, Table 2, Page 2-9
@@ -1201,6 +1201,7 @@ MCS51_Reset(struct mcs51 *mcs51)
 	mcs51->sfr[SFR_IE] = 0x00;
 	mcs51->sfr[SFR_TMOD] = 0x00;
 	mcs51->sfr[SFR_TCON] = 0x00;
+	mcs51->sfr[SFR_SCON] = 0x00;
 #ifdef SFR_T2CON
 	mcs51->sfr[SFR_T2CON] = 0x00;
 #endif
