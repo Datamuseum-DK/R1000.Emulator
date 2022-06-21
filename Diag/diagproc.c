@@ -358,8 +358,10 @@ DiagProcStep(struct diagproc_ctrl *dc, struct diagproc_context *dctx)
 	assert(dc->priv != NULL);
 	dp = dc->priv;
 
-	if (dc->pin9_reset)
+	if (dc->pin9_reset) {
+		MCS51_Reset(dp->mcs51);
 		return;
+	}
 
 	MCS51_TimerTick(dp->mcs51);
 
