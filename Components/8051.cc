@@ -131,7 +131,7 @@ SCM_8051 :: doit(void)
 		pin16 = sc_logic_1;
 		cycle = 0;
 		diag_ctrl->do_movx = 0;
-		diag_ctrl->pin9_reset = IS_L(pin9);
+		diag_ctrl->pin9_reset = IS_H(pin9);
 		if (diag_ctrl->next_needs_p1) {
 			diag_ctrl->p1val = 0;
 			PORT1(READPORT, 0);
