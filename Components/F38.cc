@@ -30,5 +30,5 @@ SCM_F38 :: doit(void)
 	    << "|"
 	    << s
 	);
-	pin3 = AS(s);
+	pin3 = s ? sc_logic_Z : sc_logic_0;
 }
