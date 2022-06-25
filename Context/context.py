@@ -20,15 +20,14 @@ class Context():
         buf = file.read(128)
         if len(buf) != 128:
             raise EOFError
-        hdr = struct.unpack("<LLQL32s76s", buf)
+        hdr = struct.unpack("<LLQL108s", buf)
         if not hdr[0]:
             raise EOFError
         if hdr[0] != 0x6e706c8e:
             raise ValueError
-        self.length = hdr[1]
+        self.length = hdr[3]
         self.activations = hdr[2]
-        self.kind = hdr[4].rstrip(b'\x00').decode("utf-8")
-        self.ident = hdr[5].rstrip(b'\x00').decode("utf-8")
+        self.ident, self.kind = hdr[4].rstrip(b'\x00').decode("utf-8").split()
         self.body = file.read(self.length - 128)
         return self
 
