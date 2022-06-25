@@ -34,6 +34,9 @@ ioc_bus_xact_schedule(uint32_t adr, uint32_t data, int width,
 {
 	struct bus_xact *bxp;
 
+	if (!sc_started)
+		return(data);
+
 	bxp = calloc(sizeof *bxp, 1);
 	AN(bxp);
 	bxp->xact->address = adr;
