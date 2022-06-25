@@ -37,11 +37,10 @@ extern "C" {
 struct ctx {
 	uint32_t	magic;
 #define CTX_MAGIC	0x6e706c8e
-	uint32_t	length;
-	uint64_t	activations;
 	uint32_t	do_trace;
-	char		kind[32];
-	char		ident[76];
+	uint64_t	activations;
+	uint32_t	length;
+	char		ident[108];
 };
 
 void *CTX_Get(const char *kind, const char *ident, uint32_t length);

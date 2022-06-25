@@ -95,8 +95,7 @@ CTX_Get(const char *kind, const char *ident, uint32_t length)
 	AN(ctx);
 	ctx->magic = CTX_MAGIC;
 	ctx->length = length;
-	strncpy(ctx->kind, kind, sizeof(ctx->kind));
-	strcpy(ctx->ident, ident);
+	snprintf(ctx->ident, sizeof ctx->ident, "%s %s", ident, kind);
 	return (ctx);
 }
 
