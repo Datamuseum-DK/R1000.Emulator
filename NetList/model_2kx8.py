@@ -43,7 +43,7 @@ class SRAM2KX8(PartFactory):
 
     def state(self, file):
         file.fmt('''
-		|	uint8_t ram[1<<11];
+		|	uint16_t ram[1<<11];
 		|''')
 
     def doit(self, file):
@@ -93,3 +93,4 @@ def register(board):
     ''' Register component model '''
 
     board.add_part("2KX8", PartModel("2KX8", SRAM2KX8))
+    board.add_part("2KX16", PartModel("2KX16", SRAM2KX8))
