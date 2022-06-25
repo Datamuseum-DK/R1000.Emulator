@@ -43,6 +43,12 @@
 static int cli_echo = 1;
 
 static void
+cli_rem(struct cli *cli)
+{
+	(void)cli;
+}
+
+static void
 cli_exit(struct cli *cli)
 {
 	uint16_t w = 0;
@@ -167,6 +173,7 @@ static const struct cli_cmds cli_cmds[] = {
 	{ "scsi_disk",		cli_scsi_disk },
 	{ "scsi_tape",		cli_scsi_tape },
 	{ "trace",		cli_trace },
+	{ "rem",		cli_rem },
 	{ NULL,			NULL },
 };
 
