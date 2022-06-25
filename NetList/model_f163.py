@@ -63,7 +63,7 @@ class F163(PartFactory):
 		|		state->state = 0;
 		|		BUS_D_READ(state->state);
 		|	} else if (PIN_ENP=> && PIN_ENT=>) {
-		|		state->state = (state->state + 1) & 0xf;
+		|		state->state = (state->state + 1) & BUS_D_MASK;
 		|	}
 		|	TRACE(
 		|	    << " clr " << PIN_CLR?
@@ -77,10 +77,11 @@ class F163(PartFactory):
 		|	    << state->state
 		|	);
 		|	BUS_Q_WRITE(state->state);
-		|	PIN_CO<=((state->state == 0xf) && PIN_ENT=>);
+		|	PIN_CO<=((state->state == BUS_D_MASK) && PIN_ENT=>);
 		|''')
 
 def register(board):
     ''' Register component model '''
 
     board.add_part("F163", PartModel("F163", F163))
+    board.add_part("F163X3", PartModel("F163X3", F163))
