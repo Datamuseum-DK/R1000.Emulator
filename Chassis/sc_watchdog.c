@@ -38,8 +38,8 @@ fido(void *priv)
 			if (strstr(cp->ident, "PROC") == NULL)
 				continue;
 			dctx = (const void*)(cp+1);
-			printf("FIDO barks: %s %s act %ju mcs51 %ju exp %ju\n",
-			    cp->kind, cp->ident,
+			printf("FIDO barks: %s act %ju mcs51 %ju exp %ju\n",
+			    cp->ident,
 			    (uintmax_t)cp->activations,
 			    (uintmax_t)dctx->instructions,
 			    (uintmax_t)dctx->executions

@@ -38,3 +38,9 @@ Chassis/sc_main_thread_${SC_BRANCH}.o: \
 		Chassis/sc_main_thread.cc
 
 OBJS += Chassis/sc_watchdog.o
+Chassis/sc_watchdog.o: \
+    Infra/r1000.h \
+    Infra/context.h \
+    Diag/diagproc.h \
+    Chassis/r1000sc_priv.h
+
