@@ -23,14 +23,14 @@ struct diagproc_ctrl {
 
 	/* Variables */
 	int pin9_reset;
-	int p0val;
-	int p0mask;
-	int p1val;
-	int p1mask;
-	int p2val;
-	int p2mask;
-	int p3val;
-	int p3mask;
+	unsigned p0val;
+	unsigned p0mask;
+	unsigned p1val;
+	unsigned p1mask;
+	unsigned p2val;
+	unsigned p2mask;
+	unsigned p3val;
+	unsigned p3mask;
 	int movx_adr;
 	int movx_data;
 

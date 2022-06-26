@@ -11,7 +11,6 @@ OBJS    += Diag/diagproc.o
 Diag/diagproc.o: \
     Diag/diagproc.c \
     Chassis/r1000sc.h \
-    Chassis/r1000sc_priv.h \
     Diag/diagproc.h \
     Diag/i8052_emul.h \
     Infra/elastic.h \

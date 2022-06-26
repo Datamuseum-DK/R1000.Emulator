@@ -10,13 +10,12 @@
 
 #include "Infra/r1000.h"
 #include "Chassis/r1000sc.h"
-#include "Chassis/r1000sc_priv.h"
 #include "Diag/diagproc.h"
 #include "Diag/i8052_emul.h"
 #include "Infra/elastic.h"
 #include "Diag/diag.h"
 
-#define FLAG_RX_SPIN		(1<<0)
+#define FLAG_RX_SPIN		(1)
 #define FLAG_DOWNLOAD		(1<<1)
 #define FLAG_RX_DISABLE		(1<<2)
 #define FLAG_IDLE		(1<<3)
@@ -152,16 +151,15 @@ diagproc_bitfunc(struct mcs51 *mcs51, uint8_t bit_adr, int what)
 			return (1);
 
 		return (mcs51_bitfunc_default(mcs51, bit_adr, what));
-		break;
 	case SFR_P1:
 		if (what < 0) {
 			retval = (dc->p1val >> (bit_adr & 7)) & 1;
 		} else {
 			dc->p1mask |= 1 << (bit_adr & 7);
 			if (what == 0)
-				dc->p1val &= ~(1 << (bit_adr & 7));
+				dc->p1val &= ~(1U << (bit_adr & 7));
 			else
-				dc->p1val |= (1 << (bit_adr & 7));
+				dc->p1val |= (1U << (bit_adr & 7));
 			retval = 0;
 		}
 		break;
@@ -171,12 +169,14 @@ diagproc_bitfunc(struct mcs51 *mcs51, uint8_t bit_adr, int what)
 		} else {
 			dc->p3mask |= 1 << (bit_adr & 7);
 			if (what == 0)
-				dc->p3val &= ~(1 << (bit_adr & 7));
+				dc->p3val &= ~(1U << (bit_adr & 7));
 			else
-				dc->p3val |= (1 << (bit_adr & 7));
+				dc->p3val |= (1U << (bit_adr & 7));
 			retval = 0;
 		}
 		break;
+	default:
+		WRONG();
 	}
 	if (*dp->do_trace & 2) {
 		if (retval == 9)
@@ -191,7 +191,7 @@ diagproc_bitfunc(struct mcs51 *mcs51, uint8_t bit_adr, int what)
 
 
 static const char *
-Explain_Diag_Byte(char msgbuf[1024], uint8_t serbuf[2])
+Explain_Diag_Byte(char msgbuf[1024], const uint8_t serbuf[2])
 {
 	sprintf(msgbuf, "%d%02x", serbuf[0], serbuf[1]);
 	if (serbuf[0] == 0) {
@@ -207,6 +207,7 @@ Explain_Diag_Byte(char msgbuf[1024], uint8_t serbuf[2])
 	case 0xa0: strcat(msgbuf, " A_DOWNLOAD"); break;
 	case 0xc0: strcat(msgbuf, " C_UNPAUSE"); break;
 	case 0xe0: strcat(msgbuf, " E_UNLOOP"); break;
+	default: WRONG();
 	}
 	switch(serbuf[1] & 0x1f) {
 	case 0x02: strcat(msgbuf, " SEQ"); break;
@@ -319,7 +320,7 @@ diagproc_istep(struct diagproc_ctrl *dc, struct diagproc_context *dctx)
 		ptr = MCS51_REG(dp->mcs51, 0);
 		sc_tracef(dp->name, "Exec %02x | %02x %02x %02x %02x | %s",
 		    ptr,
-		    dp->mcs51->iram[ptr + 0],
+		    dp->mcs51->iram[ptr],
 		    dp->mcs51->iram[ptr + 1],
 		    dp->mcs51->iram[ptr + 2],
 		    dp->mcs51->iram[ptr + 3],
@@ -480,7 +481,7 @@ DiagProcCreate(const char *name, const char *arg, uint32_t *do_trace)
 		dp->flags[0x1345] |= FLAG_WAIT_DFSM;
 		dp->flags[0x1367] |= FLAG_WAIT_DFSM;
 		dp->flags[0x1380] |= FLAG_WAIT_DFSM;
-		for (u = 0x1426; u <= sizeof dp->flags; u++)
+		for (u = 0x1426; u < sizeof dp->flags; u++)
 			dp->flags[u] |= FLAG_NOT_CODE;
 	} else {
 		dp->version = 2;
@@ -492,11 +493,11 @@ DiagProcCreate(const char *name, const char *arg, uint32_t *do_trace)
 		dp->flags[0x10a9] |= FLAG_WAIT_DFSM;
 		dp->flags[0x10d8] |= FLAG_WAIT_DFSM;
 		dp->flags[0x1109] |= FLAG_WAIT_DFSM;
-		for (u = 0x11c9; u <= sizeof dp->flags; u++)
+		for (u = 0x11c9; u < sizeof dp->flags; u++)
 			dp->flags[u] |= FLAG_NOT_CODE;
 	}
 
-	MCS51_SetProgMem(dp->mcs51, firmware, sizeof firmware);
+	AZ(MCS51_SetProgMem(dp->mcs51, firmware, sizeof firmware));
 
 	dp->diag_bus = elastic_subscribe(diag_elastic, diagproc_busrx, dp);
 

@@ -194,7 +194,7 @@ mcs51_ADD(struct mcs51 *mcs51, uint8_t a1, uint8_t a2, int carry)
 	retval = a1 + a2;
 	if (carry)
 		retval += mcs51_carry(mcs51, -1);
-	mcs51_carry(mcs51, retval >> 8);
+	(void)mcs51_carry(mcs51, retval >> 8);
 	return (retval & 0xff);
 }
 
@@ -205,7 +205,7 @@ mcs51_SUBB(struct mcs51 *mcs51, uint8_t a1, uint8_t a2)
 
 	retval = 256 + a1 - a2;
 	retval -= mcs51_carry(mcs51, -1);
-	mcs51_carry(mcs51, !(retval >> 8));
+	(void)mcs51_carry(mcs51, !(retval >> 8));
 	return (retval & 0xff);
 }
 
@@ -279,7 +279,7 @@ MCS51_SingleStep(struct mcs51 *mcs51)
 		arg = mcs51->progmem[mcs51->npc++];
 		mcs51_trace(mcs51, "INC\t0x%02x", arg);
 		arg2 = mcs51_direct_address(mcs51, arg, -1);
-		mcs51_direct_address(mcs51, arg, arg2 + 1);
+		(void)mcs51_direct_address(mcs51, arg, arg2 + 1);
 		break;
 	case 0x06: // INC @Rn
 	case 0x07: // INC @Rn
@@ -326,7 +326,7 @@ MCS51_SingleStep(struct mcs51 *mcs51)
 		mcs51_trace(mcs51, "A is 0x%02x", ACC);
 		ACC >>= 1;
 		ACC |= mcs51_carry(mcs51, -1) << 7;
-		mcs51_carry(mcs51, arg & 1);
+		(void)mcs51_carry(mcs51, arg & 1);
 		mcs51_trace(mcs51, "A is 0x%02x", ACC);
 		break;
 	case 0x14: // DEC A
@@ -337,7 +337,7 @@ MCS51_SingleStep(struct mcs51 *mcs51)
 		arg = mcs51->progmem[mcs51->npc++];
 		mcs51_trace(mcs51, "DEC\t0x%02x", arg);
 		arg2 = mcs51_direct_address(mcs51, arg, -1);
-		mcs51_direct_address(mcs51, arg, arg2 - 1);
+		(void)mcs51_direct_address(mcs51, arg, arg2 - 1);
 		break;
 	case 0x16: // DEC @Rn
 	case 0x17: // DEC @Rn
@@ -436,7 +436,7 @@ MCS51_SingleStep(struct mcs51 *mcs51)
 		mcs51_trace(mcs51, "RCL\tA");
 		if (mcs51_carry(mcs51, -1))
 			warg |= 1;
-		mcs51_carry(mcs51, warg >> 8);
+		(void)mcs51_carry(mcs51, warg >> 8);
 		ACC = warg;
 		mcs51_trace(mcs51, "A is 0x%02x", ACC);
 		break;
@@ -485,14 +485,14 @@ MCS51_SingleStep(struct mcs51 *mcs51)
 		arg = mcs51->progmem[mcs51->npc++];
 		mcs51_trace(mcs51, "ORL\t0x%02x,A", arg);
 		arg2 = mcs51_direct_address(mcs51, arg, -1);
-		mcs51_direct_address(mcs51, arg, arg2 | ACC);
+		(void)mcs51_direct_address(mcs51, arg, arg2 | ACC);
 		break;
 	case 0x43: // ORL direct, imm
 		arg = mcs51->progmem[mcs51->npc++];
 		arg2 = mcs51->progmem[mcs51->npc++];
 		mcs51_trace(mcs51, "ORL\t0x%02x,#0x%02x", arg, arg2);
 		warg = mcs51_direct_address(mcs51, arg, -1);
-		mcs51_direct_address(mcs51, arg, warg | arg2);
+		(void)mcs51_direct_address(mcs51, arg, warg | arg2);
 		break;
 	case 0x44: // ORL A,imm
 		arg = mcs51->progmem[mcs51->npc++];
@@ -538,13 +538,13 @@ MCS51_SingleStep(struct mcs51 *mcs51)
 		arg = mcs51->progmem[mcs51->npc++];
 		mcs51_trace(mcs51, "ANL\t0x%02x,A", arg);
 		arg2 = mcs51_direct_address(mcs51, arg, -1);
-		mcs51_direct_address(mcs51, arg, arg2 & ACC);
+		(void)mcs51_direct_address(mcs51, arg, arg2 & ACC);
 		break;
 	case 0x53: // ANL direct,#data
 		arg = mcs51->progmem[mcs51->npc++];
 		mcs51_trace(mcs51, "ANL\t0x%02x,#0x%02x", arg, mcs51->progmem[mcs51->npc]);
 		arg2 = mcs51_direct_address(mcs51, arg, -1);
-		mcs51_direct_address(mcs51, arg, arg2 & mcs51->progmem[mcs51->npc++]);
+		(void)mcs51_direct_address(mcs51, arg, arg2 & mcs51->progmem[mcs51->npc++]);
 		break;
 	case 0x54: // ANL A,#data
 		arg = mcs51->progmem[mcs51->npc++];
@@ -589,13 +589,13 @@ MCS51_SingleStep(struct mcs51 *mcs51)
 		arg = mcs51->progmem[mcs51->npc++];
 		mcs51_trace(mcs51, "XRL\t0x%02x,A", arg);
 		arg2 = mcs51_direct_address(mcs51, arg, -1);
-		mcs51_direct_address(mcs51, arg, arg2 ^ ACC);
+		(void)mcs51_direct_address(mcs51, arg, arg2 ^ ACC);
 		break;
 	case 0x63: // XRL direct,#data
 		arg = mcs51->progmem[mcs51->npc++];
 		mcs51_trace(mcs51, "XRL\t0x%02x,#0x%02x", arg, mcs51->progmem[mcs51->npc]);
 		arg2 = mcs51_direct_address(mcs51, arg, -1);
-		mcs51_direct_address(mcs51, arg, arg2 ^ mcs51->progmem[mcs51->npc++]);
+		(void)mcs51_direct_address(mcs51, arg, arg2 ^ mcs51->progmem[mcs51->npc++]);
 		break;
 	case 0x64: // XRL A,#data
 		arg = mcs51->progmem[mcs51->npc++];
@@ -640,7 +640,7 @@ MCS51_SingleStep(struct mcs51 *mcs51)
 		arg = mcs51->progmem[mcs51->npc++];
 		mcs51_trace(mcs51, "ORL\tC,0x%02x", arg);
 		if (mcs51->bitfunc[arg](mcs51, arg, -1))
-			mcs51_carry(mcs51, 1);
+			(void)mcs51_carry(mcs51, 1);
 		break;
 	case 0x73: // JMP @A+DPTR
 		warg = (uint16_t)(mcs51->sfr[SFR_DPH]) << 8;
@@ -659,7 +659,7 @@ MCS51_SingleStep(struct mcs51 *mcs51)
 		arg = mcs51->progmem[mcs51->npc++];
 		arg2 = mcs51->progmem[mcs51->npc++];
 		mcs51_trace(mcs51, "MOV\t0x%02x,#0x%02x", arg, arg2);
-		mcs51_direct_address(mcs51, arg, arg2);
+		(void)mcs51_direct_address(mcs51, arg, arg2);
 		break;
 	case 0x76: // MOV @Ri,#data
 	case 0x77: // MOV @Ri,#data
@@ -692,7 +692,7 @@ MCS51_SingleStep(struct mcs51 *mcs51)
 		arg = mcs51->progmem[mcs51->npc++];
 		mcs51_trace(mcs51, "ORL\tC,0x%02x", arg);
 		if (!mcs51_bit_address(mcs51, arg, -1))
-			mcs51_carry(mcs51, 0);
+			(void)mcs51_carry(mcs51, 0);
 		break;
 	// 0x83 MOVC A,@A+PC
 	case 0x84: // DIV AB
@@ -705,7 +705,7 @@ MCS51_SingleStep(struct mcs51 *mcs51)
 		mcs51->sfr[SFR_B] = arg2;
 		mcs51_trace(mcs51, "A is 0x%02x", ACC);
 		mcs51_trace(mcs51, "B is 0x%02x", mcs51->sfr[SFR_B]);
-		mcs51_carry(mcs51, 0);
+		(void)mcs51_carry(mcs51, 0);
 		break;
 	case 0x85: // 0x85 MOV dataaddr,dataaddr
 		arg = mcs51->progmem[mcs51->npc++];
@@ -720,7 +720,7 @@ MCS51_SingleStep(struct mcs51 *mcs51)
 		u8p = mcs51_reg(mcs51, ins & 1);
 		mcs51_trace(mcs51, "MOV\t0x%02x,@R%d", arg, ins & 1);
 		mcs51_trace(mcs51, "R%d is 0x%02x", ins & 1, *u8p);
-		mcs51_direct_address(mcs51, arg, mcs51->iram[*u8p]);
+		(void)mcs51_direct_address(mcs51, arg, mcs51->iram[*u8p]);
 		break;
 	case 0x88: // MOV direct,Rn
 	case 0x89: // MOV direct,Rn
@@ -732,7 +732,7 @@ MCS51_SingleStep(struct mcs51 *mcs51)
 	case 0x8f: // MOV direct,Rn
 		arg = mcs51->progmem[mcs51->npc++];
 		mcs51_trace(mcs51, "MOV\t0x%02x,R%d", arg, ins & 7);
-		mcs51_direct_address(mcs51, arg, *mcs51_reg(mcs51, ins & 7));
+		(void)mcs51_direct_address(mcs51, arg, *mcs51_reg(mcs51, ins & 7));
 		break;
 	case 0x90: // MOV DPTR, #imm16
 		mcs51->sfr[SFR_DPH] = mcs51->progmem[mcs51->npc++];
@@ -744,7 +744,7 @@ MCS51_SingleStep(struct mcs51 *mcs51)
 	case 0x92: // MOV bit, C
 		arg = mcs51->progmem[mcs51->npc++];
 		mcs51_trace(mcs51, "MOV\t0x%02x,C", arg);
-		mcs51_bit_address(mcs51, arg, mcs51_carry(mcs51, -1));
+		(void)mcs51_bit_address(mcs51, arg, mcs51_carry(mcs51, -1));
 		break;
 	case 0x93: // MOVC A,@A+DPTR
 		warg = (uint16_t)(mcs51->sfr[SFR_DPH]) << 8;
@@ -796,7 +796,7 @@ MCS51_SingleStep(struct mcs51 *mcs51)
 	case 0xa2: // MOV C, bit
 		arg = mcs51->progmem[mcs51->npc++];
 		mcs51_trace(mcs51, "MOV\tC,0x%02x", arg);
-		mcs51_carry(mcs51, mcs51_bit_address(mcs51, arg, -1));
+		(void)mcs51_carry(mcs51, mcs51_bit_address(mcs51, arg, -1));
 		break;
 	case 0xa3: // INC DPTR
 		if (!++mcs51->sfr[SFR_DPL])
@@ -811,7 +811,7 @@ MCS51_SingleStep(struct mcs51 *mcs51)
 		mcs51_trace(mcs51, "MUL\tAB\t|A is 0x%02x\t|B is 0x%02x",
 		    ACC, mcs51->sfr[SFR_B]);
 		// XXX: OVERFLOW BIT
-		mcs51_carry(mcs51, 0);
+		(void)mcs51_carry(mcs51, 0);
 		break;
 	// 0xa5 reserved
 	case 0xa6: // MOV @Ri,direct
@@ -842,23 +842,23 @@ MCS51_SingleStep(struct mcs51 *mcs51)
 		arg = mcs51->progmem[mcs51->npc++];
 		mcs51_trace(mcs51, "CPL\t0x%02x", arg);
 		warg = mcs51_bit_address(mcs51, arg, -1);
-		mcs51_bit_address(mcs51, arg, 1 - warg);
+		(void)mcs51_bit_address(mcs51, arg, 1 - warg);
 		break;
 	case 0xb3: // CPL C
 		mcs51_trace(mcs51, "CPL\tC");
-		mcs51_carry(mcs51, !mcs51_carry(mcs51, -1));
+		(void)mcs51_carry(mcs51, !mcs51_carry(mcs51, -1));
 		break;
 	case 0xb4: // CJNE A,#data,rel
 		arg = mcs51->progmem[mcs51->npc++];
 		mcs51_trace(mcs51, "CJNE\tA,#0x%02x", arg);
-		mcs51_carry(mcs51, (int8_t)ACC < (int8_t)arg);
+		(void)mcs51_carry(mcs51, (int8_t)ACC < (int8_t)arg);
 		RELJMP(ACC != arg);
 		break;
 	case 0xb5: // CJNE A,data addr
 		arg = mcs51->progmem[mcs51->npc++];
 		mcs51_trace(mcs51, "CJNE\tA,0x%02x", arg);
 		arg2 = mcs51_direct_address(mcs51, arg, -1);
-		mcs51_carry(mcs51, (int8_t)ACC < (int8_t)arg2);
+		(void)mcs51_carry(mcs51, (int8_t)ACC < (int8_t)arg2);
 		RELJMP(ACC != arg2);
 		break;
 	case 0xb6: // CJNE @Ri,#data,rel
@@ -868,7 +868,7 @@ MCS51_SingleStep(struct mcs51 *mcs51)
 		mcs51_trace(mcs51, "CJNE\t@R%d,#0x%02x", ins & 1, arg);
 		mcs51_trace(mcs51, "R%d is 0x%02x\t0x%02x is 0x%02x",
 		    ins & 1, *u8p, *u8p, mcs51->iram[*u8p]);
-		mcs51_carry(mcs51, (int8_t)(mcs51->iram[*u8p]) < (int8_t)arg);
+		(void)mcs51_carry(mcs51, (int8_t)(mcs51->iram[*u8p]) < (int8_t)arg);
 		RELJMP(mcs51->iram[*u8p] != arg);
 		break;
 	// 0xb8-0xbf: CJNE Ri,#imm
@@ -884,7 +884,7 @@ MCS51_SingleStep(struct mcs51 *mcs51)
 		arg = mcs51->progmem[mcs51->npc++];
 		mcs51_trace(mcs51, "CJNE\tR%d,#0x%02x", ins & 7, arg);
 		mcs51_trace(mcs51, "R%d is 0x%02x", ins & 7, *u8p);
-		mcs51_carry(mcs51, (int8_t)(*u8p) < (int8_t)arg);
+		(void)mcs51_carry(mcs51, (int8_t)(*u8p) < (int8_t)arg);
 		RELJMP(*u8p != arg);
 		break;
 	case 0xc0: // PUSH direct
@@ -900,7 +900,7 @@ MCS51_SingleStep(struct mcs51 *mcs51)
 		break;
 	case 0xc3: // CLR C
 		mcs51_trace(mcs51, "CLR C");
-		mcs51_carry(mcs51, 0);
+		(void)mcs51_carry(mcs51, 0);
 		break;
 	case 0xc4: // SWAP A
 		warg = ACC;
@@ -930,7 +930,7 @@ MCS51_SingleStep(struct mcs51 *mcs51)
 	case 0xd0: // POP direct
 		arg = mcs51->progmem[mcs51->npc++];
 		mcs51_trace(mcs51, "POP\t0x%02x", arg);
-		mcs51_direct_address(mcs51, arg, mcs51_pop(mcs51));
+		(void)mcs51_direct_address(mcs51, arg, mcs51_pop(mcs51));
 		break;
 	case 0xd1: return (mcs51_AJMP_ACALL(mcs51, ins));
 	case 0xd2: // SETB bit
@@ -940,7 +940,7 @@ MCS51_SingleStep(struct mcs51 *mcs51)
 		break;
 	case 0xd3: // SETB C
 		mcs51_trace(mcs51, "SETB\tC");
-		mcs51_carry(mcs51, 1);
+		(void)mcs51_carry(mcs51, 1);
 		break;
 	// case 0xd4: DA A
 	case 0xd5: // DJNZ direct,rel
@@ -948,7 +948,7 @@ MCS51_SingleStep(struct mcs51 *mcs51)
 		mcs51_trace(mcs51, "DJNZ\t0x%02x", arg);
 		arg2 = mcs51_direct_address(mcs51, arg, -1);
 		arg2--;
-		mcs51_direct_address(mcs51, arg, arg2);
+		(void)mcs51_direct_address(mcs51, arg, arg2);
 		RELJMP(arg2);
 		break;
 	// 0xd6: XCH A,@R0
@@ -1042,7 +1042,7 @@ MCS51_SingleStep(struct mcs51 *mcs51)
 		    ins & 7, ins & 7, ACC);
 		break;
 	default:
-		mcs51_diag(mcs51, "Unimplemented Instruction");
+		(void)mcs51_diag(mcs51, "Unimplemented Instruction");
 		break;
 	}
 
@@ -1265,7 +1265,7 @@ MCS51_SetSFR(struct mcs51 *mcs51, uint8_t adr, sfrfunc_f *func,
 	assert(func);
 	assert(fmt);
 	va_start(ap, fmt);
-	vasprintf(&name, fmt, ap);
+	(void)vasprintf(&name, fmt, ap);
 	assert(name != NULL);
 	if (mcs51->sfrnames[adr] != NULL)
 		free(mcs51->sfrnames[adr]);
@@ -1284,7 +1284,7 @@ MCS51_SetBit(struct mcs51 *mcs51, uint8_t adr, bitfunc_f *func,
 	assert(func);
 	assert(fmt);
 	va_start(ap, fmt);
-	vasprintf(&name, fmt, ap);
+	(void)vasprintf(&name, fmt, ap);
 	assert(name != NULL);
 	if (mcs51->bitnames[adr] != NULL)
 		free(mcs51->bitnames[adr]);
@@ -1326,8 +1326,10 @@ MCS51_Create(const char *ident)
 		return (mcs51);
 
 	mcs51->ident = strdup(ident);
-	if (mcs51->ident == NULL)
+	if (mcs51->ident == NULL) {
+		free(mcs51);
 		return (NULL);
+	}
 
 	mcs51->iram_size = 256;
 
