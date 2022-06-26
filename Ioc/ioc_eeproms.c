@@ -44,32 +44,17 @@ static uint8_t resha_eeprom[32768];
 void
 ioc_load_eeproms(void)
 {
-	FILE* fhandle;
+	uint8_t tmp[0x8000];
 
-	fhandle = fopen(FIRMWARE_PATH "/IOC_EEPROM.bin", "rb");
-	if (fhandle == NULL) {
-		fprintf(stderr, "Cannot open %s: %s\n",
-		    FIRMWARE_PATH "/IOC_EEPROM.bin",
-		    strerror(errno));
-		exit(2);
-	}
-	assert(fread(ioc_eeprom_space + 0x0000, 1, 8192, fhandle) == 8192);
-	assert(fread(ioc_eeprom_space + 0x4000, 1, 8192, fhandle) == 8192);
-	assert(fread(ioc_eeprom_space + 0x2000, 1, 8192, fhandle) == 8192);
-	assert(fread(ioc_eeprom_space + 0x6000, 1, 8192, fhandle) == 8192);
-	AZ(fclose(fhandle));
+	load_programmable("ioc", resha_eeprom, sizeof resha_eeprom, "IOC_EEPROM");
+	memcpy(ioc_eeprom_space + 0x0000, tmp + 0x0000, 0x2000);
+	memcpy(ioc_eeprom_space + 0x2000, tmp + 0x4000, 0x2000);
+	memcpy(ioc_eeprom_space + 0x4000, tmp + 0x2000, 0x2000);
+	memcpy(ioc_eeprom_space + 0x6000, tmp + 0x6000, 0x2000);
 
 	Ioc_HotFix_Ioc();
 
-	fhandle = fopen(FIRMWARE_PATH "/RESHA_EEPROM.bin", "rb");
-	if (fhandle == NULL) {
-		fprintf(stderr, "Cannot open %s: %s\n",
-		    FIRMWARE_PATH "/RESHA_EEPROM.bin",
-		    strerror(errno));
-		exit(2);
-	}
-	assert(fread(resha_eeprom + 0x0000, 1, 32768, fhandle) == 32768);
-	AZ(fclose(fhandle));
+	load_programmable("resha", resha_eeprom, sizeof resha_eeprom, "RESHA_EEPROM");
 
 	Ioc_HotFix_Resha();
 }
