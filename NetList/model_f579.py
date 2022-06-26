@@ -96,16 +96,16 @@ class F579(PartFactory):
 		|			what = "up ";
 		|		} else {
 		|			// Count Down
-		|			state->reg += 255;
+		|			state->reg += BUS_IO_MASK;
 		|			what = "dn ";
 		|		}
-		|		state->reg &= 0xff;
+		|		state->reg &= BUS_IO_MASK;
 		|	}
 		|
 		|	if (PIN_CET=>) 
 		|		PIN_CO<=(1);
 		|	else if (PIN_UslashBnot=>)
-		|		PIN_CO<=(state->reg != 0xff);
+		|		PIN_CO<=(state->reg != BUS_IO_MASK);
 		|	else
 		|		PIN_CO<=(state->reg != 0x00);
 		|
@@ -145,3 +145,4 @@ def register(board):
     ''' Register component model '''
 
     board.add_part("F579", PartModel("F579", F579))
+    board.add_part("F579X2", PartModel("F579X2", F579))
