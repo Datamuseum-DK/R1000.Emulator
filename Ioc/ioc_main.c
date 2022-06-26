@@ -351,7 +351,7 @@ cpu_instr_callback(unsigned int pc)
 		pc = m68k_get_reg(NULL, M68K_REG_PC);
 		peg = mem_find_peg(pc);
 		if (peg == NULL) {
-			fprintf(stderr, "No PEG at address 0x%8x\n", pc);
+			fprintf(stderr, "No PEG at address 0x%08x\n", pc);
 			AN(peg);
 		}
 		if (*peg & PEG_BREAKPOINT)

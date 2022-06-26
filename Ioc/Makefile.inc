@@ -30,6 +30,7 @@ Ioc/ioc_eeproms.o: \
     Ioc/ioc.h \
     Ioc/memspace.h \
     Infra/vend.h \
+    Chassis/r1000sc.h \
     ${R1000DEP}
 
 OBJS += Ioc/ioc_pnlreg.o

@@ -38,6 +38,7 @@
 #include "Ioc/ioc.h"
 #include "Ioc/memspace.h"
 #include "Infra/vend.h"
+#include "Chassis/r1000sc.h"
 
 static uint8_t resha_eeprom[32768];
 
@@ -46,7 +47,7 @@ ioc_load_eeproms(void)
 {
 	uint8_t tmp[0x8000];
 
-	load_programmable("ioc", resha_eeprom, sizeof resha_eeprom, "IOC_EEPROM");
+	load_programmable("ioc", tmp, sizeof tmp, "IOC_EEPROM");
 	memcpy(ioc_eeprom_space + 0x0000, tmp + 0x0000, 0x2000);
 	memcpy(ioc_eeprom_space + 0x2000, tmp + 0x4000, 0x2000);
 	memcpy(ioc_eeprom_space + 0x4000, tmp + 0x2000, 0x2000);
