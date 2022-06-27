@@ -7,7 +7,7 @@ modem > _.modem
 scsi_tape
 scsi_disk 0 /critter/R1K/DiskImages/PE_R1K_Disk0.dd
 scsi_disk 1 /critter/R1K/DiskImages/PE_R1K_Disk1.dd
-reset
+ioc reset
 console match expect "Boot from (Tn or Dn)  [D0] : "
 console << ""
 console match expect "Kernel program (0,1,2) [0] : "
