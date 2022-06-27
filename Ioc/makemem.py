@@ -31,6 +31,7 @@ def main():
 
     ioc += Range("io_map", 0xa1000000, 0xa1002000)
 
+    # 32 bit writes on 0x400 boundaries, so only shift down 8.
     ioc += Range("xx_map", 0xa2000000, 0xa3000000, shift = 8)
 
     ioc += Range("io_rtc", 0xffff8000, 0x1f, pre_read = 1, post_write = 1)
