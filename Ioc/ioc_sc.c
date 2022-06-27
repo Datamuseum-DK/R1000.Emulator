@@ -8,6 +8,8 @@
 #include "Ioc/ioc.h"
 #include "Ioc/ioc_sc_68k20.hh"
 
+#include "Chassis/r1000sc_priv.h"
+
 struct bus_xact {
 	struct ioc_sc_bus_xact	xact[1];
 	int			is_sync;
@@ -34,7 +36,7 @@ ioc_bus_xact_schedule(uint32_t adr, uint32_t data, int width,
 {
 	struct bus_xact *bxp;
 
-	if (!sc_started)
+	if (!(sc_boards & R1K_BOARD_IOC) || !sc_started) 
 		return(data);
 
 	bxp = calloc(sizeof *bxp, 1);

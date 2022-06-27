@@ -94,6 +94,7 @@ Ioc/ioc_sc.o: \
     Ioc/ioc_sc.c \
     Ioc/ioc_sc_68k20.hh \
     Ioc/ioc.h \
+    Chassis/r1000sc_priv.h \
     ${R1000DEP}
 
 OBJS += Ioc/ioc_scsi_ctl.o
