@@ -9,6 +9,7 @@ fi
 	"console > Tests/_expmon_${EXPMON_TEST_NAME}.console" \
 	'trace +systemc' \
 	"sc launch ${EXPMON_LAUNCH}"\
+	"dummy_diproc -TIMEOUT mem1 mem2 mem3" \
 	"dummy_diproc ${EXPMON_DUMMY}" \
 	'sc trace "DI*PROC" 4' \
 	'sc q exit' \
