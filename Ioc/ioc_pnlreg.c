@@ -6,14 +6,7 @@
  *
  */
 
-#include <pthread.h>
-#include <string.h>
-#include <time.h>
-#include <sys/time.h>
-
 #include "Infra/r1000.h"
-#include "Infra/vend.h"
-#include "Ioc/ioc.h"
 #include "Ioc/memspace.h"
 
 void v_matchproto_(mem_post_write)

@@ -91,8 +91,7 @@ flint:
 		Diag/*.c \
 		Infra/*.c \
 		Ioc/*.c \
-		SystemC/sc.c \
-		diagbus.c
+		Chassis/*.c \
 
 setup:
 	git clone https://github.com/Datamuseum-DK/Musashi
@@ -117,7 +116,7 @@ cli:	r1000sim.${SC_BRANCH}
 		"scsi_tape" \
 		"scsi_disk 0 ${DISK0_IMAGE}" \
 		"scsi_disk 1 ${DISK1_IMAGE}" \
-		"reset" \
+		"ioc reset" \
 		'console match expect "Boot from (Tn or Dn)  [D0] : "' \
 		'console << ""' \
 		'console match expect "Kernel program (0,1,2) [0] : "' \
@@ -282,7 +281,7 @@ novram:	r1000sim.${SC_BRANCH}
 		"scsi_tape" \
 		"scsi_disk 0 ${DISK0_IMAGE}" \
 		"scsi_disk 1 ${DISK1_IMAGE}" \
-		"reset" \
+		"ioc reset" \
 		'console match expect "Boot from (Tn or Dn)  [D0] : "' \
 		'console << ""' \
 		'console match expect "Kernel program (0,1,2) [0] : "' \
@@ -332,7 +331,7 @@ expmon:	all
 		"scsi_tape" \
 		"scsi_disk 0 ${DISK0_IMAGE}" \
 		"scsi_disk 1 ${DISK1_IMAGE}" \
-		"reset" \
+		"ioc reset" \
 		'console match expect "Boot from (Tn or Dn)  [D0] : "' \
 		'console << ""' \
 		'console match expect "Kernel program (0,1,2) [0] : "' \
@@ -379,7 +378,7 @@ rdiag:	r1000sim.${SC_BRANCH}
 		"scsi_tape" \
 		"scsi_disk 0 ${DISK0_IMAGE}" \
 		"scsi_disk 1 ${DISK1_IMAGE}" \
-		"reset" \
+		"ioc reset" \
 		'console match expect "Boot from (Tn or Dn)  [D0] : "' \
 		'console << ""' \
 		'console match expect "Kernel program (0,1,2) [0] : "' \
@@ -413,7 +412,7 @@ seagate:	r1000sim.${SC_BRANCH}
 		"diag > _.diag" \
 		"scsi_disk 0 ${DISK0B_IMAGE}" \
 		"scsi_disk 1 ${DISK1B_IMAGE}" \
-		"reset" \
+		"ioc reset" \
 		'console match expect "Boot from (Tn or Dn)  [D0] : "' \
 		'console << ""' \
 		'console match expect "Kernel program (0,1,2) [0] : "' \
@@ -435,7 +434,7 @@ tape:	r1000sim.${SC_BRANCH}
 		"console telnet :1400" \
 		"console serial /dev/nmdm0B" \
 		"console > _.console" \
-		"reset" \
+		"ioc reset" \
 		'console match expect "Boot from (Tn or Dn)  [D0] : "' \
 		'console << "T0"' \
 		'console match expect "Select files to boot [D=DEFAULT, O=OPERATOR_SUPPLIED] : [D]"' \

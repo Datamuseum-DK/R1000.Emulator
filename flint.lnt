@@ -18,6 +18,7 @@
 
 // 527     Unreachable code at token '___'
 -emacro(527, WRONG)
+-esym(527, break)
 
 // 534 Ignoring return value of our own functions
 -esym(534, cli_error)
@@ -39,6 +40,9 @@
 -esym(534, memcpy)
 -esym(534, usleep)
 -esym(534, rpn_error)
+
+// 641 Converting enum 'sfr_e' to 'int'
+-esym(641, sfr_e)
 
 // 740 Unusual pointer cast (incompatible indirect types)
 -emacro((740), VTAILQ_LAST)

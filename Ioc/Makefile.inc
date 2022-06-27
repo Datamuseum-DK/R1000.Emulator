@@ -36,7 +36,6 @@ Ioc/ioc_eeproms.o: \
 OBJS += Ioc/ioc_pnlreg.o
 Ioc/ioc_pnlreg.o: \
     Ioc/ioc_pnlreg.c \
-    Ioc/ioc.h \
     Ioc/memspace.h \
     Infra/vend.h \
     ${R1000DEP}

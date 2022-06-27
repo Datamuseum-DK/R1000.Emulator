@@ -11,6 +11,7 @@ class Range():
         lo,
         hi,
         mask=None,
+        shift=0,
         bidir=True,
         pre_read=None,
         post_write=None,
@@ -22,6 +23,7 @@ class Range():
         self.lo = lo
         self.hi = hi
         self.mask = mask
+        self.shift = shift
         self.bidir = bidir
         self.pre_read = pre_read
         self.post_write = post_write
@@ -56,6 +58,9 @@ class Range():
             else:
                 self.effective_address = "address"
             self.length = self.hi - self.lo
+            if self.shift:
+                self.length >>= self.shift
+                self.effective_address = "((" + self.effective_address + ")>>0x%x)" % self.shift
 
         if self.pre_read is True:
             self.pre_read = self.name + "_pre_read"
@@ -184,7 +189,7 @@ class Range():
             assert False, "Bogo Width"
 
         if self.sc_write:
-            fo.write("\t\tioc_bus_xact_schedule(address, value, %d, 1, 1);\n" % width)
+            fo.write("\t\t(void)ioc_bus_xact_schedule(address, value, %d, 1, 1);\n" % width)
         if self.post_write:
             j = "\t\t" + self.name + "_post_write" + "("
             if 'debug' in what:
