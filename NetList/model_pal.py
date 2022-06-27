@@ -137,11 +137,10 @@ class PalMacroCell():
 class GAL(PartFactory):
     ''' A generic GAL/PAL chip '''
 
-    def __init__(self, board, ident, jedecfile):
+    def __init__(self, board, ident, palbits):
         super().__init__(board, ident)
 
-        with open(jedecfile, "rb") as file:
-            self.palbits = file.read()
+        self.palbits = palbits
         self.palpins = {}
         self.palterms = []
         self.palrows = []
@@ -524,19 +523,18 @@ class GAL22V10(GAL):
 class PALModel(PartModel):
     ''' ... '''
 
-    def __init__(self, name, filename):
-        self.filename = filename
-        fsiz = os.stat(filename).st_size
+    def __init__(self, name, octets):
+        self.octets = octets
         self.cls = {
             2194: GAL16V8,
             5892: GAL22V10,
-        }.get(fsiz)
+        }.get(len(octets))
         assert self.cls
         super().__init__(name, self.cls)
         self.busable = False
 
     def create(self, board, ident):
-        return self.factory(board, ident, self.filename)
+        return self.factory(board, ident, self.octets)
 
     def assign(self, comp):
         for node in comp:
@@ -545,13 +543,32 @@ class PALModel(PartModel):
                 node.pin.role = "sc_out <sc_logic>"
         super().assign(comp)
 
+def iter_pals():
+    ''' Read PAL bitstreams out of firmware.c "library" '''
+    with open("Infra/firmware.c") as file:
+        sect = []
+        for line in file:
+            if line[:6] != "static":
+                sect.append(line)
+                continue
+            if "GAL" in sect[0]:
+                palname = sect[0].split()[3]
+                palname = palname.split('[')[0]
+                palname = palname.split('_')[0]
+                palname = palname.replace("GAL", "PAL")
+                body = bytearray()
+                for j in sect[1:]:
+                    if j[0] == '}':
+                        break
+                    j = j.replace(",", " ")
+                    j = j.replace("0x", " ")
+                    body += bytearray.fromhex(j)
+                yield [palname, body]
+            sect = [line]
+
 def register(board):
     ''' Register component models '''
 
-    for filename in glob.glob("_Firmware/*GAL*BIN"):
-        palname = filename.split('/')[-1]
-        palname = palname.split('-')[0]
-        palname = palname.replace("GAL", "PAL")
-        fsiz = os.stat(filename).st_size
-        if fsiz in (2194, 5892):
-            board.add_part(palname, PALModel(palname, filename))
+    for palname, octets in iter_pals():
+        assert len(octets) in (2194, 5892)
+        board.add_part(palname, PALModel(palname, octets))

@@ -31,43 +31,11 @@
 '''
    Fetch the R1000 firmware files from the Datamuseum.dk BitStore
    --------------------------------------------------------------
+   And put them in the Infra/firmware.c "library"
+
 '''
 
-import sys
-import os
 import http.client
-
-FWPATH = '_Firmware'
-
-conn = http.client.HTTPSConnection('datamuseum.dk')
-
-def getone(nbr):
-    ''' Fetch one artifact from the Bitstore '''
-
-    dst = FWPATH + "/%d.bin" % nbr
-    try:
-        inode = os.stat(dst)
-        if inode.st_nlink == 2:
-            return
-    except FileNotFoundError:
-        pass
-
-    conn.request("GET", "/bits/%d" % nbr)
-    resp = conn.getresponse()
-    body = resp.read()
-    with open(dst, "wb") as file:
-        file.write(body)
-
-    for hdr in resp.getheaders():
-        if hdr[0] == 'Content-Disposition':
-            flds = hdr[1].split('"')
-            assert flds[0] == 'attachment; filename='
-            assert flds[2] == ''
-            assert '..' not in flds[1]
-            assert '/' not in flds[1]
-            os.link(dst, FWPATH + "/" + flds[1])
-            print("Got", nbr, flds[1])
-            break
 
 def firmwarelist():
     ''' See: https://datamuseum.dk/wiki/Bits:Keyword/RATIONAL_1000/SW '''
@@ -97,10 +65,64 @@ def firmwarelist():
     yield from range(30003041, 30003042)	# DIPROC "-01"
     yield from range(30003101, 30003107)	# NOVRAMS
 
-try:
-    os.mkdir(FWPATH)
-except FileExistsError:
-    pass
+def getone(http_conn, nbr):
+    ''' Fetch one artifact from the Bitstore '''
 
-for i in firmwarelist():
-    getone(i)
+    http_conn.request("GET", "/bits/%d" % nbr)
+    resp = http_conn.getresponse()
+    body = resp.read()
+
+    for hdr in resp.getheaders():
+        if hdr[0] == 'Content-Disposition':
+            flds = hdr[1].split('"')
+            assert flds[0] == 'attachment; filename='
+            assert flds[2] == ''
+            assert '..' not in flds[1]
+            assert '/' not in flds[1]
+            return (flds[1], body)
+
+    return None, None
+
+def main():
+    ''' ... '''
+
+    hconn = http.client.HTTPSConnection('datamuseum.dk')
+
+    namelist = []
+    with open("Infra/firmware.c", "w", encoding="ASCII") as file:
+        file.write('/* MACHINE GENERATED, see fetch_firmware.py */\n')
+        file.write('\n')
+        file.write('#include <stdint.h>\n')
+        file.write('#include <stdint.h>\n')
+        file.write('#include <string.h>\n')
+        file.write('#include <Infra/r1000.h>\n')
+        for artifact in firmwarelist():
+            print("Fetching", artifact)
+            fname, body = getone(hconn, artifact)
+            fname = fname.replace(".bin", "")
+            fname = fname.replace(".BIN", "")
+            cname = fname.replace("-", "_")
+            namelist.append((fname, cname, len(body)))
+            file.write('\nstatic const uint8_t %s[0x%x] = {\n' % (cname, len(body)))
+            stride = 16
+            for subrange in range(0, len(body), stride):
+                octets = body[subrange:subrange + stride]
+                file.write("    " + ",".join("0x%02x" % x for x in octets) + ",\n")
+            file.write("};\n")
+            file.flush()
+
+        file.write('\n')
+        file.write('int\n')
+        file.write('get_firmware(const char *name, size_t size, void *dst)\n')
+        file.write('{\n')
+        for fname, cname, size in sorted(namelist):
+            file.write('\tif (!strcmp(name, "%s")) {\n' % fname)
+            file.write('\t\tassert(size == 0x%x);\n' % size)
+            file.write('\t\tmemcpy(dst, %s, 0x%x);\n' % (cname, size))
+            file.write('\t\treturn(0);\n')
+            file.write('\t}\n')
+        file.write('\treturn(-1);\n')
+        file.write('}\n')
+
+if __name__ == "__main__":
+    main()

@@ -35,8 +35,6 @@
 #include <pthread.h>
 #include <sys/types.h>
 
-#define FIRMWARE_PATH "_Firmware"
-
 #include "vqueue.h"
 
 #define AZ(x) assert((x) == 0);
@@ -175,6 +173,10 @@ nanosec callout_poll(void);
 cli_func_f cli_dummy_diproc;
 cli_func_f cli_diag;
 void diagbus_init(void);
+
+/* FIRMWARE *********************************************************/
+
+int get_firmware(const char *name, size_t size, void *dst);
 
 /* MEMORY *************************************************************/
 

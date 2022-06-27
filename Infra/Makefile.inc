@@ -35,6 +35,10 @@ Infra/elastic_elastic.o: \
     Infra/elastic.h \
     ${R1000DEP}
 
+OBJS += Infra/firmware.o
+Infra/firmware.o: \
+    ${R1000DEP}
+
 OBJS += Infra/elastic_tcp.o
 Infra/elastic_tcp.o: \
     Infra/elastic_tcp.c \

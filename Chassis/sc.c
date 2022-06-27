@@ -110,37 +110,33 @@ void
 load_programmable(const char *who, void *dst, size_t size, const char *arg)
 {
 	char buf[BUFSIZ];
-	FILE *f;
-	size_t sz;
+	int ret;
 
-	bprintf(buf, "%s/%s.bin", FIRMWARE_PATH, arg);
-	f = fopen(buf, "r");
-	if (f == NULL) {
-		bprintf(buf, "%s/%s-01.bin", FIRMWARE_PATH, arg);
-		f = fopen(buf, "r");
+	bprintf(buf, "%s", arg);
+        ret = get_firmware(buf, size, dst);
+	if (ret < 0) {
+		bprintf(buf, "%s-01", arg);
+		ret = get_firmware(buf, size, dst);
 	}
-	if (f == NULL) {
-		bprintf(buf, "%s/%s-02.bin", FIRMWARE_PATH, arg);
-		f = fopen(buf, "r");
+	if (ret < 0) {
+		bprintf(buf, "%s-02", arg);
+		ret = get_firmware(buf, size, dst);
 	}
-	if (f == NULL) {
-		bprintf(buf, "%s/%s-03.bin", FIRMWARE_PATH, arg);
-		f = fopen(buf, "r");
+	if (ret < 0) {
+		bprintf(buf, "%s-03", arg);
+		ret = get_firmware(buf, size, dst);
 	}
-	if (f == NULL) {
-		bprintf(buf, "%s/PROM-%s.bin", FIRMWARE_PATH, arg);
-		f = fopen(buf, "r");
+	if (ret < 0) {
+		bprintf(buf, "PROM-%s", arg);
+		ret = get_firmware(buf, size, dst);
 	}
-	if (f == NULL) {
+	if (ret < 0) {
 		fprintf(stderr, "Firmware '%s' missing for '%s'\n", arg, who);
 		fprintf(stderr, "(run 'make setup_systemc' ?)\n");
 		exit(2);
+	} else {
+		sc_tracef(who, "FIRMWARE %s => %s", arg, buf);
 	}
-	AN(f);
-	sc_tracef(who, "FIRMWARE %s => %s", arg, buf);
-	sz = fread(dst, 1, size, f);
-	assert(sz == size);
-	AZ(fclose(f));
 }
 
 double

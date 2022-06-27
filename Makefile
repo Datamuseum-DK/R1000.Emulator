@@ -20,10 +20,6 @@ DFS_TAPE ?= "/critter/BitStoreCache/30000750.bin"
 DISK0B_IMAGE = "/critter/DDHF/R1000/R1K_Seagate/R1K_Seagate0.BIN"
 DISK1B_IMAGE = "/critter/DDHF/R1000/R1K_Seagate/R1K_Seagate1.BIN"
 
-# Cache directory for firmware files, (relative to this directory)
-FIRMWARE_PATH = _Firmware
-
-
 CFLAGSMINUSI += -I.
 CFLAGSMINUSD += -DMUSASHI_CNF='"Ioc/musashi_conf.h"'
 CFLAGSMINUSD += -DFIRMWARE_PATH='"${FIRMWARE_PATH}"'
