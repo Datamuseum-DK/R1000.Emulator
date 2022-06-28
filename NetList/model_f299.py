@@ -44,7 +44,7 @@ class F299(PartFactory):
 
     def state(self, file):
         file.fmt('''
-		|	uint8_t reg;
+		|	unsigned reg;
 		|''')
 
     def sensitive(self):
@@ -97,7 +97,8 @@ class F299(PartFactory):
 		|		case 1:
 		|			what = ">> ";
 		|			state->reg >>= 1;
-		|			if (PIN_RSI=>) state->reg |= 0x80;
+		|			state->reg &= (BUS_DQ_MASK >> 1);
+		|			if (PIN_RSI=>) state->reg |= (1 << (BUS_DQ_WIDTH-1));
 		|			break;
 		|		default:
 		|			break;
@@ -112,8 +113,13 @@ class F299(PartFactory):
 		|			what = "out ";
 		|		BUS_DQ_WRITE(state->reg);
 		|	}
-		|	PIN_Q0<=((state->reg & 0x80) != 0);
+		|	PIN_Q0<=((state->reg & (1 << (BUS_DQ_WIDTH-1))) != 0);
+		|#if BUS_DQ_WIDTH == 8
 		|	PIN_Q7<=((state->reg & 0x01) != 0);
+		|#else
+		|	PIN_Q15<=((state->reg & 0x01) != 0);
+		|#endif
+		|
 		|	if (what != NULL) {
 		|		TRACE(
 		|		    << what
@@ -136,7 +142,136 @@ class F299(PartFactory):
 		|	}
 		|''')
 
+
+class F299X8(PartFactory):
+
+    ''' 8X F299 Octal Universal Shift/Storage Register with Common Parallel I/O Pins '''
+
+    def state(self, file):
+        file.fmt('''
+		|	uint64_t reg;
+		|''')
+
+    def sensitive(self):
+        yield "PIN_CLK.pos()"
+        yield "PIN_G1"
+        yield "PIN_G2"
+        if not self.comp.nodes["CLR"].net.is_pu():
+            yield "PIN_CLR"
+
+    def doit(self, file):
+        ''' The meat of the doit() function '''
+
+        super().doit(file)
+
+        file.fmt('''
+		|	const char *what = NULL;
+		|	unsigned mode = 0, tmp;
+		|
+		|	BUS_S_READ(mode);
+		|
+		|	if (mode == 0) {
+		|		next_trigger(
+		|		    BUS_S_EVENTS() |
+		|		    PIN_G1.default_event() | PIN_G2.default_event()
+		|		);
+		|	}
+		|
+		|''')
+        if "CLR" in self.comp and not self.comp["CLR"].net.is_const():
+            file.fmt('''
+		|	if (!PIN_CLR=>) {
+		|		state->reg = 0;
+		|		what = "clr ";
+		|		next_trigger(PIN_CLR.posedge_event());
+		|	} else
+		|''')
+
+        file.fmt('''
+		|	if (PIN_CLK.posedge()) {
+		|		switch (mode) {
+		|		case 3:
+		|			what = "load ";
+		|			BUS_DQ_READ(state->reg);
+		|			break;
+		|		case 2:
+		|			what = "<< ";
+		|			state->reg <<= 1;
+		|			state->reg &= 0xfefefefefefefefe;
+		|			BUS_LI_READ(tmp);
+		|			if (tmp & 0x80) state->reg |= (1ULL << 56);
+		|			if (tmp & 0x40) state->reg |= (1ULL << 48);
+		|			if (tmp & 0x20) state->reg |= (1ULL << 40);
+		|			if (tmp & 0x10) state->reg |= (1ULL << 32);
+		|			if (tmp & 0x08) state->reg |= (1ULL << 24);
+		|			if (tmp & 0x04) state->reg |= (1ULL << 16);
+		|			if (tmp & 0x02) state->reg |= (1ULL <<  8);
+		|			if (tmp & 0x01) state->reg |= 1;
+		|			break;
+		|		case 1:
+		|			what = ">> ";
+		|			state->reg >>= 1;
+		|			state->reg &= 0x7f7f7f7f7f7f7f7f;
+		|			BUS_RI_READ(tmp);
+		|			if (tmp & 0x80) state->reg |= (1ULL << 63);
+		|			if (tmp & 0x40) state->reg |= (1ULL << 55);
+		|			if (tmp & 0x20) state->reg |= (1ULL << 47);
+		|			if (tmp & 0x10) state->reg |= (1ULL << 39);
+		|			if (tmp & 0x08) state->reg |= (1ULL << 31);
+		|			if (tmp & 0x04) state->reg |= (1ULL << 23);
+		|			if (tmp & 0x02) state->reg |= (1ULL << 15);
+		|			if (tmp & 0x01) state->reg |= (1ULL << 7);
+		|			break;
+		|		default:
+		|			break;
+		|		}
+		|	}
+		|	if ((PIN_G1=> || PIN_G2=>) || (mode == 3)) {
+		|		if (what == NULL && (state->ctx.do_trace & 2))
+		|			what = "Z ";
+		|		BUS_DQ_Z();
+		|	} else {
+		|		if (what == NULL && (state->ctx.do_trace & 2))
+		|			what = "out ";
+		|		BUS_DQ_WRITE(state->reg);
+		|	}
+		|	tmp = 0;
+		|	if (state->reg & (1ULL << 56)) tmp |= 0x80;
+		|	if (state->reg & (1ULL << 48)) tmp |= 0x40;
+		|	if (state->reg & (1ULL << 40)) tmp |= 0x20;
+		|	if (state->reg & (1ULL << 32)) tmp |= 0x10;
+		|	if (state->reg & (1ULL << 24)) tmp |= 0x08;
+		|	if (state->reg & (1ULL << 16)) tmp |= 0x04;
+		|	if (state->reg & (1ULL <<  8)) tmp |= 0x02;
+		|	if (state->reg & 1ULL)         tmp |= 0x01;
+		|	BUS_Q_WRITE(tmp);
+		|
+		|	if (what != NULL) {
+		|		TRACE(
+		|		    << what
+		|		    << "clk " << PIN_CLK.posedge()
+		|		    << " s " << BUS_S_TRACE()
+		|		    << " g " << PIN_G1? << PIN_G2?
+		|''')
+
+        if "CLR" in self.comp:
+            file.fmt('''
+		|		    << " mr " << PIN_CLR?
+		|''')
+
+        file.fmt('''
+		|		    << " ri " << BUS_RI_TRACE()
+		|		    << " li " << BUS_LI_TRACE()
+		|		    << " dq " << BUS_DQ_TRACE()
+		|		    << " q " << std::hex << tmp
+		|		    << " | " << std::hex << state->reg
+		|		);
+		|	}
+		|''')
+
 def register(board):
     ''' Register component model '''
 
     board.add_part("F299", PartModel("F299", F299))
+    board.add_part("F299X2", PartModel("F299X2", F299))
+    board.add_part("F299X8", PartModel("F299X8", F299X8))
