@@ -41,9 +41,6 @@ class Xreg(PartFactory):
 
     ''' F374 Octal D-Type Flip-Flop with 3-STATE Outputs '''
 
-    def __init__(self, board, ident):
-        super().__init__(board, ident)
-
     def state(self, file):
         ''' Extra state variable '''
 

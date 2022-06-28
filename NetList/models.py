@@ -82,6 +82,7 @@ import model_pbxxx
 import model_xadd8
 import model_xalu
 import model_xbuf
+import model_xecc
 import model_xeq
 import model_xlat
 import model_xmux16_1
@@ -145,6 +146,7 @@ def register(where):
     model_xadd8.register(where)
     model_xalu.register(where)
     model_xbuf.register(where)
+    model_xecc.register(where)
     model_xeq.register(where)
     model_xlat.register(where)
     model_xmux16_1.register(where)
