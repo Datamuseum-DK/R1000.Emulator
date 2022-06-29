@@ -65,9 +65,6 @@ class NetBus():
             self.components[node.component].append(node)
             self.nodes[node.component][node.net] = node
 
-    def remove_node(self, node):
-        del self.nodes[node.component][node.net]
-
     def first_node(self, comp):
         return self.nodes[comp][self.nets[0]]
 
@@ -81,27 +78,44 @@ class NetBus():
                 node.pin.netbusidx = idx
 
     def invalid(self, file):
-        self.sort_nets()
-        for comp in self.components:
-            if not comp.part.busable:
-                file.write("\nComponent not busable " + comp.part.name + "\n")
-                self.table(file, "\t")
-                return True
-            sks = list(self.nodes[comp][net].pin.sortkey for net in self.nets)
-            spread = 1 + sks[-1][-1] - sks[0][-1]
-            if sks != sorted(sks):
-                file.write("\nBus pins out of order " + comp.name + "\n")
-                self.table(file, "\t")
-                return True
-            if spread != len(self.nets):
-                file.write("\nBus pins out of order " + comp.name + "\n")
-                self.table(file, "\t")
-                return True
         sc_type = set(x.sc_type for x in self.nets)
         if len(sc_type) > 1:
             file.write("\nMixed bus " + str(sc_type) + "\n")
             self.table(file, "\t")
             return True
+        for comp in self.components:
+            if not comp.part.busable:
+                file.write("\nComponent not busable " + comp.part.name + "\n")
+                self.table(file, "\t")
+                return True
+        return False
+
+    def unordered(self, file):
+        for comp in self.components:
+            sks = list(self.nodes[comp][net].pin.sortkey for net in self.nets)
+            spread = 1 + sks[-1][-1] - sks[0][-1]
+            if sks != sorted(sks) or spread != len(self.nets):
+                if not self.searching:
+                    file.write("\nBus pins out of order " + comp.name + "\n")
+                    self.table(file, "\t")
+                if len(self.nets) > 2 and len(self.nets) - 1 > len(self.best):
+                    self.searching += 1
+                    orig = self.nets
+                    self.nets = orig[1:]
+                    self.unordered(file)
+                    self.nets = orig[:-1]
+                    self.unordered(file)
+                    self.nets = orig
+                    self.searching -= 1
+                if not self.searching and self.best:
+                    orig = self.nets
+                    self.nets = self.best
+                    file.write("\nSubset found \n")
+                    self.table(file, "\t")
+                    self.nets = orig
+                return True
+        if len(self.nets) > len(self.best):
+            self.best = self.nets
         return False
 
     def table(self, file, pfx=""):
@@ -237,13 +251,43 @@ class PassNetConfig():
                 self.netbusses[sig] = NetBus(sig, net)
 
         for sig, maybebus in list(self.netbusses.items()):
-            if len(maybebus.nets) < 2 or maybebus.invalid(file):
+            maybebus.sort_nets()
+            if len(maybebus.nets) < 2:
                 del self.netbusses[sig]
+                continue
+            if maybebus.invalid(file):
+                del self.netbusses[sig]
+                continue
+
+        accepted = []
+        for sig, maybebus in self.netbusses.items():
+            while len(maybebus.nets) > 2:
+                maybebus.sort_nets()
+                maybebus.best = []
+                maybebus.searching = 0
+                if not maybebus.unordered(file):
+                    accepted.append(maybebus)
+                    break
+                if len(maybebus.best) < 2:
+                    break
+
+                target = set(maybebus.best)
+                rest = set(maybebus.nets) - target
+                target = list(target)
+                rest = list(rest)
+
+                newbus = NetBus(maybebus.sig, target.pop(0))
+                while target:
+                    newbus.add_net(target.pop(0))
+
+                maybebus = NetBus(maybebus.sig, rest.pop(0))
+                while rest:
+                    maybebus.add_net(rest.pop(0))
 
         file.write("\n")
         file.write("Accepted busses\n")
         file.write("===============\n")
-        for netbus in self.netbusses.values():
+        for netbus in accepted:
             netbus.register()
             file.write("\n")
             netbus.table(file)
