@@ -153,7 +153,7 @@ SC_MODULE(PowerSequencer)
 		wait(100, SC_NS);
 		clamp = sc_logic_1;
 		wait(200, SC_NS);
-		reset = sc_logic_1;
+		reset = sc_logic_Z;
 	}
 };
 
