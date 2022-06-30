@@ -320,6 +320,19 @@ cli_sc_trace(struct cli *cli)
 	regfree(&rex);
 }
 
+int sc_forced_reset;
+
+static void v_matchproto_(cli_func_f)
+cli_sc_force_reset(struct cli *cli)
+{
+	if (cli->help) {
+		cli_printf(cli,
+		    "force reset signal high for IOC without IOP\n");
+		return;
+	}
+	sc_forced_reset = 1;
+}
+
 static const struct cli_cmds cli_sc_cmds[] = {
 	{ "launch",		cli_sc_launch },
 	{ "q",			cli_sc_quota },
@@ -328,6 +341,7 @@ static const struct cli_cmds cli_sc_cmds[] = {
 	{ "trace",		cli_sc_trace },
 	{ "wait",		cli_sc_wait },
 	{ "watchdog",		cli_sc_watchdog },
+	{ "force_reset",	cli_sc_force_reset },
 	{ NULL,			NULL },
 };
 

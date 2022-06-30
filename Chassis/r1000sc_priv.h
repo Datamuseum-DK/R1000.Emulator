@@ -24,6 +24,8 @@ double sc_when(void);
 extern int sc_boards;
 extern const char *tracefilename;
 
+extern int sc_forced_reset;
+
 #ifndef __cplusplus
 cli_func_f cli_sc_watchdog;
 #endif

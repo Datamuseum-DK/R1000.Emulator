@@ -153,7 +153,16 @@ SC_MODULE(PowerSequencer)
 		wait(100, SC_NS);
 		clamp = sc_logic_1;
 		wait(200, SC_NS);
-		reset = sc_logic_Z;
+		/*
+		 * When running IOC experiments without the IOP we need
+		 * to force the reset signal high because DREG4 pulls it
+		 * low on IOC_RESET and the IOP will not be releasing it.
+		 * (1+0 = 'X' but that is good enough for now.)
+		 */
+		if (sc_forced_reset)
+			reset = sc_logic_1;
+		else
+			reset = sc_logic_Z;
 	}
 };
 

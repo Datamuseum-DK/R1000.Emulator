@@ -131,11 +131,11 @@ test_ioc:	r1000sim.${SC_BRANCH}
 	./r1000sim.${SC_BRANCH} \
 		-T ${TRACE_FILE} \
 		'sc watchdog 10' \
+		'sc force_reset' \
 		"trace +diagbus_bytes" \
 		"diag > _.diag" \
 		'trace +systemc' \
 		'sc launch ioc ' \
-		'sc trace "." 0' \
 		'sc trace "DI*PROC" 6' \
 		'sc trace "DFREG" 1' \
 		'sc q exit' \
