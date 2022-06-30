@@ -59,6 +59,7 @@ class XVNAND(PartFactory):
 def register(board):
     ''' Register component model '''
 
+    board.add_part("XVNAND7", PartModel("XVNAND7", XVNAND))
     board.add_part("XVNAND12", PartModel("XVNAND12", XVNAND))
     board.add_part("XVNAND14", PartModel("XVNAND14", XVNAND))
     board.add_part("XVNAND16", PartModel("XVNAND16", XVNAND))
