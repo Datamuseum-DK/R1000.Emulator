@@ -1,7 +1,6 @@
 
 ./r1000sim \
 	-T /critter/_r1000 \
-	"console > Tests/_fru.console" \
 	'trace +systemc' \
 	"sc launch ioc fiu seq val typ mem0" \
 	"dummy_diproc -TIMEOUT mem1 mem2 mem3" \
@@ -10,6 +9,7 @@
 	'sc q 3000' \
 	"ioc syscall internal" \
 	-f Tests/cli_prompt.cli \
+	"console > Tests/_fru.console" \
 	'console << "x fru"' \
 	'console match expect "Please enter option : "' \
 	'console << "3"' \
