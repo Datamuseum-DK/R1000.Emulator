@@ -81,6 +81,7 @@ TRANSIT = {
     "*": {
          "GB293": GB["BP_CLK_2X"],
          "GB287": GB["BP_CLK_2X_"],
+         "GF293": GB["CLK_Q1_"],
     },
     "fiu": {
          "GB268": "*",		# F.PAGE_STATE~0
