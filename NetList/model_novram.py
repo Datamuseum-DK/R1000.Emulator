@@ -43,6 +43,8 @@ class NOVRAM(PartFactory):
     def state(self, file):
         ''' Extra state variable '''
 
+        file.write("\tbool writing;\n")
+        file.write("\tuint8_t perm[256];\n")
         file.write("\tuint8_t ram[256];\n")
 
     def init(self, file):
@@ -54,22 +56,22 @@ class NOVRAM(PartFactory):
 		|	should_i_trace(this->name(), &state->ctx.do_trace);
 		|
 		|	if (strstr(this->name(), "FIU")) {
-		|		load_programmable(arg, state->ram, sizeof state->ram,
+		|		load_programmable(arg, state->perm, sizeof state->perm,
 		|		    "R1000_FIU_NOVRAM");
 		|	} else if (strstr(this->name(), "VAL")) {
-		|		load_programmable(arg, state->ram, sizeof state->ram,
+		|		load_programmable(arg, state->perm, sizeof state->perm,
 		|		    "R1000_VAL_NOVRAM");
 		|	} else if (strstr(this->name(), "TYP")) {
-		|		load_programmable(arg, state->ram, sizeof state->ram,
+		|		load_programmable(arg, state->perm, sizeof state->perm,
 		|		    "R1000_TYP_NOVRAM");
 		|	} else if (strstr(this->name(), "SEQ")) {
-		|		load_programmable(arg, state->ram, sizeof state->ram,
+		|		load_programmable(arg, state->perm, sizeof state->perm,
 		|		    "R1000_SEQ_NOVRAM");
 		|	} else if (strstr(this->name(), "MEM0")) {
-		|		load_programmable(arg, state->ram, sizeof state->ram,
+		|		load_programmable(arg, state->perm, sizeof state->perm,
 		|		    "R1000_MEM0_NOVRAM");
 		|	} else if (strstr(this->name(), "MEM2")) {
-		|		load_programmable(arg, state->ram, sizeof state->ram,
+		|		load_programmable(arg, state->perm, sizeof state->perm,
 		|		    "R1000_MEM2_NOVRAM");
 		|	} else {
 		|		unsigned part, serial, artwork, eco, year, month, day, tstamp;
@@ -77,51 +79,53 @@ class NOVRAM(PartFactory):
 		|		part = 99; serial = 9999; artwork = 99; eco = 99;
 		|		year = 1998; month = 9; day = 9;
 		|
-		|		state->ram[0x01] = (part >> 4) & 0xf;
-		|		state->ram[0x02] = part & 0xf;
+		|		state->perm[0x01] = (part >> 4) & 0xf;
+		|		state->perm[0x02] = part & 0xf;
 		|
-		|		state->ram[0x03] = (serial >> 12) & 0xf;
-		|		state->ram[0x04] = (serial >> 8) & 0xf;
-		|		state->ram[0x05] = (serial >> 4) & 0xf;
-		|		state->ram[0x06] = serial & 0xf;
+		|		state->perm[0x03] = (serial >> 12) & 0xf;
+		|		state->perm[0x04] = (serial >> 8) & 0xf;
+		|		state->perm[0x05] = (serial >> 4) & 0xf;
+		|		state->perm[0x06] = serial & 0xf;
 		|
-		|		state->ram[0x07] = (artwork >> 4) & 0xf;
-		|		state->ram[0x08] = artwork & 0xf;
+		|		state->perm[0x07] = (artwork >> 4) & 0xf;
+		|		state->perm[0x08] = artwork & 0xf;
 		|
-		|		state->ram[0x09] = (eco >> 4) & 0xf;
-		|		state->ram[0x0a] = eco & 0xf;
+		|		state->perm[0x09] = (eco >> 4) & 0xf;
+		|		state->perm[0x0a] = eco & 0xf;
 		|
 		|		tstamp = (year - 1901) << 9;
 		|		tstamp |= month << 5;
 		|		tstamp |= day;
 		|
-		|		state->ram[0x0b] = (tstamp >> 12) & 0xf;
-		|		state->ram[0x0c] = (tstamp >> 8) & 0xf;
-		|		state->ram[0x0d] = (tstamp >> 4) & 0xf;
-		|		state->ram[0x0e] = tstamp & 0xf;
+		|		state->perm[0x0b] = (tstamp >> 12) & 0xf;
+		|		state->perm[0x0c] = (tstamp >> 8) & 0xf;
+		|		state->perm[0x0d] = (tstamp >> 4) & 0xf;
+		|		state->perm[0x0e] = tstamp & 0xf;
 		|
 		|		j = 0x56;
 		|		for (i = 1; i < 0x0f; i += 2) {
-		|			j += state->ram[i] << 4;
-		|			j += state->ram[i + 1];
+		|			j += state->perm[i] << 4;
+		|			j += state->perm[i + 1];
 		|		}
 		|		j = ~j;
 		|		j += 1;
 		|		j &= 0xff;
 		|		printf("NOVRAM CHECKSUM1 0x%x\\n", j);
-		|		state->ram[0x0f] = (j >> 4) & 0xf;
-		|		state->ram[0x10] = j & 0xf;
+		|		state->perm[0x0f] = (j >> 4) & 0xf;
+		|		state->perm[0x10] = j & 0xf;
 		|	}
 		|
 		|	// READ_NOVRAM.FIU expects zero byte XOR checksum.
 		|	// We dont know which location is for adjustment, use last two.
 		|	j = 0xaa;
 		|	for (i = 0; i < 254; i += 2)
-		|		j ^= ((state->ram[i] << 4) | state->ram[i + 1]);
+		|		j ^= ((state->perm[i] << 4) | state->perm[i + 1]);
 		|	j &= 0xff;
-		|	state->ram[0xfe] = (j >> 4 & 0xf);
-		|	state->ram[0xff] = j & 0xf;
+		|	state->perm[0xfe] = (j >> 4 & 0xf);
+		|	state->perm[0xff] = j & 0xf;
+		|	memcpy(state->ram, state->perm, sizeof state->ram);
 		|''')
+
 
     def doit(self, file):
         ''' The meat of the doit() function '''
@@ -132,17 +136,43 @@ class NOVRAM(PartFactory):
 		|
 		|	unsigned adr = 0, data = 0;
 		|
+		|
+		|	if (!PIN_RECALL=>) {
+		|		TRACE("RCL");
+		|		BUS_DQ_Z();
+		|		memcpy(state->ram, state->perm, sizeof state->ram);
+		|		next_trigger(PIN_RECALL.default_event());
+		|		state->writing = false;
+		|		return;
+		|	}
+		|
 		|	BUS_A_READ(adr);
-		|	data = state->ram[adr];
+		|
+		|	if (state->writing) {
+		|		BUS_DQ_READ(data);
+		|		state->ram[adr] = data;
+		|	}
 		|
 		|	if (PIN_CS=>) {
 		|		BUS_DQ_Z();
-		|	} else if (!PIN_WE=> && PIN_STORE=> && PIN_RECALL=>) {
+		|		next_trigger(PIN_CS.negedge_event() | PIN_RECALL.negedge_event());
+		|		if (state->writing)
+		|			TRACE("ZW");
+		|		else
+		|			TRACE("Z");
+		|		state->writing = false;
+		|		return;
+		|	}
+		|
+		|	if (!PIN_WE=> && PIN_STORE=> && PIN_RECALL=>) {
 		|		BUS_DQ_Z();
 		|		BUS_DQ_READ(data);
 		|		state->ram[adr] = data;
+		|		state->writing = true;
 		|	} else {
+		|		data = state->ram[adr];
 		|		BUS_DQ_WRITE(data);
+		|		state->writing = false;
 		|	}
 		|	TRACE(
 		|	    << " cs_ " <<PIN_CS?
