@@ -884,7 +884,7 @@ MCS51_SingleStep(struct mcs51 *mcs51)
 		arg = mcs51->progmem[mcs51->npc++];
 		mcs51_trace(mcs51, "CJNE\tR%d,#0x%02x", ins & 7, arg);
 		mcs51_trace(mcs51, "R%d is 0x%02x", ins & 7, *u8p);
-		(void)mcs51_carry(mcs51, (int8_t)(*u8p) < (int8_t)arg);
+		(void)mcs51_carry(mcs51, (*u8p) < arg);
 		RELJMP(*u8p != arg);
 		break;
 	case 0xc0: // PUSH direct
