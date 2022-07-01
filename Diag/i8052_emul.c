@@ -851,14 +851,14 @@ MCS51_SingleStep(struct mcs51 *mcs51)
 	case 0xb4: // CJNE A,#data,rel
 		arg = mcs51->progmem[mcs51->npc++];
 		mcs51_trace(mcs51, "CJNE\tA,#0x%02x", arg);
-		(void)mcs51_carry(mcs51, (int8_t)ACC < (int8_t)arg);
+		(void)mcs51_carry(mcs51, ACC < arg);
 		RELJMP(ACC != arg);
 		break;
 	case 0xb5: // CJNE A,data addr
 		arg = mcs51->progmem[mcs51->npc++];
 		mcs51_trace(mcs51, "CJNE\tA,0x%02x", arg);
 		arg2 = mcs51_direct_address(mcs51, arg, -1);
-		(void)mcs51_carry(mcs51, (int8_t)ACC < (int8_t)arg2);
+		(void)mcs51_carry(mcs51, ACC < arg2);
 		RELJMP(ACC != arg2);
 		break;
 	case 0xb6: // CJNE @Ri,#data,rel
@@ -868,7 +868,7 @@ MCS51_SingleStep(struct mcs51 *mcs51)
 		mcs51_trace(mcs51, "CJNE\t@R%d,#0x%02x", ins & 1, arg);
 		mcs51_trace(mcs51, "R%d is 0x%02x\t0x%02x is 0x%02x",
 		    ins & 1, *u8p, *u8p, mcs51->iram[*u8p]);
-		(void)mcs51_carry(mcs51, (int8_t)(mcs51->iram[*u8p]) < (int8_t)arg);
+		(void)mcs51_carry(mcs51, (mcs51->iram[*u8p]) < arg);
 		RELJMP(mcs51->iram[*u8p] != arg);
 		break;
 	// 0xb8-0xbf: CJNE Ri,#imm
