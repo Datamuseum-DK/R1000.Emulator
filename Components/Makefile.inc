@@ -36,13 +36,3 @@ Components/F38.o: Components/F38.cc \
     Infra/context.h \
     Chassis/r1000sc.h
 	${SC_CC} -o Components/F38.o Components/F38.cc
-
-Components/XMUX232.hh:: Components/XMUX232_pins.hh
-	@touch Components/XMUX232.hh
-
-OBJS += Components/XMUX232.o
-Components/XMUX232.o: Components/XMUX232.cc \
-    Components/XMUX232.hh \
-    Infra/context.h \
-    Chassis/r1000sc.h
-	${SC_CC} -o Components/XMUX232.o Components/XMUX232.cc
