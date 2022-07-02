@@ -152,13 +152,13 @@ class Board():
             return
         # print("DB", self.name, self.dbus_state, line)
         if self.dbus_state == -1:
-            if line[5] == "DOWNLOAD" and line[6] == self.name:
+            if line[5] == "A_DOWNLOAD" and line[6] == self.name:
                 self.mem = mem.ByteMem(0, 0x100, attr=2)
                 #print("DLD START", self.name)
                 self.dbus_state = 0
                 self.dlpt = 0x0f
             return
-        if line[-2] == "payload" and self.dbus_state == 0:
+        if line[-1] == "payload" and self.dbus_state == 0:
             self.mem[self.dlpt] = int(line[4], 16)
             #print("DLD DATA", "0x%02x" % self.dlpt, "0x%02x" % self.mem[self.dlpt])
             if self.dlpt == 0x10 + self.mem[0xf]:
