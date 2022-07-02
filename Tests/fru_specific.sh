@@ -6,7 +6,7 @@
 	"dummy_diproc -TIMEOUT mem1 mem2 mem3" \
 	'sc q exit' \
 	'sc q 3000' \
-	'sc wait 1e-6' \
+	'sc wait 10e-6' \
 	"ioc syscall internal" \
 	-f Tests/cli_prompt.cli \
 	"console > Tests/_${TNAME}.console" \
