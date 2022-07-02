@@ -299,7 +299,7 @@ cli_dfs_read(struct cli *cli)
 			cli_error(cli, "Usage:\n");
 		cli_printf(cli, "dfs read dfs_filename filename\n");
 		cli_printf(cli,
-		    "\tread the full contents of dfs_filename into filename\n");
+		    "\tread the contents of dfs_filename into filename\n");
 		return;
 	}
 
@@ -325,12 +325,55 @@ cli_dfs_read(struct cli *cli)
 	}
 }
 
+/**********************************************************************/
 
+static void v_matchproto_(cli_func_f)
+cli_dfs_write(struct cli *cli)
+{
+	struct dfs_dirent de[1];
+	FILE *fout;
+	size_t sz;
+
+	if (cli->help || cli->ac != 3) {
+		if (!cli->help)
+			cli_error(cli, "Usage:\n");
+		cli_printf(cli, "dfs write filename dfs_filename\n");
+		cli_printf(cli,
+		    "\twrite the contents of filename into dfs_filename\n");
+		return;
+	}
+
+	if (cli_dfs_open(cli->av[2], de, 0)) {
+		cli_error(cli,
+		    "Cannot open DFS file '%s': %s\n",
+		    cli->av[2], strerror(errno)
+		);
+		return;
+	}
+
+	cli_dfs_render(cli, de);
+
+	fout = fopen(cli->av[1], "r");
+	if (fout == NULL) {
+		cli_error(cli,
+		    "Cannot open '%s' for reading: %s\n",
+		    cli->av[1], strerror(errno)
+		);
+	} else {
+		sz = fread(de->ptr, 1, de->used_sec << 10, fout);
+		if (sz < (size_t)(de->used_sec) << 10)
+			de->ptr[sz] = '\0';
+		AZ(fclose(fout));
+	}
+}
+
+/**********************************************************************/
 
 static const struct cli_cmds cli_dfs_cmds[] = {
 	{ "cat",		cli_dfs_cat, "dfs_filename [filename]" },
 	{ "dir",		cli_dfs_dir, "[glob…]" },
 	{ "read",		cli_dfs_read, "dfs_filename filename" },
+	{ "write",		cli_dfs_write, "filename dfs_filename" },
 	{ NULL,			NULL },
 };
 
