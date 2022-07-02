@@ -85,6 +85,7 @@ flint:
 	flexelint flint.lnt \
 		${CFLAGSMINUSD} \
 		${CFLAGSMINUSI} \
+		Dfs/*.c \
 		Diag/*.c \
 		Infra/*.c \
 		Ioc/*.c \
@@ -93,6 +94,7 @@ flint:
 setup:
 	git clone https://github.com/Datamuseum-DK/Musashi
 	python3 -u fetch_firmware.py all
+
 cli:	r1000sim.${SC_BRANCH}
 	./r1000sim.${SC_BRANCH} \
 		-T ${TRACE_FILE} \
@@ -125,6 +127,16 @@ cli:	r1000sim.${SC_BRANCH}
 		'console match expect "Enter option [enter CLI] : "' \
 		'console << "1"' \
 		'console match expect "CLI>"'
+
+dfs:	r1000sim.${SC_BRANCH}
+	./r1000sim.${SC_BRANCH} \
+		-T ${TRACE_FILE} \
+		"scsi_disk 0 ${DISK0_IMAGE}" \
+		"scsi_disk 1 ${DISK1_IMAGE}" \
+		"help dfs" \
+		"help dfs dir" \
+		"dfs dir KERN* PROG*" \
+		exit
 
 IOC_TEST=TEST_MACRO_EVENT_DELAY.IOC
 
