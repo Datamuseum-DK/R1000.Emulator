@@ -4,6 +4,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <fnmatch.h>
+#include <unistd.h>
 
 #include "Infra/r1000.h"
 #include "Infra/vend.h"
@@ -22,6 +23,7 @@ struct dfs_dirent {
 	uint16_t	date;
 	uint16_t	flags;
 	uint8_t		*ptr;
+	unsigned	size;
 
 	uint8_t		data[64];
 };
@@ -146,6 +148,7 @@ cli_dfs_iter_dirent(void **priv, struct dfs_dirent *de)
 
 	de->hash = vbe16dec(bp + 30);
 	de->used_sec = vbe16dec(bp + 32);
+	de->size = ((unsigned)de->used_sec) << 10;
 	de->alloc_sec = vbe16dec(bp + 34);
 	de->first_sec = vbe16dec(bp + 36);
 	for (u = 38; u < 58; u++)
@@ -155,6 +158,19 @@ cli_dfs_iter_dirent(void **priv, struct dfs_dirent *de)
 	de->flags = vbe16dec(bp + 62);
 	de->ptr = dfs_read_sect(de->first_sec);
 	return(1);
+}
+
+static int
+dfs_file_has_nul(const struct dfs_dirent *de)
+{
+	unsigned u;
+
+	// Check that there are NUL characters in the file
+	for (u = 0; u < de->size; u++) {
+		if (!de->ptr[u])
+			return (1);
+	}
+	return (0);
 }
 
 /**********************************************************************/
@@ -186,7 +202,6 @@ cli_dfs_cat(struct cli *cli)
 {
 	struct dfs_dirent de[1];
 	FILE *fout;
-	unsigned u;
 
 	if (cli->help || cli->ac < 2 || cli->ac > 3) {
 		if (!cli->help)
@@ -209,14 +224,6 @@ cli_dfs_cat(struct cli *cli)
 
 	cli_dfs_render(cli, de);
 
-	// Check that there are NUL characters in the file
-	for (u = 0; u < ((unsigned)(de->used_sec) << 10); u++) {
-		if (!de->ptr[u]) {
-			u = 0;
-			break;
-		}
-	}
-
 	if (cli->ac == 3) {
 		fout = fopen(cli->av[2], "w");
 		if (fout == NULL) {
@@ -225,17 +232,17 @@ cli_dfs_cat(struct cli *cli)
 			    cli->av[2], strerror(errno)
 			);
 		} else {
-			if (!u)
+			if (dfs_file_has_nul(de))
 				(void)fputs((char*)de->ptr, fout);
 			else
-				(void)fwrite(de->ptr, 1, u, fout);
+				(void)fwrite(de->ptr, 1, de->size, fout);
 			AZ(fclose(fout));
 		}
 	} else {
-		if (!u)
+		if (dfs_file_has_nul(de))
 			(void)puts((char*)de->ptr);
 		else
-			(void)fwrite(de->ptr, 1, u, stdout);
+			(void)fwrite(de->ptr, 1, de->size, stdout);
 	}
 }
 
@@ -320,9 +327,89 @@ cli_dfs_read(struct cli *cli)
 		    cli->av[2], strerror(errno)
 		);
 	} else {
-		(void)fwrite(de->ptr, 1, de->used_sec << 10, fout);
+		(void)fwrite(de->ptr, 1, de->size, fout);
 		AZ(fclose(fout));
 	}
+}
+
+/**********************************************************************/
+
+static void v_matchproto_(cli_func_f)
+cli_dfs_sed(struct cli *cli)
+{
+	struct dfs_dirent de[1];
+	char buf[BUFSIZ];
+	unsigned u;
+	int i;
+	char templ1[] = "/tmp/temp.XXXXXX";
+	int fd1;
+	char templ2[] = "/tmp/temp.XXXXXX";
+	int fd2;
+	FILE *pfd;
+	ssize_t sz, sza;
+
+	if (cli->help || cli->ac != 3) {
+		if (!cli->help)
+			cli_error(cli, "Usage:\n");
+		cli_printf(cli, "dfs sed dfs_filename sed_cmd…\n");
+		cli_printf(cli,
+		    "\tEdit dfs_filename with sed(1)\n");
+		return;
+	}
+
+	if (cli_dfs_open(cli->av[1], de, 0)) {
+		cli_error(cli,
+		    "Cannot open DFS file '%s': %s\n",
+		    cli->av[2], strerror(errno)
+		);
+		return;
+	}
+	if (!dfs_file_has_nul(de)) {
+		cli_error(cli,
+		    "DFS file '%s' is not a text file\n",
+		    cli->av[2]
+		);
+		return;
+	}
+	for (u = 0; u < de->size; u++) {
+		if (de->ptr[u] > 0x7e) {
+			cli_error(cli,
+			    "DFS file '%s' is not a text file\n",
+			    cli->av[2]
+			);
+			return;
+		}
+	}
+
+	cli_dfs_render(cli, de);
+	fd1 = mkstemp(templ1);
+	assert(fd1 > 0);
+	fd2 = mkstemp(templ2);
+	assert(fd2 > 0);
+	(void)write(fd1, de->ptr, strlen((char*)(de->ptr)));
+	for (i = 2; i < cli->ac; i++) {
+		(void)write(fd2, cli->av[i], strlen(cli->av[i]));
+		(void)write(fd2, "\n", 1);
+	}
+	bprintf(buf, "sed -f %s %s", templ2, templ1);
+	AZ(close(fd1));
+	AZ(close(fd2));
+	pfd = popen(buf, "r");
+	AN(pfd);
+	sza = 0;
+	while (sza < de->size) {
+		sz = fread(de->ptr + sza, 1, de->size - sza, pfd);
+		if (sz <= 0)
+			break;
+		sza += sz;
+	}
+	if (sza < de->size)
+		de->ptr[sza] = '\0';
+	AZ(pclose(pfd));
+	AZ(unlink(templ1));
+	AZ(unlink(templ2));
+	if (sza == de->size)
+		cli_error(cli, "Edit extend past dfs file allocation\n");
 }
 
 /**********************************************************************/
@@ -360,8 +447,8 @@ cli_dfs_write(struct cli *cli)
 		    cli->av[1], strerror(errno)
 		);
 	} else {
-		sz = fread(de->ptr, 1, de->used_sec << 10, fout);
-		if (sz < (size_t)(de->used_sec) << 10)
+		sz = fread(de->ptr, 1, de->size, fout);
+		if (sz < de->size)
 			de->ptr[sz] = '\0';
 		AZ(fclose(fout));
 	}
@@ -373,6 +460,7 @@ static const struct cli_cmds cli_dfs_cmds[] = {
 	{ "cat",		cli_dfs_cat, "dfs_filename [filename]" },
 	{ "dir",		cli_dfs_dir, "[glob…]" },
 	{ "read",		cli_dfs_read, "dfs_filename filename" },
+	{ "sed",		cli_dfs_sed, "dfs_filename sed_cmd…" },
 	{ "write",		cli_dfs_write, "filename dfs_filename" },
 	{ NULL,			NULL },
 };
