@@ -1,5 +1,5 @@
 
-TNAME=p2ioc
-TNBR=17
+TNAME=p2seq
+TNBR=21
 
 . Tests/fru_specific.sh
