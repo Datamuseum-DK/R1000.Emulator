@@ -86,10 +86,12 @@ class Xlat(PartFactory):
 
         if self.comp.part.name[-2:] == "_I":
             file.fmt('''
+		|	TRACE(" Wi " << std::hex << state->data);
 		|	BUS_Q_WRITE(state->data ^ BUS_Q_MASK);
 		|''')
         else:
             file.fmt('''
+		|	TRACE(" W " << std::hex << state->data);
 		|	BUS_Q_WRITE(state->data);
 		|''')
 
