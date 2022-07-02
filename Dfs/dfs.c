@@ -1,4 +1,5 @@
 
+#include <errno.h>
 #include <fcntl.h>
 #include <stdlib.h>
 #include <string.h>
@@ -20,6 +21,7 @@ struct dfs_dirent {
 	uint16_t	time;
 	uint16_t	date;
 	uint16_t	flags;
+	uint8_t		*ptr;
 
 	uint8_t		data[64];
 };
@@ -36,6 +38,37 @@ struct dfs_sb {
 	unsigned next_sec;
 	unsigned next_de;
 };
+
+/**********************************************************************/
+
+static const char * const month[16] = {
+	"0x0", "JAN", "FEB", "MAR", "APR", "MAY", "JUN", "JUL",
+	"AUG", "SEP", "OCT", "NOV", "DEC", "0xd", "0xe", "0xf",
+};
+
+static void
+cli_dfs_render(struct cli *cli, struct dfs_dirent *de)
+{
+	unsigned dd, mm, yy;
+
+	cli_printf(cli, "%-30.30s ", de->name);
+	cli_printf(cli, "%04x ", de->hash);
+	cli_printf(cli, "%04x ", de->used_sec);
+	cli_printf(cli, "%04x ", de->alloc_sec);
+	cli_printf(cli, "%04x ", de->first_sec);
+	cli_printf(cli, "%02d:", (de->time<<1) / 3600);
+	cli_printf(cli, "%02d:", ((de->time<<1) / 60) % 60);
+	cli_printf(cli, "%02d ", (de->time<<1) % 60);
+
+	// ((YYYY - 1901) << 9) | (MM << 5) | DD
+	dd = de->date & 0x1f;
+	mm = (de->date >> 5) & 0x0f;
+	yy = (de->date >> 9) + 1;
+	cli_printf(cli, "%02d-%s-%02d ", dd, month[mm], yy);
+	cli_printf(cli, "%04x\n", de->flags);
+}
+
+/**********************************************************************/
 
 static uint8_t *
 dfs_read_sect(unsigned secno)
@@ -120,35 +153,93 @@ cli_dfs_iter_dirent(void **priv, struct dfs_dirent *de)
 	de->time = vbe16dec(bp + 58);
 	de->date = vbe16dec(bp + 60);
 	de->flags = vbe16dec(bp + 62);
+	de->ptr = dfs_read_sect(de->first_sec);
 	return(1);
 }
 
-static const char * const month[16] = {
-	"0x0", "JAN", "FEB", "MAR", "APR", "MAY", "JUN", "JUL",
-	"AUG", "SEP", "OCT", "NOV", "DEC", "0xd", "0xe", "0xf",
-};
+/**********************************************************************/
 
-static void
-cli_dfs_render(struct cli *cli, struct dfs_dirent *de)
+static int
+cli_dfs_open(const char *filename, struct dfs_dirent *dep, int flags)
 {
-	unsigned dd, mm, yy;
+	void *iter = NULL;
 
-	cli_printf(cli, "%-30.30s ", de->name);
-	cli_printf(cli, "%04x ", de->hash);
-	cli_printf(cli, "%04x ", de->used_sec);
-	cli_printf(cli, "%04x ", de->alloc_sec);
-	cli_printf(cli, "%04x ", de->first_sec);
-	cli_printf(cli, "%02d:", (de->time<<1) / 3600);
-	cli_printf(cli, "%02d:", ((de->time<<1) / 60) % 60);
-	cli_printf(cli, "%02d ", (de->time<<1) % 60);
+	AZ(flags);
+	struct dfs_dirent de[2];
 
-	// ((YYYY - 1901) << 9) | (MM << 5) | DD
-	dd = de->date & 0x1f;
-	mm = (de->date >> 5) & 0x0f;
-	yy = (de->date >> 9) + 1;
-	cli_printf(cli, "%02d-%s-%02d ", dd, month[mm], yy);
-	cli_printf(cli, "%04x\n", de->flags);
+	while(cli_dfs_iter_dirent(&iter, de)) {
+		if (!strcmp(de->name, filename)) {
+			*dep = de[0];
+			while(cli_dfs_iter_dirent(&iter, de + 1))
+				continue;
+			return(0);
+		}
+	}
+	errno = ENOENT;
+	return (-1);
 }
+
+/**********************************************************************/
+
+static void v_matchproto_(cli_func_f)
+cli_dfs_cat(struct cli *cli)
+{
+	struct dfs_dirent de[1];
+	FILE *fout;
+	unsigned u;
+
+	if (cli->help || cli->ac < 2 || cli->ac > 3) {
+		if (!cli->help)
+			cli_error(cli, "Usage:\n");
+		cli_printf(cli, "dfs cat dfs_filename [filename]\n");
+		cli_printf(cli,
+		    "\t'cat' contents of dfs_filename up to the first NUL");
+		cli_printf(cli,
+		    " to stdout [or filename]\n");
+		return;
+	}
+
+	if (cli_dfs_open(cli->av[1], de, 0)) {
+		cli_error(cli,
+		    "Cannot open DFS file '%s': %s\n",
+		    cli->av[1], strerror(errno)
+		);
+		return;
+	}
+
+	cli_dfs_render(cli, de);
+
+	// Check that there are NUL characters in the file
+	for (u = 0; u < ((unsigned)(de->used_sec) << 10); u++) {
+		if (!de->ptr[u]) {
+			u = 0;
+			break;
+		}
+	}
+
+	if (cli->ac == 3) {
+		fout = fopen(cli->av[2], "w");
+		if (fout == NULL) {
+			cli_error(cli,
+			    "Cannot open '%s' for writing: %s\n",
+			    cli->av[2], strerror(errno)
+			);
+		} else {
+			if (!u)
+				(void)fputs((char*)de->ptr, fout);
+			else
+				(void)fwrite(de->ptr, 1, u, fout);
+			AZ(fclose(fout));
+		}
+	} else {
+		if (!u)
+			(void)puts((char*)de->ptr);
+		else
+			(void)fwrite(de->ptr, 1, u, stdout);
+	}
+}
+
+/**********************************************************************/
 
 static int
 decompar(const void *a, const void *b)
@@ -195,8 +286,51 @@ cli_dfs_dir(struct cli *cli)
 		cli_dfs_render(cli, de + i);
 }
 
+/**********************************************************************/
+
+static void v_matchproto_(cli_func_f)
+cli_dfs_read(struct cli *cli)
+{
+	struct dfs_dirent de[1];
+	FILE *fout;
+
+	if (cli->help || cli->ac != 3) {
+		if (!cli->help)
+			cli_error(cli, "Usage:\n");
+		cli_printf(cli, "dfs read dfs_filename filename\n");
+		cli_printf(cli,
+		    "\tread the full contents of dfs_filename into filename\n");
+		return;
+	}
+
+	if (cli_dfs_open(cli->av[1], de, 0)) {
+		cli_error(cli,
+		    "Cannot open DFS file '%s': %s\n",
+		    cli->av[1], strerror(errno)
+		);
+		return;
+	}
+
+	cli_dfs_render(cli, de);
+
+	fout = fopen(cli->av[2], "w");
+	if (fout == NULL) {
+		cli_error(cli,
+		    "Cannot open '%s' for writing: %s\n",
+		    cli->av[2], strerror(errno)
+		);
+	} else {
+		(void)fwrite(de->ptr, 1, de->used_sec << 10, fout);
+		AZ(fclose(fout));
+	}
+}
+
+
+
 static const struct cli_cmds cli_dfs_cmds[] = {
+	{ "cat",		cli_dfs_cat, "dfs_filename [filename]" },
 	{ "dir",		cli_dfs_dir, "[glob…]" },
+	{ "read",		cli_dfs_read, "dfs_filename filename" },
 	{ NULL,			NULL },
 };
 

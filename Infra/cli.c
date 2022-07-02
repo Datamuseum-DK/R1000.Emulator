@@ -226,7 +226,7 @@ cli_dispatch(struct cli *cli, const struct cli_cmds *cmds)
 		for (cc = cmds; cc->cmd != NULL; cc++) {
 			cli_printf(cli, "\t… %s", cc->cmd);
 			if (cc->usage != NULL)
-				cli_printf(cli, " %s\n", cc->usage);
+				cli_printf(cli, " %s", cc->usage);
 			cli_printf(cli, "\n");
 		}
 		return;
