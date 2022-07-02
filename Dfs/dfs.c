@@ -1,4 +1,5 @@
 
+#include <ctype.h>
 #include <errno.h>
 #include <fcntl.h>
 #include <stdlib.h>
@@ -335,6 +336,68 @@ cli_dfs_read(struct cli *cli)
 /**********************************************************************/
 
 static void v_matchproto_(cli_func_f)
+cli_dfs_neuter(struct cli *cli)
+{
+	struct dfs_dirent de[1];
+	char *p, *q;
+	unsigned adr, start;
+
+	if (cli->help || cli->ac != 2) {
+		if (!cli->help)
+			cli_error(cli, "Usage:\n");
+		cli_printf(cli, "dfs neuter dfs_experiment\n");
+		cli_printf(cli,
+		    "\tmake the dfs_experiment a no-op returning success\n");
+		return;
+	}
+
+	if (cli_dfs_open(cli->av[1], de, 0)) {
+		cli_error(cli,
+		    "Cannot open DFS file '%s': %s\n",
+		    cli->av[1], strerror(errno)
+		);
+		return;
+	}
+
+	cli_dfs_render(cli, de);
+	p = (char*)de->ptr;
+	adr = 0x10;
+	start = 0;
+	while (*p != '\0') {
+		q = strchr(p, '\n');
+		AN(q);
+		if (*p == 'P') {
+			p = q + 1;
+			continue;
+		}
+		if (*p == '\r' || *p == '\n') {
+			p = q + 1;
+			continue;
+		}
+		if (!isxdigit(p[0]) ||
+		    !isxdigit(p[1]) ||
+		    p[2] != '\r' ||
+		    p[3] != '\n') {
+			cli_error(cli,
+			    "Dont understand line at address 0x%x\n", adr
+			);
+			return;
+		}
+		if (start == 0)
+			assert (sscanf(p, "%x", &start) == 1);
+		else if (adr == start) {
+			memcpy(p, "64\r\n5C\r\n", 8);
+			break;
+		}
+		adr += 1;
+		p = q + 1;
+	}
+
+}
+
+/**********************************************************************/
+
+static void v_matchproto_(cli_func_f)
 cli_dfs_sed(struct cli *cli)
 {
 	struct dfs_dirent de[1];
@@ -348,7 +411,7 @@ cli_dfs_sed(struct cli *cli)
 	FILE *pfd;
 	ssize_t sz, sza;
 
-	if (cli->help || cli->ac != 3) {
+	if (cli->help || cli->ac < 3) {
 		if (!cli->help)
 			cli_error(cli, "Usage:\n");
 		cli_printf(cli, "dfs sed dfs_filename sed_cmd…\n");
@@ -459,6 +522,7 @@ cli_dfs_write(struct cli *cli)
 static const struct cli_cmds cli_dfs_cmds[] = {
 	{ "cat",		cli_dfs_cat, "dfs_filename [filename]" },
 	{ "dir",		cli_dfs_dir, "[glob…]" },
+	{ "neuter",		cli_dfs_neuter, "dfs_experiment" },
 	{ "read",		cli_dfs_read, "dfs_filename filename" },
 	{ "sed",		cli_dfs_sed, "dfs_filename sed_cmd…" },
 	{ "write",		cli_dfs_write, "filename dfs_filename" },
