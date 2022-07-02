@@ -157,6 +157,7 @@ static const struct cli_cmds cli_cmds[] = {
 	{ "exit",		cli_exit },
 	{ "?",			cli_help },
 	{ "console",		cli_ioc_console },
+	{ "dfs",		cli_dfs },
 	{ "diag",		cli_diag },
 	{ "dummy_diproc",	cli_dummy_diproc },
 	{ "modem",		cli_ioc_modem },
@@ -221,9 +222,13 @@ cli_dispatch(struct cli *cli, const struct cli_cmds *cmds)
 	const struct cli_cmds *cc;
 
 	if (cli->ac == 0 && cli->help) {
-		cli_usage(cli, " ...\n");
-		for (cc = cmds; cc->cmd != NULL; cc++)
-			cli_printf(cli, "\t%s\n", cc->cmd);
+		cli_usage(cli, " …\n");
+		for (cc = cmds; cc->cmd != NULL; cc++) {
+			cli_printf(cli, "\t… %s", cc->cmd);
+			if (cc->usage != NULL)
+				cli_printf(cli, " %s\n", cc->usage);
+			cli_printf(cli, "\n");
+		}
 		return;
 	}
 

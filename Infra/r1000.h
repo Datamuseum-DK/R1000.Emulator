@@ -90,6 +90,7 @@ typedef void cli_func_f(struct cli *);
 struct cli_cmds {
 	const char		*cmd;
 	cli_func_f		*func;
+	const char		*usage;
 };
 
 void cli_path(struct cli *cli);
@@ -171,6 +172,7 @@ nanosec callout_poll(void);
 /* DIAG *************************************************************/
 
 cli_func_f cli_dummy_diproc;
+cli_func_f cli_dfs;
 cli_func_f cli_diag;
 void diagbus_init(void);
 

@@ -50,6 +50,7 @@ netlist:
 	python3 -u NetList/process_kicad_netlists.py ${SC_BRANCH} ${NETLISTS}
 
 include Infra/Makefile.inc
+include Dfs/Makefile.inc
 include Diag/Makefile.inc
 include Makefile.musashi.inc
 include Ioc/Makefile.inc
