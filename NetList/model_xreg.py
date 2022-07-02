@@ -153,7 +153,8 @@ class ModelXreg(PartModel):
     def assign(self, comp):
 
         if comp.board.name == "VAL" and "ZREG" in comp.name:
-	    # TEST_Z_CNTR_FILLING.VAL
+            # TEST_Z_CNTR_FILLING.VAL in branch main
+            # loop through alu14/15, smux28/29 and xlat7
             comp.part = comp.board.part_catalog["F374_O"]
             return
 
