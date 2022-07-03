@@ -53,7 +53,7 @@ class P2K8R(PartFactory):
         file.fmt('''
 		|	load_programmable(this->name(), state->prom, sizeof state->prom, arg);
 		|	state->nxt = 2048;
-		''')
+		|''')
 
     def doit(self, file):
         ''' The meat of the doit() function '''

@@ -85,7 +85,7 @@ class XECC64(PartFactory):
 		|		cout << this->name() << " :: " << arg << "\\n";
 		|		exit(3);
 		|	}
-                ''')
+		|''')
 
     def doit(self, file):
         ''' The meat of the doit() function '''

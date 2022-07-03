@@ -60,12 +60,12 @@ class XVMUX(PartFactory):
 		|		state->aevt = BUS_A_EVENTS() | BUS_S_EVENTS();
 		|		state->bevt = BUS_B_EVENTS() | BUS_S_EVENTS();
 		|		state->once = true;
-		|	}		
+		|	}
 		|
 		|	BUS_A_READ(a);
 		|	BUS_B_READ(b);
 		|	BUS_S_READ(s);
-		|	
+		|
 		|	m = 1;
 		|	for (u = 0; u < BUS_A_WIDTH; u++) {
 		|		if (s & m)

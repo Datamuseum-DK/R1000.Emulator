@@ -52,7 +52,7 @@ class Xreg(PartFactory):
 
         file.fmt('''
 		|	state->job = -3;
-		''')
+		|''')
 
     def sensitive(self):
         ''' sensitivity list '''

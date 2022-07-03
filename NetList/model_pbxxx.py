@@ -52,7 +52,7 @@ class PBxxx(PartFactory):
 
         file.fmt('''
 		|	load_programmable(this->name(), state->prom, sizeof state->prom, arg);
-		''')
+		|''')
 
     def doit(self, file):
         ''' The meat of the doit() function '''

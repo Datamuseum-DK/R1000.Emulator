@@ -58,7 +58,7 @@ class F194(PartFactory):
         file.fmt('''
 		|	state->out = ((1<<BUS_D_WIDTH) - 1);
 		|	state->job = 1;
-		''')
+		|''')
 
     def doit(self, file):
         ''' The meat of the doit() function '''

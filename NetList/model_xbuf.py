@@ -53,7 +53,7 @@ class Xbuf(PartFactory):
 
         file.fmt('''
 		|	state->job = -1;
-		''')
+		|''')
 
     def doit(self, file):
         ''' The meat of the doit() function '''

@@ -171,7 +171,7 @@ class GAL(PartFactory):
 		|	sc_logic_1,
 		|};
 		|static const char traces[5] = "ZZ01";
-		''')
+		|''')
 
     def sensitive(self):
         for node in self.comp:

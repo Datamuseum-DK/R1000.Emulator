@@ -64,7 +64,7 @@ class F74(PartFactory):
 		|	state->job = 1;
 		|	state->dreg[0] = true;
 		|	state->dreg[1] = false;
-		''')
+		|''')
 
     def doit(self, file):
         ''' The meat of the doit() function '''
