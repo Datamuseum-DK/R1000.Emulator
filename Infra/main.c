@@ -185,7 +185,7 @@ main(int argc, char **argv)
 	argv += optind;
 
 	for (i = 0; i < argc; i++) {
-                if (!strcmp(argv[i], "-f")) {
+		if (!strcmp(argv[i], "-f")) {
 			i++;
 			fi = fopen(argv[i], "r");
 			if (fi == NULL) {

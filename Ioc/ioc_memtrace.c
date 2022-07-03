@@ -74,123 +74,141 @@ memtrace_event(void *priv, const struct memdesc *md, const char *what,
 	return (0);
 }
 
-#define USAGE \
-    "Usage:\n" \
-    "\t'add' [-seg name] [-lo adr -hi adr]\n" \
-    "\t'del' index\n"
+static struct memtrace *
+get_next_trace(void)
+{
+	struct memtrace *mt;
+	int n;
 
-void v_matchproto_(cli_func_f)
-cli_ioc_memtrace(struct cli *cli)
+	mt = VTAILQ_LAST(&memtraces, memtracehead);
+	if (mt != NULL)
+		n = mt->number + 1;
+	else
+		n = 1;
+
+	mt = calloc(sizeof *mt, 1);
+	AN(mt);
+	mt->number = n;
+	return (mt);
+}
+
+#define USAGE_ADD() \
+	do { \
+		cli_usage(cli, "<segname>|<lo_adr> <hi_adr>", \
+		    "Add a memory trace point."); \
+		return; \
+	} while (0)
+
+static void v_matchproto_(cli_func_f)
+cli_ioc_memtrace_add(struct cli *cli)
 {
 	struct memtrace *mt1;
 	const struct memdesc *md;
 	unsigned u, lo, hi;
+
+	if (cli->help || cli->ac < 2 || cli->ac > 3)
+		USAGE_ADD();
+
+	cli->ac--;
+	cli->av++;
+
+	if (cli->ac == 1) {
+		for (u = 0; u < n_memdesc; u++) {
+			if (!strcmp(memdesc[u]->name, cli->av[0]))
+				break;
+		}
+		if (u == n_memdesc) {
+			cli_error(cli, "Unknown segment name\n");
+			return;
+		}
+		mt1 = get_next_trace();
+		md = memdesc[u];
+		mt1->seg = md->name;
+		mem_peg_register(md->lo, md->hi, memtrace_event, mt1);
+		VTAILQ_INSERT_TAIL(&memtraces, mt1, list);
+		return;
+	} else {
+
+		lo = strtoul(cli->av[0], NULL, 0);
+		hi = strtoul(cli->av[1], NULL, 0);
+
+		if (hi <= lo) {
+			cli_error(cli, "hi_adr <= lo_adr\n");
+			return;
+		}
+
+		mt1 = get_next_trace();
+		mt1->lo = strdup(cli->av[0]);
+		AN(mt1->lo);
+		mt1->hi = strdup(cli->av[1]);
+		AN(mt1->hi);
+
+		mem_peg_register(lo, hi, memtrace_event, mt1);
+		VTAILQ_INSERT_TAIL(&memtraces, mt1, list);
+		return;
+	}
+}
+
+static void v_matchproto_(cli_func_f)
+cli_ioc_memtrace_del(struct cli *cli)
+{
+	struct memtrace *mt1;
 	int n;
 
-	AN(cli);
-	(void)(memtrace_event);
-	if (cli->help) {
-		cli_printf(cli, USAGE);
+	if (cli->help || cli->ac != 2) {
+		cli_usage(cli, "<number>", "Delete memtrace.");
 		return;
 	}
 	cli->ac--;
 	cli->av++;
-	if (cli->ac == 0) {
-		if (VTAILQ_EMPTY(&memtraces)) {
-			cli_printf(cli, "No active memory traces\n");
+	n = strtoul(cli->av[0], NULL, 0);
+	VTAILQ_FOREACH(mt1, &memtraces, list) {
+		if (mt1->number == n) {
+			mem_peg_expunge(mt1);
+			VTAILQ_REMOVE(&memtraces, mt1, list);
+			free(mt1->lo);
+			free(mt1->hi);
+			free(mt1);
 			return;
 		}
-		VTAILQ_FOREACH(mt1, &memtraces, list) {
-			cli_printf(cli, "    %d:", mt1->number);
-			if (mt1->seg != NULL)
-				cli_printf(cli, " -seg %s", mt1->seg);
-			if (mt1->lo != NULL)
-				cli_printf(cli, " -lo %s", mt1->lo);
-			if (mt1->hi != NULL)
-				cli_printf(cli, " -lo %s", mt1->hi);
-			cli_printf(cli, "\n");
-		}
-		return;
-	} else if (!strcmp(cli->av[0], "add")) {
-		cli->ac--;
-		cli->av++;
-		if (cli_n_m_args(cli, 2, 4, ""))
-			return;
-		mt1 = VTAILQ_LAST(&memtraces, memtracehead);
-		if (mt1 != NULL)
-			n = mt1->number + 1;
-		else
-			n = 1;
-		mt1 = calloc(sizeof *mt1, 1);
-		AN(mt1);
-		mt1->number = n;
-		if (!strcmp(cli->av[0], "-seg")) {
-			cli->ac--;
-			cli->av++;
-			if (cli_n_m_args(cli, 1, 1, "")) {
-				free(mt1);
-				return;
-			}
-			for (u = 0; u < n_memdesc; u++) {
-				if (!strcmp(memdesc[u]->name, cli->av[0]))
-					break;
-			}
-			if (u == n_memdesc) {
-				free(mt1);
-				cli_error(cli, "Unknow segment name\n");
-				return;
-			}
-			md = memdesc[u];
-			mt1->seg = md->name;
-			mem_peg_register(md->lo, md->hi, memtrace_event, mt1);
-			VTAILQ_INSERT_TAIL(&memtraces, mt1, list);
-			return;
-		}
-		if (!strcmp(cli->av[0], "-lo")) {
-			cli->ac--;
-			cli->av++;
-			if (cli_n_m_args(cli, 3, 3, "")) {
-				free(mt1);
-				return;
-			}
-			lo = strtoul(cli->av[0], NULL, 0);
-			mt1->lo = strdup(cli->av[0]);
-			AN(mt1->lo);
-			cli->ac--;
-			cli->av++;
-			if (strcmp(cli->av[0], "-hi")) {
-				free(mt1);
-				cli_error(cli, USAGE);
-				return;
-			}
-			cli->ac--;
-			cli->av++;
-			hi = strtoul(cli->av[0], NULL, 0);
-			mt1->hi = strdup(cli->av[0]);
-			AN(mt1->hi);
-			mem_peg_register(lo, hi, memtrace_event, mt1);
-			VTAILQ_INSERT_TAIL(&memtraces, mt1, list);
-			return;
-		}
-		free(mt1);
-		(void)cli_error(cli, USAGE);
-	} else if (!strcmp(cli->av[0], "del")) {
-		cli->ac--;
-		cli->av++;
-		if (cli_n_m_args(cli, 1, 1, ""))
-			return;
-		n = strtoul(cli->av[0], NULL, 0);
-		VTAILQ_FOREACH(mt1, &memtraces, list) {
-			if (mt1->number == n) {
-				mem_peg_expunge(mt1);
-				VTAILQ_REMOVE(&memtraces, mt1, list);
-				free(mt1->lo);
-				free(mt1->hi);
-				free(mt1);
-				return;
-			}
-		}
-	} else {
-		(void)cli_error(cli, USAGE);
 	}
+	cli_error(cli, "memtrace %d not found\n", n);
+}
+
+static void v_matchproto_(cli_func_f)
+cli_ioc_memtrace_list(struct cli *cli)
+{
+	struct memtrace *mt1;
+
+	if (cli->help) {
+		cli_usage(cli, NULL, "List memtrace.");
+		return;
+	}
+	if (VTAILQ_EMPTY(&memtraces)) {
+		cli_printf(cli, "No active memory traces\n");
+		return;
+	}
+	VTAILQ_FOREACH(mt1, &memtraces, list) {
+		cli_printf(cli, "    %d:", mt1->number);
+		if (mt1->seg != NULL)
+			cli_printf(cli, " -seg %s", mt1->seg);
+		if (mt1->lo != NULL)
+			cli_printf(cli, " -lo %s", mt1->lo);
+		if (mt1->hi != NULL)
+			cli_printf(cli, " -hi %s", mt1->hi);
+		cli_printf(cli, "\n");
+	}
+}
+
+static const struct cli_cmds cli_ioc_memtrace_cmds[] = {
+	{ "add",		cli_ioc_memtrace_add },
+	{ "del",		cli_ioc_memtrace_del },
+	{ "list",		cli_ioc_memtrace_list },
+	{ NULL,			NULL },
+};
+
+void v_matchproto_(cli_func_f)
+cli_ioc_memtrace(struct cli *cli)
+{
+	cli_redispatch(cli, cli_ioc_memtrace_cmds);
 }

@@ -318,22 +318,20 @@ static scsi_func_f * const scsi_disk_funcs[256] = {
 
 /**********************************************************************/
 
-void v_matchproto_(cli_func_f)
-cli_scsi_disk(struct cli *cli)
+static void v_matchproto_(cli_func_f)
+cli_scsi_disk_mount(struct cli *cli)
 {
 	struct scsi_dev *sd;
 	unsigned unit;
 
-	if (cli->help) {
-		cli_io_help(cli, "scsi_disk <unit> <filename>", 0, 0);
+	if (cli->help || cli->ac != 3) {
+		cli_usage(cli, "<unit> <filename>",
+		    "Load filename in SCSI disk unit.");
 		return;
 	}
 
 	cli->ac--;
 	cli->av++;
-
-	if (cli_n_args(cli, 1))
-		return;
 
 	unit = atoi(cli->av[0]);
 	cli->ac--;
@@ -342,9 +340,6 @@ cli_scsi_disk(struct cli *cli)
 		cli_error(cli, "Only disks 0-3 supported\n");
 		return;
 	}
-
-	if (cli_n_args(cli, 0))
-		return;
 
 	sd = scsi_d->dev[unit];
 	if (sd == NULL) {
@@ -399,6 +394,17 @@ cli_scsi_disk(struct cli *cli)
 	cli->av++;
 }
 
+static const struct cli_cmds cli_scsi_disk_cmds[] = {
+	{ "mount",		cli_scsi_disk_mount },
+	{ NULL,			NULL },
+};
+
+void v_matchproto_(cli_func_f)
+cli_scsi_disk(struct cli *cli)
+{
+	cli_redispatch(cli, cli_scsi_disk_cmds);
+}
+
 /**********************************************************************/
 
 static scsi_func_f * const scsi_tape_funcs [256] = {
@@ -411,21 +417,19 @@ static scsi_func_f * const scsi_tape_funcs [256] = {
 
 /**********************************************************************/
 
-void v_matchproto_(cli_func_f)
-cli_scsi_tape(struct cli *cli)
+static void v_matchproto_(cli_func_f)
+cli_scsi_tape_mount(struct cli *cli)
 {
 	struct scsi_dev *sd;
 
-	if (cli->help) {
-		cli_io_help(cli, "scsi_tape [filename]", 0, 0);
+	if (cli->help || cli->ac != 2) {
+		cli_usage(cli, "<filename>",
+		    "Mount filename in SCSI tape drive.");
 		return;
 	}
 
 	cli->ac--;
 	cli->av++;
-
-	if (cli->ac == 0)
-		return;
 
 	sd = scsi_t->dev[0];
 	if (sd == NULL) {
@@ -445,4 +449,15 @@ cli_scsi_tape(struct cli *cli)
 
 	cli->ac--;
 	cli->av++;
+}
+
+static const struct cli_cmds cli_scsi_tape_cmds[] = {
+	{ "mount",		cli_scsi_tape_mount },
+	{ NULL,			NULL },
+};
+
+void v_matchproto_(cli_func_f)
+cli_scsi_tape(struct cli *cli)
+{
+	cli_redispatch(cli, cli_scsi_tape_cmds);
 }

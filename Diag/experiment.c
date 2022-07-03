@@ -71,40 +71,49 @@ Load_Experiment_File(struct cli *cli, const char *filename)
 }
 
 static void
-Send_Experiment(int addr, const struct experiment *ex)
+Send_Experiment(const struct diproc *dp, const struct experiment *ex)
 {
 	unsigned u;
 
-	assert(addr >= 0 && addr <= 15);
-	DiagBus_Send(&diprocs[addr], 0x1a0 | addr);
-	DiagBus_Send(&diprocs[addr], ex->length + 1);
+	AN(dp);
+	DiagBus_Send(dp, 0x1a0 | dp->address);
+	DiagBus_Send(dp, ex->length + 1);
 	for (u = 0; u < ex->length; u++)
-		DiagBus_Send(&diprocs[addr], ex->octets[u]);
-	DiagBus_Send(&diprocs[addr], 0);
-	DiagBus_Send(&diprocs[addr], (ex->length + 1 + ex->sum) & 0xff);
+		DiagBus_Send(dp, ex->octets[u]);
+	DiagBus_Send(dp, 0);
+	DiagBus_Send(dp, (ex->length + 1 + ex->sum) & 0xff);
 }
 
 void v_matchproto_(cli_func_f)
-cli_diag_experiment(struct cli *cli)
+cli_diproc_experiment(struct cli *cli)
 {
+	struct diproc *dp;
 	struct experiment *ex;
 
-	if (cli->help || cli->ac == 1) {
-		cli_printf(cli, "\t<board> experiment <filename>\n");
+	if (cli->help || cli->ac != 3) {
+		cli_usage(cli, "<board> <filename>",
+		    "Start DIPROC experiment.");
+		if (cli->help == 1)
+			cli_diproc_help_board(cli);
 		return;
 	}
+	cli->ac--;
+	cli->av++;
+	dp = diagbus_get_board(cli, cli->av[0]);
+	if (dp == NULL)
+		return;
 	cli->ac--;
 	cli->av++;
 	ex = Load_Experiment_File(cli, cli->av[0]);
 	if (ex == NULL)
 		return;
 	usleep(100000);
-	Send_Experiment(cli->priv, ex);
-	diprocs[cli->priv].experiment = ex;
+	Send_Experiment(dp, ex);
+	dp->experiment = ex;
 }
 
 void v_matchproto_(cli_func_f)
-cli_diag_check(struct cli *cli)
+cli_diproc_status(struct cli *cli)
 {
 	struct diproc *dp;
 	struct experiment *ex;
@@ -112,11 +121,15 @@ cli_diag_check(struct cli *cli)
 	uint8_t buf[256];
 	size_t want, sz, z, w;
 
-	if (cli->help || cli->ac != 1) {
-		cli_printf(cli, "\t<board> check\n");
+	if (cli->help || cli->ac != 2) {
+		cli_usage(cli, "<board>", "Report DIPROC status");
+		if (cli->help == 1)
+			cli_diproc_help_board(cli);
 		return;
 	}
-	dp = &diprocs[cli->priv];
+	dp = diagbus_get_board(cli, cli->av[1]);
+	if (dp == NULL)
+		return;
 	ex = dp->experiment;
 	if (ex == NULL) {
 		cli_error(cli, "No active experiment\n");
@@ -131,7 +144,7 @@ cli_diag_check(struct cli *cli)
 			w = ep->len;
 	}
 	// want -= 0x10;
-	DiagBus_Send(dp, 0x120 + cli->priv);
+	DiagBus_Send(dp, 0x120 + dp->address);
 	DiagBus_Send(dp, 0);
 	DiagBus_Send(dp, want);
 

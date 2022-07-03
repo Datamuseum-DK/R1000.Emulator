@@ -169,8 +169,9 @@ cli_sc_launch(struct cli *cli)
 {
 	int i;
 
-	if (cli->help) {
-		cli_printf(cli, "Usage:\n\t[boardname|all]...\n");
+	if (cli->help || cli->ac < 2) {
+		cli_usage(cli, "[<board>|all] …",
+		    "Launch SystemC models of boards.");
 		return;
 	}
 
@@ -223,38 +224,72 @@ cli_sc_launch(struct cli *cli)
 }
 
 static void v_matchproto_(cli_func_f)
-cli_sc_quota(struct cli *cli)
+cli_sc_quota_add(struct cli *cli)
 {
-
-	if (cli->help) {
-		cli_printf(cli, "Usage:\n\t\"wait\"|microseconds\n");
+	if (cli->help || cli->ac != 2) {
+		cli_usage(cli, "<seconds>", "Add time to SystemC quota.");
 		return;
 	}
 	AZ(pthread_mutex_lock(&sc_mtx));
-	if (cli->ac == 2 && !strcmp(cli->av[1], "exit")) {
-		sc_quota_exit = 1;
-	} else if (cli->ac == 2 && !strcmp(cli->av[1], "wait")) {
-		while (sc_quota > 0) {
-			AZ(pthread_mutex_unlock(&sc_mtx));
-			usleep(100000);
-			AZ(pthread_mutex_lock(&sc_mtx));
-		}
-	} else {
-		sc_quota += strtod(cli->av[1], NULL);
-		sc_started = 4;
-	}
+	sc_quota += strtod(cli->av[1], NULL);
+	sc_started = 4;
 	cli_printf(cli, "SC_QUOTA = %.9f\n", sc_quota);
 	AZ(pthread_cond_signal(&sc_cond));
 	AZ(pthread_mutex_unlock(&sc_mtx));
 }
 
 static void v_matchproto_(cli_func_f)
+cli_sc_quota_wait(struct cli *cli)
+{
+	if (cli->help || cli->ac != 1) {
+		cli_usage(cli, NULL, "Wait for SystemC quota to expire.");
+		return;
+	}
+	AZ(pthread_mutex_lock(&sc_mtx));
+	while (sc_quota > 0) {
+		AZ(pthread_mutex_unlock(&sc_mtx));
+		usleep(100000);
+		AZ(pthread_mutex_lock(&sc_mtx));
+	}
+	AZ(pthread_mutex_unlock(&sc_mtx));
+}
+
+static void v_matchproto_(cli_func_f)
+cli_sc_quota_exit(struct cli *cli)
+{
+	if (cli->help || cli->ac != 1) {
+		cli_usage(cli, NULL,
+		    "Exit emulator when SystemC quota expires.");
+		return;
+	}
+	sc_quota_exit = 1;
+}
+
+static const struct cli_cmds cli_sc_quota_cmds[] = {
+	{ "add",		cli_sc_quota_add },
+	{ "exit",		cli_sc_quota_exit },
+	{ "wait",		cli_sc_quota_wait },
+	{ NULL,			NULL },
+};
+
+static void v_matchproto_(cli_func_f)
+cli_sc_quota(struct cli *cli)
+{
+	cli_redispatch(cli, cli_sc_quota_cmds);
+}
+
+static void v_matchproto_(cli_func_f)
 cli_sc_wait(struct cli *cli)
 {
-	double e = 0.01;
+	double e;
 
-	if (cli->ac > 1)
-		e = strtod(cli->av[1], NULL);
+	if (cli->help || cli->ac != 2) {
+		cli_usage(cli, "[<seconds>]",
+		    "Wait until SystemC time reaches seconds.");
+		return;
+	}
+
+	e = strtod(cli->av[1], NULL);
 	do
 		usleep(10000);
 	while (e < sc_when());
@@ -265,6 +300,12 @@ cli_sc_rate(struct cli *cli)
 {
 	struct timespec t1;
 	double d, e;
+
+	if (cli->help || cli->ac != 1) {
+		cli_usage(cli, NULL,
+		    "Report SystemC simulation rates.");
+		return;
+	}
 
 	AZ(clock_gettime(CLOCK_REALTIME, &t1));
 	e = sc_when();
@@ -283,22 +324,20 @@ cli_sc_trace(struct cli *cli)
 	char errbuf[BUFSIZ];
 	const char *regexp;
 	int onoff = 0;
-	int err;
+	int nmatch = 0, err;
 
-	if (cli->help) {
-		cli_printf(cli, TRACE_USAGE);
+	if (cli->help || cli->ac != 3) {
+		cli_usage(cli, "<regexp> <level>",
+		    "Set tracing for components matching regexp to level.");
 		return;
 	}
-	if (cli->ac < 2)
-		regexp = ".";
-	else
-		regexp = cli->av[1];
+	regexp = cli->av[1];
 
-	if (cli->ac == 3 && !strcmp(cli->av[2], "on"))
+	if (!strcasecmp(cli->av[2], "on"))
 		onoff = 1;
-	else if (cli->ac == 3 && !strcmp(cli->av[2], "off"))
+	else if (!strcasecmp(cli->av[2], "off"))
 		onoff = 0;
-	else if (cli->ac == 3)
+	else 
 		onoff = strtoul(cli->av[2], NULL, 0);
 
 	err = regcomp(&rex, regexp, 0);
@@ -310,6 +349,7 @@ cli_sc_trace(struct cli *cli)
 
 	VTAILQ_FOREACH(comp, &component_list, list) {
 		if (!regexec(&rex, comp->name, 0, 0, 0)) {
+			nmatch++;
 			*comp->flags = onoff;
 			cli_printf(
 			    cli,
@@ -318,6 +358,8 @@ cli_sc_trace(struct cli *cli)
 		}
 	}
 	regfree(&rex);
+	if (!nmatch)
+		cli_error(cli, "regexp matched no components.\n");
 }
 
 int sc_forced_reset;
@@ -325,9 +367,9 @@ int sc_forced_reset;
 static void v_matchproto_(cli_func_f)
 cli_sc_force_reset(struct cli *cli)
 {
-	if (cli->help) {
-		cli_printf(cli,
-		    "force reset signal high for IOC without IOP\n");
+	if (cli->help || cli->ac != 1) {
+		cli_usage(cli, NULL,
+		    "Force reset signal high for IOC without IOP\n");
 		return;
 	}
 	sc_forced_reset = 1;
@@ -335,7 +377,6 @@ cli_sc_force_reset(struct cli *cli)
 
 static const struct cli_cmds cli_sc_cmds[] = {
 	{ "launch",		cli_sc_launch },
-	{ "q",			cli_sc_quota },
 	{ "quota",		cli_sc_quota },
 	{ "rate",		cli_sc_rate },
 	{ "trace",		cli_sc_trace },
@@ -348,9 +389,5 @@ static const struct cli_cmds cli_sc_cmds[] = {
 void v_matchproto_(cli_func_f)
 cli_sc(struct cli *cli)
 {
-	if (cli->ac > 1 || cli->help) {
-		cli->ac--;
-		cli->av++;
-		cli_dispatch(cli, cli_sc_cmds);
-	}
+	cli_redispatch(cli, cli_sc_cmds);
 }

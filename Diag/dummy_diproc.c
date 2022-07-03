@@ -97,7 +97,7 @@ i8052_thread(void *priv)
 		u8 = u & 0xff;
 		switch (u8 >> 4) {
 		case 0x0:
-			if (reply && i52->response != DIPROC_RESPONSE_TIMEOUT) {
+			if (reply && i52->response != (int)DIPROC_RESPONSE_TIMEOUT) {
 				i8052_tx_diagbus(i52, reply);
 			} else {
 				i8052_tx_diagbus(i52, i52->response);
@@ -125,7 +125,7 @@ i8052_thread(void *priv)
 			    "DIAGBUS %s UL%s", i52->name, VSB_data(vsb));
 			break;
 		case 0x8:
-			reply = DIPROC_RESPONSE_RESET;
+			reply = (int)DIPROC_RESPONSE_RESET;
 			break;
 		case 0xa:
 			pointer = 0x10;
@@ -164,26 +164,20 @@ i8052_start(unsigned address, const char *name, unsigned response)
 	AZ(pthread_create(&i52->thread, NULL, i8052_thread, i52));
 }
 
-static void
-cli_dummy_diproc_usage(struct cli *cli)
-{
-	cli_printf(cli,
-	    "Usage: dummy_diproc [-response]"
-	    "[seq|fiu|ioc|typ|val|mem0|mem2]…\n");
-	cli_printf(cli, "    possible responses:\n");
-#define RESPONSE(num, name) cli_printf(cli, "\t-%s\n", #name);
-	RESPONSE_TABLE(RESPONSE)
-#undef RESPONSE
-}
-
 void v_matchproto_(cli_func_f)
-cli_dummy_diproc(struct cli *cli)
+cli_diproc_dummy(struct cli *cli)
 {
 	int i;
-	unsigned response = DIPROC_RESPONSE_OK;
+	unsigned response = (int)DIPROC_RESPONSE_OK;
 
-	if (cli->help) {
-		cli_dummy_diproc_usage(cli);
+	if (cli->help || cli->ac < 2) {
+		cli_usage(cli, "[-<status>] <board> …",
+		    "Implement dummy DIPROC.  Default status is OK."
+		);
+		if (cli->help == 1) {
+			cli_diproc_help_status(cli);
+			cli_diproc_help_board(cli);
+		}
 		return;
 	}
 	for (i = 1; i < cli->ac; i++) {
@@ -195,10 +189,8 @@ cli_dummy_diproc(struct cli *cli)
 			}
 			RESPONSE_TABLE(RESPONSE)
 #undef RESPONSE
-			cli_printf(cli, "Unknown response: \"%s\"\n",
+			cli_error(cli, "Unknown response: \"%s\"\n",
 			    cli->av[i]);
-			cli_dummy_diproc_usage(cli);
-			cli_error(cli, "");
 			return;
 		}
 #define BOARD(upper, lower, address) \
@@ -208,9 +200,7 @@ cli_dummy_diproc(struct cli *cli)
 		}
 		BOARD_TABLE(BOARD)
 #undef BOARD
-		cli_printf(cli, "Unknown diproc: \"%s\"\n", cli->av[i]);
-		cli_dummy_diproc_usage(cli);
-		cli_error(cli, "");
+		cli_error(cli, "Unknown diproc: \"%s\"\n", cli->av[i]);
 		return;
 	}
 }

@@ -51,8 +51,8 @@ void v_matchproto_(cli_func_f)
 cli_ioc_console(struct cli *cli)
 {
 
-	if (cli->help) {
-		cli_io_help(cli, "IOC console", 0, 0);
+	if (cli->help || cli->ac < 2) {
+		cli_usage(cli, "<elastic>", "Steer console output");
 		cli_elastic(cons->ep, cli);
 		return;
 	}

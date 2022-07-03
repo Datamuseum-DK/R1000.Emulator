@@ -98,7 +98,7 @@ cli_ioc_dump(struct cli *cli)
 	const char *fn;
 
 	if (cli->help) {
-		cli_usage(cli, "\n\tDump IOC RAM to file\n");
+		cli_usage(cli, NULL, "Dump IOC RAM to file.");
 		return;
 	}
 	cli->ac--;
@@ -191,7 +191,7 @@ cli_ioc_breakpoint(struct cli *cli)
 	uint32_t adr;
 
 	if (cli->help) {
-		cli_usage(cli, " <address> <rpn>\n\tSet Breakpoint\n");
+		cli_usage(cli, "<address> <rpn>", "Set Breakpoint.");
 		return;
 	}
 	cli->ac--;

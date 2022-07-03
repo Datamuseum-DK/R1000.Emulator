@@ -282,8 +282,10 @@ cli_elastic(struct elastic *ep, struct cli *cli)
 	uint8_t u8;
 
 	AN(cli);
-	if (cli->help) {
-		cli_printf(cli, "\t(elastic buffer arguments:)\n");
+	if (cli->help > 1)
+		return (0);
+	if (cli->help == 1) {
+		cli_printf(cli, "\n    Elastic buffer arguments:\n");
 		cli_printf(cli, "\ttext\n");
 		cli_printf(cli, "\t\tSet text mode\n");
 		cli_printf(cli, "\tbinary\n");

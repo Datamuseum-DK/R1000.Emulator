@@ -205,13 +205,8 @@ cli_dfs_cat(struct cli *cli)
 	FILE *fout;
 
 	if (cli->help || cli->ac < 2 || cli->ac > 3) {
-		if (!cli->help)
-			cli_error(cli, "Usage:\n");
-		cli_printf(cli, "dfs cat dfs_filename [filename]\n");
-		cli_printf(cli,
-		    "\t'cat' contents of dfs_filename up to the first NUL");
-		cli_printf(cli,
-		    " to stdout [or filename]\n");
+		cli_usage(cli, "<dfs_filename> [<filename>]",
+		    "Cat the contents of dfs_filename to stdout or filename.");
 		return;
 	}
 
@@ -268,9 +263,8 @@ cli_dfs_dir(struct cli *cli)
 	int nde = 0, i;
 
 	if (cli->help) {
-		cli_printf(cli, "dfs dir [glob…]\n");
-		cli_printf(cli,
-		    "\tList DFS directory optionally matching pattern(s).\n");
+		cli_usage(cli, "[<glob> …]",
+		    "List DFS directory optionally matching pattern(s).");
 		return;
 	}
 
@@ -303,11 +297,8 @@ cli_dfs_read(struct cli *cli)
 	FILE *fout;
 
 	if (cli->help || cli->ac != 3) {
-		if (!cli->help)
-			cli_error(cli, "Usage:\n");
-		cli_printf(cli, "dfs read dfs_filename filename\n");
-		cli_printf(cli,
-		    "\tread the contents of dfs_filename into filename\n");
+		cli_usage(cli, "<dfs_filename> <filename>",
+		    "Read the contents of dfs_filename into filename.");
 		return;
 	}
 
@@ -343,11 +334,8 @@ cli_dfs_neuter(struct cli *cli)
 	unsigned adr, start;
 
 	if (cli->help || cli->ac != 2) {
-		if (!cli->help)
-			cli_error(cli, "Usage:\n");
-		cli_printf(cli, "dfs neuter dfs_experiment\n");
-		cli_printf(cli,
-		    "\tmake the dfs_experiment a no-op returning success\n");
+		cli_usage(cli, "<dfs_experiment>",
+		    "Make the dfs_experiment a no-op returning success.");
 		return;
 	}
 
@@ -412,11 +400,8 @@ cli_dfs_sed(struct cli *cli)
 	ssize_t sz, sza;
 
 	if (cli->help || cli->ac < 3) {
-		if (!cli->help)
-			cli_error(cli, "Usage:\n");
-		cli_printf(cli, "dfs sed dfs_filename sed_cmd…\n");
-		cli_printf(cli,
-		    "\tEdit dfs_filename with sed(1)\n");
+		cli_usage(cli, "<dfs_filename> <sed_cmd> …",
+		    "Edit dfs_filename with sed(1).");
 		return;
 	}
 
@@ -485,11 +470,8 @@ cli_dfs_write(struct cli *cli)
 	size_t sz;
 
 	if (cli->help || cli->ac != 3) {
-		if (!cli->help)
-			cli_error(cli, "Usage:\n");
-		cli_printf(cli, "dfs write filename dfs_filename\n");
-		cli_printf(cli,
-		    "\twrite the contents of filename into dfs_filename\n");
+		cli_usage(cli, "<filename> <dfs_filename>",
+		    "Write the contents of filename into dfs_filename.");
 		return;
 	}
 
@@ -520,12 +502,12 @@ cli_dfs_write(struct cli *cli)
 /**********************************************************************/
 
 static const struct cli_cmds cli_dfs_cmds[] = {
-	{ "cat",		cli_dfs_cat, "dfs_filename [filename]" },
-	{ "dir",		cli_dfs_dir, "[glob…]" },
-	{ "neuter",		cli_dfs_neuter, "dfs_experiment" },
-	{ "read",		cli_dfs_read, "dfs_filename filename" },
-	{ "sed",		cli_dfs_sed, "dfs_filename sed_cmd…" },
-	{ "write",		cli_dfs_write, "filename dfs_filename" },
+	{ "cat",		cli_dfs_cat },
+	{ "dir",		cli_dfs_dir },
+	{ "neuter",		cli_dfs_neuter },
+	{ "read",		cli_dfs_read },
+	{ "sed",		cli_dfs_sed },
+	{ "write",		cli_dfs_write },
 	{ NULL,			NULL },
 };
 
@@ -533,9 +515,5 @@ void v_matchproto_(cli_func_f)
 cli_dfs(struct cli *cli)
 {
 
-	if (cli->ac > 1 || cli->help) {
-		cli->ac--;
-		cli->av++;
-		cli_dispatch(cli, cli_dfs_cmds);
-	}
+	cli_redispatch(cli, cli_dfs_cmds);
 }

@@ -36,7 +36,8 @@ ioc_bus_xact_schedule(uint32_t adr, uint32_t data, int width,
 {
 	struct bus_xact *bxp;
 
-	if (!(sc_boards & R1K_BOARD_IOC) || !sc_started) 
+	Trace(trace_ioc_sc, "IOC_SC %08x %08x %x %d %d", adr, data, width, is_write, is_sync);
+	if (!(sc_boards & R1K_BOARD_IOC) || !sc_started)
 		return(data);
 
 	bxp = calloc(sizeof *bxp, 1);

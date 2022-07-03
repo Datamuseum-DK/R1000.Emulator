@@ -82,7 +82,7 @@ struct cli {
 	int			ac;
 	char			**av;
 	char			**av0;
-	intmax_t		priv;
+	const char		*cmd;
 };
 
 typedef void cli_func_f(struct cli *);
@@ -90,11 +90,11 @@ typedef void cli_func_f(struct cli *);
 struct cli_cmds {
 	const char		*cmd;
 	cli_func_f		*func;
-	const char		*usage;
 };
 
 void cli_path(struct cli *cli);
-void cli_usage(struct cli *cli, const char *fmt, ...) __printflike(2,3);
+void cli_usage(struct cli *cli, const char *args, const char *fmt, ...) __printflike(3,4);
+void cli_redispatch(struct cli *cli, const struct cli_cmds *cmds);
 void cli_dispatch(struct cli *cli, const struct cli_cmds *cmds);
 
 int cli_exec(const char *);
@@ -171,9 +171,9 @@ nanosec callout_poll(void);
 
 /* DIAG *************************************************************/
 
-cli_func_f cli_dummy_diproc;
 cli_func_f cli_dfs;
-cli_func_f cli_diag;
+cli_func_f cli_diagbus;
+cli_func_f cli_diproc;
 void diagbus_init(void);
 
 /* FIRMWARE *********************************************************/

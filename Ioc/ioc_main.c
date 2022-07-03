@@ -108,7 +108,7 @@ void v_matchproto_(cli_func_f)
 cli_ioc_reset(struct cli *cli)
 {
 	if (cli->help) {
-		cli_usage(cli, "\n\tReset IOC CPU\n");
+		cli_usage(cli, NULL, "Reset IOC CPU.");
 		return;
 	}
 	cli->ac--;
@@ -148,7 +148,7 @@ cli_ioc_step(struct cli *cli)
 	uintmax_t uj = 1;
 
 	if (cli->help) {
-		cli_usage(cli, " [count]\n\tSingle step IOC CPU\n");
+		cli_usage(cli, "[count]", "Single step IOC CPU.");
 		return;
 	}
 	cli->ac--;
@@ -170,7 +170,7 @@ void v_matchproto_(cli_func_f)
 cli_ioc_stop(struct cli *cli)
 {
 	if (cli->help) {
-		cli_usage(cli, "\n\tStop IOC CPU\n");
+		cli_usage(cli, NULL, "Stop IOC CPU.");
 		return;
 	}
 	cli->ac--;
@@ -186,7 +186,7 @@ void v_matchproto_(cli_func_f)
 cli_ioc_start(struct cli *cli)
 {
 	if (cli->help) {
-		cli_usage(cli, "\n\tStart IOC CPU\n");
+		cli_usage(cli, NULL, "Start IOC CPU.");
 		return;
 	}
 	cli->ac--;
@@ -201,8 +201,8 @@ cli_ioc_maxins(struct cli *cli)
 {
 
 	if (cli->help) {
-		cli_usage(cli,
-		    " [count]\n\tTerminate after `count` instructions\n");
+		cli_usage(cli, "[count]",
+		    "Terminate after `count` instructions.");
 		return;
 	}
 	cli->ac--;

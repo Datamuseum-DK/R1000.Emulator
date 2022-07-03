@@ -10,11 +10,11 @@
 		PIN_ECS = 1;
 		PIN_WR = 1;
 #ifdef BUS_A_Z
-                BUS_A_Z();
+		BUS_A_Z();
 #endif
-                BUS_D_Z();
-                BUS_FC_WRITE(0);
-                BUS_SIZ_WRITE(0);
+		BUS_D_Z();
+		BUS_FC_WRITE(0);
+		BUS_SIZ_WRITE(0);
 		return;
 	}
 	TRACE(
@@ -31,6 +31,8 @@
 		<< " DSACK "
 		<< PIN_DSACK0
 		<< PIN_DSACK1
+		<< " IPL "
+		<< BUS_IPL_TRACE()
 	);
 	switch (state->xact->sc_state) {
 	case 0:
@@ -81,11 +83,11 @@
 		PIN_ECS = 1;
 		PIN_WR = 1;
 #ifdef BUS_A_Z
-                BUS_A_Z();
+		BUS_A_Z();
 #endif
-                BUS_D_Z();
-                BUS_FC_WRITE(0);
-                BUS_SIZ_WRITE(0);
+		BUS_D_Z();
+		BUS_FC_WRITE(0);
+		BUS_SIZ_WRITE(0);
 		ioc_sc_bus_done(&state->xact);
 		break;
 	}

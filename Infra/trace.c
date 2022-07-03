@@ -78,12 +78,22 @@ cli_trace(struct cli *cli)
 	int i, j;
 
 	if (cli->help) {
-		for (tp = traces; tp->name; tp++) {
-			if (cli->ac > 1 &&
-			    fnmatch(cli->av[1], tp->name, 0))
-				continue;
-			cli_printf(cli, "\t%s - %s\n",
-			    tp->name, tp->help);
+		cli_usage(cli, "[+|-|~]<trace> …",
+		    "Enable/disable/flip tracing of trace.");
+		if (cli->help == 1) {
+			cli_printf(cli, "\n    Traces");
+			if (cli->ac > 1)
+				cli_printf(cli, " matching '%s':\n",
+				    cli->av[1]);
+			else
+				cli_printf(cli, ":\n");
+			for (tp = traces; tp->name; tp++) {
+				if (cli->ac > 1 &&
+				    fnmatch(cli->av[1], tp->name, 0))
+					continue;
+				cli_printf(cli, "\t%s - %s\n",
+				    tp->name, tp->help);
+			}
 		}
 		return;
 	}

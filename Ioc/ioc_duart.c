@@ -232,7 +232,7 @@ ioc_duart_tx_callback(void *priv)
 		    chp->name, chp->txshift[0], chp->txshift[1]);
 	}
 	elastic_put(chp->ep, chp->txshift, chp->txshift_valid);
-	elastic_drain(chp->ep);
+	// elastic_drain(chp->ep);
 	chp->txshift_valid = 0;
 	chp->sr |= 4;
 	chp->sr |= 8;
@@ -417,8 +417,9 @@ cli_ioc_modem(struct cli *cli)
 {
 	struct chan *chp = &ioc_duart->chan[0];
 
-	if (cli->help) {
-		cli_io_help(cli, "IOC duart", 0, 1);
+	if (cli->help || cli->ac < 2) {
+		cli_usage(cli, "<elastic>", "Steer modem output");
+		cli_elastic(chp->ep, cli);
 		return;
 	}
 

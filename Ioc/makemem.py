@@ -52,11 +52,11 @@ def main():
     # IO_FRONT_PANEL_LED_p27
     ioc += Range("pnlreg", 0xfffff200, 0x3, post_write = True, sc_write = True)
 
-    # IO_SENREG_p25
-    ioc += Range("f300", 0xfffff300, 0x3)
+    # SENREG ioc_15
+    ioc += Range("f300", 0xfffff300, 0x3, sc_write = True)
 
-    # IO_DREG5_p24
-    ioc += Range("io_sreg4", 0xfffff400, 0x3)
+    # DREG5 ioc_14
+    ioc += Range("io_sreg4", 0xfffff400, 0x3, sc_write = True)
 
     # IO_FIFO_INIT_p68_p69
     ioc += Range("f500", 0xfffff500, 0x3)

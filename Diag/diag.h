@@ -44,9 +44,15 @@ struct diproc {
 extern struct diproc diprocs[16];
 void DiagBus_Send(const struct diproc *dp, unsigned u);
 
+struct diproc *diagbus_get_board(struct cli *cli, const char *);
+
 struct experiment *Load_Experiment_File(struct cli *, const char *filename);
 
-cli_func_f cli_diag_experiment;
-cli_func_f cli_diag_check;
+cli_func_f cli_diproc_experiment;
+cli_func_f cli_diproc_status;
+cli_func_f cli_diproc_dummy;
+void cli_diproc_help_status(struct cli *cli);
+void cli_diproc_help_board(struct cli *cli);
+
 
 #endif /* DIAG_DIAG_H */

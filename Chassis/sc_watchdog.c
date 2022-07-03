@@ -10,8 +10,6 @@
 #include "Infra/context.h"
 #include "Diag/diagproc.h"
 
-#define WATCHDOG_USAGE "Usage:\n\tpatience\n"
-
 static pthread_t fido_thread;
 static int fido_patience = 60;
 static int fido_started = 0;
@@ -76,19 +74,17 @@ cli_sc_watchdog(struct cli *cli)
 {
 	int patience;
 
-	if (cli->help) {
-		cli_printf(cli, WATCHDOG_USAGE);
+	if (cli->help || cli->ac != 2) {
+		cli_usage(cli, "<seconds>",
+		    "Tickle watchdog periodically.");
 		return;
 	}
-	if (cli->ac > 1) {
-		patience = strtoul(cli->av[1], NULL, 0);
-		if (patience < 5) {
-			cli_error(cli, "Too short patience for fido: %d\n", patience);
-			return;
-		}
-		fido_patience = patience;
+	patience = strtoul(cli->av[1], NULL, 0);
+	if (patience < 5) {
+		cli_error(cli, "Too short patience for fido: %d\n", patience);
+		return;
 	}
-	cli_printf(cli, "Fidos patience is %d seconds\n", fido_patience);
+	fido_patience = patience;
 	if (!fido_started) {
 		AZ(pthread_create(&fido_thread, NULL, fido, NULL));
 		fido_started = 1;

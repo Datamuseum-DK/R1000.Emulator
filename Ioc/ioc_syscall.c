@@ -586,8 +586,7 @@ void v_matchproto_(cli_func_f)
 cli_ioc_syscall(struct cli *cli)
 {
 	if (cli->help) {
-		cli_usage(cli, " [internal]\n");
-		cli_printf(cli, "\tTrace DFS system calls.\n");
+		cli_usage(cli, "[internal]", "Trace DFS system calls.");
 		return;
 	}
 	if (is_tracing)
@@ -599,7 +598,7 @@ cli_ioc_syscall(struct cli *cli)
 		is_tracing = 2;
 	} else if (cli->ac != 0) {
 		cli_error(cli, "Wrong argument.\n");
-		cli_usage(cli, " [internal]\n");
+		// cli_usage(cli, " [internal]\n");
 	} else {
 		is_tracing = 1;
 		start_syscall_tracing(0);
