@@ -50,7 +50,7 @@ Load_Experiment_File(struct cli *cli, const char *filename)
 
 	f = fopen(filename, "r");
 	if (f == NULL) {
-		cli_error(cli, "Cannot open `%s`: %s\n",
+		Cli_Error(cli, "Cannot open `%s`: %s\n",
 		    filename, strerror(errno));
 		return (NULL);
 	}
@@ -91,7 +91,7 @@ cli_diproc_experiment(struct cli *cli)
 	struct experiment *ex;
 
 	if (cli->help || cli->ac != 3) {
-		cli_usage(cli, "<board> <filename>",
+		Cli_Usage(cli, "<board> <filename>",
 		    "Start DIPROC experiment.");
 		if (cli->help == 1)
 			cli_diproc_help_board(cli);
@@ -122,7 +122,7 @@ cli_diproc_status(struct cli *cli)
 	size_t want, sz, z, w;
 
 	if (cli->help || cli->ac != 2) {
-		cli_usage(cli, "<board>", "Report DIPROC status");
+		Cli_Usage(cli, "<board>", "Report DIPROC status");
 		if (cli->help == 1)
 			cli_diproc_help_board(cli);
 		return;
@@ -132,7 +132,7 @@ cli_diproc_status(struct cli *cli)
 		return;
 	ex = dp->experiment;
 	if (ex == NULL) {
-		cli_error(cli, "No active experiment\n");
+		Cli_Error(cli, "No active experiment\n");
 		return;
 	}
 	want = ex->octets[0];
@@ -151,25 +151,25 @@ cli_diproc_status(struct cli *cli)
 	for (z = 0; z < 2 + want; z += sz)
 		sz = elastic_get(diag_elastic, buf + z, sizeof buf - z);
 
-	cli_printf(cli, "Status: %02x (%s)\nMemory:\n",
+	Cli_Printf(cli, "Status: %02x (%s)\nMemory:\n",
 	    buf[0],
 	    (buf[0] & 2) ? "GOOD" : "BAD"
 	);
 	for (sz = 1; sz < want + 1; sz++) {
 		if (sz % 16 == 1)
-			cli_printf(cli, "  %02zx: ", sz - 1);
-		cli_printf(cli, "%02x", buf[sz]);
+			Cli_Printf(cli, "  %02zx: ", sz - 1);
+		Cli_Printf(cli, "%02x", buf[sz]);
 		if (sz % 16 == 0)
-			cli_printf(cli, "\n");
+			Cli_Printf(cli, "\n");
 		else if (sz % 4 == 0)
-			cli_printf(cli, " ");
+			Cli_Printf(cli, " ");
 	}
-	cli_printf(cli, "\nParameters:\n");
+	Cli_Printf(cli, "\nParameters:\n");
 	VTAILQ_FOREACH(ep, &ex->params, list) {
 		for (z = 0; z < ep->len; z++)
-			cli_printf(cli, "%02x", buf[1 + ep->at + z]);
+			Cli_Printf(cli, "%02x", buf[1 + ep->at + z]);
 		for (; z < w; z++)
-			cli_printf(cli, "  ");
-		cli_printf(cli, "  [%02x:%02x] %s", ep->at, ep->len, ep->str);
+			Cli_Printf(cli, "  ");
+		Cli_Printf(cli, "  [%02x:%02x] %s", ep->at, ep->len, ep->str);
 	}
 }

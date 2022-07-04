@@ -78,20 +78,20 @@ cli_trace(struct cli *cli)
 	int i, j;
 
 	if (cli->help) {
-		cli_usage(cli, "[+|-|~]<trace> …",
+		Cli_Usage(cli, "[+|-|~]<trace> …",
 		    "Enable/disable/flip tracing of trace.");
 		if (cli->help == 1) {
-			cli_printf(cli, "\n    Traces");
+			Cli_Printf(cli, "\n    Traces");
 			if (cli->ac > 1)
-				cli_printf(cli, " matching '%s':\n",
+				Cli_Printf(cli, " matching '%s':\n",
 				    cli->av[1]);
 			else
-				cli_printf(cli, ":\n");
+				Cli_Printf(cli, ":\n");
 			for (tp = traces; tp->name; tp++) {
 				if (cli->ac > 1 &&
 				    fnmatch(cli->av[1], tp->name, 0))
 					continue;
-				cli_printf(cli, "\t%s - %s\n",
+				Cli_Printf(cli, "\t%s - %s\n",
 				    tp->name, tp->help);
 			}
 		}
@@ -99,7 +99,7 @@ cli_trace(struct cli *cli)
 	}
 	if (cli->ac == 1) {
 		for (tp = traces; tp->name; tp++)
-			cli_printf(cli, "%s is %s\n",
+			Cli_Printf(cli, "%s is %s\n",
 			    tp->name, *(tp->flag) ? "on" : "off");
 		return;
 	}
@@ -121,11 +121,11 @@ cli_trace(struct cli *cli)
 			i = *(tp->flag);
 			fp(tp->flag);
 			if (i != *(tp->flag) || fp == mod_nop)
-				cli_printf(cli, "%s is %s\n",
+				Cli_Printf(cli, "%s is %s\n",
 				    tp->name, *(tp->flag) ? "on" : "off");
 		}
 		if (!j)
-			cli_error(cli, "'%s' matched no tracers\n", p);
+			Cli_Error(cli, "'%s' matched no tracers\n", p);
 	}
 }
 

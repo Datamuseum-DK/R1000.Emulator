@@ -35,8 +35,8 @@
 #include <string.h>
 
 #include "Infra/r1000.h"
-#include "Ioc/ioc.h"
-#include "Ioc/memspace.h"
+#include "Iop/iop.h"
+#include "Iop/memspace.h"
 #include "Infra/vend.h"
 #include "Chassis/r1000sc.h"
 

@@ -5,8 +5,8 @@
 #include "Infra/r1000.h"
 #include "Infra/vqueue.h"
 
-#include "Ioc/ioc.h"
-#include "Ioc/ioc_sc_68k20.hh"
+#include "Iop/iop.h"
+#include "Iop/iop_sc_68k20.hh"
 
 #include "Chassis/r1000sc_priv.h"
 

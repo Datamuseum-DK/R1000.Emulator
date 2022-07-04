@@ -7,7 +7,7 @@
  */
 
 #include "Infra/r1000.h"
-#include "Ioc/memspace.h"
+#include "Iop/memspace.h"
 
 void v_matchproto_(mem_post_write)
 pnlreg_post_write(int debug, uint8_t *space, unsigned width, unsigned adr)

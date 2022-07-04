@@ -13555,7 +13555,7 @@ static const uint8_t R1000_VAL_NOVRAM[0x100] = {
 };
 
 int
-get_firmware(const char *name, size_t size, void *dst)
+Firmware_Get(const char *name, size_t size, void *dst)
 {
 	if (!strcmp(name, "BUSGAL-01")) {
 		assert(size == 0x1704);

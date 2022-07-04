@@ -2,7 +2,7 @@
 #include <pthread.h>
 
 #include "Infra/r1000.h"
-#include "Ioc/ioc.h"
+#include "Iop/iop.h"
 
 struct irq_vector {
 	const char			*name;

@@ -14,9 +14,9 @@
 #include <unistd.h>
 
 #include "Infra/r1000.h"
-#include "Ioc/ioc.h"
+#include "Iop/iop.h"
 #include "Infra/elastic.h"
-#include "Ioc/memspace.h"
+#include "Iop/memspace.h"
 
 #define REG_R_DATA	0
 #define REG_R_STATUS	1
@@ -51,27 +51,7 @@ void v_matchproto_(cli_func_f)
 cli_ioc_console(struct cli *cli)
 {
 
-	if (cli->help || cli->ac < 2) {
-		cli_usage(cli, "<elastic>", "Steer console output");
-		cli_elastic(cons->ep, cli);
-		return;
-	}
-
-	cli->ac--;
-	cli->av++;
-
-	while (cli->ac && !cli->status) {
-		if (cli_elastic(cons->ep, cli))
-			continue;
-		if (cli->ac >= 1 && !strcmp(cli->av[0], "test")) {
-			elastic_put(cons->ep, "Hello World\r\n", -1);
-			cli->ac -= 1;
-			cli->av += 1;
-			continue;
-		}
-		cli_unknown(cli);
-		break;
-	}
+	Elastic_Cli(cons->ep, cli);
 }
 
 /**********************************************************************/

@@ -34,8 +34,8 @@
 
 #include "Infra/r1000.h"
 #include "Musashi/m68k.h"
-#include "Ioc/memspace.h"
-#include "Ioc/ioc.h"
+#include "Iop/memspace.h"
+#include "Iop/iop.h"
 #include "Infra/vsb.h"
 
 struct sc_def {
@@ -586,7 +586,7 @@ void v_matchproto_(cli_func_f)
 cli_ioc_syscall(struct cli *cli)
 {
 	if (cli->help) {
-		cli_usage(cli, "[internal]", "Trace DFS system calls.");
+		Cli_Usage(cli, "[internal]", "Trace DFS system calls.");
 		return;
 	}
 	if (is_tracing)
@@ -597,8 +597,8 @@ cli_ioc_syscall(struct cli *cli)
 	if (cli->ac > 0 && !strcmp(*cli->av, "internal")) {
 		is_tracing = 2;
 	} else if (cli->ac != 0) {
-		cli_error(cli, "Wrong argument.\n");
-		// cli_usage(cli, " [internal]\n");
+		Cli_Error(cli, "Wrong argument.\n");
+		// Cli_Usage(cli, " [internal]\n");
 	} else {
 		is_tracing = 1;
 		start_syscall_tracing(0);
@@ -1029,31 +1029,5 @@ static struct syscall syscalls[] = {
 
 	{ NULL, 0, 0, 0, 0, NULL, NULL },
 };
-
-void v_matchproto_(cli_func_f)
-cli_ioc_syscall(struct cli *cli)
-{
-	struct syscall *sc;
-
-	if (cli->help) {
-		cli_io_help(cli, "ioc syscall", 0, 1);
-		return;
-	}
-
-	cli->ac--;
-	cli->av++;
-
-	for (sc = syscalls; sc->name != NULL; sc++) {
-		mem_peg_register(sc->lo, sc->lo+ 2, sc_peg, sc);
-		if (sc->hi)
-			mem_peg_register(sc->hi, sc->hi + 2, sc_peg, sc);
-		if (sc->no_trace)
-			mem_peg_set(sc->lo, sc->no_trace, PEG_NOTRACE);
-	}
-	while (cli->ac && !cli->status) {
-		cli_unknown(cli);
-		break;
-	}
-}
 
 #endif

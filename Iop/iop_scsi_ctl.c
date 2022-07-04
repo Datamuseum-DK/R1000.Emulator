@@ -6,9 +6,9 @@
 #include <unistd.h>
 
 #include "Infra/r1000.h"
-#include "Ioc/ioc.h"
-#include "Ioc/memspace.h"
-#include "Ioc/ioc_scsi.h"
+#include "Iop/iop.h"
+#include "Iop/memspace.h"
+#include "Iop/iop_scsi.h"
 #include "Infra/vend.h"
 
 struct scsi scsi_t[1];

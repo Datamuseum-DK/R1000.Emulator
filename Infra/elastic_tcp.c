@@ -111,7 +111,7 @@ elastic_telnet_acceptor(void *priv)
 	}
 }
 
-static int
+static void
 elastic_telnet_passive(struct elastic *ep, struct cli *cli, const char *where)
 {
 	struct addrinfo hints, *res, *res0;
@@ -136,7 +136,8 @@ elastic_telnet_passive(struct elastic *ep, struct cli *cli, const char *where)
 	error = getaddrinfo(*a ? a : NULL, p, &hints, &res0);
 	if (error) {
 		free(a);
-		return (cli_error(cli, "Error: %s\n", gai_strerror(error)));
+		Cli_Error(cli, "Error: %s\n", gai_strerror(error));
+		return;
 	}
 	s = -1;
 	for (res = res0; res != NULL; res = res->ai_next) {
@@ -159,12 +160,10 @@ elastic_telnet_passive(struct elastic *ep, struct cli *cli, const char *where)
 	}
 	free(a);
 	if (s == -1)
-		return (cli_error(cli,
-		    "Could not bind: %s\n", strerror(errno)));
-	return (0);
+		Cli_Error(cli, "Could not bind: %s\n", strerror(errno));
 }
 
-static int
+static void
 elastic_tcp_active(struct elastic *ep, struct cli *cli, const char *where)
 {
 	struct addrinfo hints, *res, *res0;
@@ -185,7 +184,8 @@ elastic_tcp_active(struct elastic *ep, struct cli *cli, const char *where)
 	error = getaddrinfo(a, p, &hints, &res0);
 	if (error) {
 		free(a);
-		return (cli_error(cli, "Error: %s\n", gai_strerror(error)));
+		Cli_Error(cli, "Error: %s\n", gai_strerror(error));
+		return;
 	}
 	s = -1;
 	for (res = res0; res != NULL; res = res->ai_next) {
@@ -201,41 +201,31 @@ elastic_tcp_active(struct elastic *ep, struct cli *cli, const char *where)
 	}
 	free(a);
 	if (s == -1)
-		return (cli_error(cli,
-		    "Could not connect: %s\n", strerror(errno)));
-	(void)elastic_fd_start(ep, s, -1, 1);
-	return (0);
+		Cli_Error(cli, "Could not connect: %s\n", strerror(errno));
+	else
+		(void)elastic_fd_start(ep, s, -1, 1);
 }
 
-int v_matchproto_(cli_elastic_f)
-cli_elastic_tcp(struct elastic *ep, struct cli *cli)
+void v_matchproto_(cli_func_f)
+cli_elastic_tcp(struct cli *cli)
 {
+	struct elastic *ep = cli->elastic;
 
-	AN(cli);
-	if (cli->help) {
-		cli_printf(cli, "\ttcp <host>:<port\n");
-		cli_printf(cli, "\t\tConnect to raw TCP socket\n");
-		cli_printf(cli, "\ttelnet [<host>]:<port>\n");
-		cli_printf(cli, "\t\tStart TELNET server\n");
-		return(0);
+	if (cli->help || cli->ac != 2) {
+		Cli_Usage(cli, "[<host>:]<port>", "Connect to TCP socket");
+		return;
 	}
-	AN(ep);
+	elastic_tcp_active(ep, cli, cli->av[1]);
+}
 
-	if (!strcmp(*cli->av, "tcp")) {
-		if (cli_n_args(cli, 1))
-			return(1);
-		(void)elastic_tcp_active(ep, cli, cli->av[1]);
-		cli->av += 2;
-		cli->ac -= 2;
-		return (1);
+void v_matchproto_(cli_func_f)
+cli_elastic_telnet(struct cli *cli)
+{
+	struct elastic *ep = cli->elastic;
+
+	if (cli->help || cli->ac != 2) {
+		Cli_Usage(cli, "[<host>:]<port>", "Start TELNET server");
+		return;
 	}
-	if (!strcmp(*cli->av, "telnet")) {
-		if (cli_n_args(cli, 1))
-			return(1);
-		(void)elastic_telnet_passive(ep, cli, cli->av[1]);
-		cli->av += 2;
-		cli->ac -= 2;
-		return (1);
-	}
-	return (0);
+	elastic_telnet_passive(ep, cli, cli->av[1]);
 }

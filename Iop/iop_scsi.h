@@ -1,5 +1,5 @@
 
-#include "ioc_scsi_cmds.h"
+#include "Iop/iop_scsi_cmds.h"
 
 struct scsi_dev;
 struct scsi;

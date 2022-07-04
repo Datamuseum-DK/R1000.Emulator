@@ -10,8 +10,8 @@
 #include <sys/mman.h>
 
 #include "Infra/r1000.h"
-#include "Ioc/ioc.h"
-#include "Ioc/ioc_scsi.h"
+#include "Iop/iop.h"
+#include "Iop/iop_scsi.h"
 #include "Infra/vend.h"
 
 /**********************************************************************/
@@ -32,12 +32,12 @@ cli_scsi_dev_map_file(struct cli *cli, struct scsi_dev *dev, const char *fn)
 	// XXX: cleanup if changing
 	dev->fd = open(fn, O_RDONLY);
 	if (dev->fd < 0) {
-		cli_error(cli, "Cannot open %s: (%s)\n", fn, strerror(errno));
+		Cli_Error(cli, "Cannot open %s: (%s)\n", fn, strerror(errno));
 		return (-1);
 	}
 	AZ(fstat(dev->fd, st));
 	if (!S_ISREG(st->st_mode)) {
-		cli_error(cli, "Not a regular file: %s\n", fn);
+		Cli_Error(cli, "Not a regular file: %s\n", fn);
 		AZ(close(dev->fd));
 		dev->fd = -1;
 		return (-1);
@@ -52,7 +52,7 @@ cli_scsi_dev_map_file(struct cli *cli, struct scsi_dev *dev, const char *fn)
 	    0
 	);
 	if (ptr == MAP_FAILED) {
-		cli_error(cli,
+		Cli_Error(cli,
 		    "Could not mmap(2): %s (%s)\n", fn, strerror(errno));
 		AZ(close(dev->fd));
 		dev->fd = -1;
@@ -325,7 +325,7 @@ cli_scsi_disk_mount(struct cli *cli)
 	unsigned unit;
 
 	if (cli->help || cli->ac != 3) {
-		cli_usage(cli, "<unit> <filename>",
+		Cli_Usage(cli, "<unit> <filename>",
 		    "Load filename in SCSI disk unit.");
 		return;
 	}
@@ -337,7 +337,7 @@ cli_scsi_disk_mount(struct cli *cli)
 	cli->ac--;
 	cli->av++;
 	if (unit > 3) {
-		cli_error(cli, "Only disks 0-3 supported\n");
+		Cli_Error(cli, "Only disks 0-3 supported\n");
 		return;
 	}
 
@@ -386,7 +386,7 @@ cli_scsi_disk_mount(struct cli *cli)
 		vbe16enc(sd->sense_4 + 0x0f, 1931);	// cyl
 		sd->sense_4[0x11] = 0x0f;		// nheads
 	} else {
-		cli_error(cli, "Unknown disk geometry\n");
+		Cli_Error(cli, "Unknown disk geometry\n");
 		return;
 	}
 
@@ -402,7 +402,7 @@ static const struct cli_cmds cli_scsi_disk_cmds[] = {
 void v_matchproto_(cli_func_f)
 cli_scsi_disk(struct cli *cli)
 {
-	cli_redispatch(cli, cli_scsi_disk_cmds);
+	Cli_Dispatch(cli, cli_scsi_disk_cmds);
 }
 
 /**********************************************************************/
@@ -423,7 +423,7 @@ cli_scsi_tape_mount(struct cli *cli)
 	struct scsi_dev *sd;
 
 	if (cli->help || cli->ac != 2) {
-		cli_usage(cli, "<filename>",
+		Cli_Usage(cli, "<filename>",
 		    "Mount filename in SCSI tape drive.");
 		return;
 	}
@@ -459,5 +459,5 @@ static const struct cli_cmds cli_scsi_tape_cmds[] = {
 void v_matchproto_(cli_func_f)
 cli_scsi_tape(struct cli *cli)
 {
-	cli_redispatch(cli, cli_scsi_tape_cmds);
+	Cli_Dispatch(cli, cli_scsi_tape_cmds);
 }

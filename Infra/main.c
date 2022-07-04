@@ -41,7 +41,7 @@
 #include <sys/resource.h>
 
 #include "Infra/r1000.h"
-#include "Ioc/ioc.h"
+#include "Iop/iop.h"
 #include "Infra/vsb.h"
 
 int optreset;		// Some have it, some not.
@@ -50,7 +50,7 @@ volatile nanosec simclock;
 volatile nanosec systemc_t_zero;
 volatile int systemc_clock;
 
-const char *tracefilename;
+const char *tracepath;
 
 static struct timespec t0;
 
@@ -123,13 +123,14 @@ finish(int status, const char *why)
 	exit (status);
 }
 
-#define ARG_SPEC "f:T:"
+#define ARG_SPEC "T:"
 
 int
 main(int argc, char **argv)
 {
 	int ch, i;
-	FILE *fi;
+	char buf[BUFSIZ];
+	const char *p, *q;
 
 	AZ(clock_gettime(CLOCK_MONOTONIC, &t0));
 	setbuf(stdout, NULL);
@@ -142,69 +143,47 @@ main(int argc, char **argv)
 
 	while ((ch = getopt(argc, argv, ARG_SPEC)) != -1) {
 		switch (ch) {
-		case 'f':
-			// handled in second pass
-			break;
 		case 'T':
-			tracefilename = optarg;
-			trace_fd =
-			    open(optarg, O_WRONLY|O_CREAT|O_TRUNC, 0644);
-			if (trace_fd < 0) {
-				fprintf(stderr, "Cannot open: %s: %s\n",
-				    optarg, strerror(errno));
-				exit(2);
-			}
+			tracepath = optarg;
 			break;
 		default:
 			fprintf(stderr, "Usage...\n");
 			exit(0);
 		}
 	}
-
-	optind = 1;
-	optreset = 1;
-	while ((ch = getopt(argc, argv, ARG_SPEC)) != -1) {
-		switch(ch) {
-		case 'f':
-			fi = fopen(optarg, "r");
-			if (fi == NULL) {
-				fprintf(stderr, "Cannot open %s: %s\n",
-				    optarg, strerror(errno));
-				exit(2);
-			}
-			if (cli_from_file(fi, 1))
-				exit(2);
-			AZ(fclose(fi));
-			break;
-		default:
-			break;
-		}
-	}
-
 	argc -= optind;
 	argv += optind;
 
+	if (tracepath == NULL) {
+		p = getenv("TMPDIR");
+		if (p == NULL)
+			p = "/tmp";
+		q = strrchr(argv[0], '/');
+		if (q == NULL)
+			q = argv[0];
+		else
+			q++;
+		bprintf(buf, "%s/_%s", p, q);
+		tracepath = strdup(buf);
+	}
+	AN(tracepath);
+
+	bprintf(buf, "%s.trace", tracepath);
+	trace_fd = open(buf, O_WRONLY|O_CREAT|O_TRUNC, 0644);
+	if (trace_fd < 0) {
+		fprintf(stderr, "Cannot open tracefile '%s': %s\n",
+		    buf, strerror(errno));
+		exit(2);
+	}
+	CTX_init(tracepath);
+
 	for (i = 0; i < argc; i++) {
-		if (!strcmp(argv[i], "-f")) {
-			i++;
-			fi = fopen(argv[i], "r");
-			if (fi == NULL) {
-				fprintf(stderr, "Cannot open %s: %s\n",
-				    argv[i], strerror(errno));
-				exit(2);
-			}
-			if (cli_from_file(fi, 1))
-				exit(2);
-			AZ(fclose(fi));
-		} else {
-			printf("CLI <%s>\n", argv[i]);
-			if (cli_exec(argv[i]))
-				exit(2);
-		}
+		if (Cli_Exec(argv[i]))
+			exit(2);
 	}
 
-	printf("CLI open\n");
+	printf("CLI stdin open\n");
 
-	(void)cli_from_file(stdin, 0);
+	(void)Cli_From_File(stdin, 0);
 	return (0);
 }

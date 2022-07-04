@@ -33,15 +33,15 @@ diagbus_get_board(struct cli *cli, const char *name)
 		return(&diprocs[address]);
 BOARD_TABLE(BOARD)
 #undef BOARD
-	cli_error(cli, "Unknown board '%s'\n", name);
+	Cli_Error(cli, "Unknown board '%s'\n", name);
 	return (NULL);
 }
 
 void
 cli_diproc_help_status(struct cli *cli)
 {
-	cli_printf(cli, "\n\tStatus:\n");
-#define RESPONSE(num, name) cli_printf(cli, "\t    %s\n", #name);
+	Cli_Printf(cli, "\n\tStatus:\n");
+#define RESPONSE(num, name) Cli_Printf(cli, "\t    %s\n", #name);
 	RESPONSE_TABLE(RESPONSE)
 #undef RESPONSE
 }
@@ -49,8 +49,8 @@ cli_diproc_help_status(struct cli *cli)
 void
 cli_diproc_help_board(struct cli *cli)
 {
-	cli_printf(cli, "\n\tBoard:\n");
-#define BOARD(upper, lower, address) cli_printf(cli, "\t    %s\n", #upper);
+	Cli_Printf(cli, "\n\tBoard:\n");
+#define BOARD(upper, lower, address) Cli_Printf(cli, "\t    %s\n", #upper);
 	BOARD_TABLE(BOARD)
 #undef BOARD
 }
@@ -103,7 +103,7 @@ cli_diproc_wait(struct cli *cli)
 	struct diproc *dp;
 
 	if (cli->help || cli->ac < 2 || cli->ac > 3) {
-		cli_usage(cli, "[[-]<status>] <board>",
+		Cli_Usage(cli, "[[-]<status>] <board>",
 		    "Wait for DIPROC to reach or leave (-) status");
 		if (cli->help == 1) {
 			cli_diproc_help_status(cli);
@@ -126,7 +126,7 @@ cli_diproc_wait(struct cli *cli)
 		RESPONSE_TABLE(RESPONSE)
 #undef RESPONSE
 		if (want_state == 0) {
-			cli_error(cli, "Unknown state '%s'\n", cli->av[0]);
+			Cli_Error(cli, "Unknown state '%s'\n", cli->av[0]);
 			return;
 		}
 		if (i)
@@ -153,25 +153,15 @@ cli_diproc_wait(struct cli *cli)
 		state = dp->status;
 	}
 	if (want_state != state)
-		cli_printf(cli, "State is 0x%02x\n", state);
+		Cli_Printf(cli, "State is 0x%02x\n", state);
 	return;
 }
 
 void v_matchproto_(cli_func_f)
 cli_diagbus(struct cli *cli)
 {
-	if (cli->help || cli->ac < 2) {
-		cli_usage(cli, "<elastic>", "Steer diagbus output");
-		(void)cli_elastic(diag_elastic, cli);
-		return;
-	}
-	cli->ac--;
-	cli->av++;
-	while (cli->ac && !cli->status) {
-		if (cli_elastic(diag_elastic, cli))
-			continue;
-		break;
-	}
+
+	Elastic_Cli(diag_elastic, cli);
 }
 
 static const struct cli_cmds cli_diproc_cmds[] = {
@@ -186,7 +176,7 @@ void v_matchproto_(cli_func_f)
 cli_diproc(struct cli *cli)
 {
 
-	cli_redispatch(cli, cli_diproc_cmds);
+	Cli_Dispatch(cli, cli_diproc_cmds);
 }
 
 void

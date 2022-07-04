@@ -36,9 +36,9 @@
 
 #include "Infra/r1000.h"
 #include "Musashi/m68k.h"
-#include "Ioc/ioc.h"
+#include "Iop/iop.h"
 #include "Infra/vsb.h"
-#include "Ioc/memspace.h"
+#include "Iop/memspace.h"
 
 static struct vsb *debug_vsb;
 static pthread_mutex_t bpt_mtx = PTHREAD_MUTEX_INITIALIZER;
@@ -95,22 +95,13 @@ ioc_dump_core(const char *fn)
 void v_matchproto_(cli_func_f)
 cli_ioc_dump(struct cli *cli)
 {
-	const char *fn;
 
-	if (cli->help) {
-		cli_usage(cli, NULL, "Dump IOC RAM to file.");
+	if (cli->help || cli->ac != 2) {
+		Cli_Usage(cli, "<filename>", "Dump IOC RAM to file.");
 		return;
 	}
-	cli->ac--;
-	cli->av++;
-	if (cli_n_m_args(cli, 0, 1, ""))
-		return;
-	if (cli->ac == 0)
-		fn = "/tmp/_ioc.ram";
-	else
-		fn = cli->av[0];
-	ioc_dump_core(fn);
-	cli_printf(cli, "Core dumped to '%s'\n", fn);
+	ioc_dump_core(cli->av[1]);
+	Cli_Printf(cli, "Core dumped to '%s'\n", cli->av[1]);
 }
 
 /**********************************************************************
@@ -190,16 +181,12 @@ cli_ioc_breakpoint(struct cli *cli)
 {
 	uint32_t adr;
 
-	if (cli->help) {
-		cli_usage(cli, "<address> <rpn>", "Set Breakpoint.");
+	if (cli->help || cli->ac != 3) {
+		Cli_Usage(cli, "<address> <rpn>", "Set Breakpoint.");
 		return;
 	}
-	cli->ac--;
-	cli->av++;
-	if (cli_n_m_args(cli, 2, 2, ""))
-		return;
-	adr = strtoul(cli->av[0], NULL, 0);
-	ioc_breakpoint_rpn(adr, cli->av[1]);
+	adr = strtoul(cli->av[1], NULL, 0);
+	ioc_breakpoint_rpn(adr, cli->av[2]);
 }
 
 /**********************************************************************

@@ -38,8 +38,8 @@
 #include <string.h>
 
 #include "Infra/r1000.h"
-#include "Ioc/ioc.h"
-#include "Ioc/memspace.h"
+#include "Iop/iop.h"
+#include "Iop/memspace.h"
 #include "Infra/vend.h"
 
 static ioc_bpt_f Ioc_HotFix_Kernel;

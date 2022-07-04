@@ -75,13 +75,13 @@ cli_sc_watchdog(struct cli *cli)
 	int patience;
 
 	if (cli->help || cli->ac != 2) {
-		cli_usage(cli, "<seconds>",
+		Cli_Usage(cli, "<seconds>",
 		    "Tickle watchdog periodically.");
 		return;
 	}
 	patience = strtoul(cli->av[1], NULL, 0);
 	if (patience < 5) {
-		cli_error(cli, "Too short patience for fido: %d\n", patience);
+		Cli_Error(cli, "Too short patience for fido: %d\n", patience);
 		return;
 	}
 	fido_patience = patience;

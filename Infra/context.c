@@ -31,6 +31,7 @@
 #include <fcntl.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <errno.h>
 #include <string.h>
 #include <unistd.h>
 #include <sys/mman.h>
@@ -38,7 +39,6 @@
 #include "Infra/r1000.h"
 #include "Infra/context.h"
 
-static const char *context_filename = "/critter/_ctx";
 static ssize_t context_size = 100<<20;
 
 static int context_fd = -1;
@@ -46,15 +46,19 @@ static uint8_t *context_start = NULL;
 static uint8_t *context_ptr = NULL;
 static const uint8_t *context_end = NULL;
 
-static void
-ctx_init(void)
+void
+CTX_init(const char *path)
 {
 	ssize_t sz, szl;
 	char buf[BUFSIZ];
 	void *ptr;
 
-	context_fd = open(context_filename, O_RDWR | O_CREAT | O_TRUNC, 0644);
-	assert(context_fd > 0);
+	bprintf(buf, "%s.ctx", path);
+	context_fd = open(buf, O_RDWR | O_CREAT | O_TRUNC, 0644);
+	if (context_fd < 0) {
+		fprintf(stderr, "Cannot open %s for writing: %s\n",
+		    buf, strerror(errno));
+	}
 
 	memset(buf, 0, sizeof buf);
 	for (szl = 0; szl < context_size; ) {
@@ -79,9 +83,7 @@ CTX_Get(const char *kind, const char *ident, uint32_t length)
 
 	struct ctx *ctx;
 
-	if (context_fd < 0)
-		ctx_init();
-
+	assert(context_fd > -1);
 	assert(sizeof *ctx == 128);
 	// assert(strlen(kind) + 1 <= sizeof ctx->kind);
 	assert(strlen(ident) + 1 <= sizeof ctx->ident);
@@ -95,7 +97,7 @@ CTX_Get(const char *kind, const char *ident, uint32_t length)
 	AN(ctx);
 	ctx->magic = CTX_MAGIC;
 	ctx->length = length;
-	snprintf(ctx->ident, sizeof ctx->ident, "%s %s", ident, kind);
+	bprintf(ctx->ident, "%s %s", ident, kind);
 	return (ctx);
 }
 

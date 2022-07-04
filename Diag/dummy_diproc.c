@@ -171,7 +171,7 @@ cli_diproc_dummy(struct cli *cli)
 	unsigned response = (int)DIPROC_RESPONSE_OK;
 
 	if (cli->help || cli->ac < 2) {
-		cli_usage(cli, "[-<status>] <board> …",
+		Cli_Usage(cli, "[-<status>] <board> …",
 		    "Implement dummy DIPROC.  Default status is OK."
 		);
 		if (cli->help == 1) {
@@ -189,7 +189,7 @@ cli_diproc_dummy(struct cli *cli)
 			}
 			RESPONSE_TABLE(RESPONSE)
 #undef RESPONSE
-			cli_error(cli, "Unknown response: \"%s\"\n",
+			Cli_Error(cli, "Unknown response: \"%s\"\n",
 			    cli->av[i]);
 			return;
 		}
@@ -200,7 +200,7 @@ cli_diproc_dummy(struct cli *cli)
 		}
 		BOARD_TABLE(BOARD)
 #undef BOARD
-		cli_error(cli, "Unknown diproc: \"%s\"\n", cli->av[i]);
+		Cli_Error(cli, "Unknown diproc: \"%s\"\n", cli->av[i]);
 		return;
 	}
 }

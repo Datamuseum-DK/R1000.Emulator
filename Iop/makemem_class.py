@@ -243,8 +243,8 @@ class System():
         fo.write('\n')
         fo.write('#include "Infra/vend.h"\n')
         fo.write('#include "Infra/vqueue.h"\n')
-        fo.write('#include "Ioc/ioc_sc_68k20.hh"\n')
-        fo.write('#include "Ioc/memspace.h"\n')
+        fo.write('#include "Iop/iop_sc_68k20.hh"\n')
+        fo.write('#include "Iop/memspace.h"\n')
         self.produce_data(fo)
         for i in (1, 2, 4):
             self.produce_read_x_bit("read", i, fo)

@@ -39,11 +39,11 @@
 #include <unistd.h>
 
 #include "Infra/r1000.h"
-#include "Ioc/ioc.h"
+#include "Iop/iop.h"
 #include "Musashi/m68k.h"
 #include "Infra/vsb.h"
 #include "Infra/vend.h"
-#include "Ioc/memspace.h"
+#include "Iop/memspace.h"
 
 #define IOC_CPU_TYPE	M68K_CPU_TYPE_68020
 
@@ -107,19 +107,18 @@ ioc_start_cpu(uintmax_t quota)
 void v_matchproto_(cli_func_f)
 cli_ioc_reset(struct cli *cli)
 {
-	if (cli->help) {
-		cli_usage(cli, NULL, "Reset IOC CPU.");
+	if (cli->help || cli->ac > 2) {
+		Cli_Usage(cli, "[-stop]", "Reset IOC CPU.");
 		return;
 	}
-	cli->ac--;
-	cli->av++;
-	if (cli_n_m_args(cli, 0, 1, "[-stop]"))
-		return;
+	if (cli->ac == 2 && !strcmp(cli->av[1], "-stop")) {
+		Cli_Error(cli, "Unknown argument '%s'.\n", cli->av[1]);
+	}
 	ioc_stop_cpu();
 	ioc_wait_cpu_stopped();
 	memcpy(ram_space, ioc_eeprom_space, 8);
 	m68k_pulse_reset();
-	if (cli->ac == 0)
+	if (cli->ac == 1)
 		ioc_start_cpu(0);
 }
 
@@ -138,7 +137,7 @@ cli_ioc_state(struct cli *cli)
 	ioc_dump_cpu_regs(vsb);
 	AZ(pthread_mutex_unlock(&ioc_cpu_mtx));
 	AZ(VSB_finish(vsb));
-	cli_printf(cli, "%s", VSB_data(vsb));
+	Cli_Printf(cli, "%s", VSB_data(vsb));
 	VSB_destroy(&vsb);
 }
 
@@ -147,18 +146,16 @@ cli_ioc_step(struct cli *cli)
 {
 	uintmax_t uj = 1;
 
-	if (cli->help) {
-		cli_usage(cli, "[count]", "Single step IOC CPU.");
+	if (cli->help || cli->ac > 2) {
+		Cli_Usage(cli, "[count]", "Single step IOC CPU.");
 		return;
 	}
 	cli->ac--;
 	cli->av++;
-	if (cli_n_m_args(cli, 0, 1, "[count]"))
-		return;
 	if (cli->ac == 1)
-		uj = strtoumax(*cli->av, NULL, 0);
+		uj = strtoumax(cli->av[0], NULL, 0);
 	if (ioc_cpu_running) {
-		cli_error(cli, "IOC CPU is running\n");
+		Cli_Error(cli, "IOC CPU is running\n");
 		return;
 	}
 	ioc_start_cpu(uj);
@@ -169,14 +166,10 @@ cli_ioc_step(struct cli *cli)
 void v_matchproto_(cli_func_f)
 cli_ioc_stop(struct cli *cli)
 {
-	if (cli->help) {
-		cli_usage(cli, NULL, "Stop IOC CPU.");
+	if (cli->help || cli->ac != 1) {
+		Cli_Usage(cli, NULL, "Stop IOC CPU.");
 		return;
 	}
-	cli->ac--;
-	cli->av++;
-	if (cli_n_m_args(cli, 0, 0, ""))
-		return;
 	ioc_stop_cpu();
 	ioc_wait_cpu_stopped();
 	cli_ioc_state(cli);
@@ -185,14 +178,10 @@ cli_ioc_stop(struct cli *cli)
 void v_matchproto_(cli_func_f)
 cli_ioc_start(struct cli *cli)
 {
-	if (cli->help) {
-		cli_usage(cli, NULL, "Start IOC CPU.");
+	if (cli->help || cli->ac != 1) {
+		Cli_Usage(cli, NULL, "Start IOC CPU.");
 		return;
 	}
-	cli->ac--;
-	cli->av++;
-	if (cli_n_m_args(cli, 0, 0, ""))
-		return;
 	ioc_start_cpu(0);
 }
 
@@ -201,15 +190,11 @@ cli_ioc_maxins(struct cli *cli)
 {
 
 	if (cli->help) {
-		cli_usage(cli, "[count]",
-		    "Terminate after `count` instructions.");
+		Cli_Usage(cli, "<count>",
+		    "Terminate after count instructions.");
 		return;
 	}
-	cli->ac--;
-	cli->av++;
-	if (cli_n_m_args(cli, 1, 1, "[count]"))
-		return;
-	ioc_maxins = strtoumax(*cli->av, NULL, 0);
+	ioc_maxins = strtoumax(cli->av[0], NULL, 0);
 }
 
 /**********************************************************************
@@ -419,10 +404,8 @@ main_ioc(void *priv)
 		else
 			ioc_nins++;
 
-		if (ioc_maxins && ioc_nins > ioc_maxins) {
-			printf("maxins reached, exiting\n");
-			exit(4);
-		}
+		if (ioc_maxins && ioc_nins > ioc_maxins)
+			finish(4, "IOP maxins reached");
 		ns = callout_poll();
 		if (1 || !systemc_clock) {
 			if (i == 1) {

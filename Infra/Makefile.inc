@@ -8,7 +8,7 @@ OBJS += Infra/cli.o
 Infra/cli.o: \
     Infra/cli.c \
     Infra/vav.h \
-    Ioc/ioc.h \
+    Iop/iop.h \
     ${R1000DEP}
 
 OBJS += Infra/context.o
@@ -49,7 +49,7 @@ OBJS += Infra/main.o
 Infra/main.o: \
     Infra/main.c \
     Infra/vsb.h \
-    Ioc/ioc.h \
+    Iop/iop.h \
     ${R1000DEP}
 
 OBJS += Infra/rpn.o

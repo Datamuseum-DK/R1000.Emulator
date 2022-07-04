@@ -196,7 +196,7 @@ sc_main(int argc, char *argv[])
 	(void)argv;
 
 	mod_planes planes("PLANES");
-	planes.tf = sc_create_vcd_trace_file(tracefilename);
+	planes.tf = sc_create_vcd_trace_file(tracepath);
 
 	// Order as seen from front L…R
 	if (sc_boards & R1K_BOARD_MEM32_2)

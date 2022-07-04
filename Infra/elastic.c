@@ -276,109 +276,111 @@ elastic_empty(const struct elastic *ep)
 	return(VTAILQ_EMPTY(&ep->chunks_in));
 }
 
-int v_matchproto_(cli_elastic_f)
-cli_elastic(struct elastic *ep, struct cli *cli)
+static void v_matchproto_(cli_func_f)
+cli_elastic_baud(struct cli *cli)
 {
-	uint8_t u8;
+	struct elastic *ep = cli->elastic;
 
-	AN(cli);
-	if (cli->help > 1)
-		return (0);
-	if (cli->help == 1) {
-		cli_printf(cli, "\n    Elastic buffer arguments:\n");
-		cli_printf(cli, "\ttext\n");
-		cli_printf(cli, "\t\tSet text mode\n");
-		cli_printf(cli, "\tbinary\n");
-		cli_printf(cli, "\t\tSet binary mode\n");
-		cli_printf(cli, "\tcps <characters_per_second>\n");
-		cli_printf(cli, "\t\tOutput bandwidth\n");
-		cli_printf(cli, "\tbaud <baud_rate>\n");
-		cli_printf(cli, "\t\tOutput bandwidth\n");
-		cli_printf(cli, "\t<< <string>\n");
-		cli_printf(cli, "\t\tInput <string> + CR into buffer\n");
-		cli_printf(cli, "\thex\n");
-		cli_printf(cli, "\t\thex string into buffer\n");
-		(void)cli_elastic_fd(NULL, cli);
-		(void)cli_elastic_tcp(NULL, cli);
-		(void)cli_elastic_match(NULL, cli);
-		return (0);
+	if (cli->help || cli->ac != 2) {
+		Cli_Usage(cli, "<baud>", "Set speed in bits per second.");
+		return;
 	}
+	ep->bits_per_sec = atoi(cli->av[1]);
+}
+
+static void v_matchproto_(cli_func_f)
+cli_elastic_binary(struct cli *cli)
+{
+	struct elastic *ep = cli->elastic;
+
+	if (cli->help || cli->ac != 1) {
+		Cli_Usage(cli, NULL, "Set Binary Mode.");
+		return;
+	}
+	ep->text = 0;
+}
+
+static void v_matchproto_(cli_func_f)
+cli_elastic_cps(struct cli *cli)
+{
+	struct elastic *ep = cli->elastic;
+
+	if (cli->help || cli->ac != 2) {
+		Cli_Usage(cli, "<cps>", "Set speed in characters per second.");
+		return;
+	}
+	ep->bits_per_sec = atoi(cli->av[1]) * ep->bits_per_char;
+}
+
+static void v_matchproto_(cli_func_f)
+cli_elastic_hex(struct cli *cli)
+{
+	struct elastic *ep = cli->elastic;
+	uint8_t u8;
+	int i;
+
+	if (cli->help || cli->ac < 2) {
+		Cli_Usage(cli, "<hex> …", "Inject bytes in hexadecimal.");
+		return;
+	}
+	for (i = 1; i < cli->ac; i++) {
+		u8 = (uint8_t)strtoul(cli->av[i], NULL, 16);
+		elastic_inject(ep, &u8, 1);
+	}
+}
+
+static void v_matchproto_(cli_func_f)
+cli_elastic_here(struct cli *cli)
+{
+	struct elastic *ep = cli->elastic;
+	int i;
+
+	if (cli->help || cli->ac < 2) {
+		Cli_Usage(cli, "<string> …", "Inject strings with CR.");
+		return;
+	}
+	for (i = 1; i < cli->ac; i++) {
+		elastic_inject(ep, cli->av[i], -1);
+		elastic_inject(ep, "\r", -1);
+	}
+}
+
+static void v_matchproto_(cli_func_f)
+cli_elastic_text(struct cli *cli)
+{
+	struct elastic *ep = cli->elastic;
+
+	if (cli->help || cli->ac != 1) {
+		Cli_Usage(cli, NULL, "Set Text Mode.");
+		return;
+	}
+	ep->text = 1;
+}
+
+static const struct cli_cmds cli_elastic_cmds[] = {
+	{ "<",			cli_elastic_input },
+	{ "<<",			cli_elastic_here },
+	{ ">",			cli_elastic_output },
+	{ ">>",			cli_elastic_output },
+	{ "baud",		cli_elastic_baud },
+	{ "binary",		cli_elastic_binary },
+	{ "cps",		cli_elastic_cps },
+	{ "hex",		cli_elastic_hex },
+	{ "match",		cli_elastic_match },
+	{ "serial",		cli_elastic_serial },
+	{ "tcp",		cli_elastic_tcp },
+	{ "telnet",		cli_elastic_telnet },
+	{ "text",		cli_elastic_text },
+	{ NULL,			NULL },
+};
+
+void
+Elastic_Cli(struct elastic *ep, struct cli *cli)
+{
 
 	AN(ep);
-
-	if (!strcmp(*cli->av, "cps")) {
-		if (cli->ac != 1) {
-			if (cli_n_args(cli, 1))
-				return (1);
-			ep->bits_per_sec =
-			    atoi(cli->av[1]) * ep->bits_per_char;
-			cli->ac--;
-			cli->av++;
-		}
-		cli_printf(cli,
-		    "cps = %jd\n", ep->bits_per_sec / ep->bits_per_char);
-		cli->ac--;
-		cli->av++;
-		return(1);
-	}
-	if (!strcmp(*cli->av, "baud")) {
-		if (cli->ac != 1) {
-			if (cli_n_args(cli, 1))
-				return (1);
-			ep->bits_per_sec = atoi(cli->av[1]);
-			cli->ac--;
-			cli->av++;
-		}
-		cli_printf(cli, "baud = %jd\n", ep->bits_per_sec);
-		cli->ac--;
-		cli->av++;
-		return(1);
-	}
-	if (!strcmp(*cli->av, "text")) {
-		if (cli_n_args(cli, 0))
-			return (1);
-		ep->text = 1;
-		cli->ac--;
-		cli->av++;
-		return (1);
-	}
-
-	if (!strcmp(*cli->av, "binary")) {
-		if (cli_n_args(cli, 0))
-			return (1);
-		ep->text = 0;
-		cli->ac--;
-		cli->av++;
-		return (1);
-	}
-
-	if (!strcmp(*cli->av, "hex")) {
-		if (cli_n_args(cli, 1))
-			return (1);
-		if (ep->mode == O_WRONLY)
-			return (cli_error(cli, "Only inputs can '<<'\n"));
-		u8 = (uint8_t)strtoul(cli->av[1], NULL, 16);
-		elastic_inject(ep, &u8, 1);
-		cli->av += 2;
-		cli->ac -= 2;
-		return (1);
-	}
-	if (!strcmp(*cli->av, "<<")) {
-		if (cli_n_args(cli, 1))
-			return (1);
-		if (ep->mode == O_WRONLY)
-			return (cli_error(cli, "Only inputs can '<<'\n"));
-		elastic_inject(ep, cli->av[1], -1);
-		elastic_inject(ep, "\r", -1);
-		cli->av += 2;
-		cli->ac -= 2;
-		return (1);
-	}
-	if (cli_elastic_fd(ep, cli))
-		return (1);
-	if (cli_elastic_tcp(ep, cli))
-		return (1);
-	if (cli_elastic_match(ep, cli))
-		return (1);
-	return (0);
+	AZ(cli->elastic);
+	cli->elastic = ep;
+	Cli_Dispatch(cli, cli_elastic_cmds);
+	cli->elastic = NULL;
 }

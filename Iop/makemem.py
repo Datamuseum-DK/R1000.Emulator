@@ -85,8 +85,8 @@ def main():
     # IO_READ_SENSE_p25
     ioc += Range("irq_vector", 0xffffff00, 0xff, pre_read = True)
 
-    ioc.produce_c("Ioc/_memcfg")
-    ioc.produce_h("Ioc/_memcfg")
+    ioc.produce_c("Iop/_memcfg")
+    ioc.produce_h("Iop/_memcfg")
 
 if __name__ == "__main__":
     main()

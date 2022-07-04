@@ -1,3 +1,33 @@
+/*-
+ * Copyright (c) 2022 Poul-Henning Kamp
+ * All rights reserved.
+ *
+ * Author: Poul-Henning Kamp <phk@phk.freebsd.dk>
+ *
+ * SPDX-License-Identifier: BSD-2-Clause
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions
+ * are met:
+ * 1. Redistributions of source code must retain the above copyright
+ *    notice, this list of conditions and the following disclaimer.
+ * 2. Redistributions in binary form must reproduce the above copyright
+ *    notice, this list of conditions and the following disclaimer in the
+ *    documentation and/or other materials provided with the distribution.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE AUTHOR AND CONTRIBUTORS ``AS IS'' AND
+ * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+ * ARE DISCLAIMED.  IN NO EVENT SHALL AUTHOR OR CONTRIBUTORS BE LIABLE
+ * FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+ * DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
+ * OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
+ * HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
+ * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
+ * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
+ * SUCH DAMAGE.
+ *
+ */
 
 #include <ctype.h>
 #include <errno.h>
@@ -9,7 +39,7 @@
 
 #include "Infra/r1000.h"
 #include "Infra/vend.h"
-#include "Ioc/ioc_scsi.h"
+#include "Iop/iop_scsi.h"
 
 #define DFS_NAME_LEN 30
 #define DFS_DIRENT_LEN 64
@@ -31,7 +61,7 @@ struct dfs_dirent {
 
 #define N_DIR_STANZA 8
 
-struct dfs_sb {
+struct dfs_superblock {
 	struct {
 		uint16_t	magic;
 		uint16_t	freeblk;
@@ -50,25 +80,25 @@ static const char * const month[16] = {
 };
 
 static void
-cli_dfs_render(struct cli *cli, struct dfs_dirent *de)
+dfs_render_dirent(struct cli *cli, struct dfs_dirent *de)
 {
 	unsigned dd, mm, yy;
 
-	cli_printf(cli, "%-30.30s ", de->name);
-	cli_printf(cli, "%04x ", de->hash);
-	cli_printf(cli, "%04x ", de->used_sec);
-	cli_printf(cli, "%04x ", de->alloc_sec);
-	cli_printf(cli, "%04x ", de->first_sec);
-	cli_printf(cli, "%02d:", (de->time<<1) / 3600);
-	cli_printf(cli, "%02d:", ((de->time<<1) / 60) % 60);
-	cli_printf(cli, "%02d ", (de->time<<1) % 60);
+	Cli_Printf(cli, "%-30.30s ", de->name);
+	Cli_Printf(cli, "%04x ", de->hash);
+	Cli_Printf(cli, "%04x ", de->used_sec);
+	Cli_Printf(cli, "%04x ", de->alloc_sec);
+	Cli_Printf(cli, "%04x ", de->first_sec);
+	Cli_Printf(cli, "%02d:", (de->time<<1) / 3600);
+	Cli_Printf(cli, "%02d:", ((de->time<<1) / 60) % 60);
+	Cli_Printf(cli, "%02d ", (de->time<<1) % 60);
 
 	// ((YYYY - 1901) << 9) | (MM << 5) | DD
 	dd = de->date & 0x1f;
 	mm = (de->date >> 5) & 0x0f;
 	yy = (de->date >> 9) + 1;
-	cli_printf(cli, "%02d-%s-%02d ", dd, month[mm], yy);
-	cli_printf(cli, "%04x\n", de->flags);
+	Cli_Printf(cli, "%02d-%s-%02d ", dd, month[mm], yy);
+	Cli_Printf(cli, "%04x\n", de->flags);
 }
 
 /**********************************************************************/
@@ -88,10 +118,10 @@ dfs_read_sect(unsigned secno)
 	return (retval);
 }
 
-static struct dfs_sb *
-cli_dfs_read_sb(void)
+static struct dfs_superblock *
+dfs_read_super_block(void)
 {
-	struct dfs_sb *dsb;
+	struct dfs_superblock *dsb;
 	uint8_t *bp;
 	unsigned u;
 
@@ -108,14 +138,14 @@ cli_dfs_read_sb(void)
 }
 
 static int
-cli_dfs_iter_dirent(void **priv, struct dfs_dirent *de)
+dfs_iter_dirent(void **priv, struct dfs_dirent *de)
 {
-	struct dfs_sb *dsb;
+	struct dfs_superblock *dsb;
 	uint8_t *bp;
 	unsigned u;
 
 	if (*priv == NULL) {
-		dsb = cli_dfs_read_sb();
+		dsb = dfs_read_super_block();
 		AN(dsb);
 		*priv = dsb;
 	} else {
@@ -177,17 +207,17 @@ dfs_file_has_nul(const struct dfs_dirent *de)
 /**********************************************************************/
 
 static int
-cli_dfs_open(const char *filename, struct dfs_dirent *dep, int flags)
+dfs_open(const char *filename, struct dfs_dirent *dep, int flags)
 {
 	void *iter = NULL;
 
 	AZ(flags);
 	struct dfs_dirent de[2];
 
-	while(cli_dfs_iter_dirent(&iter, de)) {
+	while(dfs_iter_dirent(&iter, de)) {
 		if (!strcmp(de->name, filename)) {
 			*dep = de[0];
-			while(cli_dfs_iter_dirent(&iter, de + 1))
+			while(dfs_iter_dirent(&iter, de + 1))
 				continue;
 			return(0);
 		}
@@ -205,25 +235,25 @@ cli_dfs_cat(struct cli *cli)
 	FILE *fout;
 
 	if (cli->help || cli->ac < 2 || cli->ac > 3) {
-		cli_usage(cli, "<dfs_filename> [<filename>]",
+		Cli_Usage(cli, "<dfs_filename> [<filename>]",
 		    "Cat the contents of dfs_filename to stdout or filename.");
 		return;
 	}
 
-	if (cli_dfs_open(cli->av[1], de, 0)) {
-		cli_error(cli,
+	if (dfs_open(cli->av[1], de, 0)) {
+		Cli_Error(cli,
 		    "Cannot open DFS file '%s': %s\n",
 		    cli->av[1], strerror(errno)
 		);
 		return;
 	}
 
-	cli_dfs_render(cli, de);
+	dfs_render_dirent(cli, de);
 
 	if (cli->ac == 3) {
 		fout = fopen(cli->av[2], "w");
 		if (fout == NULL) {
-			cli_error(cli,
+			Cli_Error(cli,
 			    "Cannot open '%s' for writing: %s\n",
 			    cli->av[2], strerror(errno)
 			);
@@ -245,7 +275,7 @@ cli_dfs_cat(struct cli *cli)
 /**********************************************************************/
 
 static int
-decompar(const void *a, const void *b)
+dfs_de_compare(const void *a, const void *b)
 {
 	return (
 	    strcmp(
@@ -263,13 +293,13 @@ cli_dfs_dir(struct cli *cli)
 	int nde = 0, i;
 
 	if (cli->help) {
-		cli_usage(cli, "[<glob> …]",
+		Cli_Usage(cli, "[<glob> …]",
 		    "List DFS directory optionally matching pattern(s).");
 		return;
 	}
 
 	dep = de;
-	while(cli_dfs_iter_dirent(&iter, dep)) {
+	while(dfs_iter_dirent(&iter, dep)) {
 		if (cli->ac == 1) {
 			dep++;
 			nde++;
@@ -283,9 +313,9 @@ cli_dfs_dir(struct cli *cli)
 			break;
 		}
 	}
-	qsort(de, nde, sizeof de[0], decompar);
+	qsort(de, nde, sizeof de[0], dfs_de_compare);
 	for (i = 0; i < nde; i++)
-		cli_dfs_render(cli, de + i);
+		dfs_render_dirent(cli, de + i);
 }
 
 /**********************************************************************/
@@ -297,24 +327,24 @@ cli_dfs_read(struct cli *cli)
 	FILE *fout;
 
 	if (cli->help || cli->ac != 3) {
-		cli_usage(cli, "<dfs_filename> <filename>",
+		Cli_Usage(cli, "<dfs_filename> <filename>",
 		    "Read the contents of dfs_filename into filename.");
 		return;
 	}
 
-	if (cli_dfs_open(cli->av[1], de, 0)) {
-		cli_error(cli,
+	if (dfs_open(cli->av[1], de, 0)) {
+		Cli_Error(cli,
 		    "Cannot open DFS file '%s': %s\n",
 		    cli->av[1], strerror(errno)
 		);
 		return;
 	}
 
-	cli_dfs_render(cli, de);
+	dfs_render_dirent(cli, de);
 
 	fout = fopen(cli->av[2], "w");
 	if (fout == NULL) {
-		cli_error(cli,
+		Cli_Error(cli,
 		    "Cannot open '%s' for writing: %s\n",
 		    cli->av[2], strerror(errno)
 		);
@@ -334,20 +364,20 @@ cli_dfs_neuter(struct cli *cli)
 	unsigned adr, start;
 
 	if (cli->help || cli->ac != 2) {
-		cli_usage(cli, "<dfs_experiment>",
+		Cli_Usage(cli, "<dfs_experiment>",
 		    "Make the dfs_experiment a no-op returning success.");
 		return;
 	}
 
-	if (cli_dfs_open(cli->av[1], de, 0)) {
-		cli_error(cli,
+	if (dfs_open(cli->av[1], de, 0)) {
+		Cli_Error(cli,
 		    "Cannot open DFS file '%s': %s\n",
 		    cli->av[1], strerror(errno)
 		);
 		return;
 	}
 
-	cli_dfs_render(cli, de);
+	dfs_render_dirent(cli, de);
 	p = (char*)de->ptr;
 	adr = 0x10;
 	start = 0;
@@ -366,7 +396,7 @@ cli_dfs_neuter(struct cli *cli)
 		    !isxdigit(p[1]) ||
 		    p[2] != '\r' ||
 		    p[3] != '\n') {
-			cli_error(cli,
+			Cli_Error(cli,
 			    "Dont understand line at address 0x%x\n", adr
 			);
 			return;
@@ -400,20 +430,20 @@ cli_dfs_sed(struct cli *cli)
 	ssize_t sz, sza;
 
 	if (cli->help || cli->ac < 3) {
-		cli_usage(cli, "<dfs_filename> <sed_cmd> …",
+		Cli_Usage(cli, "<dfs_filename> <sed_cmd> …",
 		    "Edit dfs_filename with sed(1).");
 		return;
 	}
 
-	if (cli_dfs_open(cli->av[1], de, 0)) {
-		cli_error(cli,
+	if (dfs_open(cli->av[1], de, 0)) {
+		Cli_Error(cli,
 		    "Cannot open DFS file '%s': %s\n",
 		    cli->av[2], strerror(errno)
 		);
 		return;
 	}
 	if (!dfs_file_has_nul(de)) {
-		cli_error(cli,
+		Cli_Error(cli,
 		    "DFS file '%s' is not a text file\n",
 		    cli->av[2]
 		);
@@ -421,7 +451,7 @@ cli_dfs_sed(struct cli *cli)
 	}
 	for (u = 0; u < de->size; u++) {
 		if (de->ptr[u] > 0x7e) {
-			cli_error(cli,
+			Cli_Error(cli,
 			    "DFS file '%s' is not a text file\n",
 			    cli->av[2]
 			);
@@ -429,7 +459,7 @@ cli_dfs_sed(struct cli *cli)
 		}
 	}
 
-	cli_dfs_render(cli, de);
+	dfs_render_dirent(cli, de);
 	fd1 = mkstemp(templ1);
 	assert(fd1 > 0);
 	fd2 = mkstemp(templ2);
@@ -457,7 +487,7 @@ cli_dfs_sed(struct cli *cli)
 	AZ(unlink(templ1));
 	AZ(unlink(templ2));
 	if (sza == de->size)
-		cli_error(cli, "Edit extend past dfs file allocation\n");
+		Cli_Error(cli, "Edit extend past dfs file allocation\n");
 }
 
 /**********************************************************************/
@@ -470,24 +500,24 @@ cli_dfs_write(struct cli *cli)
 	size_t sz;
 
 	if (cli->help || cli->ac != 3) {
-		cli_usage(cli, "<filename> <dfs_filename>",
+		Cli_Usage(cli, "<filename> <dfs_filename>",
 		    "Write the contents of filename into dfs_filename.");
 		return;
 	}
 
-	if (cli_dfs_open(cli->av[2], de, 0)) {
-		cli_error(cli,
+	if (dfs_open(cli->av[2], de, 0)) {
+		Cli_Error(cli,
 		    "Cannot open DFS file '%s': %s\n",
 		    cli->av[2], strerror(errno)
 		);
 		return;
 	}
 
-	cli_dfs_render(cli, de);
+	dfs_render_dirent(cli, de);
 
 	fout = fopen(cli->av[1], "r");
 	if (fout == NULL) {
-		cli_error(cli,
+		Cli_Error(cli,
 		    "Cannot open '%s' for reading: %s\n",
 		    cli->av[1], strerror(errno)
 		);
@@ -512,8 +542,8 @@ static const struct cli_cmds cli_dfs_cmds[] = {
 };
 
 void v_matchproto_(cli_func_f)
-cli_dfs(struct cli *cli)
+Cli_dfs(struct cli *cli)
 {
 
-	cli_redispatch(cli, cli_dfs_cmds);
+	Cli_Dispatch(cli, cli_dfs_cmds);
 }

@@ -84,12 +84,13 @@ int elastic_drain(struct elastic *ep);
 ssize_t elastic_get(struct elastic *ep, void *ptr, ssize_t len);
 int elastic_empty(const struct elastic *ep);
 
-typedef int cli_elastic_f(struct elastic *ep, struct cli *);
-
-cli_elastic_f cli_elastic;
-cli_elastic_f cli_elastic_tcp;
-cli_elastic_f cli_elastic_fd;
-cli_elastic_f cli_elastic_match;
+void Elastic_Cli(struct elastic *, struct cli *);
+cli_func_f cli_elastic_serial;
+cli_func_f cli_elastic_input;
+cli_func_f cli_elastic_output;
+cli_func_f cli_elastic_tcp;
+cli_func_f cli_elastic_telnet;
+cli_func_f cli_elastic_match;
 
 struct elastic_fd *elastic_fd_start(
     struct elastic *ep, int fd, int mode, int selfdestruct);

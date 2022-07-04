@@ -12,9 +12,9 @@
 #include <unistd.h>
 
 #include "Infra/r1000.h"
-#include "Ioc/ioc.h"
+#include "Iop/iop.h"
 #include "Infra/elastic.h"
-#include "Ioc/memspace.h"
+#include "Iop/memspace.h"
 #include "Diag/diag.h"
 
 static const char * const rd_reg[] = {
@@ -417,27 +417,7 @@ cli_ioc_modem(struct cli *cli)
 {
 	struct chan *chp = &ioc_duart->chan[0];
 
-	if (cli->help || cli->ac < 2) {
-		cli_usage(cli, "<elastic>", "Steer modem output");
-		cli_elastic(chp->ep, cli);
-		return;
-	}
-
-	cli->ac--;
-	cli->av++;
-
-	while (cli->ac && !cli->status) {
-		if (cli_elastic(chp->ep, cli))
-			continue;
-		if (cli->ac >= 1 && !strcmp(cli->av[0], "test")) {
-			elastic_put(chp->ep, "Hello World\r\n", -1);
-			cli->ac -= 1;
-			cli->av += 1;
-			continue;
-		}
-		cli_unknown(cli);
-		break;
-	}
+	Elastic_Cli(chp->ep, cli);
 }
 
 void

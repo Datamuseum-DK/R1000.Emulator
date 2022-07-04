@@ -124,76 +124,59 @@ elastic_match_wait(const struct elastic *ep)
 	usleep(150000);
 }
 
-int v_matchproto_(cli_elastic_f)
-cli_elastic_match(struct elastic *ep, struct cli *cli)
+static void v_matchproto_(cli_func_f)
+cli_elastic_match_arm(struct cli *cli)
 {
-	char buf[2];
+	struct elastic *ep = cli->elastic;
 
-	AN(cli);
-	if (cli->help) {
-		cli_printf(cli, "\tmatch arm <string>\n");
-		cli_printf(cli, "\t\tStart looking for string\n");
-		cli_printf(cli, "\tmatch wait\n");
-		cli_printf(cli, "\t\tWait for 'arm' to match\n");
-		cli_printf(cli, "\tmatch expect <string>\n");
-		cli_printf(cli, "\t\tShortcut for 'arm' + 'wait'\n");
-		cli_printf(cli, "\tmatch xon\n");
-		cli_printf(cli, "\t\tWait for XON character\n");
-		return (0);
+	if (cli->help || cli->ac != 2) {
+		Cli_Usage(cli, "<string>", "Start looking for string");
+		return;
 	}
-	AN(ep);
-
-	if (strcasecmp(*cli->av, "match"))
-		return (0);
-	cli->av++;
-	cli->ac--;
 	if (ep->em == NULL)
 		elastic_match_new(ep);
+	elastic_match_arm(ep, cli->av[1]);
+}
 
-	if (!strcasecmp(*cli->av, "arm")) {
-		if (cli_n_args(cli, 1))
-			return(1);
-		elastic_match_arm(ep, cli->av[1]);
-		cli->av += 2;
-		cli->ac -= 2;
-		return (1);
+static void v_matchproto_(cli_func_f)
+cli_elastic_match_expect(struct cli *cli)
+{
+	struct elastic *ep = cli->elastic;
+
+	if (cli->help || cli->ac != 2) {
+		Cli_Usage(cli, "<string>", "arm and wait");
+		return;
 	}
-	if (!strcasecmp(*cli->av, "wait")) {
-		if (cli_n_args(cli, 0))
-			return(1);
-		cli->av += 1;
-		cli->ac -= 1;
+	if (ep->em == NULL)
+		elastic_match_new(ep);
+	elastic_match_arm(ep, cli->av[1]);
+	elastic_match_wait(ep);
+}
+
+static void v_matchproto_(cli_func_f)
+cli_elastic_match_wait(struct cli *cli)
+{
+	struct elastic *ep = cli->elastic;
+
+	if (cli->help || cli->ac != 1) {
+		Cli_Usage(cli, NULL, "Wait for match to happen.");
+		return;
+	}
+	if (ep->em == NULL)
+		Cli_Error(cli, "Not armed.\n");
+	else
 		elastic_match_wait(ep);
-		return (1);
-	}
-	if (!strcasecmp(*cli->av, "expect")) {
-		if (cli_n_args(cli, 1))
-			return(1);
-		elastic_match_arm(ep, cli->av[1]);
-		elastic_match_wait(ep);
-		cli->av += 2;
-		cli->ac -= 2;
-		return (1);
-	}
-	if (!strcasecmp(*cli->av, "xon")) {
-		if (cli_n_args(cli, 0))
-			return(1);
-		elastic_match_arm(ep, "\x11");
-		elastic_match_wait(ep);
-		cli->av += 1;
-		cli->ac -= 1;
-		return (1);
-	}
-	if (!strcasecmp(*cli->av, "byte")) {
-		if (cli_n_args(cli, 1))
-			return(1);
-		buf[0] = strtoul(cli->av[1], NULL, 0);
-		buf[1] = 0x00;
-		elastic_match_arm(ep, buf);
-		elastic_match_wait(ep);
-		cli->av += 2;
-		cli->ac -= 2;
-		return (1);
-	}
-	return (0);
+}
+
+static const struct cli_cmds cli_elastic_match_cmds[] = {
+	{ "arm",		cli_elastic_match_arm},
+	{ "expect",		cli_elastic_match_expect},
+	{ "wait",		cli_elastic_match_wait},
+	{ NULL,			NULL},
+};
+
+void v_matchproto_(cli_func_f)
+cli_elastic_match(struct cli *cli)
+{
+	Cli_Dispatch(cli, cli_elastic_match_cmds);
 }

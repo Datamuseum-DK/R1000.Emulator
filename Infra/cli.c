@@ -38,23 +38,40 @@
 
 #include "Infra/r1000.h"
 #include "Infra/vav.h"
-#include "Ioc/ioc.h"
+#include "Iop/iop.h"
 
-static int cli_echo = 1;
+static int cli_echo_cmds = 1;
+
+static void
+cli_path(struct cli *cli)
+{
+	size_t sz;
+	char **av;
+	const char *sep = "";
+
+	for (av = cli->av0; *av; av++) {
+		sz = strcspn(*av, " \t");
+		if ((*av)[sz])
+			Cli_Printf(cli, "%s\"%s\"", sep, *av);
+		else
+			Cli_Printf(cli, "%s%s", sep, *av);
+		if (av == cli->av)
+			break;
+		sep = " ";
+	}
+}
 
 static void
 cli_exit(struct cli *cli)
 {
 	uint16_t w = 0;
 
-	if (cli->help) {
-		cli_usage(cli, "[<exit status>]", "Exit emulator.");
+	if (cli->help || cli->ac > 2) {
+		Cli_Usage(cli, "[<exit status>]", "Exit emulator.");
 		return;
 	}
 	cli->ac--;
 	cli->av++;
-	if (cli_n_m_args(cli, 0, 1, "[exit status]\n"))
-		return;
 	if (cli->ac == 1)
 		w = atoi(cli->av[0]);
 	finish(w, "CLI asked for it");
@@ -62,8 +79,62 @@ cli_exit(struct cli *cli)
 
 /**********************************************************************/
 
+static void
+cli_include(struct cli *cli)
+{
+	FILE *fi;
+	const char *fn;
+	int old_echo = cli_echo_cmds;
+
+	if (cli->help || cli->ac != 2) {
+		Cli_Usage(cli, "[+|-]<filename>", "Include CLI commands from filename.");
+		return;
+	}
+
+	fn = cli->av[1];
+	if (cli->av[1][0] == '-') {
+		cli_echo_cmds = 0;
+		fn++;
+	} else if (cli->av[1][0] == '+') {
+		cli_echo_cmds = 1;
+		fn++;
+	}
+	fi = fopen(fn, "r");
+	if (fi == NULL) {
+		Cli_Error(cli, "Cannot open '%s' for reading: %s\n",
+		    fn, strerror(errno));
+		return;
+	}
+	if (Cli_From_File(fi, 1))
+		Cli_Error(cli, "");
+	AZ(fclose(fi));
+	if (cli->av[1][0] == '-' || cli->av[1][0] == '+')
+		cli_echo_cmds = old_echo;
+}
+
+/**********************************************************************/
+
+static void
+cli_echo(struct cli *cli)
+{
+
+	if (cli->help || cli->ac != 2) {
+		Cli_Usage(cli, "+|-", "Control echo of CLI commands to stdout.");
+		return;
+	}
+
+	if (!strcmp(cli->av[1], "+"))
+		cli_echo_cmds = 1;
+	else if (!strcmp(cli->av[1], "-"))
+		cli_echo_cmds = 0;
+	else
+		Cli_Error(cli, "Did not understand '%s', use '+' or '-'\n", cli->av[1]);
+}
+
+/**********************************************************************/
+
 void
-cli_printf(struct cli *cli, const char *fmt, ...)
+Cli_Printf(struct cli *cli, const char *fmt, ...)
 {
 	va_list ap;
 
@@ -74,8 +145,8 @@ cli_printf(struct cli *cli, const char *fmt, ...)
 	va_end(ap);
 }
 
-int
-cli_error(struct cli *cli, const char *fmt, ...)
+void
+Cli_Error(struct cli *cli, const char *fmt, ...)
 {
 	va_list ap;
 
@@ -84,69 +155,14 @@ cli_error(struct cli *cli, const char *fmt, ...)
 	va_start(ap, fmt);
 	(void)vprintf(fmt, ap);
 	va_end(ap);
-	return (1);
 }
 
 void
-cli_io_help(struct cli *cli, const char *desc, int has_trace, int has_elastic)
-{
-	cli_printf(cli, "%s\n", desc);
-	cli_usage(cli, "<args>", "…\n");
-	if (has_trace) {
-		cli_printf(cli, "\ttrace <word>\n");
-		cli_printf(cli, "\t\tI/O trace level.\n");
-	}
-	if (has_elastic) {
-		cli_printf(cli, "\t<elastic>\n");
-		cli_printf(cli, "\t\tElastic buffer arguments\n");
-	}
-}
-
-void
-cli_unknown(struct cli *cli)
+Cli_Unknown(struct cli *cli)
 {
 
-	cli_printf(cli, "Unknown argument '%s'\n", cli->av[0]);
+	Cli_Printf(cli, "Unknown argument '%s'\n", cli->av[0]);
 	cli->status = 1;
-}
-
-int
-cli_n_m_args(struct cli *cli, int minarg, int maxarg, const char *fmt, ...)
-{
-	va_list ap;
-
-	assert (minarg <= maxarg);
-	AN(fmt);
-	if (cli->ac >= minarg && cli->ac <= maxarg)
-		return (0);
-	if (maxarg == 0) {
-		(void)cli_error(cli, "Expected no arguments after '");
-		cli_path(cli);
-		cli_printf(cli,"'\n");
-		return (1);
-	}
-	(void)cli_error(cli, "Wrong number of arguments after '");
-	cli_path(cli);
-	if (minarg != maxarg) {
-		cli_printf(cli, "', expected: [%d…%d]", minarg, maxarg);
-	} else {
-		cli_printf(cli, "', expected: %d", minarg);
-	}
-	if (*fmt) {
-		cli_printf(cli, ":\n\t");
-		va_start(ap, fmt);
-		(void)vprintf(fmt, ap);
-		va_end(ap);
-	} else {
-		cli_printf(cli, "\n");
-	}
-	return (1);
-}
-
-int
-cli_n_args(struct cli *cli, int args)
-{
-	return (cli_n_m_args(cli, args, args + 1, ""));
 }
 
 static cli_func_f cli_help;
@@ -154,12 +170,14 @@ static cli_func_f cli_help;
 static const struct cli_cmds cli_cmds[] = {
 	{ "?",			cli_help },
 	{ "console",		cli_ioc_console },
-	{ "dfs",		cli_dfs },
+	{ "dfs",		Cli_dfs },
 	{ "diagbus",		cli_diagbus },
 	{ "diproc",		cli_diproc },
 	{ "disk",		cli_scsi_disk },
+	{ "echo",		cli_echo },
 	{ "exit",		cli_exit },
 	{ "help",		cli_help },
+	{ "include",		cli_include },
 	{ "iop",		cli_ioc },
 	{ "modem",		cli_ioc_modem },
 	{ "sc",			cli_sc },
@@ -168,89 +186,54 @@ static const struct cli_cmds cli_cmds[] = {
 	{ NULL,			NULL },
 };
 
-static void v_matchproto_(cli_func_t)
-cli_help(struct cli *cli)
-{
-
-	if (cli->help) {
-		cli_usage(cli, " [cmds…]", "Print brief usage.");
-		return;
-	}
-
-	cli->help = 1;
-	cli->av0++;
-	cli->av++;
-	cli->ac--;
-	cli_dispatch(cli, cli_cmds);
-}
-
 void
-cli_path(struct cli *cli)
-{
-	size_t sz;
-	char **av;
-	const char *sep = "";
-
-	for (av = cli->av0; *av; av++) {
-		sz = strcspn(*av, " \t");
-		if ((*av)[sz])
-			cli_printf(cli, "%s\"%s\"", sep, *av);
-		else
-			cli_printf(cli, "%s%s", sep, *av);
-		if (av == cli->av)
-			break;
-		sep = " ";
-	}
-}
-
-void
-cli_usage(struct cli *cli, const char *args, const char *fmt, ...)
+Cli_Usage(struct cli *cli, const char *args, const char *fmt, ...)
 {
 	va_list ap;
 
 	if (cli->help < 2) {
-		cli_printf(cli, "Usage:\n\t");
+		Cli_Printf(cli, "Usage:\n\t");
 		if (*cli->av0)
 			cli_path(cli);
 		else
-			cli_printf(cli, " ");
+			Cli_Printf(cli, " ");
 	}
 
 	if (args != NULL)
-		cli_printf(cli, " %s\n", args);
+		Cli_Printf(cli, " %s\n", args);
 	else
-		cli_printf(cli, "\n");
+		Cli_Printf(cli, "\n");
 
 	if (cli->help == 1) {
-		cli_printf(cli, "\n\t");
+		Cli_Printf(cli, "\n\t");
 		va_start(ap, fmt);
 		(void)vprintf(fmt, ap);
 		va_end(ap);
-		cli_printf(cli, "\n");
+		Cli_Printf(cli, "\n");
 	}
 }
 
-void
-cli_dispatch(struct cli *cli, const struct cli_cmds *cmds)
+static void
+cli_int_dispatch(struct cli *cli, const struct cli_cmds *cmds)
 {
 	const struct cli_cmds *cc;
 
 	if (cli->ac == 0 && cli->help) {
 		cli->help++;
 
-		cli_printf(cli, "Usage:");
+		Cli_Printf(cli, "Usage:");
 		if (cli->av != cli->av0) {
-			cli_printf(cli, " ");
+			Cli_Printf(cli, " ");
 			cli_path(cli);
-			cli_printf(cli, " …");
+			Cli_Printf(cli, " …");
 		}
-		cli_printf(cli, "\n");
+		Cli_Printf(cli, "\n");
 
 		for (cc = cmds; cc->cmd != NULL; cc++) {
 			if (cli->av != cli->av0)
-				cli_printf(cli, "\t… %s", cc->cmd);
+				Cli_Printf(cli, "\t… %s", cc->cmd);
 			else
-				cli_printf(cli, "\t%s", cc->cmd);
+				Cli_Printf(cli, "\t%s", cc->cmd);
 			cli->cmd = cc->cmd;
 			cc->func(cli);
 		}
@@ -267,13 +250,29 @@ cli_dispatch(struct cli *cli, const struct cli_cmds *cmds)
 		return;
 	}
 
-	(void)cli_error(cli, "CLI error, no command: ");
+	(void)Cli_Error(cli, "CLI error, no command: ");
 	cli_path(cli);
-	cli_printf(cli, "\n");
+	Cli_Printf(cli, "\n");
+}
+
+static void v_matchproto_(cli_func_f)
+cli_help(struct cli *cli)
+{
+
+	if (cli->help) {
+		Cli_Usage(cli, " [cmds…]", "Print brief usage.");
+		return;
+	}
+
+	cli->help = 1;
+	cli->av0++;
+	cli->av++;
+	cli->ac--;
+	cli_int_dispatch(cli, cli_cmds);
 }
 
 void
-cli_redispatch(struct cli *cli, const struct cli_cmds *cmds)
+Cli_Dispatch(struct cli *cli, const struct cli_cmds *cmds)
 {
 	const struct cli_cmds *cc;
 	const char *mycmd = cli->cmd;
@@ -281,16 +280,16 @@ cli_redispatch(struct cli *cli, const struct cli_cmds *cmds)
 
 	if (cli->help == 0 && cli->ac < 2) {
 		cli->help = 1;
-		cli_error(cli, "Usage:\n");
+		Cli_Error(cli, "Usage:\n");
 	}
 	if (cli->help == 2) {
 		for (cc = cmds; cc->cmd != NULL; cc++) {
 			if (cc != cmds) {
-				cli_printf(cli, "\t");
+				Cli_Printf(cli, "\t");
 				cli_path(cli);
-				cli_printf(cli, "%s", cli->cmd);
+				Cli_Printf(cli, "%s", cli->cmd);
 			}
-			cli_printf(cli, " %s", cc->cmd);
+			Cli_Printf(cli, " %s", cc->cmd);
 			bprintf(buf, "%s %s", mycmd, cc->cmd);
 			cli->cmd = buf;
 			cc->func(cli);
@@ -301,9 +300,9 @@ cli_redispatch(struct cli *cli, const struct cli_cmds *cmds)
 	if (cli->help == 1 && cli->ac == 1) {
 		cli->help++;
 		for (cc = cmds; cc->cmd != NULL; cc++) {
-			cli_printf(cli, "\t");
+			Cli_Printf(cli, "\t");
 			cli_path(cli);
-			cli_printf(cli, " %s", cc->cmd);
+			Cli_Printf(cli, " %s", cc->cmd);
 			cc->func(cli);
 		}
 		return;
@@ -312,11 +311,11 @@ cli_redispatch(struct cli *cli, const struct cli_cmds *cmds)
 		cli->ac--;
 		cli->av++;
 	}
-	cli_dispatch(cli, cmds);
+	cli_int_dispatch(cli, cmds);
 }
 
 int
-cli_exec(const char *s)
+Cli_Exec(const char *s)
 {
 	int ac, i;
 	char **av;
@@ -333,7 +332,7 @@ cli_exec(const char *s)
 		VAV_Free(av);
 		return (0);
 	}
-	if (cli_echo) {
+	if (cli_echo_cmds) {
 		printf("CLI «");
 		for (i = 1; i < ac; i++) {
 			if (strchr(av[i], ' ') != NULL)
@@ -347,13 +346,13 @@ cli_exec(const char *s)
 	cli.ac = ac - 1;
 	cli.av0 = av + 1;
 	cli.av = av + 1;
-	cli_dispatch(&cli, cli_cmds);
+	cli_int_dispatch(&cli, cli_cmds);
 	VAV_Free(av);
 	return (cli.status);
 }
 
 int
-cli_from_file(FILE *fi, int fatal)
+Cli_From_File(FILE *fi, int fatal)
 {
 	char buf[BUFSIZ];
 	char *p;
@@ -365,7 +364,7 @@ cli_from_file(FILE *fi, int fatal)
 		p = strchr(buf, '\n');
 		if (p != NULL)
 			*p = '\0';
-		rv = cli_exec(buf);
+		rv = Cli_Exec(buf);
 		if (rv < 0 || (rv && fatal))
 			break;
 	}

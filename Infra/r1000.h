@@ -66,9 +66,13 @@ extern volatile nanosec		simclock;
 extern volatile nanosec		systemc_t_zero;
 extern volatile int		systemc_clock;
 extern int			trace_fd;
-extern const char		*tracefilename;
+extern const char		*tracepath;
 
 double sc_when(void);
+
+/* CONTEXT  ***************************************************************/
+
+void CTX_init(const char *path);
 
 /* MAIN ***************************************************************/
 
@@ -83,6 +87,7 @@ struct cli {
 	char			**av;
 	char			**av0;
 	const char		*cmd;
+	struct elastic		*elastic;
 };
 
 typedef void cli_func_f(struct cli *);
@@ -92,24 +97,13 @@ struct cli_cmds {
 	cli_func_f		*func;
 };
 
-void cli_path(struct cli *cli);
-void cli_usage(struct cli *cli, const char *args, const char *fmt, ...) __printflike(3,4);
-void cli_redispatch(struct cli *cli, const struct cli_cmds *cmds);
-void cli_dispatch(struct cli *cli, const struct cli_cmds *cmds);
-
-int cli_exec(const char *);
-int cli_from_file(FILE *fi, int fatal);
-
-
-void cli_printf(struct cli *cli, const char *fmt, ...) __printflike(2, 3);
-int cli_error(struct cli *cli, const char *fmt, ...) __printflike(2, 3);
-
-void cli_io_help(struct cli *, const char *desc, int trace, int elastic);
-
-int cli_n_m_args(struct cli *cli, int minarg, int maxarg,
-    const char *fmt, ...) __printflike(4, 5);
-int cli_n_args(struct cli *cli, int maxarg);
-void cli_unknown(struct cli *cli);
+void Cli_Usage(struct cli *, const char *args, const char *fmt, ...) __printflike(3,4);
+void Cli_Dispatch(struct cli *, const struct cli_cmds *cmds);
+int Cli_Exec(const char *);
+int Cli_From_File(FILE *, int fatal);
+void Cli_Printf(struct cli *, const char *fmt, ...) __printflike(2, 3);
+void Cli_Error(struct cli *, const char *fmt, ...) __printflike(2, 3);
+void Cli_Unknown(struct cli *);
 
 /* RPN evaluator ******************************************************/
 
@@ -171,14 +165,14 @@ nanosec callout_poll(void);
 
 /* DIAG *************************************************************/
 
-cli_func_f cli_dfs;
+cli_func_f Cli_dfs;
 cli_func_f cli_diagbus;
 cli_func_f cli_diproc;
 void diagbus_init(void);
 
 /* FIRMWARE *********************************************************/
 
-int get_firmware(const char *name, size_t size, void *dst);
+int Firmware_Get(const char *name, size_t size, void *dst);
 
 /* MEMORY *************************************************************/
 

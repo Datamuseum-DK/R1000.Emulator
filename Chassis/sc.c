@@ -113,22 +113,22 @@ load_programmable(const char *who, void *dst, size_t size, const char *arg)
 	int ret;
 
 	bprintf(buf, "%s", arg);
-        ret = get_firmware(buf, size, dst);
+	ret = Firmware_Get(buf, size, dst);
 	if (ret < 0) {
 		bprintf(buf, "%s-01", arg);
-		ret = get_firmware(buf, size, dst);
+		ret = Firmware_Get(buf, size, dst);
 	}
 	if (ret < 0) {
 		bprintf(buf, "%s-02", arg);
-		ret = get_firmware(buf, size, dst);
+		ret = Firmware_Get(buf, size, dst);
 	}
 	if (ret < 0) {
 		bprintf(buf, "%s-03", arg);
-		ret = get_firmware(buf, size, dst);
+		ret = Firmware_Get(buf, size, dst);
 	}
 	if (ret < 0) {
 		bprintf(buf, "PROM-%s", arg);
-		ret = get_firmware(buf, size, dst);
+		ret = Firmware_Get(buf, size, dst);
 	}
 	if (ret < 0) {
 		fprintf(stderr, "Firmware '%s' missing for '%s'\n", arg, who);
@@ -170,7 +170,7 @@ cli_sc_launch(struct cli *cli)
 	int i;
 
 	if (cli->help || cli->ac < 2) {
-		cli_usage(cli, "[<board>|all] …",
+		Cli_Usage(cli, "[<board>|all] …",
 		    "Launch SystemC models of boards.");
 		return;
 	}
@@ -198,7 +198,7 @@ cli_sc_launch(struct cli *cli)
 			else
 				sc_boards |= R1K_BOARD_MEM32_0;
 		} else {
-			cli_error(cli, "Bad board name `%s`\n", cli->av[i]);
+			Cli_Error(cli, "Bad board name `%s`\n", cli->av[i]);
 		}
 	}
 
@@ -220,20 +220,20 @@ cli_sc_launch(struct cli *cli)
 	sc_started = 3;
 	AZ(pthread_mutex_unlock(&sc_mtx));
 
-	cli_printf(cli, "SystemC started, %d components\n", ncomponents);
+	Cli_Printf(cli, "SystemC started, %d components\n", ncomponents);
 }
 
 static void v_matchproto_(cli_func_f)
 cli_sc_quota_add(struct cli *cli)
 {
 	if (cli->help || cli->ac != 2) {
-		cli_usage(cli, "<seconds>", "Add time to SystemC quota.");
+		Cli_Usage(cli, "<seconds>", "Add time to SystemC quota.");
 		return;
 	}
 	AZ(pthread_mutex_lock(&sc_mtx));
 	sc_quota += strtod(cli->av[1], NULL);
 	sc_started = 4;
-	cli_printf(cli, "SC_QUOTA = %.9f\n", sc_quota);
+	Cli_Printf(cli, "SC_QUOTA = %.9f\n", sc_quota);
 	AZ(pthread_cond_signal(&sc_cond));
 	AZ(pthread_mutex_unlock(&sc_mtx));
 }
@@ -242,7 +242,7 @@ static void v_matchproto_(cli_func_f)
 cli_sc_quota_wait(struct cli *cli)
 {
 	if (cli->help || cli->ac != 1) {
-		cli_usage(cli, NULL, "Wait for SystemC quota to expire.");
+		Cli_Usage(cli, NULL, "Wait for SystemC quota to expire.");
 		return;
 	}
 	AZ(pthread_mutex_lock(&sc_mtx));
@@ -258,7 +258,7 @@ static void v_matchproto_(cli_func_f)
 cli_sc_quota_exit(struct cli *cli)
 {
 	if (cli->help || cli->ac != 1) {
-		cli_usage(cli, NULL,
+		Cli_Usage(cli, NULL,
 		    "Exit emulator when SystemC quota expires.");
 		return;
 	}
@@ -275,7 +275,7 @@ static const struct cli_cmds cli_sc_quota_cmds[] = {
 static void v_matchproto_(cli_func_f)
 cli_sc_quota(struct cli *cli)
 {
-	cli_redispatch(cli, cli_sc_quota_cmds);
+	Cli_Dispatch(cli, cli_sc_quota_cmds);
 }
 
 static void v_matchproto_(cli_func_f)
@@ -284,7 +284,7 @@ cli_sc_wait(struct cli *cli)
 	double e;
 
 	if (cli->help || cli->ac != 2) {
-		cli_usage(cli, "[<seconds>]",
+		Cli_Usage(cli, "[<seconds>]",
 		    "Wait until SystemC time reaches seconds.");
 		return;
 	}
@@ -302,7 +302,7 @@ cli_sc_rate(struct cli *cli)
 	double d, e;
 
 	if (cli->help || cli->ac != 1) {
-		cli_usage(cli, NULL,
+		Cli_Usage(cli, NULL,
 		    "Report SystemC simulation rates.");
 		return;
 	}
@@ -311,10 +311,8 @@ cli_sc_rate(struct cli *cli)
 	e = sc_when();
 	d = 1e-9 * (t1.tv_nsec - sc_t0.tv_nsec);
 	d += (t1.tv_sec - sc_t0.tv_sec);
-	cli_printf(cli, "SC real time: %.3f\tsim time: %.3f\tratio: %.3f\n", d, e, d / e);
+	Cli_Printf(cli, "SC real time: %.3f\tsim time: %.3f\tratio: %.3f\n", d, e, d / e);
 }
-
-#define TRACE_USAGE "Usage:\n\t[regexp ['on'|'off']]\n"
 
 static void v_matchproto_(cli_func_f)
 cli_sc_trace(struct cli *cli)
@@ -327,7 +325,7 @@ cli_sc_trace(struct cli *cli)
 	int nmatch = 0, err;
 
 	if (cli->help || cli->ac != 3) {
-		cli_usage(cli, "<regexp> <level>",
+		Cli_Usage(cli, "<regexp> <level>",
 		    "Set tracing for components matching regexp to level.");
 		return;
 	}
@@ -337,13 +335,13 @@ cli_sc_trace(struct cli *cli)
 		onoff = 1;
 	else if (!strcasecmp(cli->av[2], "off"))
 		onoff = 0;
-	else 
+	else
 		onoff = strtoul(cli->av[2], NULL, 0);
 
 	err = regcomp(&rex, regexp, 0);
 	if (err) {
 		(void)regerror(err, &rex, errbuf, sizeof errbuf);
-		cli_error(cli, "Regexp error: %s\n", errbuf);
+		Cli_Error(cli, "Regexp error: %s\n", errbuf);
 		return;
 	}
 
@@ -351,7 +349,7 @@ cli_sc_trace(struct cli *cli)
 		if (!regexec(&rex, comp->name, 0, 0, 0)) {
 			nmatch++;
 			*comp->flags = onoff;
-			cli_printf(
+			Cli_Printf(
 			    cli,
 			    "    0x%x %s\n", *comp->flags, comp->name
 			);
@@ -359,7 +357,7 @@ cli_sc_trace(struct cli *cli)
 	}
 	regfree(&rex);
 	if (!nmatch)
-		cli_error(cli, "regexp matched no components.\n");
+		Cli_Error(cli, "regexp matched no components.\n");
 }
 
 int sc_forced_reset;
@@ -368,7 +366,7 @@ static void v_matchproto_(cli_func_f)
 cli_sc_force_reset(struct cli *cli)
 {
 	if (cli->help || cli->ac != 1) {
-		cli_usage(cli, NULL,
+		Cli_Usage(cli, NULL,
 		    "Force reset signal high for IOC without IOP\n");
 		return;
 	}
@@ -389,5 +387,5 @@ static const struct cli_cmds cli_sc_cmds[] = {
 void v_matchproto_(cli_func_f)
 cli_sc(struct cli *cli)
 {
-	cli_redispatch(cli, cli_sc_cmds);
+	Cli_Dispatch(cli, cli_sc_cmds);
 }

@@ -1,5 +1,5 @@
-SC_BRANCH ?= megacomp2
 SC_BRANCH ?= main
+SC_BRANCH ?= megacomp2
 NETLISTS ?= /critter/R1K/R1000.HwDoc/${SC_BRANCH}/Schematics/*/*.net
 
 EXP_PATH ?= /critter/R1K/Old/hack/X/
@@ -21,7 +21,7 @@ DISK0B_IMAGE = "/critter/DDHF/R1000/R1K_Seagate/R1K_Seagate0.BIN"
 DISK1B_IMAGE = "/critter/DDHF/R1000/R1K_Seagate/R1K_Seagate1.BIN"
 
 CFLAGSMINUSI += -I.
-CFLAGSMINUSD += -DMUSASHI_CNF='"Ioc/musashi_conf.h"'
+CFLAGSMINUSD += -DMUSASHI_CNF='"Iop/musashi_conf.h"'
 CFLAGSMINUSD += -DFIRMWARE_PATH='"${FIRMWARE_PATH}"'
 
 CFLAGS	+= -Wall -Werror -pthread -g -O0
@@ -53,7 +53,7 @@ include Infra/Makefile.inc
 include Dfs/Makefile.inc
 include Diag/Makefile.inc
 include Makefile.musashi.inc
-include Ioc/Makefile.inc
+include Iop/Makefile.inc
 include Chassis/Makefile.inc
 include Components/Makefile.inc
 -include Fiu/${SC_BRANCH}/Makefile.inc
@@ -88,7 +88,7 @@ flint:
 		Dfs/*.c \
 		Diag/*.c \
 		Infra/*.c \
-		Ioc/*.c \
+		Iop/*.c \
 		Chassis/*.c \
 
 setup:
@@ -134,11 +134,20 @@ dfs:	r1000sim.${SC_BRANCH}
 		"scsi_disk 0 ${DISK0_IMAGE}" \
 		"scsi_disk 1 ${DISK1_IMAGE}" \
 		"help dfs" \
+		"help dfs cat" \
 		"help dfs dir" \
+		"help dfs read" \
 		"dfs dir KERN* PROG*" \
+		"dfs cat PATCH.HLP _patch.hlp" \
+		"dfs read KERNEL_0.M200 _kernel_0.m200" \
+		"dfs sed PATCH.HLP s/SWITCH/FOOBAR/" \
+		"dfs cat PATCH.HLP" \
+		"dfs write Dfs/Makefile.inc PATCH.HLP" \
+		"dfs cat FOOBAR" \
 		exit
 
 IOC_TEST=TEST_MACRO_EVENT_DELAY.IOC
+IOC_TEST=TEST_WCS_ADDRESSING.IOC
 
 test_ioc:	r1000sim.${SC_BRANCH}
 	./r1000sim.${SC_BRANCH} \
@@ -146,16 +155,15 @@ test_ioc:	r1000sim.${SC_BRANCH}
 		'sc watchdog 10' \
 		'sc force_reset' \
 		"trace +diagbus_bytes" \
-		"diag > _.diag" \
+		"diagbus > _.diag" \
 		'trace +systemc' \
 		'sc launch ioc ' \
-		'sc trace "DI*PROC" 6' \
-		'sc trace "DFREG" 1' \
-		'sc q exit' \
-		'sc q 5' \
-		"diag ioc experiment ${EXP_PATH}/${IOC_TEST}" \
-		"diag ioc wait" \
-		"diag ioc check" \
+		'sc trace "DI*PROC" 4' \
+		'sc quota exit' \
+		'sc quota add 5' \
+		"diproc experiment ioc ${EXP_PATH}/${IOC_TEST}" \
+		"diproc wait ioc" \
+		"diproc status ioc" \
 		"exit"
 
 FIU_TEST=TEST_OREG_PARITY.FIU
@@ -275,22 +283,24 @@ novram:	r1000sim.${SC_BRANCH}
 	./r1000sim.${SC_BRANCH} \
 		-T ${TRACE_FILE} \
 		"trace +diagbus_bytes" \
-		"trace -ioc_interrupt" \
-		"trace -ioc_dma" \
-		"trace -ioc_io" \
-		"trace +ioc_pit" \
-		"trace -ioc_instructions" \
-		"ioc memtrace add -lo 0x00000 -hi 0x00000" \
-		"ioc syscall internal" \
+		"#trace -ioc_interrupt" \
+		"#trace -ioc_dma" \
+		"#trace -ioc_io" \
+		"#trace +ioc_pit" \
+		"#trace -ioc_instructions" \
+		"# ioc memtrace add io_duart" \
+		"# ioc memtrace list" \
+		"# ioc memtrace del 1" \
+		"# ioc memtrace list" \
+		"iop syscall internal" \
 		"console > _.console" \
 		"console telnet localhost:1400" \
 		"console serial /dev/nmdm0B" \
 		"modem > _.modem" \
-		"diag > _.diag" \
-		"scsi_tape" \
-		"scsi_disk 0 ${DISK0_IMAGE}" \
-		"scsi_disk 1 ${DISK1_IMAGE}" \
-		"ioc reset" \
+		"diagbus > _.diag" \
+		"disk mount 0 ${DISK0_IMAGE}" \
+		"disk mount 1 ${DISK1_IMAGE}" \
+		"iop reset" \
 		'console match expect "Boot from (Tn or Dn)  [D0] : "' \
 		'console << ""' \
 		'console match expect "Kernel program (0,1,2) [0] : "' \
@@ -304,16 +314,18 @@ novram:	r1000sim.${SC_BRANCH}
 		'console match expect "CLI>"' \
 		'trace +systemc' \
 		'sc launch ioc fiu val typ seq mem0' \
+		'diproc dummy -TIMEOUT mem1 mem2 mem3' \
 		'sc trace "NOVRAM" on' \
 		'sc trace "DI*PROC" 6' \
-		'sc q exit' \
-		'sc q 3' \
+		'sc quota exit' \
+		'sc quota add 3' \
 		'console << "x novram"' \
 		'console match expect "Enter option : "' \
 		'console << "1"' \
 		'console match expect "Enter option : "' \
 		'console << "0"' \
 		'console match expect "CLI>"' \
+		'sc rate' \
 		exit
 
 EXPERIMENT=write [xeq ioc TEST_WCS_ADDRESSING]

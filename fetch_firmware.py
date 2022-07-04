@@ -1,6 +1,6 @@
 #!/usr/local/bin/python3
 #
-# Copyright (c) 2021 Poul-Henning Kamp
+# Copyright (c) 2022 Poul-Henning Kamp
 # All rights reserved.
 #
 # Author: Poul-Henning Kamp <phk@phk.freebsd.dk>
@@ -113,7 +113,7 @@ def main():
 
         file.write('\n')
         file.write('int\n')
-        file.write('get_firmware(const char *name, size_t size, void *dst)\n')
+        file.write('Firmware_Get(const char *name, size_t size, void *dst)\n')
         file.write('{\n')
         for fname, cname, size in sorted(namelist):
             file.write('\tif (!strcmp(name, "%s")) {\n' % fname)

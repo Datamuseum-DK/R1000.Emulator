@@ -4,7 +4,7 @@
 #include <stdio.h>
 
 #include "Infra/r1000.h"
-#include "Ioc/ioc.h"
+#include "Iop/iop.h"
 
 static const struct cli_cmds cli_ioc_cmds[] = {
 	{ "breakpoint",		cli_ioc_breakpoint },
@@ -23,5 +23,5 @@ void v_matchproto_(cli_func_f)
 cli_ioc(struct cli *cli)
 {
 
-	cli_redispatch(cli, cli_ioc_cmds);
+	Cli_Dispatch(cli, cli_ioc_cmds);
 }

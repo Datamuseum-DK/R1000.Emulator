@@ -34,8 +34,8 @@
 #include <string.h>
 
 #include "Infra/r1000.h"
-#include "Ioc/ioc.h"
-#include "Ioc/memspace.h"
+#include "Iop/iop.h"
+#include "Iop/memspace.h"
 
 struct memtrace {
 	int			number;
@@ -94,7 +94,7 @@ get_next_trace(void)
 
 #define USAGE_ADD() \
 	do { \
-		cli_usage(cli, "<segname>|<lo_adr> <hi_adr>", \
+		Cli_Usage(cli, "<segname>|<lo_adr> <hi_adr>", \
 		    "Add a memory trace point."); \
 		return; \
 	} while (0)
@@ -118,7 +118,7 @@ cli_ioc_memtrace_add(struct cli *cli)
 				break;
 		}
 		if (u == n_memdesc) {
-			cli_error(cli, "Unknown segment name\n");
+			Cli_Error(cli, "Unknown segment name\n");
 			return;
 		}
 		mt1 = get_next_trace();
@@ -133,7 +133,7 @@ cli_ioc_memtrace_add(struct cli *cli)
 		hi = strtoul(cli->av[1], NULL, 0);
 
 		if (hi <= lo) {
-			cli_error(cli, "hi_adr <= lo_adr\n");
+			Cli_Error(cli, "hi_adr <= lo_adr\n");
 			return;
 		}
 
@@ -156,7 +156,7 @@ cli_ioc_memtrace_del(struct cli *cli)
 	int n;
 
 	if (cli->help || cli->ac != 2) {
-		cli_usage(cli, "<number>", "Delete memtrace.");
+		Cli_Usage(cli, "<number>", "Delete memtrace.");
 		return;
 	}
 	cli->ac--;
@@ -172,7 +172,7 @@ cli_ioc_memtrace_del(struct cli *cli)
 			return;
 		}
 	}
-	cli_error(cli, "memtrace %d not found\n", n);
+	Cli_Error(cli, "memtrace %d not found\n", n);
 }
 
 static void v_matchproto_(cli_func_f)
@@ -181,22 +181,22 @@ cli_ioc_memtrace_list(struct cli *cli)
 	struct memtrace *mt1;
 
 	if (cli->help) {
-		cli_usage(cli, NULL, "List memtrace.");
+		Cli_Usage(cli, NULL, "List memtrace.");
 		return;
 	}
 	if (VTAILQ_EMPTY(&memtraces)) {
-		cli_printf(cli, "No active memory traces\n");
+		Cli_Printf(cli, "No active memory traces\n");
 		return;
 	}
 	VTAILQ_FOREACH(mt1, &memtraces, list) {
-		cli_printf(cli, "    %d:", mt1->number);
+		Cli_Printf(cli, "    %d:", mt1->number);
 		if (mt1->seg != NULL)
-			cli_printf(cli, " -seg %s", mt1->seg);
+			Cli_Printf(cli, " -seg %s", mt1->seg);
 		if (mt1->lo != NULL)
-			cli_printf(cli, " -lo %s", mt1->lo);
+			Cli_Printf(cli, " -lo %s", mt1->lo);
 		if (mt1->hi != NULL)
-			cli_printf(cli, " -hi %s", mt1->hi);
-		cli_printf(cli, "\n");
+			Cli_Printf(cli, " -hi %s", mt1->hi);
+		Cli_Printf(cli, "\n");
 	}
 }
 
@@ -210,5 +210,5 @@ static const struct cli_cmds cli_ioc_memtrace_cmds[] = {
 void v_matchproto_(cli_func_f)
 cli_ioc_memtrace(struct cli *cli)
 {
-	cli_redispatch(cli, cli_ioc_memtrace_cmds);
+	Cli_Dispatch(cli, cli_ioc_memtrace_cmds);
 }

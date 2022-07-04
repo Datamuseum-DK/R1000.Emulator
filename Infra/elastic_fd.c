@@ -142,14 +142,15 @@ elastic_fd_stop(struct elastic_fd **efpp)
 	free(efp);
 }
 
-static void
-elastic_serial(struct elastic *ep, struct cli *cli)
+void v_matchproto_(cli_func_f)
+cli_elastic_serial(struct cli *cli)
 {
 	int fd, i;
 	struct termios tt;
+	struct elastic *ep = cli->elastic;
 
-	if (cli->ac < 2) {
-		(void)cli_n_args(cli, 1);
+	if (cli->help || cli->ac != 2) {
+		Cli_Usage(cli, "<filename>", "Open serial port.");
 		return;
 	}
 
@@ -159,28 +160,28 @@ elastic_serial(struct elastic *ep, struct cli *cli)
 		fd = open(cli->av[1], O_RDWR | O_NONBLOCK);
 	}
 	if (fd < 0) {
-		cli_error(cli, "Cannot open %s: %s\n",
+		Cli_Error(cli, "Cannot open %s: %s\n",
 		    cli->av[1], strerror(errno));
 		return;
 	}
 
 	i = fcntl(fd, F_GETFL);
 	if (i == -1) {
-		cli_error(cli, "Cannot fcntl(F_GETFL) %s: %s\n",
+		Cli_Error(cli, "Cannot fcntl(F_GETFL) %s: %s\n",
 		    cli->av[1], strerror(errno));
 		(void)close(fd);
 		return;
 	}
 	i = fcntl(fd, F_SETFL, i & ~O_NONBLOCK);
 	if (i == -1) {
-		cli_error(cli, "Cannot fcntl(F_SETFL) %s: %s\n",
+		Cli_Error(cli, "Cannot fcntl(F_SETFL) %s: %s\n",
 		    cli->av[1], strerror(errno));
 		(void)close(fd);
 		return;
 	}
 
 	if (tcgetattr(fd, &tt)) {
-		cli_error(cli, "Not a tty %s: %s\n",
+		Cli_Error(cli, "Not a tty %s: %s\n",
 		    cli->av[1], strerror(errno));
 		AZ(close(fd));
 		return;
@@ -191,76 +192,66 @@ elastic_serial(struct elastic *ep, struct cli *cli)
 	tt.c_cc[VTIME] = 0;
 	cli->ac -= 2;
 	cli->av += 2;
-	while (cli->ac > 0) {
-		cli_unknown(cli);
-	}
+
 	assert(tcsetattr(fd, TCSAFLUSH, &tt) == 0);
 	(void)elastic_fd_start(ep, fd, -1, 1);
 }
 
-int v_matchproto_(cli_elastic_f)
-cli_elastic_fd(struct elastic *ep, struct cli *cli)
-	{
+void v_matchproto_(cli_func_f)
+cli_elastic_input(struct cli *cli)
+{
 	int fd;
+	struct elastic *ep = cli->elastic;
 
-	AN(cli);
-	if (cli->help) {
-		cli_printf(cli, "\t< <filename>\n");
-		cli_printf(cli, "\t\tRead input from file\n");
-		cli_printf(cli, "\t> <filename>\n");
-		cli_printf(cli, "\t\tWrite output to file\n");
-		cli_printf(cli, "\t>> <filename>\n");
-		cli_printf(cli, "\t\tAppend output to file\n");
-		cli_printf(cli, "\tserial <tty-device>\n");
-		cli_printf(cli, "\t\tConnect to (UNIX) tty-device\n");
-		return(0);
+	if (cli->help || cli->ac != 2) {
+		Cli_Usage(cli, "<filename>", "Read input from filename");
+		return;
+	}
+	if (ep->mode == O_WRONLY) {
+		Cli_Error(cli, "Only inputs can '%s'\n", *cli->av);
+		return;
+	}
+	fd = open(cli->av[1], O_RDONLY);
+	if (fd < 0) {
+		Cli_Error(cli, "Cannot open '%s' for reading: %s\n",
+		    cli->av[1], strerror(errno));
+		return;
 	}
 
-	AN(ep);
+	(void)elastic_fd_start(ep, fd, O_RDONLY, 1);
+}
 
-	if (!strcmp(*cli->av, ">") || !strcmp(*cli->av, ">>")) {
-		if (cli_n_args(cli, 1))
-			return(1);
-		if (ep->mode == O_RDONLY)
-			return (cli_error(cli,
-			    "Only outputs can '%s'\n", *cli->av));
+void v_matchproto_(cli_func_f)
+cli_elastic_output(struct cli *cli)
+{
+	int fd;
+	const char *what;
+	struct elastic *ep = cli->elastic;
 
-		if (!strcmp(*cli->av, ">"))
-			fd = open(cli->av[1], O_WRONLY|O_CREAT|O_TRUNC, 0644);
-		else
-			fd = open(cli->av[1], O_WRONLY|O_CREAT|O_APPEND, 0644);
-
-		if (fd < 0)
-			return (cli_error(cli, "Cannot open %s: %s\n",
-			    cli->av[1], strerror(errno)));
-
-		if (ep->out != NULL)
-			elastic_fd_stop(&ep->out);
-		ep->out = elastic_fd_start(ep, fd, O_WRONLY, 0);
-		cli->av += 2;
-		cli->ac -= 2;
-		return (1);
+	if (cli->help || cli->ac != 2) {
+		Cli_Usage(cli, "<filename>", "Send output to filename");
+		return;
 	}
-	if (!strcmp(*cli->av, "<")) {
-		if (cli_n_args(cli, 1))
-			return(1);
-		if (ep->mode == O_WRONLY)
-			return (cli_error(cli,
-			    "Only inputs can '%s'\n", *cli->av));
-
-		fd = open(cli->av[1], O_RDONLY);
-		if (fd < 0)
-			return (cli_error(cli, "Cannot open %s: %s\n",
-			    cli->av[1], strerror(errno)));
-
-		(void)elastic_fd_start(ep, fd, O_RDONLY, 1);
-		cli->av += 2;
-		cli->ac -= 2;
-		return (1);
+	if (ep->mode == O_RDONLY) {
+		Cli_Error(cli, "Only outputs can '%s'\n", *cli->av);
+		return;
 	}
-	if (!strcmp(*cli->av, "serial")) {
-		elastic_serial(ep, cli);
-		return (1);
+
+	if (!strcmp(*cli->av, ">")) {
+		fd = open(cli->av[1], O_WRONLY|O_CREAT|O_TRUNC, 0644);
+		what = "writing";
+	} else {
+		fd = open(cli->av[1], O_WRONLY|O_CREAT|O_APPEND, 0644);
+		what = "appending";
 	}
-	return (0);
+
+	if (fd < 0) {
+		Cli_Error(cli, "Cannot open '%s' for %s: %s\n",
+		    cli->av[1], what, strerror(errno));
+		return;
+	}
+
+	if (ep->out != NULL)
+		elastic_fd_stop(&ep->out);
+	ep->out = elastic_fd_start(ep, fd, O_WRONLY, 0);
 }
