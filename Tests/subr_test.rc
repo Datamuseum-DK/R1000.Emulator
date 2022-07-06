@@ -1,0 +1,80 @@
+
+set -e
+R1K_TESTNAME=`basename $0 .sh`
+
+R1K_PFX=Tests/_${R1K_TESTNAME}
+
+rm -f ${R1K_PFX}.*
+
+R1K_CLIFILE=${R1K_PFX}.cli
+
+cli() {
+	echo "$*" >> ${R1K_CLIFILE}
+}
+
+cli '# => Standard prefix'
+cli 'disk mount 0 /critter/R1K/DiskImages/PE_R1K_Disk0.dd'
+cli 'disk mount 1 /critter/R1K/DiskImages/PE_R1K_Disk1.dd'
+cli 'console >' ${R1K_PFX}.console
+cli 'console serial /dev/nmdm0B'
+
+sc_boards() {
+	cli '# => sc_all_boards'
+	cli trace +systemc
+	cli sc launch $*
+	for brd in ioc fiu mem0 mem1 mem2 mem3 seq typ val
+	do
+	    echo "$*" | grep -q -i ${brd} || cli diproc dummy -TIMEOUT ${brd}
+	done
+}
+
+cli_prompt() {
+	cli '# => cli_prompt'
+	cli iop reset
+	cli 'console match expect "Boot from (Tn or Dn)  [D0] : "'
+	cli 'console << ""'
+	cli 'console match expect "Kernel program (0,1,2) [0] : "'
+	cli 'console << ""'
+	cli 'console match expect "File system    (0,1,2) [0] : "'
+	cli 'console << ""'
+	cli 'console match expect "User program   (0,1,2) [0] : "'
+	cli 'console << ""'
+	cli 'console match expect "Enter option [enter CLI] : "'
+	cli 'console << "1"'
+	cli 'console match expect "CLI>"'
+}
+
+expmon_cmd() {
+	cli '# => expmon_cmd'
+	cli 'console <<' "\"$*\""
+	cli 'console match expect "EM>"'
+}
+
+expmon_prompt() {
+	cli '# => expmon_prompt'
+	cli_prompt
+	cli 'console << "x expmon"'
+	cli 'console match expect "EM>"'
+	expmon_cmd '[set FIRST_PASS true]'
+}
+
+fru_prompt() {
+	cli_prompt
+	cli '# => fru_prompt'
+	cli 'console << "x fru"'
+	cli 'console match expect "Please enter option : "'
+	for i in $*
+	do
+		cli "console << $i"
+		cli 'console match expect " : "'
+	done
+}
+
+run() {
+	cli sc rate
+	cli exit
+	echo "exit" | ./r1000sim \
+		-T /critter/_r1000 \
+		"include ${R1K_CLIFILE}" 2>&1 | tee ${R1K_PFX}.log
+	python3 Context/context.py > ${R1K_PFX}.ctx
+}
