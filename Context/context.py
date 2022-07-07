@@ -1,6 +1,6 @@
 import struct
 
-CONTEXT_FILE = "/critter/_ctx"
+CONTEXT_FILE = "/critter/_r1000.ctx"
 
 class Context():
 
