@@ -36,13 +36,13 @@
 import sys
 import os
 
-import transit
-
 from board import Board
 from srcfile import SrcFile
 from scmod import SC_Mod
 
 import models
+
+from pass_planes import PassPlanes
 
 ME = os.path.basename(__file__)
 
@@ -55,6 +55,7 @@ class R1000Cpu():
         self.branch = branch
         self.netlists = netlists
         self.part_catalog = {}
+        self.boards = []
         self.chassis_makefile = None
 
         os.makedirs("Chassis", exist_ok=True)
@@ -99,15 +100,21 @@ class R1000Cpu():
 
     def do_build(self):
         ''' ... '''
-        chf = SrcFile("Chassis/plane_tbl.h")
-        transit.make_transit_h(chf)
-        chf.commit()
 
         self.chassis_makefile = SrcFile(os.path.join("Chassis", self.branch, "Makefile.inc"))
 
         for filename in self.netlists:
             print("Processing", filename)
-            board = Board(self, filename)
+            self.boards.append(Board(self, filename))
+
+        self.boards.sort()
+
+        PassPlanes(self)
+
+        for board in self.boards:
+            board.chew()
+
+        for board in self.boards:
             board.produce()
 
         self.chassis_makefile.commit()
@@ -154,7 +161,7 @@ def main():
         sys.exit(2)
 
     if len(sys.argv) < 3:
-        sys.stderr.write("Usage:\n\t%s <branch> <KiCad netlist-file> ...\n" % ME)
+        sys.stderr.write("Usage:\n\t%s <branch> <KiCad netlist-file> …\n" % ME)
         sys.exit(2)
 
     branch = sys.argv[1]

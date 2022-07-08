@@ -1,5 +1,5 @@
-SC_BRANCH ?= main
 SC_BRANCH ?= megacomp2
+SC_BRANCH ?= main
 NETLISTS ?= /critter/R1K/R1000.HwDoc/${SC_BRANCH}/Schematics/*/*.net
 
 EXP_PATH ?= /critter/R1K/Old/hack/X/
@@ -56,6 +56,7 @@ include Makefile.musashi.inc
 include Iop/Makefile.inc
 include Chassis/Makefile.inc
 include Components/Makefile.inc
+-include Emu/${SC_BRANCH}/Makefile.inc
 -include Fiu/${SC_BRANCH}/Makefile.inc
 -include Ioc/${SC_BRANCH}/Makefile.inc
 -include Mem32/${SC_BRANCH}/Makefile.inc
@@ -105,17 +106,16 @@ cli:	r1000sim.${SC_BRANCH}
 		"trace -ioc_pit" \
 		"trace +scsi_cmd" \
 		"trace -ioc_instructions" \
-		"ioc syscall internal" \
+		"iop syscall internal" \
 		"console > _.console" \
 		"console telnet localhost:1400" \
 		"console serial /dev/nmdm0B" \
 		"modem > _.modem" \
 		"modem serial /dev/nmdm1B" \
-		"diag > _.diag" \
-		"scsi_tape" \
-		"scsi_disk 0 ${DISK0_IMAGE}" \
-		"scsi_disk 1 ${DISK1_IMAGE}" \
-		"ioc reset" \
+		"diagbus > _.diag" \
+		"disk mount 0 ${DISK0_IMAGE}" \
+		"disk mount 1 ${DISK1_IMAGE}" \
+		"iop reset" \
 		'console match expect "Boot from (Tn or Dn)  [D0] : "' \
 		'console << ""' \
 		'console match expect "Kernel program (0,1,2) [0] : "' \
@@ -204,21 +204,23 @@ test_typ:	r1000sim.${SC_BRANCH}
 
 
 VAL_TEST=TEST_WCS_ADDRESS.VAL
+VAL_TEST=TEST_LOOP_CNTR_OVERFLOW.VAL
 
 test_val:	r1000sim.${SC_BRANCH}
 	./r1000sim.${SC_BRANCH} \
 		-T ${TRACE_FILE} \
 		"trace +diagbus_bytes" \
-		"diag > _.diag" \
+		"diagbus > _.diag" \
 		'trace +systemc' \
 		'sc launch val' \
-		'sc trace "DI*PROC" 6' \
+		'sc trace "DI*PROC" 4' \
 		'sc trace "DUIRG[0-6]" 1' \
-		'sc q exit' \
-		'sc q 5' \
-		"diag val experiment ${EXP_PATH}/${VAL_TEST}" \
-		"diag val wait" \
-		"diag val check" \
+		'sc trace "LCNTR" 1' \
+		'sc quota exit' \
+		'sc quota add 5' \
+		"diproc experiment val ${EXP_PATH}/${VAL_TEST}" \
+		"diproc wait val" \
+		"diproc status val" \
 		"exit"
 
 
@@ -378,6 +380,41 @@ expmon:	all
 		'console match expect "EM>"' \
 		'sc rate' \
 		exit
+
+fru:	all
+	./r1000sim.${SC_BRANCH} \
+		-T ${TRACE_FILE} \
+		"trace -diagbus_bytes" \
+		"trace -ioc_interrupt" \
+		"trace -ioc_dma" \
+		"trace -ioc_pit" \
+		"trace -ioc_instructions" \
+		"iop syscall internal" \
+		"console > _.console" \
+		"console telnet localhost:1400" \
+		"console serial /dev/nmdm0B" \
+		"modem > _.modem" \
+		"diagbus > _.diag" \
+		"disk mount 0 ${DISK0_IMAGE}" \
+		"disk mount 1 ${DISK1_IMAGE}" \
+		'trace +systemc' \
+		"diproc dummy -TIMEOUT mem1 mem2 mem3" \
+		'sc launch all' \
+		'sc trace "DI*PROC" 4' \
+		'sc quota add 3000' \
+		"iop reset" \
+		'console match expect "Boot from (Tn or Dn)  [D0] : "' \
+		'console << ""' \
+		'console match expect "Kernel program (0,1,2) [0] : "' \
+		'console << ""' \
+		'console match expect "File system    (0,1,2) [0] : "' \
+		'console << ""' \
+		'console match expect "User program   (0,1,2) [0] : "' \
+		'console << ""' \
+		'console match expect "Enter option [enter CLI] : "' \
+		'console << "1"' \
+		'console match expect "CLI>"' \
+		'console << "x fru"'
 
 $DIAG="TEST IOA"
 

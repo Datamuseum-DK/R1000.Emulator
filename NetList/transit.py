@@ -75,6 +75,10 @@ GB = {
     "EXT_ID0": "GB330",
     "EXT_ID1": "GB331",
     "EXT_ID2": "GB332",
+    "HIT_LRU0": "GB333",
+    "HIT_LRU1": "GB334",
+    "HIT_LRU2": "GB335",
+    "HIT_LRU3": "GB336",
 }
 
 TRANSIT = {
@@ -170,10 +174,10 @@ TRANSIT = {
         "GF291": "*",
     },
     "mem32": {
-        "GB054": "*",
-        "GB055": "*",
-        "GB056": "*",
-        "GB058": "*",
+        "GB054": GB["HIT_LRU0"],
+        "GB055": GB["HIT_LRU1"],
+        "GB056": GB["HIT_LRU2"],
+        "GB058": GB["HIT_LRU3"],
         "GB242": GB["SLOT0"],
         "GB243": GB["SLOT1"],
         "GB264": GB["BOARD_HIT0"],

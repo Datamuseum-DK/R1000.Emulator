@@ -45,7 +45,6 @@ from part import LibPartSexp, NoPart
 from net import NetSexp
 from component import ComponentSexp
 
-from pass_planes import PassPlanes
 from pass_assign_part import PassAssignPart
 from pass_net_config import PassNetConfig
 from pass_part_config import PassPartConfig
@@ -58,7 +57,6 @@ class Board():
         self.sexp = SExp(None)
         self.sexp.parse(open(netlist).read())
         self.find_board_name()
-        print("Board", self.name)
         self.dstdir = self.name.capitalize() + "/" + self.branch
         os.makedirs(self.dstdir, exist_ok=True)
         self.srcs = []
@@ -92,13 +90,16 @@ class Board():
         for netsexp in self.sexp.find("nets.net"):
             NetSexp(self, netsexp)
 
-        PassPlanes(self)
+    def __str__(self):
+        return self.name
+
+    def __lt__(self, other):
+        return self.name < other.name
+
+    def chew(self):
         PassAssignPart(self)
         PassNetConfig(self)
         PassPartConfig(self)
-
-    def __str__(self):
-        return self.name
 
     def add_part(self, name, part):
         ''' Add a part to our catalog, if not already occupied '''
@@ -180,7 +181,7 @@ class Board():
     def produce_board_cc(self, scm):
         ''' ... '''
         scm.write("#include <systemc.h>\n")
-        scm.include("Chassis/planes.hh")
+        scm.include("Chassis/%s/planes.hh" % self.branch)
         scm.include(self.scm_board.hh)
         scm.include(self.scm_board.pub)
         scm.fmt('''
