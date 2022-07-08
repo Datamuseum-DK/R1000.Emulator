@@ -13,7 +13,7 @@ for tst in \
 	Tests/fru_phase1.sh \
 	Tests/fru_phase2.sh \
 	Tests/fru_phase3.sh \
-	Tests/test_novram.sh \
+	Tests/test_novram.sh
 do
 	sh $tst || ( [ $? == 9 ] && sh $tst ) || true
 done
