@@ -9,14 +9,11 @@ rm -f Tests/_*
 TS=`date +%Y%m%d%H%M`
 
 for tst in \
-	Tests/test_ioc.sh \
-	Tests/test_fiu.sh \
-	Tests/test_seq.sh \
-	Tests/test_typ.sh \
-	Tests/test_val.sh \
-	Tests/test_novram.sh \
 	Tests/test_reset_all.sh \
-	Tests/test_mem32.sh
+	Tests/fru_phase1.sh \
+	Tests/fru_phase2.sh \
+	Tests/fru_phase3.sh \
+	Tests/test_novram.sh \
 do
 	sh $tst || ( [ $? == 9 ] && sh $tst ) || true
 done
