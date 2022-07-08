@@ -126,7 +126,7 @@ class F579(PartFactory):
 		|	if (what != NULL) {
 		|		TRACE(
 		|		    << what
-		|		    << " clk " << PIN_CLK?
+		|		    << " clk↑ " << PIN_CLK.posedge()
 		|		    << " io " << BUS_IO_TRACE()
 		|		    << " oe_ " << PIN_OE?
 		|		    << " cs_ " << PIN_CS?

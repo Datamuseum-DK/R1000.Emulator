@@ -64,7 +64,7 @@ class F113(PartFactory):
 		|
 		|	TRACE(
 		|	    << state->job
-		|	    << " clk " << PIN_CLK_?
+		|	    << " clk↓ " << PIN_CLK_.negedge()
 		|	    << " k " << PIN_K?
 		|	    << " j " << PIN_J?
 		|	    << " pr " << PIN_PR_?
