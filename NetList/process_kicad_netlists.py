@@ -44,6 +44,8 @@ import models
 
 from pass_assign_part import PassAssignPart
 from pass_planes import PassPlanes
+from pass_net_config import PassNetConfig
+from pass_part_config import PassPartConfig
 
 ME = os.path.basename(__file__)
 
@@ -114,7 +116,10 @@ class R1000Cpu():
         PassPlanes(self)
 
         for board in self.boards:
-            board.chew()
+            PassNetConfig(board)
+
+        for board in self.boards:
+            PassPartConfig(board)
 
         for board in self.boards:
             board.produce()

@@ -45,9 +45,6 @@ from part import LibPartSexp, NoPart
 from net import NetSexp
 from component import ComponentSexp
 
-from pass_net_config import PassNetConfig
-from pass_part_config import PassPartConfig
-
 class Board():
     ''' A netlist file '''
     def __init__(self, cpu, netlist):
@@ -94,10 +91,6 @@ class Board():
 
     def __lt__(self, other):
         return self.name < other.name
-
-    def chew(self):
-        PassNetConfig(self)
-        PassPartConfig(self)
 
     def add_part(self, name, part):
         ''' Add a part to our catalog, if not already occupied '''
