@@ -42,6 +42,7 @@ from scmod import SC_Mod
 
 import models
 
+from pass_assign_part import PassAssignPart
 from pass_planes import PassPlanes
 
 ME = os.path.basename(__file__)
@@ -109,6 +110,7 @@ class R1000Cpu():
 
         self.boards.sort()
 
+        PassAssignPart(self)
         PassPlanes(self)
 
         for board in self.boards:

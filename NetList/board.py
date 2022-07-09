@@ -45,7 +45,6 @@ from part import LibPartSexp, NoPart
 from net import NetSexp
 from component import ComponentSexp
 
-from pass_assign_part import PassAssignPart
 from pass_net_config import PassNetConfig
 from pass_part_config import PassPartConfig
 
@@ -97,7 +96,6 @@ class Board():
         return self.name < other.name
 
     def chew(self):
-        PassAssignPart(self)
         PassNetConfig(self)
         PassPartConfig(self)
 
