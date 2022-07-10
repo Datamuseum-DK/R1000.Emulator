@@ -60,6 +60,7 @@ class R1000Cpu():
         self.part_catalog = {}
         self.boards = []
         self.chassis_makefile = None
+        self.nets = {}
 
         os.makedirs("Chassis", exist_ok=True)
         os.makedirs(os.path.join("Chassis", branch), exist_ok=True)
@@ -115,8 +116,7 @@ class R1000Cpu():
         PassAssignPart(self)
         PassPlanes(self)
 
-        for board in self.boards:
-            PassNetConfig(board)
+        PassNetConfig(self)
 
         for board in self.boards:
             PassPartConfig(board)

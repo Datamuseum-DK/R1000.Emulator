@@ -85,7 +85,7 @@ class NetBus():
             return True
         for comp in self.components:
             if not comp.part.busable:
-                file.write("\nComponent not busable " + comp.part.name + "\n")
+                file.write("\nComponent not busable " + comp.part.name + " " + comp.board.name + " " + comp.name + "\n")
                 self.table(file, "\t")
                 return True
         return False
@@ -96,7 +96,7 @@ class NetBus():
             spread = 1 + sks[-1][-1] - sks[0][-1]
             if sks != sorted(sks) or spread != len(self.nets):
                 if not self.searching:
-                    file.write("\nBus pins out of order " + comp.name + "\n")
+                    file.write("\nBus pins out of order " + comp.part.name + " " + comp.board.name + " " + comp.name + "\n")
                     self.table(file, "\t")
                 if len(self.nets) > 2 and len(self.nets) - 1 > len(self.best):
                     self.searching += 1
@@ -190,11 +190,11 @@ class PassNetConfig():
 
     ''' Pass: Configure the `net` '''
 
-    def __init__(self, board):
-        self.board = board
+    def __init__(self, cpu):
+        self.cpu = cpu
         self.netbusses = {}
 
-        for net in self.board.iter_nets():
+        for _gnam, net in sorted(self.cpu.nets.items()):
             net.is_plane = net.name in ("PU", "PD")
             for node in net.iter_nodes():
                 if node.component.partname in ("GF", "GB"):
@@ -209,11 +209,11 @@ class PassNetConfig():
             net.find_cname()
 
         self.ponder_bool()
-        with open("_bus_%s.txt" % self.board.name.lower(), "w") as file:
+        with open("_bus.txt", "w") as file:
             self.bus_candidates(file)
 
     def ponder_bool(self):
-        for net in self.board.iter_nets():
+        for _gnam, net in sorted(self.cpu.nets.items()):
             if net.no_bool:
                 continue
             i = {}
@@ -232,7 +232,7 @@ class PassNetConfig():
             net.sc_type = "bool"
 
     def bus_candidates(self, file):
-        for net in self.board.iter_nets():
+        for _gnam, net in sorted(self.cpu.nets.items()):
 
             if len(net.nnodes) < 2:
                 continue

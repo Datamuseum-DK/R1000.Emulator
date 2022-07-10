@@ -99,6 +99,7 @@ class Board():
     def add_net(self, net):
         ''' ... '''
         self.nets[net.name] = net
+        self.cpu.nets[self.name + "." + net.name] = net
 
     def iter_components(self):
         ''' ... '''
