@@ -120,10 +120,15 @@ class NetBus():
 
     def table(self, file, pfx=""):
         self.decide_cname()
-        file.write(pfx + "BUS " + self.nets[0].board.name)
+        file.write(pfx + "BUS")
         file.write(" %d×%d" % (len(self.nets), len(self.nodes)))
         file.write(" \t" + str(self.cname) + "\n")
         file.write(pfx + "   [" + self.sig + "]\n")
+
+        i = [""]
+        for component in self.components:
+            i.append(component.board.name)
+        file.write(pfx + "\t".join(i) + "\n")
 
         i = [""]
         for component in self.components:
