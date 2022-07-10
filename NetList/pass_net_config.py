@@ -195,13 +195,8 @@ class PassNetConfig():
         self.netbusses = {}
 
         for _gnam, net in sorted(self.cpu.nets.items()):
-            net.is_plane = net.name in ("PU", "PD")
             for node in net.iter_nodes():
-                if node.component.partname in ("GF", "GB"):
-                    net.is_plane = True
-                    net.name = node.component.ref
-                else:
-                    net.sheets.add(node.component.sheet)
+                net.sheets.add(node.component.sheet)
             net.sheets = list(sorted(net.sheets))
             net.is_local = not net.is_plane and len(net.sheets) == 1
             if net.is_local:
@@ -209,7 +204,7 @@ class PassNetConfig():
             net.find_cname()
 
         self.ponder_bool()
-        with open("_bus.txt", "w") as file:
+        with open("_bus_%s.txt" % self.cpu.branch, "w") as file:
             self.bus_candidates(file)
 
     def ponder_bool(self):
@@ -248,7 +243,7 @@ class PassNetConfig():
                 continue
 
             sig = " ".join(str(x) for x in net.sortkey[:-1]) + " "
-            sig += " ".join(sorted(x.component.ref + ":" + x.pin.pinbus.name for x in net.nnodes))
+            sig += " ".join(sorted(x.component.board.name + ":" + x.component.ref + ":" + x.pin.pinbus.name for x in net.nnodes))
             i = self.netbusses.get(sig)
             if i:
                 i.add_net(net)

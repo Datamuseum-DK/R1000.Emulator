@@ -44,7 +44,7 @@ class F175(PartFactory):
 
     def state(self, file):
         file.fmt('''
-		|	bool dreg[4];
+		|	unsigned dreg;
 		|	int job;
 		|''')
 
@@ -65,7 +65,7 @@ class F175(PartFactory):
 
         file.fmt('''
 		|
-		|	bool nxt[4];
+		|	unsigned nxt;
 		|
 		|	if (state->job || (state->ctx.do_trace & 2)) {
 		|		TRACE(
@@ -75,47 +75,25 @@ class F175(PartFactory):
 		|		    << " d "
 		|		    << BUS_D_TRACE()
 		|		    << " | "
-		|		    << state->dreg[0]
-		|		    << state->dreg[1]
-		|		    << state->dreg[2]
-		|		    << state->dreg[3]
+		|		    << std::hex << state->dreg
 		|		);
 		|	}
 		|	if (state->job) {
-		|		PIN_Q0<=(state->dreg[0]);
-		|		PIN_Q0not<=(!state->dreg[0]);
-		|		PIN_Q1<=(state->dreg[1]);
-		|		PIN_Q1not<=(!state->dreg[1]);
-		|		PIN_Q2<=(state->dreg[2]);
-		|		PIN_Q2not<=(!state->dreg[2]);
-		|		PIN_Q3<=(state->dreg[3]);
-		|		PIN_Q3not<=(!state->dreg[3]);
+		|		BUS_Q_WRITE(state->dreg);
+		|		PIN_Q0not<=(!(state->dreg & 8));
+		|		PIN_Q1not<=(!(state->dreg & 4));
+		|		PIN_Q2not<=(!(state->dreg & 2));
+		|		PIN_Q3not<=(!(state->dreg & 1));
 		|		state->job = 0;
 		|	}
-		|	nxt[0] = state->dreg[0];
-		|	nxt[1] = state->dreg[1];
-		|	nxt[2] = state->dreg[2];
-		|	nxt[3] = state->dreg[3];
+		|	nxt = state->dreg;
 		|	if (!PIN_CLR=>) {
-		|		nxt[0] = false;
-		|		nxt[1] = false;
-		|		nxt[2] = false;
-		|		nxt[3] = false;
+		|		nxt = 0;
 		|	} else if (PIN_CLK.posedge()) {
-		|		nxt[0] = PIN_D0=>;
-		|		nxt[1] = PIN_D1=>;
-		|		nxt[2] = PIN_D2=>;
-		|		nxt[3] = PIN_D3=>;
+		|		BUS_D_READ(nxt);
 		|	}
-		|	if (
-		|	    nxt[0] != state->dreg[0] ||
-		|	    nxt[1] != state->dreg[1] ||
-		|	    nxt[2] != state->dreg[2] ||
-		|	    nxt[3] != state->dreg[3]) {
-		|		state->dreg[0] = nxt[0];
-		|		state->dreg[1] = nxt[1];
-		|		state->dreg[2] = nxt[2];
-		|		state->dreg[3] = nxt[3];
+		|	if ( nxt != state->dreg) {
+		|		state->dreg = nxt;
 		|		state->job = 1;
 		|		next_trigger(5, SC_NS);
 		|	}
@@ -124,4 +102,4 @@ class F175(PartFactory):
 def register(board):
     ''' Register component model '''
 
-    board.add_part("F175", PartModel("F175", F175, busable=False))
+    board.add_part("F175", PartModel("F175", F175))

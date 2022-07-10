@@ -53,6 +53,8 @@ class Component():
         self.name = "X"
         self.part = None
         self.busses = {}
+        self.is_plane = self.partname in ("GF", "GB")
+        self.is_supply = self.partname in ("PU", "PD")
 
         self.insert()
 

@@ -42,8 +42,9 @@ from scmod import SC_Mod
 
 import models
 
+import planes
+
 from pass_assign_part import PassAssignPart
-from pass_planes import PassPlanes
 from pass_net_config import PassNetConfig
 from pass_part_config import PassPartConfig
 
@@ -61,6 +62,7 @@ class R1000Cpu():
         self.boards = []
         self.chassis_makefile = None
         self.nets = {}
+        self.plane = None
 
         os.makedirs("Chassis", exist_ok=True)
         os.makedirs(os.path.join("Chassis", branch), exist_ok=True)
@@ -111,12 +113,17 @@ class R1000Cpu():
             print("Processing", filename)
             self.boards.append(Board(self, filename))
 
+        # Establish canonical order
         self.boards.sort()
 
+        self.plane = planes.Planes(self)
+
         PassAssignPart(self)
-        PassPlanes(self)
+
 
         PassNetConfig(self)
+
+        self.plane.produce()
 
         for board in self.boards:
             PassPartConfig(board)

@@ -31,7 +31,7 @@ static char Val_how[] = "+++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
 SC_MODULE(PowerSequencer)
 {
-	sc_out <sc_logic> clamp;	// CLAMP
+	sc_out <bool> clamp;	// CLAMP
 	sc_out <sc_logic> reset;	// RESET
 	int do_trace = 0;
 
@@ -42,10 +42,10 @@ SC_MODULE(PowerSequencer)
 
 	void thread()
 	{
-		clamp = sc_logic_0;
+		clamp = false;
 		reset = sc_logic_0;
 		wait(100, SC_NS);
-		clamp = sc_logic_1;
+		clamp = true;
 		wait(200, SC_NS);
 		/*
 		 * When running IOC experiments without the IOP we need
@@ -112,18 +112,18 @@ sc_main(int argc, char *argv[])
 	emu = make_mod_emu("EMU", planes, Emu_how);
 
 	if (!(sc_boards & R1K_BOARD_IOC))
-		planes.GB_ECC_STOP = sc_logic_0;
+		planes.ECC_STOP_EN = false;
 
-	planes.GB_SLOT0 = sc_logic_0;
-	planes.GB_SLOT1 = sc_logic_0;
+	planes.B_SLOT0 = false;
+	planes.B_SLOT1 = false;
 
 	PowerSequencer powseq("UNCLAMP");
-	powseq.clamp(planes.GB_CLAMP);	// CLAMP
-	powseq.reset(planes.GB_RESET);
+	powseq.clamp(planes.CLAMPnot);	// CLAMP
+	powseq.reset(planes.RESETnot);
 
-	planes.GB_EXT_ID0 = sc_logic_0;
-	planes.GB_EXT_ID1 = sc_logic_1;
-	planes.GB_EXT_ID2 = sc_logic_0;
+	planes.EXT_ID0 = false;
+	planes.EXT_ID1 = true;
+	planes.EXT_ID2 = false;
 
 	sc_set_time_resolution(1, SC_NS);
 

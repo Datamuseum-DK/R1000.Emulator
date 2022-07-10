@@ -86,7 +86,7 @@ class Board():
         for netsexp in self.sexp.find("nets.net"):
             NetSexp(self, netsexp)
 
-    def __str__(self):
+    def __repr__(self):
         return self.name
 
     def __lt__(self, other):
@@ -100,6 +100,11 @@ class Board():
         ''' ... '''
         self.nets[net.name] = net
         self.cpu.nets[self.name + "." + net.name] = net
+
+    def del_net(self, net):
+        ''' ... '''
+        del self.nets[net.name]
+        del self.cpu.nets[self.name + "." + net.name]
 
     def iter_components(self):
         ''' ... '''
@@ -227,7 +232,7 @@ class Board():
 		|{
 		|''')
         for net in sorted(self.nets.values()):
-            if net.is_local or net.is_plane:
+            if net.is_local or net.is_plane or net.is_supply:
                 continue
             net.write_decl(scm)
         scm.fmt('''
@@ -252,7 +257,7 @@ class Board():
 		|''')
         scm.write("\tsc_module(name)")
         for net in sorted(self.nets.values()):
-            if net.is_local or net.is_plane:
+            if net.is_local or net.is_plane or net.is_supply:
                 continue
             net.write_init(scm)
         scm.write("\n{\n}\n")

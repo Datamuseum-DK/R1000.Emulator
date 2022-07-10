@@ -54,6 +54,7 @@ class Net():
         self.sheets = set()
         self.is_plane = None
         self.is_local = None
+        self.is_supply = netname in ("GND", "+5V", "PU", "PD")
         self.sc_type = "sc_logic"
         self.no_bool = False
         self.cname = None
@@ -76,12 +77,26 @@ class Net():
         if self.netbus:
             self.netbus.remove_node(node)
 
+    def adopt(self, other):
+        for node in list(other.iter_nodes()):
+            node.remove()
+            node.net = self
+            node.insert()
+
     def iter_nodes(self):
         ''' ... '''
         yield from self.nnodes
 
     def find_cname(self):
         ''' This is gnarly '''
+        if self.is_pd():
+            self.bcname = "*** PU ***"
+            self.cname = "planes.PD"
+            return
+        if self.is_pu():
+            self.bcname = "*** PD ***"
+            self.cname = "planes.PU"
+            return
         self.cname = self.name
         if self.cname[0].isdigit():
             self.cname = "z" + self.cname
@@ -102,8 +117,10 @@ class Net():
         ):
             self.cname = self.cname.replace(find, replace)
         self.bcname = self.cname
-        if self.is_plane:
-            self.cname = "planes." + self.name
+        if self.is_supply:
+            self.cname = "///supply-c///"
+        elif self.is_plane:
+            self.cname = "planes." + self.cname
         elif not self.is_local:
             self.cname = self.board.lname + "_globals." + self.cname
 

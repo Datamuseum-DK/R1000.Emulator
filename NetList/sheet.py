@@ -99,7 +99,8 @@ class Sheet():
 		|''')
 
         for net in sorted(self.local_nets):
-            net.write_decl(scm)
+            if not net.is_supply:
+                net.write_decl(scm)
 
         scm.write("\n")
 
@@ -142,7 +143,8 @@ class Sheet():
 		|''')
         scm.write("\tsc_module(name)")
         for net in sorted(self.local_nets):
-            net.write_init(scm)
+            if not net.is_supply:
+                net.write_init(scm)
         for comp in sorted(self.components.values()):
             comp.part.initialize(scm, comp)
         scm.write("\n{\n")
