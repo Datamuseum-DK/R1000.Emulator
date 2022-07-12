@@ -43,7 +43,7 @@ class XWCSRAM(PartFactory):
 
     def state(self, file):
         file.fmt('''
-		|	uint8_t ram[1<<14];
+		|	uint64_t ram[1<<14];
 		|''')
 
     def doit(self, file):
@@ -97,3 +97,4 @@ def register(board):
     ''' Register component model '''
 
     board.add_part("XWCSRAM", PartModel("XWCSRAM", XWCSRAM))
+    board.add_part("XWCSRAM42", PartModel("XWCSRAM42", XWCSRAM))
