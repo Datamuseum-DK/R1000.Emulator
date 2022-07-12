@@ -50,19 +50,6 @@ class Nand(PartFactory):
         self.delay = delay
         self.invert = invert
 
-    def pin_iterator(self):
-        ''' SC pin declarations '''
-
-        for node in self.comp:
-            if node.pin.name == "Q" and node.net.sc_type == "bool":
-                yield "sc_out <bool>\t\tPIN_Q;"
-            elif node.pin.name == "Q":
-                yield "sc_out <sc_logic>\tPIN_Q;"
-            elif node.net.sc_type == "bool":
-                yield "sc_in <bool>\t\tPIN_%s;" % node.pin.name
-            else:
-                yield "sc_in <sc_logic>\tPIN_%s;" % node.pin.name
-
     def state(self, file):
         ''' Extra state variable '''
 
