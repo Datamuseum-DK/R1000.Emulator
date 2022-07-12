@@ -163,18 +163,9 @@ class Nand(PartFactory):
 
         if self.inputs > 1:
             for node in self.comp:
-                if node.pin.name == "Q":
-                    continue
-                else:
+                if node.pin.name != "Q":
                     file.fmt("\t\t} else if (!PIN_%s=>) {\n" % node.pin.name)
                     file.fmt("\t\t\tnext_trigger(PIN_%s.default_event());\n" % node.pin.name)
-                    continue
-                if node.net.sc_type == "bool":
-                    file.write("\t\t} else if (!PIN_%s.read()) {\n" % node.pin.name)
-                    file.write("\t\t\tnext_trigger(PIN_%s.posedge_event());\n" % node.pin.name)
-                elif self.name[-3:] != "_OC":
-                    file.write("\t\t} else if (PIN_%s.read() != sc_logic_1) {\n" % node.pin.name)
-                    file.write("\t\t\tnext_trigger(PIN_%s.posedge_event());\n" % node.pin.name)
 
         file.fmt('''
 		|		}
@@ -228,10 +219,7 @@ class ModelNand(Part):
     def configure(self, board, comp):
         i = []
         j = 0
-        alu_zero = False
         for node in list(comp):
-            if "ALU.ZERO" in node.net.name:
-                alu_zero = True
             if node.pin.name != "Q":
                 node.pin.name = "D%d" % j
                 j += 1
@@ -244,8 +232,6 @@ class ModelNand(Part):
         ident = "AND%d_" % inputs + "%d_" % self.delay + sig
         if self.invert:
             ident = "N" + ident
-        if alu_zero:
-            ident += "_OC"
         if ident not in board.part_catalog:
             board.add_part(ident, Nand(board, ident, inputs, self.delay, self.invert))
         comp.part = board.part_catalog[ident]
