@@ -35,6 +35,20 @@
 
 from part import PartModel, PartFactory
 
+class SCM2661(PartFactory):
+
+    def sensitive(self):
+        for a in range(0):
+            yield a
+
+    def doit(self, file):
+        ''' The meat of the doit() function '''
+
+        super().doit(file)
+        file.fmt('''
+		|	PIN_BRKDET<=(false);
+		|''')
+
 class Null(PartFactory):
 
     ''' Null component model '''
@@ -52,7 +66,7 @@ def register(board):
     ''' Register component model '''
 
     board.add_part("1489", PartModel("1489", Null))
-    board.add_part("2661B", PartModel("2661B", Null))
+    board.add_part("2661B", PartModel("2661B", SCM2661))
     board.add_part("2681", PartModel("2681", Null))
     board.add_part("28256", PartModel("28256", Null))
     board.add_part("58167", PartModel("58167", Null))
