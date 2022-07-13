@@ -10,9 +10,11 @@
 
 #include "Chassis/r1000sc_priv.h"
 
+typedef void ioc_sc_bus_callback_f(uint32_t data);
+
 struct bus_xact {
 	struct ioc_sc_bus_xact	xact[1];
-	int			is_sync;
+	ioc_sc_bus_callback_f	*cb_func;
 	int			is_done;
 	VTAILQ_ENTRY(bus_xact)	list;
 };
@@ -30,35 +32,41 @@ ioc_bus_xact_init(void)
 	AZ(pthread_cond_init(&bus_xact_cond, NULL));
 }
 
-uint32_t
-ioc_bus_xact_schedule(uint32_t adr, uint32_t data, int width,
-    int is_write, int is_sync)
+static uint32_t
+ioc_bus_xact_schedule_cb(uint8_t fc, uint32_t adr, uint32_t data, int width,
+    int is_write, ioc_sc_bus_callback_f *cb_func)
 {
 	struct bus_xact *bxp;
 
-	Trace(trace_ioc_sc, "IOC_SC %08x %08x %x %d %d", adr, data, width, is_write, is_sync);
+	Trace(trace_ioc_sc, "IOC_SC %08x %08x %x %d %p", adr, data, width, is_write, cb_func);
 	if (!(sc_boards & R1K_BOARD_IOC) || !sc_started)
 		return(data);
 
 	bxp = calloc(sizeof *bxp, 1);
 	AN(bxp);
+	bxp->xact->sc_state = 100;
+	bxp->xact->fc = fc;
 	bxp->xact->address = adr;
 	bxp->xact->data = data;
 	bxp->xact->width = width;
 	bxp->xact->is_write = is_write;
-	if (!is_write)
-		is_sync = 1;
-	bxp->is_sync = is_sync;
+	bxp->cb_func = cb_func;
 	AZ(pthread_mutex_lock(&bus_xact_mtx));
 	VTAILQ_INSERT_TAIL(&bus_xact_head, bxp, list);
-	while (is_sync && !bxp->is_done)
+	while (cb_func == NULL && !bxp->is_done)
 		AZ(pthread_cond_wait(&bus_xact_cond, &bus_xact_mtx));
 	AZ(pthread_mutex_unlock(&bus_xact_mtx));
-	if (is_sync) {
+	if (cb_func == NULL) {
 		data = bxp->xact->data;
 		free(bxp);
 	}
 	return (data);
+}
+
+uint32_t
+ioc_bus_xact_schedule(uint8_t fc, uint32_t adr, uint32_t data, int width, int is_write)
+{
+	return (ioc_bus_xact_schedule_cb(fc, adr, data, width, is_write, NULL));
 }
 
 struct ioc_sc_bus_xact *
@@ -89,10 +97,18 @@ ioc_sc_bus_done(struct ioc_sc_bus_xact **bxpa)
 	*bxpa = NULL;
 	VTAILQ_REMOVE(&bus_xact_head, bxp, list);
 	bxp->is_done = 1;
-	if (bxp->is_sync)
+	if (bxp->cb_func == NULL)
 		AZ(pthread_cond_signal(&bus_xact_cond));
+	else
+		bxp->cb_func(bxp->xact->data);
 	AZ(pthread_mutex_unlock(&bus_xact_mtx));
-	if (!bxp->is_sync)
+	if (bxp->cb_func != NULL)
 		free(bxp);
 }
 
+void
+ioc_sc_bus_start_iack(unsigned ipl_pins)
+{
+
+	(void)ipl_pins;
+}

@@ -34,7 +34,7 @@ io_mosart_pre_read(int debug, uint8_t *space, unsigned width, unsigned adr)
 void v_matchproto_(mem_post_write)
 io_mosart_post_write(int debug, uint8_t *space, unsigned width, unsigned adr)
 {
- 
+
 	if (debug) return;
 	Trace(trace_ioc_io, "MOSART W [%x] <- %x (w%d)", adr, space[adr], width);
 	if (adr == 5 && space[adr] == 0x40) {

@@ -41,6 +41,7 @@ class MC68020(PartFactory):
     ''' MC68020 CPU'''
 
     def sensitive(self):
+        yield "BUS_IPL_SENSITIVE()"
         yield "PIN_CLK.pos()"
 
     def extra(self, file):
@@ -53,6 +54,7 @@ class MC68020(PartFactory):
         ''' Extra state variable '''
 
         file.write("\tstruct ioc_sc_bus_xact *xact;\n")
+        file.write("\tunsigned last_ipl;\n")
 
     def doit(self, file):
         ''' The meat of the doit() function '''

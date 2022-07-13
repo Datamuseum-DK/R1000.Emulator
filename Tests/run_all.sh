@@ -9,9 +9,7 @@ rm -f Tests/_*
 TS=`date +%Y%m%d%H%M`
 
 for tst in \
-	Tests/test_reset_all.sh \
-	Tests/fru_phase1.sh \
-	Tests/fru_phase2.sh \
+	Tests/expmon_reset_all.sh \
 	Tests/fru_phase3.sh \
 	Tests/test_novram.sh
 do

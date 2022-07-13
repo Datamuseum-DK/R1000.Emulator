@@ -131,7 +131,6 @@ class XClkGen(PartFactory):
 		|	}
 		|	next_trigger((state->when - now) % 200, SC_NS);
 		|	state->when = state->when % 200;
-		|
 		|''')
 
 def register(board):

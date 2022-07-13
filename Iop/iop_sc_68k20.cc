@@ -1,8 +1,23 @@
 // This source file is included in the IOC's 68K20's doit() SystemC function
 
 
+	unsigned ipl;
+
 	if (!state->xact)
 		state->xact = ioc_sc_bus_get_xact();
+
+	if (!state->xact) {
+		BUS_IPL_READ(ipl);
+		if (ipl != state->last_ipl) {
+			TRACE(<< "IPL-CHANGE " << BUS_IPL_TRACE() << " " << std::hex << ipl);
+			state->last_ipl = ipl;
+			return;
+		}
+		if (ipl != 7) {
+			ioc_sc_bus_start_iack(ipl);
+		}
+	}
+
 	if (!state->xact) {
 		PIN_DS = 1;
 		PIN_AS = 1;
@@ -35,44 +50,45 @@
 		<< BUS_IPL_TRACE()
 	);
 	switch (state->xact->sc_state) {
-	case 0:
+	case 100:
 		PIN_ECS = 0;
+		BUS_FC_WRITE(state->xact->fc);
 		BUS_A_WRITE(state->xact->address);
 		BUS_FC_WRITE(5);
 		BUS_SIZ_WRITE(state->xact->width);
 		PIN_WR = state->xact->is_write == 0;
 		next_trigger(PIN_CLK.negedge_event());
-		state->xact->sc_state = 1;
+		state->xact->sc_state++;
 		break;
-	case 1:
+	case 101:
 		PIN_ECS = 1;
 		PIN_DBEN = 0;
 		PIN_AS = 0;
 		next_trigger(PIN_CLK.posedge_event());
-		state->xact->sc_state = 2;
+		state->xact->sc_state++;
 		break;
-	case 2:
+	case 102:
 		BUS_D_WRITE(state->xact->data);
 		next_trigger(PIN_CLK.negedge_event());
-		state->xact->sc_state = 3;
+		state->xact->sc_state++;
 		break;
-	case 3:
+	case 103:
 		PIN_DS = 0;
 		next_trigger(PIN_CLK.negedge_event());
-		state->xact->sc_state = 4;
+		state->xact->sc_state++;
 		break;
-	case 4:
+	case 104:
 		PIN_DS = 1;
 		next_trigger(PIN_CLK.negedge_event());
-		state->xact->sc_state = 5;
+		state->xact->sc_state++;
 		break;
-	case 5:
-	case 6:
-	case 7:
-	case 8:
-	case 9:
-	case 10:
-	case 11:
+	case 105:
+	case 106:
+	case 107:
+	case 108:
+	case 109:
+	case 110:
+	case 111:
 		next_trigger(PIN_CLK.negedge_event());
 		state->xact->sc_state++;
 		break;

@@ -35,7 +35,7 @@ add_param(struct experiment *ex, const char *str)
 	AN(param);
 	VTAILQ_INSERT_TAIL(&ex->params, param, list);
 	param->str = strdup(str);
-	AN(param->str)
+	AN(param->str);
 	param->at = strtoul(str + 1, NULL, 16);
 	param->len = strtoul(str + 5, NULL, 16);
 }

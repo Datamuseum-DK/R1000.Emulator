@@ -189,7 +189,7 @@ class Range():
             assert False, "Bogo Width"
 
         if self.sc_write:
-            fo.write("\t\t(void)ioc_bus_xact_schedule(address, value, %d, 1, 1);\n" % width)
+            fo.write("\t\t(void)ioc_bus_xact_schedule(5, address, value, %d, 1);\n" % width)
         if self.post_write:
             j = "\t\t" + self.name + "_post_write" + "("
             if 'debug' in what:

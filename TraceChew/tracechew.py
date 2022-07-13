@@ -28,7 +28,7 @@ class Main():
             "MEM0": MEM_Board(0),
             "MEM2": MEM_Board(2),
         }
-        self.consume("/critter/_r1000")
+        self.consume("/critter/_r1000.trace")
 
     def consume(self, fn):
         for i in open(fn):

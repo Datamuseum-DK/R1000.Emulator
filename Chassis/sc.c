@@ -86,7 +86,6 @@ sc_tracef(const char *me, const char *fmt, ...)
 	va_end(ap);
 }
 
-
 void
 should_i_trace(const char *me, uint32_t *p)
 {
@@ -95,9 +94,9 @@ should_i_trace(const char *me, uint32_t *p)
 	AN(me);
 	AN(p);
 	comp = calloc(sizeof *comp, 1);
-	AN(comp)
+	AN(comp);
 	comp->name = strdup(me);
-	AN(comp->name)
+	AN(comp->name);
 	comp->flags = p;
 	VTAILQ_INSERT_TAIL(&component_list, comp, list);
 	ncomponents++;

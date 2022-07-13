@@ -37,8 +37,8 @@
 
 #include "vqueue.h"
 
-#define AZ(x) assert((x) == 0);
-#define AN(x) assert((x) != 0);
+#define AZ(x) do { assert((x) == 0); } while(0)
+#define AN(x) do { assert((x) != 0); } while(0)
 #define WRONG() assert(__LINE__ == 0);
 
 #ifndef __printflike
