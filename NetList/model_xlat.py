@@ -46,6 +46,7 @@ class Xlat(PartFactory):
         ''' Extra state variable '''
 
         file.write("\tuint64_t data;\n")
+        file.write("\tbool z;\n")
 
     def doit(self, file):
         ''' The meat of the doit() function '''
@@ -53,14 +54,15 @@ class Xlat(PartFactory):
         super().doit(file)
 
         file.fmt('''
-		|	const char *what = NULL;
+		|	uint64_t tmp;
+		|	bool upd = false;
 		|
 		|	if (PIN_LE=>) {
-		|		uint64_t tmp;
 		|		BUS_D_READ(tmp);
 		|		if (tmp != state->data) {
-		|			what = "new ";
+		|			TRACE(<< " D 0x" << std::hex << tmp);
 		|			state->data = tmp;
+		|			upd = true;
 		|		}
 		|	} else {
 		|''')
@@ -78,21 +80,30 @@ class Xlat(PartFactory):
         if 'OE' in self.comp:
             file.fmt('''
 		|	if (PIN_OE=>) {
-		|		TRACE(" Z ");
-		|		BUS_Q_Z();
+		|		if (!state->z) {
+		|			TRACE(" Z ");
+		|			BUS_Q_Z();
+		|			state->z = true;
+		|		}
 		|		return;
 		|	}
 		|''')
 
+        file.fmt('''
+		|	if (!state->z && !upd)
+		|		return;
+		|	state->z = false;
+		|	tmp = state->data;
+		|''')
+
         if self.comp.part.name[-2:] == "_I":
             file.fmt('''
-		|	TRACE(" Wi " << std::hex << state->data);
-		|	BUS_Q_WRITE(state->data ^ BUS_Q_MASK);
+		|	tmp ^= BUS_Q_MASK;
 		|''')
-        else:
-            file.fmt('''
-		|	TRACE(" W " << std::hex << state->data);
-		|	BUS_Q_WRITE(state->data);
+
+        file.fmt('''
+		|	TRACE(" W 0x" << std::hex << tmp);
+		|	BUS_Q_WRITE(tmp);
 		|''')
 
 
