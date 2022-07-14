@@ -3,7 +3,7 @@
 
 OBJS += Components/tables.o
 Components/tables.o: Components/tables.c 
-	${CC} -o Components/tables.o -c Components/tables.c
+	${CC} ${CFLAGS} -o Components/tables.o -c Components/tables.c
 
 OBJS += Components/8051.o
 Components/8051.o: Components/8051.cc \
