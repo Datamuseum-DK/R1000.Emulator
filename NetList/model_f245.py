@@ -51,20 +51,15 @@ class F245(PartFactory):
         file.fmt('''
 		|       uint64_t tmp;
 		|
-		|	TRACE(
-		|	    << " oe " << PIN_OE?
-		|	    << " dir " << PIN_DIR?
-		|	    << " a " << BUS_A_TRACE()
-		|	);
 		|''')
 
         if dir_ab:
             file.fmt('''
-		|	if (!(PIN_OE=>) && (PIN_DIR=>)) {
+		|	if ((!PIN_OE=>) && (PIN_DIR=>)) {
 		|''')
         else:
             file.fmt('''
-		|	if (!(PIN_OE=>) && !PIN_DIR=>) {
+		|	if ((!PIN_OE=>) && (!PIN_DIR=>)) {
 		|''')
 
         file.fmt('''
