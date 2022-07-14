@@ -250,7 +250,7 @@ cli_int_dispatch(struct cli *cli, const struct cli_cmds *cmds)
 		return;
 	}
 
-	(void)Cli_Error(cli, "CLI error, no command: ");
+	Cli_Error(cli, "CLI error, no command: ");
 	cli_path(cli);
 	Cli_Printf(cli, "\n");
 }
