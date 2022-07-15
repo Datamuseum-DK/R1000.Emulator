@@ -44,12 +44,12 @@ ioc_bus_xact_schedule_cb(uint8_t fc, uint32_t adr, uint32_t data, int width,
 
 	bxp = calloc(sizeof *bxp, 1);
 	AN(bxp);
-	bxp->xact->sc_state = 100;
 	bxp->xact->fc = fc;
 	bxp->xact->address = adr;
 	bxp->xact->data = data;
 	bxp->xact->width = width;
 	bxp->xact->is_write = is_write;
+	bxp->xact->sc_state = is_write ? 100 : 200;
 	bxp->cb_func = cb_func;
 	AZ(pthread_mutex_lock(&bus_xact_mtx));
 	VTAILQ_INSERT_TAIL(&bus_xact_head, bxp, list);
@@ -58,6 +58,12 @@ ioc_bus_xact_schedule_cb(uint8_t fc, uint32_t adr, uint32_t data, int width,
 	AZ(pthread_mutex_unlock(&bus_xact_mtx));
 	if (cb_func == NULL) {
 		data = bxp->xact->data;
+                switch(bxp->xact->width) {
+		case 1: data &= 0xff; break;
+		case 2: data &= 0xffff; break;
+		case 4: break;
+		default: WRONG();
+		}
 		free(bxp);
 	}
 	return (data);
@@ -106,9 +112,30 @@ ioc_sc_bus_done(struct ioc_sc_bus_xact **bxpa)
 		free(bxp);
 }
 
+static void
+iack_cb(uint32_t data)
+{
+	printf("IACK 0x%x\n", data);
+	irq_raise(&IRQ_REQUEST_FIFO);
+}
+
 void
 ioc_sc_bus_start_iack(unsigned ipl_pins)
 {
+	static int count;
 
-	(void)ipl_pins;
+        ipl_pins ^= 7;
+        if (ipl_pins > irq_level) {
+		if (++count > 12)
+			finish(12, "Too many IACK");
+		printf("START IACK pins=%x level=%x (count=%u)\n", ipl_pins, irq_level, count);
+		(void)ioc_bus_xact_schedule_cb(
+		     0x7,
+		     0xfffffff1 | (ipl_pins << 1),
+		     0,
+		     1,
+		     0,
+		     iack_cb
+		);
+	}
 }

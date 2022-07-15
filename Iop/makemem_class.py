@@ -17,6 +17,7 @@ class Range():
         post_write=None,
         read_only=False,
         write_only=False,
+        sc_read=False,
         sc_write=False,
     ):
         self.name = name
@@ -29,6 +30,7 @@ class Range():
         self.post_write = post_write
         self.read_only = read_only
         self.write_only = write_only
+        self.sc_read = sc_read
         self.sc_write = sc_write
 
         if not (1 + self.hi) & self.hi and self.hi < self.lo:
@@ -148,7 +150,9 @@ class Range():
                 fo.write(j + self.rd_space + ", %d, " % width + self.effective_address + ");\n")
 
         fo.write("\t\tvalue = ")
-        if width == 1:
+        if self.sc_read:
+            fo.write("ioc_bus_xact_schedule(5, address, 0, %d, 0);\n" % width)
+        elif width == 1:
             fo.write(self.rd_space + "[" + self.effective_address + "];\n")
         elif width == 2:
             fo.write("vbe16dec(" + self.rd_space + " + " + self.effective_address + ");\n")
