@@ -53,6 +53,10 @@ class F113(PartFactory):
         file.write("\tbool dreg;\n")
         file.write("\tint job;\n")
 
+    def init(self, file):
+        file.write("\tstate->job = 1;\n")
+        file.write("\tstate->dreg = 0;\n")
+
     def doit(self, file):
         ''' The meat of the doit() function '''
 
