@@ -31,10 +31,14 @@ LDFLAGS	+= -lm
 
 PARANOIA != sh cflags.sh "${CC}"
 
-CFLAGS += ${PARANOIA}
+# SANITIZE = -fsanitize=address
+
+CFLAGS += ${PARANOIA} ${SANITIZE}
 
 SC_OPT = -O2
 SC_WARN = -Wall -Werror ${PARANOIA} -Wno-cast-qual -Wno-cast-align -Wno-unused-parameter
+SC_WARN += ${SANITIZE}
+
 SC_CC = ${CXX} ${SC_OPT} ${SC_WARN} -pthread -c
 SC_CC += -I/usr/local/include -I.
 
