@@ -33,6 +33,8 @@
    ========================
 '''
 
+MIN_BUS_WIDTH = 8
+
 import util
 import sys
 
@@ -261,7 +263,7 @@ class PassNetConfig():
 
         accepted = []
         for sig, maybebus in self.netbusses.items():
-            while len(maybebus.nets) > 2:
+            while len(maybebus.nets) >= MIN_BUS_WIDTH:
                 maybebus.sort_nets()
                 maybebus.best = []
                 maybebus.searching = 0
