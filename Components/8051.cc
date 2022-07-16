@@ -90,6 +90,7 @@ SCM_8051 :: SCM_8051(sc_module_name nm, const char *arg) : sc_module(nm)
 	should_i_trace(this->name(), &state->ctx.do_trace);
 	diag_ctrl = DiagProcCreate(this->name(), arg, &state->ctx.do_trace);
 	assert(diag_ctrl != NULL);
+	cycle = 0;
 
 	SC_METHOD(doit);
 	sensitive << pin9 << pin18.pos();

@@ -34,7 +34,8 @@ double sc_now(void);
 #define TRACE( ...) \
 	do { \
 		if (state->ctx.do_trace & 1) { \
-			char buf[1024]; \
+			char buf[4096]; \
+			buf[0] = '\0'; \
 			std::stringstream ss(buf); \
 			ss << "" __VA_ARGS__ << (uint8_t)0; \
 			sysc_trace(this->name(), ss.str().c_str()); \
