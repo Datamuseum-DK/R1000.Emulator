@@ -203,8 +203,9 @@ ioc_duart_pace_downloads(struct chan *chp)
 
 	cmd = chp->txshift[1] & 0xe0;
 	if (cmd == 0xa0) {
+		elastic_drain(chp->ep);
 		adr = chp->txshift[1] & 0x1f;
-		while (diprocs[adr].status == DIPROC_RESPONSE_RUNNING) {
+		while ((diprocs[adr].status & 0x0f) == DIPROC_RESPONSE_RUNNING) {
 			Trace(
 			    trace_diagbus_bytes,
 			    "%s Holding Download (%x%02x)",
@@ -232,7 +233,6 @@ ioc_duart_tx_callback(void *priv)
 		    chp->name, chp->txshift[0], chp->txshift[1]);
 	}
 	elastic_put(chp->ep, chp->txshift, chp->txshift_valid);
-	// elastic_drain(chp->ep);
 	chp->txshift_valid = 0;
 	chp->sr |= 4;
 	chp->sr |= 8;
