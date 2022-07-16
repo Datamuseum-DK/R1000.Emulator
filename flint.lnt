@@ -4,6 +4,7 @@
 +libh(memspace.h)
 +libh(vsb.h)
 
+-sem(callout_insert_locked, custodial(1))
 -sem(callout_insert, custodial(1))
 -sem(elastic_subscribe, custodial(3))
 -sem(mem_peg_register, custodial(4))
