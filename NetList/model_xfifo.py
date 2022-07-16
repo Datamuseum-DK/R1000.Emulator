@@ -91,7 +91,7 @@ class XFIFO(PartFactory):
 		|		BUS_Q_WRITE(state->oreg);
 		|	else
 		|		BUS_Q_Z();
-		|	
+		|
 		|	PIN_E<=(state->rptr == state->wptr);
 		|	PIN_NE<=(state->rptr != state->wptr);
 		|''')
