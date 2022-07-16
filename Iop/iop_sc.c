@@ -80,9 +80,6 @@ ioc_sc_bus_get_xact(void)
 {
 	struct bus_xact *bxp;
 
-	if (VTAILQ_EMPTY(&bus_xact_head))
-		return (NULL);
-
 	AZ(pthread_mutex_lock(&bus_xact_mtx));
 	bxp = VTAILQ_FIRST(&bus_xact_head);
 	AZ(pthread_mutex_unlock(&bus_xact_mtx));
@@ -122,13 +119,10 @@ iack_cb(uint32_t data)
 void
 ioc_sc_bus_start_iack(unsigned ipl_pins)
 {
-	static int count;
 
         ipl_pins ^= 7;
         if (ipl_pins > irq_level) {
-		if (++count > 12)
-			finish(12, "Too many IACK");
-		printf("START IACK pins=%x level=%x (count=%u)\n", ipl_pins, irq_level, count);
+		printf("START IACK pins=%x level=%x\n", ipl_pins, irq_level);
 		(void)ioc_bus_xact_schedule_cb(
 		     0x7,
 		     0xfffffff1 | (ipl_pins << 1),
