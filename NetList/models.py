@@ -85,6 +85,8 @@ import model_xbuf
 import model_xecc
 import model_xeq
 import model_xclkgen
+import model_xfifo
+import model_xiopram
 import model_xlat
 import model_xmux16_1
 import model_xpar64
@@ -151,6 +153,8 @@ def register(where):
     model_xclkgen.register(where)
     model_xecc.register(where)
     model_xeq.register(where)
+    model_xfifo.register(where)
+    model_xiopram.register(where)
     model_xlat.register(where)
     model_xmux16_1.register(where)
     model_xpar64.register(where)
