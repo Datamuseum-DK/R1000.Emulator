@@ -102,23 +102,23 @@
 		next_trigger(PIN_CLK.negedge_event());
 		state->xact->sc_state++;
 		break;
-        case 201:
+	case 201:
 		PIN_ECS = 1;
 		PIN_DBEN = 0;
 		PIN_AS = 0;
 		next_trigger(10, SC_NS);
 		state->xact->sc_state++;
 		break;
-        case 202:
+	case 202:
 		PIN_DS = 0;
 		next_trigger(PIN_CLK.posedge_event());
 		state->xact->sc_state++;
 		break;
-        case 203:
+	case 203:
 		next_trigger(PIN_CLK.posedge_event());
 		state->xact->sc_state++;
 		break;
-        case 204:
+	case 204:
 		BUS_DSACK_READ(dsack);
 		if (dsack != 3) {
 			state->xact->sc_state++;
@@ -150,5 +150,6 @@
 		BUS_FC_WRITE(0);
 		BUS_SIZ_WRITE(0);
 		ioc_sc_bus_done(&state->xact);
+		assert(state->xact == NULL);
 		break;
 	}
