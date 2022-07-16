@@ -134,13 +134,9 @@ class Nor(PartFactory):
 		|''')
 
         for node in self.comp:
-            if node.pin.name == "Q":
-                continue
-            if node.net.sc_type == "bool":
-                file.write("\t\t} else if (PIN_%s.read()) {\n" % node.pin.name)
-            else:
-                file.write("\t\t} else if (IS_H(PIN_%s.read())) {\n" % node.pin.name)
-            file.write("\t\t\tnext_trigger(PIN_%s.negedge_event());\n" % node.pin.name)
+            if node.pin.name != "Q":
+                file.fmt("\t\t} else if (PIN_%s=>) {\n" % node.pin.name)
+                file.fmt("\t\t\tnext_trigger(PIN_%s.default_event());\n" % node.pin.name)
 
         file.fmt('''
 		|		}

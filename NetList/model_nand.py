@@ -117,13 +117,9 @@ class Nand(PartFactory):
 
         i = []
         for node in self.comp:
-            if node.pin.name == "Q":
-                continue
-            if node.net.sc_type == "bool":
-                i.append("PIN_%s.read()" % node.pin.name)
-            else:
-                i.append("IS_H(PIN_%s.read())" % node.pin.name)
-        file.write(" &&\n\t    ".join(i))
+            if node.pin.name != "Q":
+                i.append("PIN_%s=>" % node.pin.name)
+        file.fmt(" &&\n\t    ".join(i))
 
         file.fmt('''
 		|
