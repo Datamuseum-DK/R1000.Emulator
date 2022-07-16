@@ -22,6 +22,8 @@ struct bus_xact {
 static VTAILQ_HEAD(, bus_xact) bus_xact_head =
     VTAILQ_HEAD_INITIALIZER(bus_xact_head);
 
+static struct bus_xact *in_progress = NULL;
+
 static pthread_mutex_t bus_xact_mtx;
 static pthread_cond_t bus_xact_cond;
 
@@ -58,7 +60,7 @@ ioc_bus_xact_schedule_cb(uint8_t fc, uint32_t adr, uint32_t data, int width,
 	AZ(pthread_mutex_unlock(&bus_xact_mtx));
 	if (cb_func == NULL) {
 		data = bxp->xact->data;
-                switch(bxp->xact->width) {
+		switch(bxp->xact->width) {
 		case 1: data &= 0xff; break;
 		case 2: data &= 0xffff; break;
 		case 4: break;
@@ -78,34 +80,38 @@ ioc_bus_xact_schedule(uint8_t fc, uint32_t adr, uint32_t data, int width, int is
 struct ioc_sc_bus_xact *
 ioc_sc_bus_get_xact(void)
 {
-	struct bus_xact *bxp;
 
 	AZ(pthread_mutex_lock(&bus_xact_mtx));
-	bxp = VTAILQ_FIRST(&bus_xact_head);
+	assert(in_progress == NULL);
+	in_progress = VTAILQ_FIRST(&bus_xact_head);
+	if (in_progress != NULL)
+		VTAILQ_REMOVE(&bus_xact_head, in_progress, list);
 	AZ(pthread_mutex_unlock(&bus_xact_mtx));
-	if (bxp)
-		return (bxp->xact);
+	if (in_progress != NULL)
+		return (in_progress->xact);
 	return (NULL);
 }
 
 void
 ioc_sc_bus_done(struct ioc_sc_bus_xact **bxpa)
 {
-	struct bus_xact *bxp;
+	struct bus_xact *bxp = NULL;
 
 	AN(bxpa);
 	AZ(pthread_mutex_lock(&bus_xact_mtx));
-	bxp = VTAILQ_FIRST(&bus_xact_head);
-	assert(bxp->xact == *bxpa);
+	assert(in_progress != NULL);
+	assert(in_progress->xact == *bxpa);
 	*bxpa = NULL;
-	VTAILQ_REMOVE(&bus_xact_head, bxp, list);
-	bxp->is_done = 1;
-	if (bxp->cb_func == NULL)
+	in_progress->is_done = 1;
+	if (in_progress->cb_func == NULL) {
 		AZ(pthread_cond_signal(&bus_xact_cond));
-	else
-		bxp->cb_func(bxp->xact->data);
+	} else {
+		in_progress->cb_func(in_progress->xact->data);
+		bxp = in_progress;
+	}
+	in_progress = NULL;
 	AZ(pthread_mutex_unlock(&bus_xact_mtx));
-	if (bxp->cb_func != NULL)
+	if (bxp != NULL)
 		free(bxp);
 }
 
@@ -120,8 +126,8 @@ void
 ioc_sc_bus_start_iack(unsigned ipl_pins)
 {
 
-        ipl_pins ^= 7;
-        if (ipl_pins > irq_level) {
+	ipl_pins ^= 7;
+	if (ipl_pins > irq_level) {
 		printf("START IACK pins=%x level=%x\n", ipl_pins, irq_level);
 		(void)ioc_bus_xact_schedule_cb(
 		     0x7,
