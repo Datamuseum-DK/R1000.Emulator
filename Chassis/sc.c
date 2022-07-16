@@ -142,6 +142,7 @@ double
 sc_main_get_quota(void)
 {
 	double retval;
+	int fin;
 
 	AZ(pthread_mutex_lock(&sc_mtx));
 	if (sc_started == 1) {
@@ -154,8 +155,9 @@ sc_main_get_quota(void)
 		retval = sc_quota;
 	}
 	sc_quota -= retval;
+	fin = sc_quota_exit && retval == 0;
 	AZ(pthread_mutex_unlock(&sc_mtx));
-	if (sc_quota_exit && retval == 0) {
+	if (fin) {
 		fprintf(stderr, "QQQ sc_started %d retval %g %a\n", sc_started, retval, retval);
 		finish(1, "SystemC quota exhausted");
 	}
@@ -261,7 +263,9 @@ cli_sc_quota_exit(struct cli *cli)
 		    "Exit emulator when SystemC quota expires.");
 		return;
 	}
+	AZ(pthread_mutex_lock(&sc_mtx));
 	sc_quota_exit = 1;
+	AZ(pthread_mutex_unlock(&sc_mtx));
 }
 
 static const struct cli_cmds cli_sc_quota_cmds[] = {
