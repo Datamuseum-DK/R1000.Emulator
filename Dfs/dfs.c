@@ -393,9 +393,7 @@ cli_dfs_neuter(struct cli *cli)
 			continue;
 		}
 		if (!isxdigit(p[0]) ||
-		    !isxdigit(p[1]) ||
-		    p[2] != '\r' ||
-		    p[3] != '\n') {
+		    !isxdigit(p[1])) {
 			Cli_Error(cli,
 			    "Dont understand line at address 0x%x\n", adr
 			);
