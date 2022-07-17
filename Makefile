@@ -1,24 +1,23 @@
-SC_BRANCH ?= megacomp2
+
+# You can override the defaults by creating a Makefile.local
+-include Makefile.local
+
 SC_BRANCH ?= main
-NETLISTS ?= /critter/R1K/R1000.HwDoc/${SC_BRANCH}/Schematics/*/*.net
+
+NETLISTS ?= *.net
+
+OBJDIR ?= _obj
 
 EXP_PATH ?= /critter/R1K/Old/hack/X/
 
 # Set this to where you want the ~1GB trace output file
-TRACE_FILE ?= "/critter/_r1000"
+TRACE_FILE ?= "/tmp/_r1000"
 
 # Set this to copy of https://datamuseum.dk/bits/30000551 (also ~1GB)
-DISK0_IMAGE ?= "/critter/R1K/DiskImages/PE_R1K_Disk0.dd"
+DISK0_IMAGE ?= R1K_PAM_Disk_0_Image.BIN
 
 # Set this to copy of https://datamuseum.dk/bits/30000552 (also ~1GB)
-DISK1_IMAGE ?= "/critter/R1K/DiskImages/PE_R1K_Disk1.dd"
-
-# DFS tape copy of https://datamuseum.dk/bits/30000528 (20 MB)
-DFS_TAPE ?= "/critter/BitStoreCache/30000750.bin"
-
-# These are alternate images, phk@ has them (~1GB each)
-DISK0B_IMAGE = "/critter/DDHF/R1000/R1K_Seagate/R1K_Seagate0.BIN"
-DISK1B_IMAGE = "/critter/DDHF/R1000/R1K_Seagate/R1K_Seagate1.BIN"
+DISK1_IMAGE ?= R1K_PAM_Disk_1_Image.BIN
 
 CFLAGSMINUSI += -I.
 CFLAGSMINUSD += -DMUSASHI_CNF='"Iop/musashi_conf.h"'
@@ -45,12 +44,14 @@ SC_CC += -I/usr/local/include -I.
 R1000DEP = Infra/r1000.h Infra/vqueue.h Infra/trace.h
 
 all:	netlist
+	@echo "# of automatic symbols: `grep OBJS -c Chassis/${SC_BRANCH}/Makefile.inc`"
 	${MAKE} r1000sim
 
 branchname:
 	@echo ${SC_BRANCH}
 
 netlist:
+	-mkdir -p ${OBJDIR}
 	python3 -u NetList/process_kicad_netlists.py ${SC_BRANCH} ${NETLISTS}
 
 include Infra/Makefile.inc
@@ -69,8 +70,10 @@ include Components/Makefile.inc
 -include Val/${SC_BRANCH}/Makefile.inc
 -include Chassis/${SC_BRANCH}/Makefile.inc
 
-r1000sim.${SC_BRANCH}:	netlist ${OBJS}
-	@${CXX} -o r1000sim.${SC_BRANCH} ${CFLAGS} ${LDFLAGS} ${OBJS} \
+R1000SIM=${OBJDIR}/r1000sim.${SC_BRANCH}
+
+${R1000SIM}:	netlist ${OBJS}
+	@${CXX} -o ${R1000SIM} ${CFLAGS} ${LDFLAGS} ${OBJS} \
 		-L /usr/local/lib -lsystemc
 
 size: r1000sim
@@ -79,9 +82,9 @@ size: r1000sim
 
 .PHONY: r1000sim
 
-r1000sim:
-	${MAKE} r1000sim.${SC_BRANCH}
-	cp r1000sim.${SC_BRANCH} r1000sim
+r1000sim: ${R1000SIM}
+	-rm -f r1000sim
+	ln -s ${R1000SIM} r1000sim
 
 clean:
 	rm -f ${OBJS} ${CLEANFILES} *.tmp r1000sim*
@@ -100,8 +103,8 @@ setup:
 	git clone https://github.com/Datamuseum-DK/Musashi
 	python3 -u fetch_firmware.py all
 
-cli:	r1000sim.${SC_BRANCH}
-	./r1000sim.${SC_BRANCH} \
+cli:	${R1000SIM}
+	${R1000SIM} \
 		-T ${TRACE_FILE} \
 		"trace -diagbus_bytes" \
 		"trace -ioc_interrupt" \
@@ -132,8 +135,8 @@ cli:	r1000sim.${SC_BRANCH}
 		'console << "1"' \
 		'console match expect "CLI>"'
 
-dfs:	r1000sim.${SC_BRANCH}
-	./r1000sim.${SC_BRANCH} \
+dfs:	${R1000SIM}
+	${R1000SIM} \
 		-T ${TRACE_FILE} \
 		"scsi_disk 0 ${DISK0_IMAGE}" \
 		"scsi_disk 1 ${DISK1_IMAGE}" \
@@ -153,8 +156,8 @@ dfs:	r1000sim.${SC_BRANCH}
 IOC_TEST=TEST_MACRO_EVENT_DELAY.IOC
 IOC_TEST=TEST_WCS_ADDRESSING.IOC
 
-test_ioc:	r1000sim.${SC_BRANCH}
-	./r1000sim.${SC_BRANCH} \
+test_ioc:	${R1000SIM}
+	${R1000SIM} \
 		-T ${TRACE_FILE} \
 		'sc watchdog 10' \
 		'sc force_reset' \
@@ -172,8 +175,8 @@ test_ioc:	r1000sim.${SC_BRANCH}
 
 FIU_TEST=TEST_OREG_PARITY.FIU
 
-test_fiu:	r1000sim.${SC_BRANCH}
-	./r1000sim.${SC_BRANCH} \
+test_fiu:	${R1000SIM}
+	${R1000SIM} \
 		-T ${TRACE_FILE} \
 		"trace +diagbus_bytes" \
 		"diag > _.diag" \
@@ -190,8 +193,8 @@ test_fiu:	r1000sim.${SC_BRANCH}
 
 TYP_TEST=TEST_WCS_ADDRESS.TYP
 
-test_typ:	r1000sim.${SC_BRANCH}
-	./r1000sim.${SC_BRANCH} \
+test_typ:	${R1000SIM}
+	${R1000SIM} \
 		-T ${TRACE_FILE} \
 		"trace +diagbus_bytes" \
 		"diag > _.diag" \
@@ -210,8 +213,8 @@ test_typ:	r1000sim.${SC_BRANCH}
 VAL_TEST=TEST_WCS_ADDRESS.VAL
 VAL_TEST=TEST_LOOP_CNTR_OVERFLOW.VAL
 
-test_val:	r1000sim.${SC_BRANCH}
-	./r1000sim.${SC_BRANCH} \
+test_val:	${R1000SIM}
+	${R1000SIM} \
 		-T ${TRACE_FILE} \
 		"trace +diagbus_bytes" \
 		"diagbus > _.diag" \
@@ -230,8 +233,8 @@ test_val:	r1000sim.${SC_BRANCH}
 
 SEQ_TEST=LATCHED_STACK_BIT_1_FRU.SEQ
 
-test_seq:	r1000sim.${SC_BRANCH}
-	./r1000sim.${SC_BRANCH} \
+test_seq:	${R1000SIM}
+	${R1000SIM} \
 		-T ${TRACE_FILE} \
 		"trace +diagbus_bytes" \
 		"diag > _.diag" \
@@ -250,8 +253,8 @@ test_seq:	r1000sim.${SC_BRANCH}
 MEM_TEST=TEST_PARALLEL_SERIAL.M32
 MEM_TEST=TEST_TAGSTORE_PARITY_2.M32
 
-test_mem:	r1000sim.${SC_BRANCH}
-	./r1000sim.${SC_BRANCH} \
+test_mem:	${R1000SIM}
+	${R1000SIM} \
 		-T ${TRACE_FILE} \
 		"trace +diagbus_bytes" \
 		"diag > _.diag" \
@@ -268,8 +271,8 @@ test_mem:	r1000sim.${SC_BRANCH}
 
 
 
-hack:	r1000sim.${SC_BRANCH}
-	./r1000sim.${SC_BRANCH} \
+hack:	${R1000SIM}
+	${R1000SIM} \
 		-T ${TRACE_FILE} \
 		"trace +diagbus_bytes" \
 		"diag > _.diag" \
@@ -285,8 +288,8 @@ hack:	r1000sim.${SC_BRANCH}
 		"diag ioc tx 0x1a5 { 2 0x01 0x15 }"  \
 
 
-novram:	r1000sim.${SC_BRANCH}
-	./r1000sim.${SC_BRANCH} \
+novram:	${R1000SIM}
+	${R1000SIM} \
 		-T ${TRACE_FILE} \
 		"trace +diagbus_bytes" \
 		"#trace -ioc_interrupt" \
@@ -340,8 +343,8 @@ EXPERIMENT=write [xeq fiu READ_NOVRAM 00]
 EXPERIMENT=TEST_FIU
 EXPERIMENT=write [xeq ioc TEST_RESET]
 
-expmon:	all
-	./r1000sim.${SC_BRANCH} \
+expmon:	${R1000SIM}
+	${R1000SIM} \
 		-T ${TRACE_FILE} \
 		"trace -diagbus_bytes" \
 		"trace -ioc_interrupt" \
@@ -385,8 +388,8 @@ expmon:	all
 		'sc rate' \
 		exit
 
-fru:	all
-	./r1000sim.${SC_BRANCH} \
+fru:	${R1000SIM}
+	${R1000SIM} \
 		-T ${TRACE_FILE} \
 		"trace -diagbus_bytes" \
 		"trace -ioc_interrupt" \
@@ -422,8 +425,8 @@ fru:	all
 
 $DIAG="TEST IOA"
 
-rdiag:	r1000sim.${SC_BRANCH}
-	./r1000sim.${SC_BRANCH} \
+rdiag:	${R1000SIM}
+	${R1000SIM} \
 		-T ${TRACE_FILE} \
 		"trace -diagbus_bytes" \
 		"trace -ioc_interrupt" \
@@ -466,8 +469,8 @@ rdiag:	r1000sim.${SC_BRANCH}
 		exit
 
 
-seagate:	r1000sim.${SC_BRANCH}
-	./r1000sim.${SC_BRANCH} \
+seagate:	${R1000SIM}
+	${R1000SIM} \
 		-T ${TRACE_FILE} \
 		"console > _.console" \
 		"console telnet :1400" \
@@ -484,10 +487,10 @@ seagate:	r1000sim.${SC_BRANCH}
 		'console match expect "User program   (0,1,2) [0] : "' \
 		'console << ""' 
 
-tape:	r1000sim.${SC_BRANCH}
+tape:	${R1000SIM}
 	truncate -s 1143936000 /critter/_r1000.d0
 	truncate -s 1143936000 /critter/_r1000.d1
-	./r1000sim.${SC_BRANCH} \
+	${R1000SIM} \
 		-T ${TRACE_FILE} \
 		"ioc syscall" \
 		"scsi_tape ${DFS_TAPE}" \

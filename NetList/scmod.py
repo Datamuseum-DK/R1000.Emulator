@@ -64,8 +64,9 @@ class SC_Mod():
 
     def makefile_entry(self, file):
         ''' ... '''
-        file.write("\n# " + self.filename + "\n")
-        obj = self.filename + ".o"
+        bname = self.filename.split("/")[-1]
+        file.write("\n# " + bname + "\n")
+        obj = "${OBJDIR}/" + bname + ".o"
         file.write("OBJS += " + obj + "\n")
         file.write(obj + ":")
         for incl in sorted(self.cc):

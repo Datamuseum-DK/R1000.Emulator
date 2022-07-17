@@ -1,14 +1,15 @@
 
 
-OBJS    += Diag/diagbus.o
-Diag/diagbus.o: \
+OBJS    += ${OBJDIR}/diagbus.o
+${OBJDIR}/diagbus.o: \
     Diag/diagbus.c \
     Infra/elastic.h \
     Diag/diag.h \
     ${R1000DEP}
+	${CC} ${CFLAGS} -c Diag/diagbus.c -o ${OBJDIR}/diagbus.o
 
-OBJS    += Diag/diagproc.o
-Diag/diagproc.o: \
+OBJS    += ${OBJDIR}/diagproc.o
+${OBJDIR}/diagproc.o: \
     Diag/diagproc.c \
     Chassis/r1000sc.h \
     Diag/diagproc.h \
@@ -16,24 +17,28 @@ Diag/diagproc.o: \
     Infra/elastic.h \
     Diag/diag.h \
     ${R1000DEP}
+	${CC} ${CFLAGS} -c Diag/diagproc.c -o ${OBJDIR}/diagproc.o
 
-OBJS    += Diag/dummy_diproc.o
-Diag/dummy_diproc.o: \
+OBJS    += ${OBJDIR}/dummy_diproc.o
+${OBJDIR}/dummy_diproc.o: \
     Diag/dummy_diproc.c \
     Infra/vsb.h \
     Infra/elastic.h \
     Diag/diag.h \
     ${R1000DEP}
+	${CC} ${CFLAGS} -c Diag/dummy_diproc.c -o ${OBJDIR}/dummy_diproc.o
 
-OBJS    += Diag/experiment.o
-Diag/experiment.o: \
+OBJS    += ${OBJDIR}/experiment.o
+${OBJDIR}/experiment.o: \
     Diag/experiment.c \
     Infra/elastic.h \
     Infra/vqueue.h \
     Diag/diag.h \
     ${R1000DEP}
+	${CC} ${CFLAGS} -c Diag/experiment.c -o ${OBJDIR}/experiment.o
 
-OBJS    += Diag/i8052_emul.o
-Diag/i8052_emul.o: \
+OBJS    += ${OBJDIR}/i8052_emul.o
+${OBJDIR}/i8052_emul.o: \
     Diag/i8052_emul.c \
     Diag/i8052_emul.h
+	${CC} ${CFLAGS} -c Diag/i8052_emul.c -o ${OBJDIR}/i8052_emul.o

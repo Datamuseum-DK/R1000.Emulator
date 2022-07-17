@@ -228,10 +228,11 @@ class Planes():
         self.cfile.commit()
 
     def make_makefile(self):
+        bname = self.pfx.split("/")[-1]
         mf = self.cpu.chassis_makefile
-        mf.write("OBJS += %s.o\n" % self.pfx)
-        mf.write("%s.o: \\\n" % self.pfx)
+        mf.write("OBJS += ${OBJDIR}/%s.o\n" % bname)
+        mf.write("${OBJDIR}/%s.o: \\\n" % bname)
         mf.write("    %s.cc \\\n" % self.pfx)
         mf.write("    %s.hh\n" % self.pfx)
-        mf.write("\t${SC_CC} -o %s.o %s.cc\n" % (self.pfx, self.pfx))
+        mf.write("\t${SC_CC} -o ${OBJDIR}/%s.o %s.cc\n" % (bname, self.pfx))
 		
