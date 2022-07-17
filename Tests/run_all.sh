@@ -8,6 +8,10 @@ rm -f Tests/_*
 
 TS=`date +%Y%m%d%H%M`
 
+if [ "x$1" != "x" ] ; then
+	TS="${TS}_${1}"
+fi
+
 for tst in \
 	Tests/expmon_reset_all.sh \
 	Tests/fru_phase3.sh \
