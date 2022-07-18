@@ -46,6 +46,7 @@ class Xlat(PartFactory):
         ''' Extra state variable '''
 
         file.write("\tuint64_t data;\n")
+        file.write("\tint job;\n")
         file.write("\tbool z;\n")
 
     def doit(self, file):
@@ -56,6 +57,21 @@ class Xlat(PartFactory):
         file.fmt('''
 		|	uint64_t tmp;
 		|	bool upd = false;
+		|
+		|	if (state->job) {
+		|		tmp = state->data;
+		|''')
+
+        if self.comp.part.name[-2:] == "_I":
+            file.fmt('''
+		|		tmp ^= BUS_Q_MASK;
+		|''')
+
+        file.fmt('''
+		|		TRACE(" W 0x" << std::hex << tmp);
+		|		BUS_Q_WRITE(tmp);
+		|		state->job = 0;
+		|	}
 		|
 		|	if (PIN_LE=>) {
 		|		BUS_D_READ(tmp);
@@ -93,17 +109,8 @@ class Xlat(PartFactory):
 		|	if (!state->z && !upd)
 		|		return;
 		|	state->z = false;
-		|	tmp = state->data;
-		|''')
-
-        if self.comp.part.name[-2:] == "_I":
-            file.fmt('''
-		|	tmp ^= BUS_Q_MASK;
-		|''')
-
-        file.fmt('''
-		|	TRACE(" W 0x" << std::hex << tmp);
-		|	BUS_Q_WRITE(tmp);
+		|	state->job = 1;
+		|	next_trigger(5, SC_NS);
 		|''')
 
 
