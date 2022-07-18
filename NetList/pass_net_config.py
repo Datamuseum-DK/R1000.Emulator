@@ -244,8 +244,7 @@ class PassNetConfig():
             if None in (x.pin.pinbus for x in net.nnodes):
                 continue
 
-            sig = " ".join(str(x) for x in net.sortkey[:-1]) + " "
-            sig += " ".join(sorted(x.component.board.name + ":" + x.component.ref + ":" + x.pin.pinbus.name for x in net.nnodes))
+            sig = " ".join(sorted(x.component.board.name + ":" + x.component.ref + ":" + x.pin.pinbus.name for x in net.nnodes))
             i = self.netbusses.get(sig)
             if i:
                 i.add_net(net)
