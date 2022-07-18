@@ -22,10 +22,3 @@ ${OBJDIR}/F374.o: Components/F374.cc \
     Infra/context.h \
     Chassis/r1000sc.h
 	${SC_CC} -c Components/F374.cc -o ${OBJDIR}/F374.o
-
-OBJS += ${OBJDIR}/F38.o
-${OBJDIR}/F38.o: Components/F38.cc \
-    Components/F38.hh \
-    Infra/context.h \
-    Chassis/r1000sc.h
-	${SC_CC} -c Components/F38.cc -o ${OBJDIR}/F38.o
