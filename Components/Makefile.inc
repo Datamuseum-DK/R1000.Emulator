@@ -13,13 +13,6 @@ ${OBJDIR}/8051.o: Components/8051.cc \
     Diag/diagproc.h
 	${SC_CC} -c Components/8051.cc -o ${OBJDIR}/8051.o
 
-OBJS += ${OBJDIR}/DLY_35.o
-${OBJDIR}/DLY_35.o: Components/DLY_35.cc \
-    Components/DLY_35.hh \
-    Infra/context.h \
-    Chassis/r1000sc.h
-	${SC_CC} -c Components/DLY_35.cc -o ${OBJDIR}/DLY_35.o
-
 Components/F374.hh:: Components/F374_pins.hh
 	@touch Components/F374.hh
 
