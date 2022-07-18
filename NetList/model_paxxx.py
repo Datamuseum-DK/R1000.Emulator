@@ -172,16 +172,8 @@ class XPAxxxL(PartFactory):
 		|	next_trigger(5, SC_NS);
 		|''')
 
-class ModelPAxxxL(PartModel):
-    ''' PAxxx Rom '''
-
-    def __init__(self, *args):
-        super().__init__(*args)
-        self.busable = True
-
-
 def register(board):
     ''' Register component model '''
 
     board.add_part("PAxxx", ModelPAxxx("PAXXX"))
-    board.add_part("XPAXXXL", ModelPAxxxL("PAXXXL", XPAxxxL))
+    board.add_part("XPAXXXL", PartModel("PAXXXL", XPAxxxL))
