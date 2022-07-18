@@ -41,6 +41,7 @@ import model_25s558
 import model_2kx8
 import model_64kx1
 import model_68020
+import model_8051
 import model_8641
 import model_93s48
 import model_dly_35
@@ -111,6 +112,7 @@ def register(where):
     model_2kx8.register(where)
     model_64kx1.register(where)
     model_68020.register(where)
+    model_8051.register(where)
     model_8641.register(where)
     model_93s48.register(where)
     model_dly_35.register(where)
