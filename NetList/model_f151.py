@@ -101,3 +101,4 @@ def register(board):
     ''' Register component model '''
 
     board.add_part("F151", PartModel("F151", F151))
+    board.add_part("F151V", PartModel("F151", F151))
