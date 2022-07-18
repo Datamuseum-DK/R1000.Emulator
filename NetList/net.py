@@ -65,6 +65,10 @@ class Net():
         ''' ... '''
         self.board.add_net(self)
 
+    def remove(self):
+        ''' ... '''
+        self.board.del_net(self)
+
     def add_node(self, node):
         ''' ... '''
         assert node not in self.nnodes
@@ -90,11 +94,11 @@ class Net():
     def find_cname(self):
         ''' This is gnarly '''
         if self.is_pd():
-            self.bcname = "*** PU ***"
+            self.bcname = "PD"
             self.cname = "planes.PD"
             return
         if self.is_pu():
-            self.bcname = "*** PD ***"
+            self.bcname = "PU"
             self.cname = "planes.PU"
             return
         self.cname = self.name

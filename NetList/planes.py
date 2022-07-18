@@ -74,7 +74,7 @@ class PlaneSignal():
         self.boards[net.board.name] = net
 
     def chew(self):
-        if self.is_supply:
+        if self.is_supply and self.name not in {"PD", "PU"}:
             return
         self.divine_better_name()
         self.net = self.nets.pop(0)
@@ -131,9 +131,15 @@ class Planes():
         self.cfile = srcfile.SrcFile(self.pfx + ".cc")
         self.hfile = srcfile.SrcFile(self.pfx + ".hh")
 
+        for i in ("PU", "PD"):
+            self.psig[i] = PlaneSignal(cpu, i)
+
+    def build_planes(self):
         for board in self.cpu.boards:
             for comp in list(board.iter_components()):
                 if not comp.is_plane:
+                    continue
+                if not comp.nodes:
                     continue
 
                 node = comp.nodes['W']
@@ -146,7 +152,7 @@ class Planes():
                 comp.name = nref
 
                 if nref not in self.psig:
-                    self.psig[nref] = PlaneSignal(cpu, nref)
+                    self.psig[nref] = PlaneSignal(self.cpu, nref)
                 self.psig[nref].add_net(net)
 
         for psig in self.psig.values():
@@ -168,14 +174,9 @@ class Planes():
 		|''')
 
         for signame, psig in sorted(self.psig.items()):
-            if psig.is_supply:
-                continue
             psig.net.write_decl(self.hfile)
 
         self.hfile.fmt('''
-		|	sc_signal_resolved PU;
-		|	sc_signal_resolved PD;
-		|
 		|	sc_trace_file *tf;
 		|
 		|	mod_planes(sc_module_name name);
@@ -219,8 +220,6 @@ class Planes():
             psig.net.write_init(self.cfile)
 
         self.cfile.fmt('''
-		|	,PU("PU", sc_logic_1)
-		|	,PD("PD", sc_logic_0)
 		|{
 		|}
 		|''')

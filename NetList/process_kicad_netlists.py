@@ -35,6 +35,7 @@
 
 import sys
 import os
+import glob
 
 from board import Board
 from srcfile import SrcFile
@@ -44,6 +45,7 @@ import models
 
 import planes
 
+from pass_pupd import PassPuPd
 from pass_assign_part import PassAssignPart
 from pass_net_config import PassNetConfig
 from pass_part_config import PassPartConfig
@@ -102,6 +104,11 @@ class R1000Cpu():
                 print(filename, "triggers build")
                 return False
 
+        for fn in glob.glob("NetList/*.py"):
+            if os.stat(fn).st_mtime > t_old:
+                print(fn, "triggers build")
+                return False
+
         return True
 
     def do_build(self):
@@ -118,8 +125,11 @@ class R1000Cpu():
 
         self.plane = planes.Planes(self)
 
+        PassPuPd(self)
+
         PassAssignPart(self)
 
+        self.plane.build_planes()
 
         PassNetConfig(self)
 
