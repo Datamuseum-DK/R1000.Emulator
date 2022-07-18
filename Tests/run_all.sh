@@ -6,10 +6,10 @@ make
 
 rm -f Tests/_*
 
-TS=`date +%Y%m%d%H%M`
-
 if [ "x$1" != "x" ] ; then
-	TS="${TS}_${1}"
+	TS="${1}"
+else
+	TS=`date +%Y%m%d%H%M`
 fi
 
 for tst in \
@@ -23,6 +23,3 @@ done
 mkdir -p Tests/Results/$TS
 mv Tests/_* Tests/Results/$TS
 cd Tests/Results/$TS && python3 ../../testsumm.py > summary.txt
-if [ -d ../baseline ] ; then
-	sdiff ../baseline/summary.txt summary.txt
-fi
