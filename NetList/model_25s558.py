@@ -66,3 +66,4 @@ def register(board):
     ''' Register component model '''
 
     board.add_part("25S558", PartModel("25S558", Am25S558))
+    board.add_part("XMUL161632", PartModel("XMUL161632", Am25S558))
