@@ -14,8 +14,8 @@ fi
 
 for tst in \
 	Tests/expmon_reset_all.sh \
-	Tests/fru_phase3.sh \
-	Tests/test_novram.sh
+	Tests/test_novram.sh \
+	Tests/fru_phase3.sh
 do
 	sh $tst || ( [ $? == 9 ] && sh $tst ) || true
 done
