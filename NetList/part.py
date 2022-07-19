@@ -49,6 +49,7 @@ class Part():
         self.uses = []
         self.blame = set()
         self.busable = False
+        self.has_private = False
 
         self.clsname = "SCM_" + self.name.upper()
 
@@ -236,13 +237,19 @@ class PartFactory(Part):
         for bus in self.comp.busses.values():
             bus.write_extra(file, self.comp)
 
+    def private(self):
+        ''' Private variables '''
+        for _i in range(0):
+            yield None, None
+
     def state(self, _file):
         ''' Extra state variable '''
         return
 
-    def init(self, _file):
+    def init(self, file):
         ''' Extra initialization '''
-        return
+        if self.has_private:
+            file.write("\tfirst_initialization = true;\n")
 
     def sensitive(self):
         ''' sensitivity list '''
@@ -259,6 +266,7 @@ class PartFactory(Part):
                     yield "PINB_%s" % node.pin.name
 
     def subs(self, file):
+        ''' Standard substitutions for .fmt() '''
         for node in self.comp:
             if node.netbus:
                 continue
@@ -286,9 +294,14 @@ class PartFactory(Part):
                 file.subst(dst, "PIN_%s = AS" % node.pin.name)
                 file.subst(trc, "PIN_%s" % node.pin.name)
 
-    def doit(self, _file):
+    def doit(self, file):
         ''' The meat of the doit() function '''
-        return
+        if self.has_private:
+            file.write("\tif (first_initialization) {\n")
+            file.write("\t\tfirst_initialization = false;\n")
+            for _decl, init in self.private():
+                file.write("\t\t" + init + ";\n")
+            file.write("\t}\n")
 
     def pin_iterator(self):
         ''' SC pin declarations '''
@@ -327,7 +340,11 @@ class PartFactory(Part):
                 yield "sc_out <sc_logic>\tPIN_%s;" % node.pin.name
             else:
                 yield "sc_in <sc_logic>\tPIN_%s;" % node.pin.name + "\t// " + str(node.pin.role)
-
+        for decl, _init in self.private():
+            self.has_private = True
+            yield decl
+        if self.has_private:
+            yield "bool first_initialization;"
 
     def hookup(self, file, comp):
         ''' Hook instance into SystemC model '''
@@ -341,3 +358,24 @@ class PartFactory(Part):
                 file.write("\t%s.PIN_%s(%s);\n" % (comp.name, node.pin.name, node.net.cname))
             elif node.netbus.nets[0] == node.net:
                 file.write("\t%s.PINB_%s(%s);\n" % (comp.name, node.pin.name, node.netbus.cname))
+
+    def event_or(self, name, *args):
+        ''' Produce a sc_event_or_list for .private() '''
+        j = []
+        for pin in args:
+            if pin[:4] == "BUS_":
+                j.append(pin + "_EVENTS()")
+                continue
+            assert pin[:4] == "PIN_"
+            pname = pin[4:].split(".")[0]
+            node = self.comp.nodes.get(pname)
+            if not node:
+                print("PN", pname, node, self.comp.nodes)
+            if node.net.is_const():
+                continue
+            if "." in pin:
+                j.append(pin)
+            else:
+                j.append(pin + ".default_event()")
+        init = name + " = " + " | ".join(j)
+        yield "sc_event_or_list\t" + name + ";", init

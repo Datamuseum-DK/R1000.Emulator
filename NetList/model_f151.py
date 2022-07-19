@@ -42,6 +42,16 @@ class F151(PartFactory):
 
     ''' F151 8-Input Multiplexer '''
 
+    def private(self):
+        ''' private variables '''
+        for i in "abcdefgh":
+            yield from self.event_or(
+               i + "_event",
+               "PIN_" + i.upper(),
+               "PIN_Enot.posedge_event()",
+               "BUS_S",
+            )
+
     def doit(self, file):
         ''' The meat of the doit() function '''
 
@@ -55,14 +65,14 @@ class F151(PartFactory):
 		|	if (PIN_Enot=>) adr |= 8;
 		|	bool s;
 		|	switch (adr) {
-		|	case 0: s = PIN_A=>; break;
-		|	case 1: s = PIN_B=>; break;
-		|	case 2: s = PIN_C=>; break;
-		|	case 3: s = PIN_D=>; break;
-		|	case 4: s = PIN_E=>; break;
-		|	case 5: s = PIN_F=>; break;
-		|	case 6: s = PIN_G=>; break;
-		|	case 7: s = PIN_H=>; break;
+		|	case 0: s = PIN_A=>; next_trigger(a_event); break;
+		|	case 1: s = PIN_B=>; next_trigger(b_event); break;
+		|	case 2: s = PIN_C=>; next_trigger(c_event); break;
+		|	case 3: s = PIN_D=>; next_trigger(d_event); break;
+		|	case 4: s = PIN_E=>; next_trigger(e_event); break;
+		|	case 5: s = PIN_F=>; next_trigger(f_event); break;
+		|	case 6: s = PIN_G=>; next_trigger(g_event); break;
+		|	case 7: s = PIN_H=>; next_trigger(h_event); break;
 		|	default:
 		|		s = false;
 		|''')

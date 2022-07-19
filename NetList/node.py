@@ -71,6 +71,9 @@ class Node():
             )
         )
 
+    def unconnected(self):
+        return len(self.net.nnodes) == 1
+
 class NodeSexp(Node):
 
     ''' Create `node` from netlist-sexp '''
