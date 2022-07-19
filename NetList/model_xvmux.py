@@ -40,10 +40,17 @@ class XVMUX(PartFactory):
 
     ''' Vector of NAND '''
 
+    def private(self):
+        ''' private variables '''
+        for  i in "ab":
+            yield from self.event_or(
+                i + "_event",
+                "BUS_%s" % i.upper(),
+                "BUS_S",
+            )
+
     def state(self, file):
         file.fmt('''
-		|	sc_event_or_list aevt;
-		|	sc_event_or_list bevt;
 		|	bool once;
 		|''')
 
@@ -55,12 +62,6 @@ class XVMUX(PartFactory):
         file.fmt('''
 		|	uint64_t a, b, s, q = 0, m;
 		|	unsigned u;
-		|
-		|	if (!state->once) {
-		|		state->aevt = BUS_A_EVENTS() | BUS_S_EVENTS();
-		|		state->bevt = BUS_B_EVENTS() | BUS_S_EVENTS();
-		|		state->once = true;
-		|	}
 		|
 		|	BUS_A_READ(a);
 		|	BUS_B_READ(b);
@@ -82,13 +83,12 @@ class XVMUX(PartFactory):
 		|	    << " q " << std::hex << q
 		|	);
 		|	if (!s)
-		|		next_trigger(state->aevt);
+		|		next_trigger(a_event);
 		|	else if (s == BUS_S_MASK)
-		|		next_trigger(state->bevt);
+		|		next_trigger(b_event);
 		|''')
 
 def register(board):
     ''' Register component model '''
 
-    if True:
-        board.add_part("XMUX232", PartModel("XMUX232", XVMUX))
+    board.add_part("XMUX232", PartModel("XMUX232", XVMUX))

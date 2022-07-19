@@ -370,7 +370,8 @@ class PartFactory(Part):
             pname = pin[4:].split(".")[0]
             node = self.comp.nodes.get(pname)
             if not node:
-                print("PN", pname, node, self.comp.nodes)
+                print("Event pin not found:", pname, self.comp)
+                assert node
             if node.net.is_const():
                 continue
             if "." in pin:

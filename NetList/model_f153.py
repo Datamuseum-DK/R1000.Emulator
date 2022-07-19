@@ -42,6 +42,16 @@ class F153(PartFactory):
 
     ''' F153 Dual 4-Input Multiplexer '''
 
+    def private(self):
+        ''' private variables '''
+        for  i in "abcd":
+            yield from self.event_or(
+                i + "_event",
+                "BUS_%s" % i.upper(),
+                "BUS_S",
+                "BUS_E",
+            )
+
     def doit(self, file):
         ''' The meat of the doit() function '''
 
@@ -55,15 +65,19 @@ class F153(PartFactory):
 		|	switch (tmp) {
 		|	case 0:
 		|		BUS_A_READ(val);
+		|		next_trigger(a_event);
 		|		break;
 		|	case 1:
 		|		BUS_B_READ(val);
+		|		next_trigger(b_event);
 		|		break;
 		|	case 2:
 		|		BUS_C_READ(val);
+		|		next_trigger(c_event);
 		|		break;
 		|	case 3:
 		|		BUS_D_READ(val);
+		|		next_trigger(d_event);
 		|		break;
 		|	}
 		|

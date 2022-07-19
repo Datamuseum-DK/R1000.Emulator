@@ -48,6 +48,26 @@ class Mux2(PartFactory):
         super().__init__(board, ident)
         self.invert = invert
 
+    def private(self):
+        ''' private variables '''
+        j = []
+        if "OE" in self.comp.nodes:
+            j.append("PIN_OE")
+        if "E" in self.comp.nodes:
+            j.append("PIN_E")
+            yield from self.event_or(
+                "e_event",
+                *j
+            )
+        for  i in "ab":
+            yield from self.event_or(
+                i + "_event",
+                "BUS_%s" % i.upper(),
+                "PIN_S",
+                *j
+            )
+         
+
     def doit(self, file):
         ''' The meat of the doit() function '''
 
@@ -72,7 +92,7 @@ class Mux2(PartFactory):
             file.fmt('''
 		|	if (PIN_E=>) {
 		|		tmp = 0;
-		|		// next_trigger(PIN_E.negedge_event());
+		|		next_trigger(e_event);
 		|	} else if (PIN_S=>) {
 		|''')
         else:
@@ -82,8 +102,10 @@ class Mux2(PartFactory):
 
         file.fmt('''
 		|		BUS_B_READ(tmp);
+		|		next_trigger(b_event);
 		|	} else {
 		|		BUS_A_READ(tmp);
+		|		next_trigger(a_event);
 		|	}
 		|
 		|''')
