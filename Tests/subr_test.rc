@@ -12,7 +12,7 @@ standard_patches() {
 	# Dont use "CR ESC [ 2 K" to hide experiment names
 	cli dfs patch FS_0.M200 0x8fb7 0x20
 	cli dfs patch FS_0.M200 0x8fbd 0x20
-	cli dfs patch FS_0.M200 0x827e 0x20 0x0a 0x0d
+	cli dfs patch FS_0.M200 0x827e 0x40 0x0a 0x0d
 }
 
 cli() {
