@@ -54,6 +54,12 @@ ${OBJDIR}/firmware.o: \
     ${R1000DEP}
 	${CC} ${CFLAGS} -c Infra/firmware.c -o ${OBJDIR}/firmware.o
 
+OBJS += ${OBJDIR}/firmware_cli.o
+${OBJDIR}/firmware_cli.o: \
+    Infra/firmware_cli.c \
+    ${R1000DEP}
+	${CC} ${CFLAGS} -c Infra/firmware_cli.c -o ${OBJDIR}/firmware_cli.o
+
 OBJS += ${OBJDIR}/main.o
 ${OBJDIR}/main.o: \
     Infra/main.c \

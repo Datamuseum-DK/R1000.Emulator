@@ -175,6 +175,7 @@ static const struct cli_cmds cli_cmds[] = {
 	{ "diproc",		cli_diproc },
 	{ "disk",		cli_scsi_disk },
 	{ "echo",		cli_echo },
+	{ "firmware",		cli_firmware },
 	{ "exit",		cli_exit },
 	{ "help",		cli_help },
 	{ "include",		cli_include },

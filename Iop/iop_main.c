@@ -116,6 +116,8 @@ cli_ioc_reset(struct cli *cli)
 	}
 	ioc_stop_cpu();
 	ioc_wait_cpu_stopped();
+	if (!vbe64dec(ioc_eeprom_space))
+		ioc_load_eeproms();
 	memcpy(ram_space, ioc_eeprom_space, 8);
 	m68k_pulse_reset();
 	if (cli->ac == 1)
@@ -432,7 +434,6 @@ ioc_init(void)
 	ioc_bus_xact_init();
 
 	ioc_debug_init();
-	ioc_load_eeproms();
 
 	ioc_console_init();
 	ioc_duart_init();
