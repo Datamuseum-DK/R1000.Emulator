@@ -50,6 +50,7 @@ ${OBJDIR}/elastic_tcp.o: \
 
 OBJS += ${OBJDIR}/firmware.o
 ${OBJDIR}/firmware.o: \
+    Infra/firmware.c \
     ${R1000DEP}
 	${CC} ${CFLAGS} -c Infra/firmware.c -o ${OBJDIR}/firmware.o
 

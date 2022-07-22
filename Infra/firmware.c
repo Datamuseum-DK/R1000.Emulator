@@ -13554,568 +13554,134 @@ static uint8_t R1000_VAL_NOVRAM[0x100] = {
     0x0f,0x0f,0x0f,0x0f,0x0f,0x0f,0x0f,0x0f,0x0f,0x0f,0x0f,0x0f,0x0f,0x0f,0x0f,0x0f,
 };
 
-int
-Firmware_Get(const char *name, size_t size, void *dst)
+uint8_t *
+Firmware_Get(const char *name, size_t *size)
 {
-	if (!strcmp(name, "BUSGAL-01")) {
-		assert(size == 0x1704);
-		memcpy(dst, BUSGAL_01, 0x1704);
-		return(0);
-	}
-	if (!strcmp(name, "CMDGAL-02")) {
-		assert(size == 0x892);
-		memcpy(dst, CMDGAL_02, 0x892);
-		return(0);
-	}
-	if (!strcmp(name, "CNTRGAL-01")) {
-		assert(size == 0x1704);
-		memcpy(dst, CNTRGAL_01, 0x1704);
-		return(0);
-	}
-	if (!strcmp(name, "DFSM0-01")) {
-		assert(size == 0x802);
-		memcpy(dst, DFSM0_01, 0x802);
-		return(0);
-	}
-	if (!strcmp(name, "DFSM1-01")) {
-		assert(size == 0x802);
-		memcpy(dst, DFSM1_01, 0x802);
-		return(0);
-	}
-	if (!strcmp(name, "DFSM2-01")) {
-		assert(size == 0x802);
-		memcpy(dst, DFSM2_01, 0x802);
-		return(0);
-	}
-	if (!strcmp(name, "DFSM3-01")) {
-		assert(size == 0x802);
-		memcpy(dst, DFSM3_01, 0x802);
-		return(0);
-	}
-	if (!strcmp(name, "DFSM4-01")) {
-		assert(size == 0x802);
-		memcpy(dst, DFSM4_01, 0x802);
-		return(0);
-	}
-	if (!strcmp(name, "DFSM5-02")) {
-		assert(size == 0x802);
-		memcpy(dst, DFSM5_02, 0x802);
-		return(0);
-	}
-	if (!strcmp(name, "DFSM6-01")) {
-		assert(size == 0x802);
-		memcpy(dst, DFSM6_01, 0x802);
-		return(0);
-	}
-	if (!strcmp(name, "DIBRGAL-02")) {
-		assert(size == 0x892);
-		memcpy(dst, DIBRGAL_02, 0x892);
-		return(0);
-	}
-	if (!strcmp(name, "DIPROC-01")) {
-		assert(size == 0x2000);
-		memcpy(dst, DIPROC_01, 0x2000);
-		return(0);
-	}
-	if (!strcmp(name, "DISTGAL-02")) {
-		assert(size == 0x892);
-		memcpy(dst, DISTGAL_02, 0x892);
-		return(0);
-	}
-	if (!strcmp(name, "DRADGAL-01")) {
-		assert(size == 0x1704);
-		memcpy(dst, DRADGAL_01, 0x1704);
-		return(0);
-	}
-	if (!strcmp(name, "DRCGAL-01")) {
-		assert(size == 0x1704);
-		memcpy(dst, DRCGAL_01, 0x1704);
-		return(0);
-	}
-	if (!strcmp(name, "IOC_EEPROM")) {
-		assert(size == 0x8000);
-		memcpy(dst, IOC_EEPROM, 0x8000);
-		return(0);
-	}
-	if (!strcmp(name, "LUXXGAL-01")) {
-		assert(size == 0x1704);
-		memcpy(dst, LUXXGAL_01, 0x1704);
-		return(0);
-	}
-	if (!strcmp(name, "MARGAL-02")) {
-		assert(size == 0x892);
-		memcpy(dst, MARGAL_02, 0x892);
-		return(0);
-	}
-	if (!strcmp(name, "MUXEGAL-02")) {
-		assert(size == 0x892);
-		memcpy(dst, MUXEGAL_02, 0x892);
-		return(0);
-	}
-	if (!strcmp(name, "MUXLGAL-02")) {
-		assert(size == 0x892);
-		memcpy(dst, MUXLGAL_02, 0x892);
-		return(0);
-	}
-	if (!strcmp(name, "P8052AH_9028")) {
-		assert(size == 0x2000);
-		memcpy(dst, P8052AH_9028, 0x2000);
-		return(0);
-	}
-	if (!strcmp(name, "PA010-02")) {
-		assert(size == 0x200);
-		memcpy(dst, PA010_02, 0x200);
-		return(0);
-	}
-	if (!strcmp(name, "PA011-02")) {
-		assert(size == 0x200);
-		memcpy(dst, PA011_02, 0x200);
-		return(0);
-	}
-	if (!strcmp(name, "PA012-02")) {
-		assert(size == 0x200);
-		memcpy(dst, PA012_02, 0x200);
-		return(0);
-	}
-	if (!strcmp(name, "PA013-02")) {
-		assert(size == 0x200);
-		memcpy(dst, PA013_02, 0x200);
-		return(0);
-	}
-	if (!strcmp(name, "PA014-02")) {
-		assert(size == 0x200);
-		memcpy(dst, PA014_02, 0x200);
-		return(0);
-	}
-	if (!strcmp(name, "PA015-02")) {
-		assert(size == 0x200);
-		memcpy(dst, PA015_02, 0x200);
-		return(0);
-	}
-	if (!strcmp(name, "PA016-02")) {
-		assert(size == 0x200);
-		memcpy(dst, PA016_02, 0x200);
-		return(0);
-	}
-	if (!strcmp(name, "PA017-02")) {
-		assert(size == 0x200);
-		memcpy(dst, PA017_02, 0x200);
-		return(0);
-	}
-	if (!strcmp(name, "PA018-03")) {
-		assert(size == 0x200);
-		memcpy(dst, PA018_03, 0x200);
-		return(0);
-	}
-	if (!strcmp(name, "PA019-02")) {
-		assert(size == 0x200);
-		memcpy(dst, PA019_02, 0x200);
-		return(0);
-	}
-	if (!strcmp(name, "PA020-01")) {
-		assert(size == 0x200);
-		memcpy(dst, PA020_01, 0x200);
-		return(0);
-	}
-	if (!strcmp(name, "PA021-01")) {
-		assert(size == 0x200);
-		memcpy(dst, PA021_01, 0x200);
-		return(0);
-	}
-	if (!strcmp(name, "PA022-01")) {
-		assert(size == 0x200);
-		memcpy(dst, PA022_01, 0x200);
-		return(0);
-	}
-	if (!strcmp(name, "PA023-01")) {
-		assert(size == 0x200);
-		memcpy(dst, PA023_01, 0x200);
-		return(0);
-	}
-	if (!strcmp(name, "PA024-01")) {
-		assert(size == 0x200);
-		memcpy(dst, PA024_01, 0x200);
-		return(0);
-	}
-	if (!strcmp(name, "PA025-03")) {
-		assert(size == 0x200);
-		memcpy(dst, PA025_03, 0x200);
-		return(0);
-	}
-	if (!strcmp(name, "PA026-02")) {
-		assert(size == 0x200);
-		memcpy(dst, PA026_02, 0x200);
-		return(0);
-	}
-	if (!strcmp(name, "PA027-01")) {
-		assert(size == 0x200);
-		memcpy(dst, PA027_01, 0x200);
-		return(0);
-	}
-	if (!strcmp(name, "PA028-02")) {
-		assert(size == 0x200);
-		memcpy(dst, PA028_02, 0x200);
-		return(0);
-	}
-	if (!strcmp(name, "PA029-01")) {
-		assert(size == 0x200);
-		memcpy(dst, PA029_01, 0x200);
-		return(0);
-	}
-	if (!strcmp(name, "PA030-02")) {
-		assert(size == 0x200);
-		memcpy(dst, PA030_02, 0x200);
-		return(0);
-	}
-	if (!strcmp(name, "PA031-02")) {
-		assert(size == 0x200);
-		memcpy(dst, PA031_02, 0x200);
-		return(0);
-	}
-	if (!strcmp(name, "PA032-02")) {
-		assert(size == 0x200);
-		memcpy(dst, PA032_02, 0x200);
-		return(0);
-	}
-	if (!strcmp(name, "PA033-02")) {
-		assert(size == 0x200);
-		memcpy(dst, PA033_02, 0x200);
-		return(0);
-	}
-	if (!strcmp(name, "PA034-02")) {
-		assert(size == 0x200);
-		memcpy(dst, PA034_02, 0x200);
-		return(0);
-	}
-	if (!strcmp(name, "PA035-02")) {
-		assert(size == 0x200);
-		memcpy(dst, PA035_02, 0x200);
-		return(0);
-	}
-	if (!strcmp(name, "PA036-02")) {
-		assert(size == 0x200);
-		memcpy(dst, PA036_02, 0x200);
-		return(0);
-	}
-	if (!strcmp(name, "PA040-02")) {
-		assert(size == 0x200);
-		memcpy(dst, PA040_02, 0x200);
-		return(0);
-	}
-	if (!strcmp(name, "PA041-01")) {
-		assert(size == 0x200);
-		memcpy(dst, PA041_01, 0x200);
-		return(0);
-	}
-	if (!strcmp(name, "PA042-02")) {
-		assert(size == 0x200);
-		memcpy(dst, PA042_02, 0x200);
-		return(0);
-	}
-	if (!strcmp(name, "PA043-02")) {
-		assert(size == 0x200);
-		memcpy(dst, PA043_02, 0x200);
-		return(0);
-	}
-	if (!strcmp(name, "PA044-01")) {
-		assert(size == 0x200);
-		memcpy(dst, PA044_01, 0x200);
-		return(0);
-	}
-	if (!strcmp(name, "PA045-03")) {
-		assert(size == 0x200);
-		memcpy(dst, PA045_03, 0x200);
-		return(0);
-	}
-	if (!strcmp(name, "PA046-02")) {
-		assert(size == 0x200);
-		memcpy(dst, PA046_02, 0x200);
-		return(0);
-	}
-	if (!strcmp(name, "PA047-02")) {
-		assert(size == 0x200);
-		memcpy(dst, PA047_02, 0x200);
-		return(0);
-	}
-	if (!strcmp(name, "PA048-02")) {
-		assert(size == 0x200);
-		memcpy(dst, PA048_02, 0x200);
-		return(0);
-	}
-	if (!strcmp(name, "PA049-02")) {
-		assert(size == 0x200);
-		memcpy(dst, PA049_02, 0x200);
-		return(0);
-	}
-	if (!strcmp(name, "PA050-02")) {
-		assert(size == 0x200);
-		memcpy(dst, PA050_02, 0x200);
-		return(0);
-	}
-	if (!strcmp(name, "PA051-03")) {
-		assert(size == 0x200);
-		memcpy(dst, PA051_03, 0x200);
-		return(0);
-	}
-	if (!strcmp(name, "PA052-02")) {
-		assert(size == 0x200);
-		memcpy(dst, PA052_02, 0x200);
-		return(0);
-	}
-	if (!strcmp(name, "PA053-02")) {
-		assert(size == 0x200);
-		memcpy(dst, PA053_02, 0x200);
-		return(0);
-	}
-	if (!strcmp(name, "PA054-02")) {
-		assert(size == 0x200);
-		memcpy(dst, PA054_02, 0x200);
-		return(0);
-	}
-	if (!strcmp(name, "PA055-03")) {
-		assert(size == 0x200);
-		memcpy(dst, PA055_03, 0x200);
-		return(0);
-	}
-	if (!strcmp(name, "PA059-01")) {
-		assert(size == 0x200);
-		memcpy(dst, PA059_01, 0x200);
-		return(0);
-	}
-	if (!strcmp(name, "PA060-01")) {
-		assert(size == 0x200);
-		memcpy(dst, PA060_01, 0x200);
-		return(0);
-	}
-	if (!strcmp(name, "PA065-02")) {
-		assert(size == 0x200);
-		memcpy(dst, PA065_02, 0x200);
-		return(0);
-	}
-	if (!strcmp(name, "PA068-01")) {
-		assert(size == 0x200);
-		memcpy(dst, PA068_01, 0x200);
-		return(0);
-	}
-	if (!strcmp(name, "PA101-02")) {
-		assert(size == 0x200);
-		memcpy(dst, PA101_02, 0x200);
-		return(0);
-	}
-	if (!strcmp(name, "PA102-02")) {
-		assert(size == 0x200);
-		memcpy(dst, PA102_02, 0x200);
-		return(0);
-	}
-	if (!strcmp(name, "PA103-02")) {
-		assert(size == 0x200);
-		memcpy(dst, PA103_02, 0x200);
-		return(0);
-	}
-	if (!strcmp(name, "PA104-02")) {
-		assert(size == 0x200);
-		memcpy(dst, PA104_02, 0x200);
-		return(0);
-	}
-	if (!strcmp(name, "PA105-02")) {
-		assert(size == 0x200);
-		memcpy(dst, PA105_02, 0x200);
-		return(0);
-	}
-	if (!strcmp(name, "PA106-02")) {
-		assert(size == 0x200);
-		memcpy(dst, PA106_02, 0x200);
-		return(0);
-	}
-	if (!strcmp(name, "PA107-01")) {
-		assert(size == 0x200);
-		memcpy(dst, PA107_01, 0x200);
-		return(0);
-	}
-	if (!strcmp(name, "PA108-02")) {
-		assert(size == 0x200);
-		memcpy(dst, PA108_02, 0x200);
-		return(0);
-	}
-	if (!strcmp(name, "PA109-02")) {
-		assert(size == 0x200);
-		memcpy(dst, PA109_02, 0x200);
-		return(0);
-	}
-	if (!strcmp(name, "PA110-01")) {
-		assert(size == 0x200);
-		memcpy(dst, PA110_01, 0x200);
-		return(0);
-	}
-	if (!strcmp(name, "PA111-01")) {
-		assert(size == 0x200);
-		memcpy(dst, PA111_01, 0x200);
-		return(0);
-	}
-	if (!strcmp(name, "PA112-01")) {
-		assert(size == 0x200);
-		memcpy(dst, PA112_01, 0x200);
-		return(0);
-	}
-	if (!strcmp(name, "PA113-01")) {
-		assert(size == 0x200);
-		memcpy(dst, PA113_01, 0x200);
-		return(0);
-	}
-	if (!strcmp(name, "PA114-01")) {
-		assert(size == 0x200);
-		memcpy(dst, PA114_01, 0x200);
-		return(0);
-	}
-	if (!strcmp(name, "PA115-01")) {
-		assert(size == 0x200);
-		memcpy(dst, PA115_01, 0x200);
-		return(0);
-	}
-	if (!strcmp(name, "PA116-01")) {
-		assert(size == 0x200);
-		memcpy(dst, PA116_01, 0x200);
-		return(0);
-	}
-	if (!strcmp(name, "PA117-01")) {
-		assert(size == 0x200);
-		memcpy(dst, PA117_01, 0x200);
-		return(0);
-	}
-	if (!strcmp(name, "PA118-01")) {
-		assert(size == 0x200);
-		memcpy(dst, PA118_01, 0x200);
-		return(0);
-	}
-	if (!strcmp(name, "PA119-01")) {
-		assert(size == 0x200);
-		memcpy(dst, PA119_01, 0x200);
-		return(0);
-	}
-	if (!strcmp(name, "PA120-01")) {
-		assert(size == 0x200);
-		memcpy(dst, PA120_01, 0x200);
-		return(0);
-	}
-	if (!strcmp(name, "PB010-01")) {
-		assert(size == 0x20);
-		memcpy(dst, PB010_01, 0x20);
-		return(0);
-	}
-	if (!strcmp(name, "PB011-01")) {
-		assert(size == 0x20);
-		memcpy(dst, PB011_01, 0x20);
-		return(0);
-	}
-	if (!strcmp(name, "PB012-01")) {
-		assert(size == 0x20);
-		memcpy(dst, PB012_01, 0x20);
-		return(0);
-	}
-	if (!strcmp(name, "PB013-01")) {
-		assert(size == 0x20);
-		memcpy(dst, PB013_01, 0x20);
-		return(0);
-	}
-	if (!strcmp(name, "PB014-01")) {
-		assert(size == 0x20);
-		memcpy(dst, PB014_01, 0x20);
-		return(0);
-	}
-	if (!strcmp(name, "PB015-01")) {
-		assert(size == 0x20);
-		memcpy(dst, PB015_01, 0x20);
-		return(0);
-	}
-	if (!strcmp(name, "PB016-01")) {
-		assert(size == 0x20);
-		memcpy(dst, PB016_01, 0x20);
-		return(0);
-	}
-	if (!strcmp(name, "PB017-01")) {
-		assert(size == 0x20);
-		memcpy(dst, PB017_01, 0x20);
-		return(0);
-	}
-	if (!strcmp(name, "PB018-01")) {
-		assert(size == 0x20);
-		memcpy(dst, PB018_01, 0x20);
-		return(0);
-	}
-	if (!strcmp(name, "PHITGAL-02")) {
-		assert(size == 0x892);
-		memcpy(dst, PHITGAL_02, 0x892);
-		return(0);
-	}
-	if (!strcmp(name, "R1000_FIU_NOVRAM")) {
-		assert(size == 0x100);
-		memcpy(dst, R1000_FIU_NOVRAM, 0x100);
-		return(0);
-	}
-	if (!strcmp(name, "R1000_MEM0_NOVRAM")) {
-		assert(size == 0x100);
-		memcpy(dst, R1000_MEM0_NOVRAM, 0x100);
-		return(0);
-	}
-	if (!strcmp(name, "R1000_MEM2_NOVRAM")) {
-		assert(size == 0x100);
-		memcpy(dst, R1000_MEM2_NOVRAM, 0x100);
-		return(0);
-	}
-	if (!strcmp(name, "R1000_SEQ_NOVRAM")) {
-		assert(size == 0x100);
-		memcpy(dst, R1000_SEQ_NOVRAM, 0x100);
-		return(0);
-	}
-	if (!strcmp(name, "R1000_TYP_NOVRAM")) {
-		assert(size == 0x100);
-		memcpy(dst, R1000_TYP_NOVRAM, 0x100);
-		return(0);
-	}
-	if (!strcmp(name, "R1000_VAL_NOVRAM")) {
-		assert(size == 0x100);
-		memcpy(dst, R1000_VAL_NOVRAM, 0x100);
-		return(0);
-	}
-	if (!strcmp(name, "RDRGAL-02")) {
-		assert(size == 0x892);
-		memcpy(dst, RDRGAL_02, 0x892);
-		return(0);
-	}
-	if (!strcmp(name, "RESHA_EEPROM")) {
-		assert(size == 0x8000);
-		memcpy(dst, RESHA_EEPROM, 0x8000);
-		return(0);
-	}
-	if (!strcmp(name, "SETGAL-01")) {
-		assert(size == 0x1704);
-		memcpy(dst, SETGAL_01, 0x1704);
-		return(0);
-	}
-	if (!strcmp(name, "TAGAGAL-01")) {
-		assert(size == 0x1704);
-		memcpy(dst, TAGAGAL_01, 0x1704);
-		return(0);
-	}
-	if (!strcmp(name, "TPARGAL-02")) {
-		assert(size == 0x892);
-		memcpy(dst, TPARGAL_02, 0x892);
-		return(0);
-	}
-	if (!strcmp(name, "TRACGAL-01")) {
-		assert(size == 0x1704);
-		memcpy(dst, TRACGAL_01, 0x1704);
-		return(0);
-	}
-	if (!strcmp(name, "TSCGAL-01")) {
-		assert(size == 0x1704);
-		memcpy(dst, TSCGAL_01, 0x1704);
-		return(0);
-	}
-	if (!strcmp(name, "TSXXGAL-01")) {
-		assert(size == 0x1704);
-		memcpy(dst, TSXXGAL_01, 0x1704);
-		return(0);
-	}
-	return(-1);
+	if (!strcmp(name, "BUSGAL-01")) { *size = 0x1704; return(BUSGAL_01); }
+	if (!strcmp(name, "CMDGAL-02")) { *size = 0x892; return(CMDGAL_02); }
+	if (!strcmp(name, "CNTRGAL-01")) { *size = 0x1704; return(CNTRGAL_01); }
+	if (!strcmp(name, "DFSM0-01")) { *size = 0x802; return(DFSM0_01); }
+	if (!strcmp(name, "DFSM1-01")) { *size = 0x802; return(DFSM1_01); }
+	if (!strcmp(name, "DFSM2-01")) { *size = 0x802; return(DFSM2_01); }
+	if (!strcmp(name, "DFSM3-01")) { *size = 0x802; return(DFSM3_01); }
+	if (!strcmp(name, "DFSM4-01")) { *size = 0x802; return(DFSM4_01); }
+	if (!strcmp(name, "DFSM5-02")) { *size = 0x802; return(DFSM5_02); }
+	if (!strcmp(name, "DFSM6-01")) { *size = 0x802; return(DFSM6_01); }
+	if (!strcmp(name, "DIBRGAL-02")) { *size = 0x892; return(DIBRGAL_02); }
+	if (!strcmp(name, "DIPROC-01")) { *size = 0x2000; return(DIPROC_01); }
+	if (!strcmp(name, "DISTGAL-02")) { *size = 0x892; return(DISTGAL_02); }
+	if (!strcmp(name, "DRADGAL-01")) { *size = 0x1704; return(DRADGAL_01); }
+	if (!strcmp(name, "DRCGAL-01")) { *size = 0x1704; return(DRCGAL_01); }
+	if (!strcmp(name, "IOC_EEPROM")) { *size = 0x8000; return(IOC_EEPROM); }
+	if (!strcmp(name, "LUXXGAL-01")) { *size = 0x1704; return(LUXXGAL_01); }
+	if (!strcmp(name, "MARGAL-02")) { *size = 0x892; return(MARGAL_02); }
+	if (!strcmp(name, "MUXEGAL-02")) { *size = 0x892; return(MUXEGAL_02); }
+	if (!strcmp(name, "MUXLGAL-02")) { *size = 0x892; return(MUXLGAL_02); }
+	if (!strcmp(name, "P8052AH_9028")) { *size = 0x2000; return(P8052AH_9028); }
+	if (!strcmp(name, "PA010-02")) { *size = 0x200; return(PA010_02); }
+	if (!strcmp(name, "PA011-02")) { *size = 0x200; return(PA011_02); }
+	if (!strcmp(name, "PA012-02")) { *size = 0x200; return(PA012_02); }
+	if (!strcmp(name, "PA013-02")) { *size = 0x200; return(PA013_02); }
+	if (!strcmp(name, "PA014-02")) { *size = 0x200; return(PA014_02); }
+	if (!strcmp(name, "PA015-02")) { *size = 0x200; return(PA015_02); }
+	if (!strcmp(name, "PA016-02")) { *size = 0x200; return(PA016_02); }
+	if (!strcmp(name, "PA017-02")) { *size = 0x200; return(PA017_02); }
+	if (!strcmp(name, "PA018-03")) { *size = 0x200; return(PA018_03); }
+	if (!strcmp(name, "PA019-02")) { *size = 0x200; return(PA019_02); }
+	if (!strcmp(name, "PA020-01")) { *size = 0x200; return(PA020_01); }
+	if (!strcmp(name, "PA021-01")) { *size = 0x200; return(PA021_01); }
+	if (!strcmp(name, "PA022-01")) { *size = 0x200; return(PA022_01); }
+	if (!strcmp(name, "PA023-01")) { *size = 0x200; return(PA023_01); }
+	if (!strcmp(name, "PA024-01")) { *size = 0x200; return(PA024_01); }
+	if (!strcmp(name, "PA025-03")) { *size = 0x200; return(PA025_03); }
+	if (!strcmp(name, "PA026-02")) { *size = 0x200; return(PA026_02); }
+	if (!strcmp(name, "PA027-01")) { *size = 0x200; return(PA027_01); }
+	if (!strcmp(name, "PA028-02")) { *size = 0x200; return(PA028_02); }
+	if (!strcmp(name, "PA029-01")) { *size = 0x200; return(PA029_01); }
+	if (!strcmp(name, "PA030-02")) { *size = 0x200; return(PA030_02); }
+	if (!strcmp(name, "PA031-02")) { *size = 0x200; return(PA031_02); }
+	if (!strcmp(name, "PA032-02")) { *size = 0x200; return(PA032_02); }
+	if (!strcmp(name, "PA033-02")) { *size = 0x200; return(PA033_02); }
+	if (!strcmp(name, "PA034-02")) { *size = 0x200; return(PA034_02); }
+	if (!strcmp(name, "PA035-02")) { *size = 0x200; return(PA035_02); }
+	if (!strcmp(name, "PA036-02")) { *size = 0x200; return(PA036_02); }
+	if (!strcmp(name, "PA040-02")) { *size = 0x200; return(PA040_02); }
+	if (!strcmp(name, "PA041-01")) { *size = 0x200; return(PA041_01); }
+	if (!strcmp(name, "PA042-02")) { *size = 0x200; return(PA042_02); }
+	if (!strcmp(name, "PA043-02")) { *size = 0x200; return(PA043_02); }
+	if (!strcmp(name, "PA044-01")) { *size = 0x200; return(PA044_01); }
+	if (!strcmp(name, "PA045-03")) { *size = 0x200; return(PA045_03); }
+	if (!strcmp(name, "PA046-02")) { *size = 0x200; return(PA046_02); }
+	if (!strcmp(name, "PA047-02")) { *size = 0x200; return(PA047_02); }
+	if (!strcmp(name, "PA048-02")) { *size = 0x200; return(PA048_02); }
+	if (!strcmp(name, "PA049-02")) { *size = 0x200; return(PA049_02); }
+	if (!strcmp(name, "PA050-02")) { *size = 0x200; return(PA050_02); }
+	if (!strcmp(name, "PA051-03")) { *size = 0x200; return(PA051_03); }
+	if (!strcmp(name, "PA052-02")) { *size = 0x200; return(PA052_02); }
+	if (!strcmp(name, "PA053-02")) { *size = 0x200; return(PA053_02); }
+	if (!strcmp(name, "PA054-02")) { *size = 0x200; return(PA054_02); }
+	if (!strcmp(name, "PA055-03")) { *size = 0x200; return(PA055_03); }
+	if (!strcmp(name, "PA059-01")) { *size = 0x200; return(PA059_01); }
+	if (!strcmp(name, "PA060-01")) { *size = 0x200; return(PA060_01); }
+	if (!strcmp(name, "PA065-02")) { *size = 0x200; return(PA065_02); }
+	if (!strcmp(name, "PA068-01")) { *size = 0x200; return(PA068_01); }
+	if (!strcmp(name, "PA101-02")) { *size = 0x200; return(PA101_02); }
+	if (!strcmp(name, "PA102-02")) { *size = 0x200; return(PA102_02); }
+	if (!strcmp(name, "PA103-02")) { *size = 0x200; return(PA103_02); }
+	if (!strcmp(name, "PA104-02")) { *size = 0x200; return(PA104_02); }
+	if (!strcmp(name, "PA105-02")) { *size = 0x200; return(PA105_02); }
+	if (!strcmp(name, "PA106-02")) { *size = 0x200; return(PA106_02); }
+	if (!strcmp(name, "PA107-01")) { *size = 0x200; return(PA107_01); }
+	if (!strcmp(name, "PA108-02")) { *size = 0x200; return(PA108_02); }
+	if (!strcmp(name, "PA109-02")) { *size = 0x200; return(PA109_02); }
+	if (!strcmp(name, "PA110-01")) { *size = 0x200; return(PA110_01); }
+	if (!strcmp(name, "PA111-01")) { *size = 0x200; return(PA111_01); }
+	if (!strcmp(name, "PA112-01")) { *size = 0x200; return(PA112_01); }
+	if (!strcmp(name, "PA113-01")) { *size = 0x200; return(PA113_01); }
+	if (!strcmp(name, "PA114-01")) { *size = 0x200; return(PA114_01); }
+	if (!strcmp(name, "PA115-01")) { *size = 0x200; return(PA115_01); }
+	if (!strcmp(name, "PA116-01")) { *size = 0x200; return(PA116_01); }
+	if (!strcmp(name, "PA117-01")) { *size = 0x200; return(PA117_01); }
+	if (!strcmp(name, "PA118-01")) { *size = 0x200; return(PA118_01); }
+	if (!strcmp(name, "PA119-01")) { *size = 0x200; return(PA119_01); }
+	if (!strcmp(name, "PA120-01")) { *size = 0x200; return(PA120_01); }
+	if (!strcmp(name, "PB010-01")) { *size = 0x20; return(PB010_01); }
+	if (!strcmp(name, "PB011-01")) { *size = 0x20; return(PB011_01); }
+	if (!strcmp(name, "PB012-01")) { *size = 0x20; return(PB012_01); }
+	if (!strcmp(name, "PB013-01")) { *size = 0x20; return(PB013_01); }
+	if (!strcmp(name, "PB014-01")) { *size = 0x20; return(PB014_01); }
+	if (!strcmp(name, "PB015-01")) { *size = 0x20; return(PB015_01); }
+	if (!strcmp(name, "PB016-01")) { *size = 0x20; return(PB016_01); }
+	if (!strcmp(name, "PB017-01")) { *size = 0x20; return(PB017_01); }
+	if (!strcmp(name, "PB018-01")) { *size = 0x20; return(PB018_01); }
+	if (!strcmp(name, "PHITGAL-02")) { *size = 0x892; return(PHITGAL_02); }
+	if (!strcmp(name, "R1000_FIU_NOVRAM")) { *size = 0x100; return(R1000_FIU_NOVRAM); }
+	if (!strcmp(name, "R1000_MEM0_NOVRAM")) { *size = 0x100; return(R1000_MEM0_NOVRAM); }
+	if (!strcmp(name, "R1000_MEM2_NOVRAM")) { *size = 0x100; return(R1000_MEM2_NOVRAM); }
+	if (!strcmp(name, "R1000_SEQ_NOVRAM")) { *size = 0x100; return(R1000_SEQ_NOVRAM); }
+	if (!strcmp(name, "R1000_TYP_NOVRAM")) { *size = 0x100; return(R1000_TYP_NOVRAM); }
+	if (!strcmp(name, "R1000_VAL_NOVRAM")) { *size = 0x100; return(R1000_VAL_NOVRAM); }
+	if (!strcmp(name, "RDRGAL-02")) { *size = 0x892; return(RDRGAL_02); }
+	if (!strcmp(name, "RESHA_EEPROM")) { *size = 0x8000; return(RESHA_EEPROM); }
+	if (!strcmp(name, "SETGAL-01")) { *size = 0x1704; return(SETGAL_01); }
+	if (!strcmp(name, "TAGAGAL-01")) { *size = 0x1704; return(TAGAGAL_01); }
+	if (!strcmp(name, "TPARGAL-02")) { *size = 0x892; return(TPARGAL_02); }
+	if (!strcmp(name, "TRACGAL-01")) { *size = 0x1704; return(TRACGAL_01); }
+	if (!strcmp(name, "TSCGAL-01")) { *size = 0x1704; return(TSCGAL_01); }
+	if (!strcmp(name, "TSXXGAL-01")) { *size = 0x1704; return(TSXXGAL_01); }
+	return(NULL);
+}
+
+int
+Firmware_Copy(const char *name, size_t size, void *dst)
+{
+	size_t sz;
+	uint8_t *ptr;
+
+	ptr = Firmware_Get(name, &sz);
+	if (ptr == NULL)
+		return(-1);
+	assert(size == sz);
+	memcpy(dst, ptr, sz);
+	return(0);
 }

@@ -112,22 +112,22 @@ load_programmable(const char *who, void *dst, size_t size, const char *arg)
 	int ret;
 
 	bprintf(buf, "%s", arg);
-	ret = Firmware_Get(buf, size, dst);
+	ret = Firmware_Copy(buf, size, dst);
 	if (ret < 0) {
 		bprintf(buf, "%s-01", arg);
-		ret = Firmware_Get(buf, size, dst);
+		ret = Firmware_Copy(buf, size, dst);
 	}
 	if (ret < 0) {
 		bprintf(buf, "%s-02", arg);
-		ret = Firmware_Get(buf, size, dst);
+		ret = Firmware_Copy(buf, size, dst);
 	}
 	if (ret < 0) {
 		bprintf(buf, "%s-03", arg);
-		ret = Firmware_Get(buf, size, dst);
+		ret = Firmware_Copy(buf, size, dst);
 	}
 	if (ret < 0) {
 		bprintf(buf, "PROM-%s", arg);
-		ret = Firmware_Get(buf, size, dst);
+		ret = Firmware_Copy(buf, size, dst);
 	}
 	if (ret < 0) {
 		fprintf(stderr, "Firmware '%s' missing for '%s'\n", arg, who);

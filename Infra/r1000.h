@@ -172,7 +172,8 @@ void diagbus_init(void);
 
 /* FIRMWARE *********************************************************/
 
-int Firmware_Get(const char *name, size_t size, void *dst);
+uint8_t *Firmware_Get(const char *name, size_t *size);
+int Firmware_Copy(const char *name, size_t size, void *dst);
 
 /* MEMORY *************************************************************/
 
