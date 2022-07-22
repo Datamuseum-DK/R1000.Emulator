@@ -103,7 +103,7 @@ def main():
             fname = fname.replace(".BIN", "")
             cname = fname.replace("-", "_")
             namelist.append((fname, cname, len(body)))
-            file.write('\nstatic const uint8_t %s[0x%x] = {\n' % (cname, len(body)))
+            file.write('\nstatic uint8_t %s[0x%x] = {\n' % (cname, len(body)))
             stride = 16
             for subrange in range(0, len(body), stride):
                 octets = body[subrange:subrange + stride]
