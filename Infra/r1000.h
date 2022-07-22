@@ -168,6 +168,7 @@ nanosec callout_poll(void);
 cli_func_f Cli_dfs;
 cli_func_f cli_diagbus;
 cli_func_f cli_diproc;
+cli_func_f cli_firmware;
 void diagbus_init(void);
 
 /* FIRMWARE *********************************************************/

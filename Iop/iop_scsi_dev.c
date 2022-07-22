@@ -318,30 +318,26 @@ static scsi_func_f * const scsi_disk_funcs[256] = {
 
 /**********************************************************************/
 
-static void v_matchproto_(cli_func_f)
-cli_scsi_disk_mount(struct cli *cli)
+static struct scsi_dev *
+cli_scsi_get_disk(struct cli *cli, int create)
 {
 	struct scsi_dev *sd;
 	unsigned unit;
-
-	if (cli->help || cli->ac != 3) {
-		Cli_Usage(cli, "<unit> <filename>",
-		    "Load filename in SCSI disk unit.");
-		return;
-	}
-
-	cli->ac--;
-	cli->av++;
 
 	unit = atoi(cli->av[0]);
 	cli->ac--;
 	cli->av++;
 	if (unit > 3) {
 		Cli_Error(cli, "Only disks 0-3 supported\n");
-		return;
+		return(NULL);
+	}
+	sd = scsi_d->dev[unit];
+
+	if (sd == NULL && !create) {
+		Cli_Error(cli, "Disks not mounted\n");
+		return(NULL);
 	}
 
-	sd = scsi_d->dev[unit];
 	if (sd == NULL) {
 		sd = calloc(1, sizeof *sd);
 		AN(sd);
@@ -352,6 +348,26 @@ cli_scsi_disk_mount(struct cli *cli)
 		sd->funcs = scsi_disk_funcs;
 		scsi_d->dev[unit] = sd;
 	}
+
+	return (sd);
+}
+
+/**********************************************************************/
+
+static void v_matchproto_(cli_func_f)
+cli_scsi_disk_mount(struct cli *cli)
+{
+	struct scsi_dev *sd;
+
+	if (cli->help || cli->ac != 3) {
+		Cli_Usage(cli, "<unit> <filename>",
+		    "Load filename in SCSI disk unit.");
+		return;
+	}
+	cli->ac--;
+	cli->av++;
+
+	sd = cli_scsi_get_disk(cli, 1);
 
 	if (cli_scsi_dev_map_file(cli, sd, cli->av[0]) < 0)
 		return;
@@ -394,8 +410,54 @@ cli_scsi_disk_mount(struct cli *cli)
 	cli->av++;
 }
 
+/**********************************************************************/
+
+static void v_matchproto_(cli_func_f)
+cli_scsi_disk_patch(struct cli *cli)
+{
+	unsigned offset, val;
+	struct scsi_dev *sd;
+	int i;
+	char *err;
+
+	if (cli->help || cli->ac != 3) {
+		Cli_Usage(cli, "<unit> <offset> <byte>…",
+		    "Patch bytes in disk-image");
+		return;
+	}
+	cli->ac--;
+	cli->av++;
+
+	sd = cli_scsi_get_disk(cli, 0);
+	if (sd == NULL)
+		return;
+
+	err = NULL;
+	offset = strtoul(cli->av[0], &err, 0);
+	if ((err != NULL && *err != '\0') || offset < 0) {
+		Cli_Error(cli, "Cannot grog <offset>");
+		return;
+	}
+
+	for (i = 1; cli->av[i] != NULL; i++) {
+		if (offset >= sd->map_size) {
+			Cli_Error(cli, "<offset> past end of disk-image.");
+			return;
+		}
+		err = NULL;
+		val = strtoul(cli->av[i], &err, 0);
+		if ((err != NULL && *err != '\0') || val < 0 || val > 255) {
+			Cli_Error(cli, "Cannot grog <byte> (%s)", cli->av[i]);
+			return;
+		}
+		sd->map[offset++] = val;
+	}
+}
+
+
 static const struct cli_cmds cli_scsi_disk_cmds[] = {
 	{ "mount",		cli_scsi_disk_mount },
+	{ "patch",		cli_scsi_disk_patch },
 	{ NULL,			NULL },
 };
 
