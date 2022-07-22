@@ -414,6 +414,53 @@ cli_dfs_neuter(struct cli *cli)
 /**********************************************************************/
 
 static void v_matchproto_(cli_func_f)
+cli_dfs_patch(struct cli *cli)
+{
+	struct dfs_dirent de[1];
+	unsigned offset, val;
+	int i;
+	char *err;
+
+	if (cli->help || cli->ac < 3) {
+		Cli_Usage(cli, "<offset> <byte>…", "Write bytes at offset.");
+		return;
+	}
+
+	if (dfs_open(cli->av[1], de, 0)) {
+		Cli_Error(cli,
+		    "Cannot open DFS file '%s': %s\n",
+		    cli->av[1], strerror(errno)
+		);
+		return;
+	}
+
+	dfs_render_dirent(cli, de);
+
+	err = NULL;
+	offset = strtoul(cli->av[2], &err, 0);
+	if ((err != NULL && *err != '\0') || offset < 0) {
+		Cli_Error(cli, "Cannot grog <offset>");
+		return;
+	}
+	if (offset >= ((unsigned)de->used_sec) << 10) {
+		Cli_Error(cli, "<offset> past end of dfs-file.");
+		return;
+	}
+
+	for (i = 3; cli->av[i] != NULL; i++) {
+		err = NULL;
+		val = strtoul(cli->av[i], &err, 0);
+		if ((err != NULL && *err != '\0') || val < 0 || val > 255) {
+			Cli_Error(cli, "Cannot grog <byte> (%s)", cli->av[i]);
+			return;
+		}
+		de->ptr[offset++] = val;
+	}
+}
+
+/**********************************************************************/
+
+static void v_matchproto_(cli_func_f)
 cli_dfs_sed(struct cli *cli)
 {
 	struct dfs_dirent de[1];
@@ -533,6 +580,7 @@ static const struct cli_cmds cli_dfs_cmds[] = {
 	{ "cat",		cli_dfs_cat },
 	{ "dir",		cli_dfs_dir },
 	{ "neuter",		cli_dfs_neuter },
+	{ "patch",		cli_dfs_patch },
 	{ "read",		cli_dfs_read },
 	{ "sed",		cli_dfs_sed },
 	{ "write",		cli_dfs_write },
