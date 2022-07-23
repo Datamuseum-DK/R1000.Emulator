@@ -131,6 +131,10 @@ static struct sc_def sc_defs[] = {
 	    "sp+2 @L 16 hexdump",
 	    supress
 	},
+	{ 0x10224, "Sleep",
+	    "sp+2 @L .L",
+	    supress
+	},
 	{ 0x10226, "Calendar",
 	    "sp+2 @L .L",
 	    "sp+0 @L 7 hexdump"
@@ -318,7 +322,10 @@ static struct sc_def sc_defs[] = {
 	    "sp+7 String , sp+5 String , sp+4 @B .B",
 	    "sp+0 .L ' => ' sp+0 @L .L ' => ' sp+0 @L @L .L"
 	},
-	{ 0x103b8, "PopProgram", "sp+2 String , sp+4 @B .B", "" },
+	{ 0x103b8, "PopProgram",
+	    "sp+2 String , sp+4 @B .B",
+	    "sp+0 @L 16 hexdump"
+	},
 	{ 0x103d0, "WriteConsoleChar",
 	    "sp+2 @B .B",
 	    supress
@@ -352,6 +359,13 @@ static struct sc_def sc_defs[] = {
 	    ,
 	    "'<freed>' , "
 	    "sp+0 @L .L '=>' sp+0 @L @L .L ' ' sp+0 @L @L 16 hexdump "
+	},
+	{ 0x10466, "ExpInputParam",
+	    "sp+6 @L .L , "
+	    "sp+4 @L .L , "
+	    "sp+2 @L .L "
+	    ,
+	    supress
 	},
 	{ 0x10472, "DiagGetOutParam",
 	    "sp+6 @L .L , "
@@ -410,9 +424,8 @@ static struct sc_def sc_defs[] = {
 	    "'adr=' @b @W .W , "
 	    "'n_out=' @b 2 + @B .B , "
 	    "'n_in=' @b 3 + @B .B , "
-	    "'params=' @b 4 + @b 2 + @B @b 3 + @B + hexdump , "
-	    "'stack=' A7 8 + @a @W 8 - hexdump",
-	    ""
+	    "'params=' @b 4 + @b 2 + @B @b 3 + @B + hexdump , ",
+	    supress
 	},
 	{ 0x10592, "ReadConfig", "sp+2 @L .L ", "sp+0 @L .L , sp+2 @W .W" },
 	{ 0x105ce, "ReadKeySwitch", "", "sp+0 @B .B" },
@@ -474,14 +487,16 @@ sc_render(int ret, const struct sc_def *def)
 static int v_matchproto_(ioc_bpt_f)
 sc_bpt_ret(void *priv, uint32_t adr)
 {
+	unsigned a7;
 	struct sc_call *scc = priv;
 
 	if (scc->ctx != VTAILQ_FIRST(&sc_ctxs))
 		return (0);
 	sc_render(1, scc->def);
-	Trace(1, "SCEXIT %2d %d SC=0x%08x %13ju RET=0x%08x %s",
+	a7 = m68k_get_reg(NULL, M68K_REG_A7);
+	Trace(1, "SCEXIT %2d %d SC=0x%08x A7=0x%08x RET=0x%08x %s",
 	    VTAILQ_FIRST(&sc_ctxs)->nbr, ctx_level,
-	    scc->def->address, scc->when, adr, VSB_data(sc_vsb));
+	    scc->def->address, a7, adr, VSB_data(sc_vsb));
 	return (1);
 }
 
@@ -494,28 +509,33 @@ sc_bpt(void *priv, uint32_t adr)
 	struct sc_ctx *sctx;
 
 	AN(scd);
+	(void)adr;
 	sc_render(0, scd);
 	a7 = m68k_get_reg(NULL, M68K_REG_A7);
 	u = m68k_debug_read_memory_32(a7);
+	if (scd->address == 0x10568) {
+		/* Experiment() return to previous frame */
+		u = m68k_debug_read_memory_32(a7 + 4);
+	}
 	Trace(1, "SCCALL %2d %d SC=0x%08x A7=0x%08x RET=0x%08x %s",
 	    VTAILQ_FIRST(&sc_ctxs)->nbr, ctx_level,
 	    scd->address, a7, u, VSB_data(sc_vsb));
-	if (adr == 0x103b8) {	// PopProgram
+	if (scd->address == 0x103b8) {	// PopProgram
 		ctx_level--;
 		sctx = VTAILQ_FIRST(&sc_ctxs);
 		VTAILQ_REMOVE(&sc_ctxs, sctx, list);
-		free(sctx);
+		// Must leak, pointers to it still exist.
 		return (0);
 	}
-	if (scd->ret_args == supress)
-		return (0);
+	// if (scd->ret_args == supress)
+	//	return (0);
 	scc = calloc(sizeof *scc, 1);
 	AN(scc);
 	scc->def = scd;
 	scc->when = simclock;
 	scc->ctx = VTAILQ_FIRST(&sc_ctxs);
 	ioc_breakpoint(u, sc_bpt_ret, scc);
-	if (adr == 0x103b0) {	// PushProgram
+	if (scd->address == 0x103b0) {	// PushProgram
 		sctx = calloc(sizeof *sctx, 1);
 		AN(sctx);
 		VTAILQ_INSERT_HEAD(&sc_ctxs, sctx, list);
@@ -544,6 +564,7 @@ start_syscall_tracing(int intern)
 	while (a < 0x1061c) {
 		if (scp->address == a) {
 			scp2 = scp++;
+			assert(scp->address > a);
 		} else {
 			scp2 = calloc(sizeof *scp2, 1);
 			AN(scp2);
