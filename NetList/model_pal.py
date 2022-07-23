@@ -552,7 +552,7 @@ def iter_pals():
                 sect.append(line)
                 continue
             if "GAL" in sect[0]:
-                palname = sect[0].split()[3]
+                palname = sect[0].split()[2]
                 palname = palname.split('[')[0]
                 palname = palname.split('_')[0]
                 palname = palname.replace("GAL", "PAL")
