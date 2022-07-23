@@ -100,12 +100,12 @@ static struct sc_def sc_defs[] = {
 	{ 0x10204, "DiskIO",
 	    "D1 .W , sp+2 @W .W , sp+3 @L .L , sp+5 @L .L ':{'"
 	    "sp+5 @L !a "
-	    "'cyl=' @a 12 + @W .W "
-	    "' hd=' @a 14 + @B .B "
-	    "' sec=' @a 15 + @B .B "
-	    "' (=> lba=' @a 12 + @W 0x8fe @W * "
-	    "    @a 14 + @B + 0x8f6 @W * "
-	    "    @a 15 + @B + "
+	    "'cyl=' a 12 + @W .W "
+	    "' hd=' a 14 + @B .B "
+	    "' sec=' a 15 + @B .B "
+	    "' (=> lba=' a 12 + @W 0x8fe @W * "
+	    "    a 14 + @B + 0x8f6 @W * "
+	    "    a 15 + @B + "
 	    "    2 / .W ')}'",
 	    "D1 .W , sp+0 @W .W , sp+1 @L .L , sp+3 @L .L"
 	},
@@ -115,8 +115,8 @@ static struct sc_def sc_defs[] = {
 	},
 	{ 0x1020a, "WriteConsole",
 	    "sp+2 @L !a "
-	    "@a @W .W , "
-	    "@a 2 + @a @W ascii",
+	    "a @W .W , "
+	    "a 2 + a @W ascii",
 	    supress
 	},
 	{ 0x1020c, "PutCharConsole",
@@ -418,13 +418,13 @@ static struct sc_def sc_defs[] = {
 	},
 	{ 0x10568, "Experiment",
 	    "sp+0 @L !a "
-	    "'stackdepth=' @a @W .W , "
-	    "'experiment=' @a 3 + @a 2 + @B ascii , "
-	    "@a 3 + @a 2 + @B + !b "
-	    "'adr=' @b @W .W , "
-	    "'n_out=' @b 2 + @B .B , "
-	    "'n_in=' @b 3 + @B .B , "
-	    "'params=' @b 4 + @b 2 + @B @b 3 + @B + hexdump , ",
+	    "'stackdepth=' a @W .W , "
+	    "'experiment=' a 3 + a 2 + @B ascii , "
+	    "a 3 + a 2 + @B + !b "
+	    "'adr=' b @W .W , "
+	    "'n_out=' b 2 + @B .B , "
+	    "'n_in=' b 3 + @B .B , "
+	    "'params=' b 4 + b 2 + @B b 3 + @B + hexdump , ",
 	    supress
 	},
 	{ 0x10592, "ReadConfig", "sp+2 @L .L ", "sp+0 @L .L , sp+2 @W .W" },

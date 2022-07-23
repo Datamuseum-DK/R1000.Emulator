@@ -236,15 +236,8 @@ cli_ioc_breakpoint(struct cli *cli)
 RPN_REGS
 #undef RPN_REG
 
-static void v_matchproto_(rpn_op_f)
-rpn_sp_0(struct rpn *rpn)
-{
-	intmax_t a7;
-	a7 = m68k_get_reg(NULL, M68K_REG_A7);
-	RPN_PUSH(a7);
-}
-
 #define RPN_SPS \
+	RPN_SP(0) \
 	RPN_SP(1) \
 	RPN_SP(2) \
 	RPN_SP(3) \
@@ -477,8 +470,6 @@ ioc_debug_init(void)
 
 	RPN_REGS
 #undef RPN_REG
-	Rpn_AddOp("sp", rpn_sp_0);
-	Rpn_AddOp("sp+0", rpn_sp_0);
 #define RPN_SP(nbr)	Rpn_AddOp("sp+" #nbr, rpn_sp_##nbr);
 	RPN_SPS
 #undef RPN_SP

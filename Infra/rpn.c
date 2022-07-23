@@ -51,6 +51,7 @@
 struct rpn_op {
 	const char		*name;
 	rpn_op_f		*func;
+	ssize_t			namelen;
 	VTAILQ_ENTRY(rpn_op)	list;
 };
 
@@ -86,6 +87,7 @@ Rpn_AddOp(const char *name, rpn_op_f *func)
 	AN(rpo);
 	rpo->name = strdup(name);
 	AN(rpo->name);
+	rpo->namelen = strlen(rpo->name);
 	rpo->func = func;
 	VTAILQ_INSERT_TAIL(&rpnops, rpo, list);
 }
@@ -107,7 +109,7 @@ rpn_need(const struct rpn *rpn, unsigned up, unsigned down)
 	return (0);
 }
 
-void
+void __printflike(2, 3)
 Rpn_Printf(const struct rpn *rpn, const char *fmt, ...)
 {
 	va_list ap;
@@ -300,7 +302,7 @@ TWO_ARGS
 
 #define VAR(name)			\
 	{ "!" #name, rpn_bang_##name },	\
-	{ "@" #name, rpn_at_##name },
+	{ #name, rpn_at_##name },
 VARS
 #undef VAR
 
@@ -331,6 +333,9 @@ Rpn_Eval(struct vsb *vsb, const char *pgm)
 	memset(rpn, 0, sizeof *rpn);
 	rpn->vsb = vsb;
 	rpn->sp = rpn->stack;
+
+	for(rpno = rpn_builtin; rpno->name != NULL; rpno++)
+		rpno->namelen = strlen(rpno->name);
 
 	while (*pgm != '\0') {
 		if (isspace(*pgm)) {
@@ -363,12 +368,12 @@ Rpn_Eval(struct vsb *vsb, const char *pgm)
 			continue;
 		}
 		VTAILQ_FOREACH(rpno, &rpnops, list) {
-			if (!strncmp(rpno->name, pgm, z))
+			if (rpno->namelen == z && !memcmp(rpno->name, pgm, z))
 				break;
 		}
 		if (rpno == NULL) {
 			for(rpno = rpn_builtin; rpno->name != NULL; rpno++) {
-				if (!strncmp(rpno->name, pgm, z))
+				if (rpno->namelen == z && !memcmp(rpno->name, pgm, z))
 					break;
 			}
 			if (rpno->name == NULL)
