@@ -8,9 +8,6 @@ cli 'sc trace DI*PROC 4'
 cli 'sc quota add 5'
 cli 'sc quota exit'
 
-# Temporary patch to prevent timout of counter overflow test
-cli 'dfs patch P2TYP.M200 0x50c 0xff 0xfe 0xec 0x78'
-
 # 8 => Initialize processor state
 # 3 => Execute diagnostics
 # 4 => Run a specific test

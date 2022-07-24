@@ -202,7 +202,11 @@ ioc_duart_pace_downloads(struct chan *chp)
 	uint8_t adr, cmd;
 
 	cmd = chp->txshift[1] & 0xe0;
-	if (cmd == 0xa0) {
+	if (cmd == 0x00) {
+		// STATUS
+		usleep(50000);
+	} else if (cmd == 0xa0) {
+		// DOWNLOAD
 		elastic_drain(chp->ep);
 		adr = chp->txshift[1] & 0x1f;
 		while ((diprocs[adr].status & 0x0f) == DIPROC_RESPONSE_RUNNING) {
