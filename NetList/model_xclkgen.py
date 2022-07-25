@@ -60,7 +60,7 @@ class XClkGen(PartFactory):
 		|	now = state->when;
 		|	switch (now) {
 		|	case 0:
-		|		if (++state->pit == 32) {
+		|		if (++state->pit == 256) {
 		|			pit_clock();
 		|			state->pit = 0;
 		|		}
