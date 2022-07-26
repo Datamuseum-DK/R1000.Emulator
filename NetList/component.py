@@ -41,6 +41,7 @@ class Component():
 
     def __init__(self, board, compref, compvalue, compsheet, comppart):
         self.board = board
+        self.gref = self.board.name[0] + "_" + compref
         self.ref = compref
         self.value = compvalue
         self.nodes = {}
