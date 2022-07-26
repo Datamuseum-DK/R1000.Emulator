@@ -29,18 +29,18 @@
 # SUCH DAMAGE.
 
 '''
-   25S10 Four-Bit Shifter with Three-State Outputs
-   ===============================================
+   64x4 rotator
+   ============
 
-   Ref: Am25s10 03611B
 '''
 
 
 from part import PartModel, PartFactory
 
-class Am25S10(PartFactory):
+class XROT64(PartFactory):
 
-    ''' 25S10 Four-Bit Shifter with Three-State Outputs '''
+    ''' 64x4 rotator '''
+
 
     def doit(self, file):
         ''' The meat of the doit() function '''
@@ -48,77 +48,32 @@ class Am25S10(PartFactory):
         super().doit(file)
 
         file.fmt('''
-		|	bool output[4];
-		|	unsigned sel;
-		|''')
-
-        if not self.comp["OE"].net.is_const():
-            file.fmt('''
+		|	uint64_t s, i, yl = 0, yh = 0, y;
 		|
 		|	if (PIN_OE=>) {
-		|		TRACE("Z");
+		|		TRACE(<<"Z");
 		|		BUS_Y_Z();
 		|		next_trigger(PIN_OE.negedge_event());
 		|		return;
 		|	}
-		|''')
-        elif self.comp["OE"].net.is_pu():
-            file.fmt('''
-		|		BUS_Y_Z();
-		|		return;
-		|''')
-
-        file.fmt('''
-		|	BUS_S_READ(sel);
-		|	switch(sel) {
-		|	case 0:
-		|		output[0] = PIN_I0=>;
-		|		output[1] = PIN_I1=>;
-		|		output[2] = PIN_I2=>;
-		|		output[3] = PIN_I3=>;
-		|		break;
-		|	case 1:
-		|		output[0] = PIN_IM1=>;
-		|		output[1] = PIN_I0=>;
-		|		output[2] = PIN_I1=>;
-		|		output[3] = PIN_I2=>;
-		|		break;
-		|	case 2:
-		|		output[0] = PIN_IM2=>;
-		|		output[1] = PIN_IM1=>;
-		|		output[2] = PIN_I0=>;
-		|		output[3] = PIN_I1=>;
-		|		break;
-		|	case 3:
-		|		output[0] = PIN_IM3=>;
-		|		output[1] = PIN_IM2=>;
-		|		output[2] = PIN_IM1=>;
-		|		output[3] = PIN_I0=>;
-		|		break;
-		|	}
+		|
+		|	BUS_S_READ(s);
+		|	BUS_I_READ(i);
+		|	s <<= 2;
+		|	yl = i >> s;
+		|	yh = i << (64 - s);
+		|	y = yh | yl;
+		|	BUS_Y_WRITE(y);
 		|	TRACE(
+		|	    << " oe " << PIN_OE?
 		|	    << " s " << BUS_S_TRACE()
-		|	    << " oe_ " << PIN_OE?
-		|	    << " i " << PIN_IM3? << PIN_IM2? << PIN_IM1? << BUS_I_TRACE()
-		|	    << "|"
-		|	    << output[0] << output[1] << output[2] << output[3]
+		|	    << " i " << BUS_I_TRACE()
+		|	    << " " << std::hex << i
+		|	    << " y " << std::hex << y
 		|	);
-		|	PIN_Y0<=(output[0]);
-		|	PIN_Y1<=(output[1]);
-		|	PIN_Y2<=(output[2]);
-		|	PIN_Y3<=(output[3]);
 		|''')
-
-class Model25S10(PartModel):
-    ''' Am25S10 '''
-
-    def assign(self, comp):
-        for node in comp:
-            if node.pin.name[:2] == "I-":
-                node.pin.name = "IM" + node.pin.name[2:]
-        super().assign(comp)
 
 def register(board):
     ''' Register component model '''
 
-    board.add_part("25S10", Model25S10("25S10", Am25S10))
+    board.add_part("XROT64", PartModel("XROT64", XROT64))

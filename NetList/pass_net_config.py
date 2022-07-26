@@ -236,9 +236,10 @@ class PassNetConfig():
 
             uniq_comps = set(x.component.gref for x in net.nnodes)
             if len(uniq_comps) != len(net.nnodes):
-                print("DISC", net, len(uniq_comps), len(net.nnodes))
-                for n in net.nnodes:
-                    print("\t", n.component.ref, n.component)
+                if 0 and not net.is_supply:
+                    print("DISC", net, len(uniq_comps), len(net.nnodes))
+                    for n in net.nnodes:
+                        print("\t", n.component.ref, n.component)
                 # Signals which connect multiple times to a single component
                 # are disqualified, because we cannot (easily) figure out
                 # which of the multiple connections to assign where in the bus.
