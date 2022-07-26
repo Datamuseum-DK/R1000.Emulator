@@ -35,6 +35,7 @@ ${OBJDIR}/sc_main_thread.o: \
 
 OBJS += ${OBJDIR}/sc_watchdog.o
 ${OBJDIR}/sc_watchdog.o: \
+    Chassis/sc_watchdog.c \
     Infra/r1000.h \
     Infra/context.h \
     Diag/diagproc.h \
