@@ -25,6 +25,7 @@ extern int sc_boards;
 extern const char *tracepath;
 
 extern int sc_forced_reset;
+extern struct timespec sc_t0;
 
 #ifndef __cplusplus
 cli_func_f cli_sc_watchdog;

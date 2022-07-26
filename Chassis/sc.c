@@ -66,7 +66,7 @@ static pthread_cond_t sc_cond;
 static double sc_quota = 0;
 static int sc_quota_exit = 0;
 int sc_started;
-static struct timespec sc_t0;
+struct timespec sc_t0;
 
 void
 sysc_trace(const char *me, const char *fmt)
