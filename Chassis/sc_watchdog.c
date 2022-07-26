@@ -13,6 +13,7 @@
 static pthread_t fido_thread;
 static int fido_patience = 60;
 static int fido_started = 0;
+static int fido_dont_bite = 0;
 
 static void *
 fido(void *priv)
@@ -22,11 +23,22 @@ fido(void *priv)
 	const struct diagproc_context *dctx;
 	uint64_t last_exec = 0, last_instr = 0, last_act = 0;
 	uint64_t this_exec, this_instr, this_act;
+	struct timespec t1;
+	double d, e;
 
 	(void)priv;
 	sleep(fido_patience);
 	while (1) {
 		sleep(fido_patience);
+		AZ(clock_gettime(CLOCK_REALTIME, &t1));
+		e = sc_when();
+		if (e > 0) {
+			d = 1e-9 * (t1.tv_nsec - sc_t0.tv_nsec);
+			d += (t1.tv_sec - sc_t0.tv_sec);
+			printf("SC real time: %.3f\tsim time: %.3f\tratio: %.3f\n",
+			    d, e, d / e);
+		}
+
 		this_exec = this_instr = this_act = 0;
 		ctx_iter_priv = NULL;
 		while(1) {
@@ -51,7 +63,8 @@ fido(void *priv)
 		    (double)(this_instr - last_instr) / (double)fido_patience,
 		    (double)(this_exec - last_exec) / (double)fido_patience
 		);
-		if (this_exec > last_exec && this_instr > last_instr) {
+		if (fido_dont_bite ||
+                    (this_exec > last_exec && this_instr > last_instr)) {
 			last_act = this_act;
 			last_exec = this_exec;
 			last_instr = this_instr;
@@ -74,12 +87,21 @@ cli_sc_watchdog(struct cli *cli)
 {
 	int patience;
 
-	if (cli->help || cli->ac != 2) {
-		Cli_Usage(cli, "<seconds>",
+	if (cli->help || cli->ac < 2 || cli->ac > 3) {
+		Cli_Usage(cli, "[-dont_bite] <seconds>",
 		    "Tickle watchdog periodically.");
 		return;
 	}
-	patience = strtoul(cli->av[1], NULL, 0);
+
+	if (!strcmp(cli->av[1], "-dont_bite")) {
+		fido_dont_bite = 1;
+		if (cli->ac == 2)
+			patience = 60;
+		else
+			patience = strtoul(cli->av[2], NULL, 0);
+	} else {
+		patience = strtoul(cli->av[1], NULL, 0);
+	}
 	if (patience < 5) {
 		Cli_Error(cli, "Too short patience for fido: %d\n", patience);
 		return;
