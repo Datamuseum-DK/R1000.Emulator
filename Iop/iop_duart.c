@@ -283,9 +283,7 @@ io_duart_pre_read(int debug, uint8_t *space, unsigned width, unsigned adr)
 		ioc_duart->counter = io_duart_wr_space[REG_W_CTLR];
 		ioc_duart->counter |= io_duart_wr_space[REG_W_CTUR] << 8;
 		ioc_duart->pit_running = 1;
-		Trace(trace_ioc_pit, "PIT START 0x%02x%02x",
-		    io_duart_rd_space[REG_R_CTU],
-		    io_duart_rd_space[REG_R_CTL]);
+		Trace(trace_ioc_pit, "PIT START 0x%04x", ioc_duart->counter);
 		break;
 	case REG_R_STOP_PIT:
 		Trace(trace_ioc_pit, "PIT STOP");
