@@ -42,7 +42,7 @@ class XZCNT(PartFactory):
     ''' Zero bit counter'''
 
     def state(self, file):
-        file.write("\tunsigned count;\n")
+        file.write("\tuint64_t count;\n")
 
     def sensitive(self):
         yield 'PIN_OE'
