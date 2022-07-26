@@ -13,6 +13,9 @@ standard_patches() {
 	cli dfs patch FS_0.M200 0x8fb7 0x20
 	cli dfs patch FS_0.M200 0x8fbd 0x20
 	cli dfs patch FS_0.M200 0x827e 0x40 0x0a 0x0d
+
+	# Poll experiment completion four times more often
+	cli 'dfs patch FS_0.M200 0x93c6 0x00 0x14'
 }
 
 cli() {
@@ -34,6 +37,7 @@ sc_boards() {
 	do
 	    echo "$*" | grep -q -i ${brd} || cli diproc dummy -TIMEOUT ${brd}
 	done
+	cli 'sc watchdog -dont_bite'
 }
 
 cli_prompt() {
