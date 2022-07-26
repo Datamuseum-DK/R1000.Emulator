@@ -19,12 +19,14 @@ static void *
 fido(void *priv)
 {
 	const struct ctx *cp;
+	struct ctx ccp;
 	void *ctx_iter_priv;
 	const struct diagproc_context *dctx;
 	uint64_t last_exec = 0, last_instr = 0, last_act = 0;
 	uint64_t this_exec, this_instr, this_act;
 	struct timespec t1;
 	double d, e;
+	char *p;
 
 	(void)priv;
 	sleep(fido_patience);
@@ -47,9 +49,14 @@ fido(void *priv)
 				break;
 			if (strstr(cp->ident, "PROC") == NULL)
 				continue;
+			ccp = *cp;
+			p = strchr(ccp.ident, ' ');
+                        if (p != NULL)
+				*p = '\0';
+			
 			dctx = (const void*)(cp+1);
 			printf("FIDO barks: %s act %ju mcs51 %ju exp %ju\n",
-			    cp->ident,
+			    ccp.ident,
 			    (uintmax_t)cp->activations,
 			    (uintmax_t)dctx->instructions,
 			    (uintmax_t)dctx->executions
