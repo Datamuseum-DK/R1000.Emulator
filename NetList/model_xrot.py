@@ -37,6 +37,40 @@
 
 from part import PartModel, PartFactory
 
+class XROT16(PartFactory):
+
+    ''' 16x4x2 rotator '''
+
+
+    def doit(self, file):
+        ''' The meat of the doit() function '''
+
+        super().doit(file)
+
+        file.fmt('''
+		|	unsigned a, b, s, ab, y = 0;
+		|
+		|	BUS_A_READ(a);
+		|	BUS_B_READ(b);
+		|	BUS_S_READ(s);
+		|	BUS_AB_READ(ab);
+		|	a >>= s;
+		|	b >>= s;
+		|	y |= (ab & 0x1) ? (b & 0x000f) : (a & 0x000f);
+		|	y |= (ab & 0x2) ? (b & 0x00f0) : (a & 0x00f0);
+		|	y |= (ab & 0x4) ? (b & 0x0f00) : (a & 0x0f00);
+		|	y |= (ab & 0x8) ? (b & 0xf000) : (a & 0xf000);
+		|	TRACE(
+		|	    << " a " << BUS_A_TRACE()
+		|	    << " b " << BUS_B_TRACE()
+		|	    << " s " << BUS_S_TRACE()
+		|	    << " ab " << BUS_AB_TRACE()
+		|	    << " y " << std::hex << y
+		|	);
+		|	BUS_Y_WRITE(y);
+		|''')
+
+
 class XROT64(PartFactory):
 
     ''' 64x4 rotator '''
@@ -76,4 +110,5 @@ class XROT64(PartFactory):
 def register(board):
     ''' Register component model '''
 
+    board.add_part("XROT16", PartModel("XROT16", XROT16))
     board.add_part("XROT64", PartModel("XROT64", XROT64))

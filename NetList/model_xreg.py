@@ -68,7 +68,7 @@ class Xreg(PartFactory):
         file.fmt('''
 		|
 		|	if (state->job == -3) {
-		|		BUS_Q_WRITE(0);
+		|		BUS_Q_WRITE(0ULL);
 		|		state->job = -1;
 		|	}
 		|
