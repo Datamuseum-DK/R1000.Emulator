@@ -123,6 +123,7 @@ static void
 ioc_duart_pit_tick(void)
 {
 	AZ(pthread_mutex_lock(&duart_mtx));
+	Trace(trace_ioc_pit, "PIT tick 0x%04x", ioc_duart->counter);
 	if (ioc_duart->pit_running == 1) {
 		ioc_duart->pit_running = 2;
 	} else if (ioc_duart->pit_running == 2) {
