@@ -294,6 +294,17 @@ rpn_load_l(struct rpn *rpn)
 }
 
 static void v_matchproto_(rpn_op_f)
+rpn_load_q(struct rpn *rpn)
+{
+	intmax_t a, b;
+
+	RPN_POP(a);
+	b = ((intmax_t)m68k_debug_read_memory_32((unsigned)a)) << 32;
+	b |= m68k_debug_read_memory_32((unsigned)(a + 4));
+	RPN_PUSH(b);
+}
+
+static void v_matchproto_(rpn_op_f)
 rpn_comma(struct rpn *rpn)
 {
 
@@ -344,10 +355,14 @@ rpn_dirent(struct rpn *rpn)
 
 	RPN_POP(a);
 	u = m68k_debug_read_memory_32((unsigned)a);
-	// u = m68k_debug_read_memory_32(u);
-	Rpn_Printf(rpn, "Dirent@0x%08x{'", u);
-	for (v = 0; v < 0x1c; v++) {
-		c = m68k_debug_read_memory_8(u++);
+        if (u == 1) {
+		Rpn_Printf(rpn, "Dirent@0x%08x{}", u);
+		return;
+	}
+	// Rpn_Printf(rpn, "Dirent@0x%08x{'", u);
+	Rpn_Printf(rpn, "Dirent{'");
+	for (v = 0; v < 0x1e; v++) {
+		c = m68k_debug_read_memory_8(u + v);
 		if (!c)
 			break;
 		if (0x20 <= c && c <= 0x7e)
@@ -355,30 +370,14 @@ rpn_dirent(struct rpn *rpn)
 		else
 			Rpn_Printf(rpn, "\\x%02x", c);
 	}
-	Rpn_Printf(rpn, "', ");
-	for (; v < 0x1c; v++) {
-		c = m68k_debug_read_memory_8(u++);
-		if (c)
-			Rpn_Printf(rpn, " [Bogo @%x: x%02x]", v, c);
-	}
-	for (; v < 0x23; v++) {
-		c = m68k_debug_read_memory_8(u++);
-		Rpn_Printf(rpn, "%02x", c);
-	}
-	w = m68k_debug_read_memory_16(u);
-	Rpn_Printf(rpn, ", lba=0x%04x, ", w);
-	v += 2;
-	u += 2;
-	for (; v < 0x39; v++) {
-		c = m68k_debug_read_memory_8(u++);
-		if (c)
-			Rpn_Printf(rpn, " [Bogo @%x: x%02x]", v, c);
-	}
-	for (; v < 0x40; v++) {
-		c = m68k_debug_read_memory_8(u++);
-		Rpn_Printf(rpn, "%02x", c);
-	}
-	Rpn_Printf(rpn, "}");
+	// w = m68k_debug_read_memory_16(u + 0x1e); Rpn_Printf(rpn, ", hash=0x%04x", w);
+	w = m68k_debug_read_memory_16(u + 0x20); Rpn_Printf(rpn, ", used=0x%04x", w);
+	w = m68k_debug_read_memory_16(u + 0x22); Rpn_Printf(rpn, ", alloc=0x%04x", w);
+	w = m68k_debug_read_memory_16(u + 0x24); Rpn_Printf(rpn, ", lba=0x%04x", w);
+	// w = m68k_debug_read_memory_16(u + 0x3a); Rpn_Printf(rpn, ", time=0x%04x", w);
+	// w = m68k_debug_read_memory_16(u + 0x3c); Rpn_Printf(rpn, ", date=0x%04x", w);
+	// w = m68k_debug_read_memory_16(u + 0x3e); Rpn_Printf(rpn, ", flag=0x%04x", w);
+	Rpn_Printf(rpn, " }", u + v);
 }
 
 static void v_matchproto_(rpn_op_f)
@@ -476,6 +475,7 @@ ioc_debug_init(void)
 	Rpn_AddOp("@B", rpn_load_b);
 	Rpn_AddOp("@W", rpn_load_w);
 	Rpn_AddOp("@L", rpn_load_l);
+	Rpn_AddOp("@Q", rpn_load_q);
 	Rpn_AddOp(",", rpn_comma);
 	Rpn_AddOp("String", rpn_string);
 	Rpn_AddOp("Dirent", rpn_dirent);
