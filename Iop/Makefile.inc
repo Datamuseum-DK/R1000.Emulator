@@ -130,6 +130,7 @@ ${OBJDIR}/iop_scsi_dev.o: \
 OBJS += ${OBJDIR}/iop_syscall.o
 ${OBJDIR}/iop_syscall.o: \
     Iop/iop_syscall.c \
+    Iop/pascal_syscalls.c \
     Iop/iop.h \
     Iop/memspace.h \
     Infra/vsb.h \

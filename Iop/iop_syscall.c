@@ -46,25 +46,26 @@ struct sc_def {
 };
 
 static int is_tracing = 0;
+static int indent = 0;
 
 static const char supress[] = "";
+static const char noreturn[] = "";
 
 static struct sc_def sc_kernel[] = {
 	{ 0x0362c, "DiagBus_Response",
 	    "'D2=' D2 .W",
 	    supress
 	},
+#if 0
 	{ 0x0374c, "DiagBus_KC15",
 	    "'D0=' D0 .W , 'A0=' A0 .L , A0 16 hexdump",
 	    supress
 	},
-	{ 0x37a8, "DiagBus_KC15_CMDx",
-	    "'D0=' D0 .W",
-	    supress
-	},
+	{ 0x37a8, "DiagBus_KC15_CMDx", "'D0=' D0 .W", "" },
 	{ 0x37b2, "DiagBus_KC15_CMD0", supress, supress },
 	{ 0x37d0, "DiagBus_KC15_CMD1", supress, supress },
 	{ 0x3840, "DiagBus_KC15_CMD5", supress, supress },
+#endif
 	{ 0x09d6e, "Timeout_Stop_PIT",
 	    "'A1=' A1 .L",
 	    supress
@@ -88,6 +89,11 @@ static struct sc_def sc_kernel[] = {
 	{ 1U<<31, NULL, NULL, NULL },
 };
 
+static struct sc_def pascal_defs[] = {
+#include "Iop/pascal_syscalls.c"
+	{ 1U<<31, NULL, NULL, NULL },
+};
+
 static struct sc_def sc_defs[] = {
 	{ 0x10200, "FSC_10200",
 	    "sp+4 @B .B , sp+2 @W .W",
@@ -97,88 +103,32 @@ static struct sc_def sc_defs[] = {
 	    "sp+2 @W .W , sp+3 @W .W",
 	    supress
 	},
-	{ 0x10204, "DiskIO",
-	    "D1 .W , sp+2 @W .W , sp+3 @L .L , sp+5 @L .L ':{'"
-	    "sp+5 @L !a "
-	    "'cyl=' a 12 + @W .W "
-	    "' hd=' a 14 + @B .B "
-	    "' sec=' a 15 + @B .B "
-	    "' (=> lba=' a 12 + @W 0x8fe @W * "
-	    "    a 14 + @B + 0x8f6 @W * "
-	    "    a 15 + @B + "
-	    "    2 / .W ')}'",
-	    "D1 .W , sp+0 @W .W , sp+1 @L .L , sp+3 @L .L"
-	},
-	{ 0x10206, "WaitDiskIO",
-	    "sp+4 @W .W , sp+2 .L",
-	    "sp+2 @W .W , sp+0 @B .B"
-	},
 	{ 0x1020a, "WriteConsole",
 	    "sp+2 @L !a "
 	    "a @W .W , "
 	    "a 2 + a @W ascii",
 	    supress
 	},
-	{ 0x1020c, "PutCharConsole",
-	    "sp+2 @W .B ' (' sp+2 1 + 1 ascii ')'",
-	    supress
-	},
-	{ 0x1020e, "GetCharConsole",
-	    "sp+2 @L .L ",
-	    "sp+0 @L @W .B ' (' sp+0 @L 1 + 1 ascii ')'",
-	},
 	{ 0x1021e, "ReInit",
 	    "sp+2 @L 16 hexdump",
-	    supress
-	},
-	{ 0x10224, "Sleep",
-	    "sp+2 @L .L",
 	    supress
 	},
 	{ 0x10226, "Calendar",
 	    "sp+2 @L .L",
 	    "sp+0 @L 7 hexdump"
 	},
-	{ 0x1022a, "DiagBus",
-	    "sp+5 @L .L sp+5 @L 32 hexdump , "
-	    "'cmd=' sp+4 @W .W , "
-	    "sp+2 @L @W .W",
-	    "sp+3 @L .L sp+3 @L 32 hexdump , "
-	    "'cmd=' sp+2 @W .W , "
-	    "sp+0 @L @W .W",
-	},
 	{ 0x10232, "FSC_10232",
 	    "'Src=' sp+5 @L .L , 'Dst=' sp+3 @L .L , 'Len=' sp+2 @B .B "
 	    "' ' sp+5 @L sp+2 @B hexdump",
 	    supress
 	},
-	{ 0x10238, "ProtCopy",
-	    "'Src=' sp+5 @L .L , 'Dst=' sp+3 @L .L , 'Len=' sp+2 @W .W "
-	    "' ' sp+5 @L sp+2 @W hexdump",
-	    supress
-	},
-	{ 0x1023a, "SpaceRead",
-	    "'src=' sp+7 @L .L , "
-	    "'sfc=' sp+6 @W .W , "
-	    "'dst=' sp+4 @L .L , "
-	    "'dfc=' sp+3 @W .W , "
-	    "'len=' sp+2 @W .W "
-	    "sp+7 @L sp+2 @W hexdump"
-	    ,
-	    supress
-	},
-	{ 0x10280, "StartProg", ".A7", supress },
+	{ 0x10280, "StartProg", ".A7", noreturn },
 
 	{ 0x1028c, "?muls_d3_d4_to_d4", ".D3 , .D4", ".D3 , .D4" },
 	{ 0x10290, "?mulu_d3_d4_to_d4", ".D3 , .D4", ".D3 , .D4" },
 	{ 0x10294, "?divs_d3_d4", ".D3 , .D4", ".D3 , .D4" },
 	{ 0x10298, "?divu_d3_d4", ".D3 , .D4", ".D3 , .D4" },
 
-	{ 0x1029c, "Malloc", "sp+4 @L .L , sp+2 @L .L", "sp+2 @L @L .L" },
-	{ 0x102a8, "Free", "sp+4 @L @L .L , sp+2 @L .L", supress },
-	{ 0x102b8, "NewString", "", "sp+0 @L String" },
-	{ 0x102bc, "FreeString", "sp+2 @L String", supress },
-	{ 0x102c0, "AppendChar", "sp+3 String , sp+2 @B .B", "sp+1 String" },
 	{ 0x102c4, "FillString",
 	    "sp+6 .L , "
 	    "sp+4 @L sp+2 @W ascii , "
@@ -186,32 +136,10 @@ static struct sc_def sc_defs[] = {
 	    "sp+2 @W .W " ,
 	    "sp+4 String"
 	},
-	{ 0x102c8, "StringEqual", "sp+4 String , sp+2 String", "sp+4 @B .B" },
-	{ 0x102cc, "StringDup", "sp+2 String", "sp+0 String" },
-	{ 0x102d0, "StringCat2", "sp+4 String , sp+2 String", "sp+4 String" },
-	{ 0x102d4, "StringCat3",
-	    "sp+8 .L , sp+6 String , sp+4 String , sp+2 String",
-	    "sp+6 String"
-	},
-	{ 0x102d8, "StringCat4",
-	    "sp+8 String , sp+6 String , sp+4 String , sp+2 String",
-	    "sp+6 String"
-	},
-	{ 0x102dc, "StringCat5",
-	    "sp+10 String , sp+8 String , sp+6 String , sp+4 String , sp+2 String",
-	    "sp+8 String"
-	},
-	{ 0x102e4, "LongInt2String", "sp+2 @L .L", "sp+2 String" },
-	{ 0x102ec, "String2LongInt",
-	    "sp+6 String",
-	    "sp+0 @L @L .L , sp+2 @L @B .B"
-	},
-	{ 0x102f0, "ToUpper", "sp+2 String", "sp+0 String" },
-	{ 0x102f8, "RightPad", "sp+4 String , sp+2 @L .L", "sp+2 String" },
-	{ 0x10304, "Timestamp", "sp+2 @L .L", "sp+0 @L @L .L" },
+	{ 0x102fc, "FS102fc", "sp+10 String, sp+6 String, sp+2 @L .L", "sp+6 String, sp+2 String" },
 	{ 0x10308, "Time2Text",
 	    "sp+4 @L .L , "
-	    "sp+2 @L .L",
+	    "sp+2 @L .L , stack",
 	    "sp+2 String , "
 	    "sp+0 @L @L .L"
 	},
@@ -226,36 +154,6 @@ static struct sc_def sc_defs[] = {
 	    "sp+2 @L .L , "
 	    "sp+0 @L .L"
 	},
-	{ 0x10368, "LBA2CHS",
-	    "sp+6 @W .W , sp+4 @L .L , sp+2 @L .L",
-	    "sp+4 @W .W , sp+2 @L @W .W , sp+0 @L @W .W"
-	},
-	{ 0x1036c, "RW_Sectors",
-	    "sp+9 @B .B , "
-	    "'lba=' sp+8 @W .W , "
-	    "'nsect=' sp+6 @L .L , "
-	    "'dst=' sp+4 @L .L , "
-	    "sp+2 @L @B .B "
-	    ,
-	    "sp+7 @B .B , "
-	    "'lba=' sp+6 @W .W , "
-	    "'nsect=' sp+4 @L .L , "
-	    "'dst=' sp+2 @L .L , "
-	    "sp+0 @L @B .B "
-	},
-	{ 0x10374, "FSC_10374",
-	    "'lba=' sp+8 @W .W , "
-	    "sp+7 @W .W , "
-	    "sp+5 @L .L , "
-	    "sp+4 @W .W , "
-	    "sp+2 @L .L "
-	    ,
-	    "'lba=' sp+6 @W .W , "
-	    "sp+5 @W .W , "
-	    "sp+3 @L .L , "
-	    "sp+2 @W .W , "
-	    "sp+0 @L .L , "
-	},
 	{ 0x1037c, "FSC_1037c",
 	    "sp+4 @L .L sp+4 @L 16 ascii , "
 	    "sp+2 @L .L "
@@ -266,40 +164,6 @@ static struct sc_def sc_defs[] = {
 	{ 0x10380, "OpenFile",
 	    "sp+10 String , sp+9 @W .W , sp+8 @B .B , sp+6 @L .L",
 	    "sp+2 @B .B , sp+0 @L Dirent"
-	},
-	{ 0x10384, "ReadFile",
-	    "sp+10 Dirent , "
-	    "'secno=' sp+9 @W .W , "
-	    "sp+8 @W .W , "
-	    "sp+7 @W .W , "
-	    "sp+6 @B .B , "
-	    "'ptr=' sp+4 @L .L sp+4 @L 16 hexdump , "
-	    "sp+2 @L .L",
-
-	    "sp+8 Dirent , "
-	    "'secno=' sp+7 @W .W , "
-	    "sp+6 @W .W , "
-	    "sp+5 @W .W , "
-	    "sp+4 @B .B , "
-	    "'ptr=' sp+2 @L .L sp+2 @L 16 hexdump , "
-	    "sp+0 @L .L"
-	},
-	{ 0x10388, "WriteFile",
-	    "sp+10 Dirent , "
-	    "'secno=' sp+9 @W .W , "
-	    "sp+8 @W .W , "
-	    "sp+7 @W .W , "
-	    "sp+6 @B .B , "
-	    "'ptr=' sp+4 @L .L sp+4 @L 16 hexdump , "
-	    "sp+2 @L .L",
-
-	    "sp+8 Dirent , "
-	    "'secno=' sp+7 @W .W , "
-	    "sp+6 @W .W , "
-	    "sp+5 @W .W , "
-	    "sp+4 @B .B , "
-	    "'ptr=' sp+2 @L .L sp+2 @L 16 hexdump , "
-	    "sp+0 @L .L"
 	},
 	{ 0x1038c, "CloseFile",
 	    "sp+9 @B .B , "
@@ -326,40 +190,12 @@ static struct sc_def sc_defs[] = {
 	    "sp+2 String , sp+4 @B .B",
 	    "sp+0 @L 16 hexdump"
 	},
-	{ 0x103d0, "WriteConsoleChar",
-	    "sp+2 @B .B",
-	    supress
+#if 0
+	{ 0x10454, "FS10454",
+	    "stack , sp+4 @L 16 hexdump , sp+8 @L hexdump",
+	    "stack",
 	},
-	{ 0x103d8, "WriteConsoleString",
-	    "sp+2 String",
-	    supress
-	},
-	{ 0x103dc, "WriteConsoleCrLf", "", "" },
-	{ 0x103e0, "WriteLineConsoleString",
-	    "sp+2 String",
-	    supress
-	},
-	{ 0x103e4, "AskConsoleString",
-	    "sp+4 .L , "
-	    "sp+2 String ",
-	    "sp+2 String"
-	},
-	{ 0x1043c, "FileReadLine",
-	    "sp+6 Dirent , "
-	    "sp+4 @L .L , "
-	    "sp+2 @B .B"
-	    ,
-	    "sp+4 Dirent , "
-	    "sp+2 @L String , "
-	    "sp+0 @B .B"
-	},
-	{ 0x10460, "LoadExperiment",
-	    "sp+4 String , "
-	    "sp+2 @L .L "
-	    ,
-	    "'<freed>' , "
-	    "sp+0 @L .L '=>' sp+0 @L @L .L ' ' sp+0 @L @L 16 hexdump "
-	},
+#endif
 	{ 0x10466, "ExpInputParam",
 	    "sp+6 @L .L , "
 	    "sp+4 @L .L , "
@@ -367,54 +203,13 @@ static struct sc_def sc_defs[] = {
 	    ,
 	    supress
 	},
-	{ 0x10472, "DiagGetOutParam",
-	    "sp+6 @L .L , "
-	    "sp+4 @L .L , "
-	    "sp+2 @L .L "
-	    ,
-	    "sp+4 @L sp+0 @L 1 +  hexdump , "
-	    "sp+2 @L .L , "
-	    "sp+0 @L .L "
-	},
-	{ 0x10478, "FSC_10478",
-	    "sp+2 @L 16 hexdump",
-	    supress
-	},
-	{ 0x1047e, "DiagBusXmit",
-	    "sp+4 @B .B , "
-	    "sp+2 @L 16 hexdump ",
-	    "sp+2 @B .B , "
-	    "sp+0 @L 16 hexdump "
-	},
-	{ 0x10484, "DiagBusPing",
-	    "'adr=' sp+8 @B .B , "
-	    "sp+6 @L .L , "
-	    "sp+4 @L @B .B , "
-	    "sp+2 @L @B .B",
-	    "'adr=' sp+6 @B .B , "
-	    "'status=' sp+4 @L @B .B , "
-	    "sp+2 @L @B .B , "
-	    "sp+0 @L @B .B"
-	},
-	{ 0x1048a, "DiagBusCmd",
-	    "'adr=' sp+3 @B .B , 'cmd=' sp+2 @B .B",
-	    supress
-	},
-	{ 0x10496, "CloseExperiment",
+	{ 0x1046c, "ExpInputFlag",
 	    "sp+2 @L @L 16 hexdump",
 	    supress
 	},
-	{ 0x104ba, "DiagDownload",
-	    "sp+5 @B .B , "
-	    "'adr=' sp+4 @B .B , "
-	    "sp+2 @L .L sp+2 @L 16 hexdump , "
-	    ,
-	    "sp+3 @B .B , "
-	    "sp+2 @B .B , "
-	    "sp+0 @L .L sp+0 @L 16 hexdump , "
-	},
-	{ 0x104c0, "FSC_104c0",
-	    "sp+4 @B .B , sp+2 @B .B", "sp+2 @B .B , sp+0 @B .B",
+	{ 0x10496, "ExpClose",
+	    "sp+2 @L @L 16 hexdump",
+	    supress
 	},
 	{ 0x10568, "Experiment",
 	    "sp+0 @L !a "
@@ -427,14 +222,12 @@ static struct sc_def sc_defs[] = {
 	    "'params=' b 4 + b 2 + @B b 3 + @B + hexdump , ",
 	    supress
 	},
-	{ 0x10592, "ReadConfig", "sp+2 @L .L ", "sp+0 @L .L , sp+2 @W .W" },
-	{ 0x105ce, "ReadKeySwitch", "", "sp+0 @B .B" },
-
 	{ 1U<<31, NULL, NULL, NULL },
 };
 
 struct sc_ctx {
 	int			nbr;
+	int			indent;
 	VTAILQ_ENTRY(sc_ctx)	list;
 };
 
@@ -466,6 +259,9 @@ sc_render(int ret, const struct sc_def *def)
 
 	VSB_clear(sc_vsb);
 
+	for (i = 0; i < indent; i++)
+		VSB_putc(sc_vsb, ' ');
+
 	if (def->name == NULL)
 		VSB_printf(sc_vsb, "FS_CALL_%08x", def->address);
 	else
@@ -492,6 +288,10 @@ sc_bpt_ret(void *priv, uint32_t adr)
 
 	if (scc->ctx != VTAILQ_FIRST(&sc_ctxs))
 		return (0);
+
+	if (indent > 0)
+		indent--;
+
 	sc_render(1, scc->def);
 	a7 = m68k_get_reg(NULL, M68K_REG_A7);
 	Trace(1, "SCEXIT %2d %d SC=0x%08x A7=0x%08x RET=0x%08x %s",
@@ -524,11 +324,16 @@ sc_bpt(void *priv, uint32_t adr)
 		ctx_level--;
 		sctx = VTAILQ_FIRST(&sc_ctxs);
 		VTAILQ_REMOVE(&sc_ctxs, sctx, list);
+		indent = sctx->indent;
 		// Must leak, pointers to it still exist.
 		return (0);
 	}
-	// if (scd->ret_args == supress)
-	//	return (0);
+	if (scd->address == 0x10280)
+		return (0);
+	if (scd->ret_args == noreturn)
+		return (0);
+	if (indent < 40)
+		indent++;
 	scc = calloc(sizeof *scc, 1);
 	AN(scc);
 	scc->def = scd;
@@ -540,6 +345,7 @@ sc_bpt(void *priv, uint32_t adr)
 		AN(sctx);
 		VTAILQ_INSERT_HEAD(&sc_ctxs, sctx, list);
 		sctx->nbr = ++ctx_ctr;
+		sctx->indent = indent;
 		ctx_level++;
 	}
 	return (0);
@@ -549,7 +355,7 @@ static void
 start_syscall_tracing(int intern)
 {
 	unsigned a, b;
-	struct sc_def *scp, *scp2;
+	struct sc_def *scp, *scp2, *scp3;
 	struct sc_ctx *sctx;
 
 	if (intern) {
@@ -559,10 +365,21 @@ start_syscall_tracing(int intern)
 			scp++;
 		}
 	}
+
 	scp = sc_defs;
+	scp3 = pascal_defs;
 	a = 0x10200;
 	while (a < 0x1061c) {
-		if (scp->address == a) {
+		if (scp3->address == a && scp->address == a) {
+                        printf("DUP BREAKPOINT 0x%x\n", a);
+			scp2 = scp3++;
+			assert(scp3->address > a);
+			scp++;
+			assert(scp->address > a);
+		} else if (scp3->address == a) {
+			scp2 = scp3++;
+			assert(scp3->address > a);
+		} else if (scp->address == a) {
 			scp2 = scp++;
 			assert(scp->address > a);
 		} else {
@@ -729,30 +546,13 @@ ioc_trace_syscall(unsigned pc)
 	if (0x10460 <= pc && pc <= 0x104c0)
 		return;
 	switch (pc) {
-	case 0x10204: dump_10204(syscall_vsb, a7); break;
-	case 0x10206: return;
 	case 0x1020a: return;
-	case 0x1022a: return;
-	case 0x10238: return;
 	case 0x102c4: return;
-	case 0x102c8: return;
-	case 0x102cc: return;
-	case 0x102d0: return;
-	case 0x102d4: return;
-	case 0x102e4: return;
 	case 0x10310: return;
 	case 0x10380: return;
-	case 0x103d0: return;
-	case 0x103d8: return;
-	case 0x103e0: return;
 	case 0x103e4: return;
-	case 0x10460: return;
 	case 0x10466: return;
 	case 0x1046c: return;
-	case 0x10472: return;
-	case 0x10478: return;
-	case 0x1047e: return;
-	case 0x10484: return;
 	case 0x10da4: return;
 	default:
 		VSB_cat(syscall_vsb, "\n");
@@ -1025,24 +825,15 @@ static struct syscall syscalls[] = {
 	{ "WriteLnConsole",	0x154b0, 0x154f4, 0x154f4, 0, "sS", ""},
 	{ "AskConsoleString",	0x15694, 0x158be, 0x158c0, 0, "sS", "ilsS"},
 	{ "ReadDir",		0x17d1a, 0x17e94, 0,	   1, "", ""},
-	{ "fs_10460",		0x1866c, 0x18b26, 0,	   1, "sPsPsL", "sPsPsP"},
 	{ "fs_10466",		0x18b28, 0x18b84, 0,	   1, "", ""},
 	{ "fs_1046c",		0x18b86, 0x18bf2, 0,	   1, "", ""},
-	{ "fs_10472",		0x18bf4, 0x18c90, 0,	   1, "sLsLsPsP", "sLsLsPsP"},
-	{ "fs_10478",		0x18c92, 0x18d22, 0,	   1, "", ""},
-	{ "fs_1047e_exp_xmit",	0x18d24, 0x18d60, 0,	   1, "sEsB", "sE"},
-	{ "fs_10484",		0x18d62, 0x18df6, 0,	   1, "sPsPsP", "sPsPsP"},
-	{ "fs_1048a",		0x18df8, 0x18e40, 0,	   1, "", ""},
-	{ "fs_10490",		0x18e42, 0x18eea, 0,	   1, "", ""},
 	{ "fs_10496_exp_close",	0x18eec, 0x18ff0, 0,	   1, "", ""},
 	{ "fs_1049c",		0x18ff2, 0x190a2, 0,	   1, "", ""},
 	{ "fs_104a2",		0x190a4, 0x190f8, 0,	   1, "", ""},
 	{ "fs_104a8",		0x190fa, 0x19168, 0,	   1, "", ""},
 	{ "fs_104ae",		0x1916a, 0x191d4, 0,	   1, "", ""},
 	{ "fs_104b4",		0x191d6, 0x1927c, 0,	   1, "", ""},
-	{ "fs_104ba",		0x1927e, 0x194f4, 0,	   1, "sEsBsBsW", "sEsBsBsW"},
 	{ "fs_104c0",		0x194f6, 0x195fc, 0,	   1, "", ""},
-	{ "fs_10592",		0x1a96a, 0x1a9ba, 0,	   1, "sLsW", "sLsW"},
 	{ "fs_10610",		0x1afd0, 0x1b01e, 0x1b020, 0, "", "sB"},
 
 	{ "novram_0",		0x21cda, 0,	  0,	   1, "sB", ""},
