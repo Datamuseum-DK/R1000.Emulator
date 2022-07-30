@@ -154,34 +154,6 @@ static struct sc_def sc_defs[] = {
 	    "sp+2 @L .L , "
 	    "sp+0 @L .L"
 	},
-	{ 0x1037c, "FSC_1037c",
-	    "sp+4 @L .L sp+4 @L 16 ascii , "
-	    "sp+2 @L .L "
-	    ,
-	    "sp+2 @L .L sp+2 @L 16 ascii , "
-	    "sp+0 @L .L "
-	},
-	{ 0x10380, "OpenFile",
-	    "sp+10 String , sp+9 @W .W , sp+8 @B .B , sp+6 @L .L",
-	    "sp+2 @B .B , sp+0 @L Dirent"
-	},
-	{ 0x1038c, "CloseFile",
-	    "sp+9 @B .B , "
-	    "sp+8 @B .B , "
-	    "sp+6 @L .L , "
-	    "sp+4 @L .L sp+4 @L 4 hexdump , "
-	    "sp+2 @L Dirent",
-
-	    "sp+7 @B .B , "
-	    "sp+6 @B .B , "
-	    "sp+3 @L .L , "
-	    "sp+2 @L .L sp+2 @L 4 hexdump , "
-	    "'<closed>'"
-	},
-	{ 0x103a4, "FSC_103a4",
-	    "sp+2 @L 16 hexdump",
-	    "sp+0 @L 16 hexdump"
-	},
 	{ 0x103b0, "PushProgram",
 	    "sp+7 String , sp+5 String , sp+4 @B .B",
 	    "sp+0 .L ' => ' sp+0 @L .L ' => ' sp+0 @L @L .L"
