@@ -232,7 +232,7 @@ class Board():
 		|{
 		|''')
         for net in sorted(self.nets.values()):
-            if net.is_local or net.is_plane or net.is_supply:
+            if net.is_local or net.is_plane or net.is_supply or not net:
                 continue
             net.write_decl(scm)
         scm.fmt('''
@@ -257,7 +257,7 @@ class Board():
 		|''')
         scm.write("\tsc_module(name)")
         for net in sorted(self.nets.values()):
-            if net.is_local or net.is_plane or net.is_supply:
+            if net.is_local or net.is_plane or net.is_supply or not net:
                 continue
             net.write_init(scm)
         scm.write("\n{\n}\n")
