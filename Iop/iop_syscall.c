@@ -109,10 +109,12 @@ static struct sc_def sc_defs[] = {
 	    "a 2 + a @W ascii",
 	    supress
 	},
+#if 0
 	{ 0x1021e, "ReInit",
 	    "sp+2 @L 16 hexdump",
 	    supress
 	},
+#endif
 	{ 0x10226, "Calendar",
 	    "sp+2 @L .L",
 	    "sp+0 @L 7 hexdump"
