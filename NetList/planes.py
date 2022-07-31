@@ -46,7 +46,6 @@ class PlaneSignal():
         self.nets = []
         self.net = None
         self.boards = {}
-        self.roles = {}
         self.is_supply = False
 
     def __repr__(self):
@@ -55,19 +54,15 @@ class PlaneSignal():
         l.append(self.net.bcname)
         for board in self.cpu.boards:
             net = self.boards.get(board.name)
-            if net:
+            if net is not None:
                 nname = net.name.split('/')[-1]
                 l.append(nname)
             else:
                 l.append("-")
-        return "".join("%-19s" % x for x in l) + " - " + str(self.roles)
+        return "".join(x.ljust(19) for x in l)
 
     def add_net(self, net):
         self.is_supply |= net.is_supply
-        #for node in list(net.nnodes):
-        #    self.is_supply |= node.net.is_supply
-        #    nrole = self.roles.get(node.pin.role, 0)
-        #    self.roles[node.pin.role] = nrole + 1
         self.nets.append(net)
         if net.board in self.boards:
             print("Multiple nets on plane", self.name, "from", net.board, self.boards[net.board], net)
@@ -189,6 +184,7 @@ class Planes():
     def make_cfile(self):
         ''' ... '''
 
+        self.cfile.write("//".ljust(47) + "".join(x.name.ljust(19) for x in self.cpu.boards) + "\n")
         for signame, psig in sorted(self.psig.items()):
             if psig.is_supply:
                 self.cfile.write("// " + str(signame) + " <supply>\n")
