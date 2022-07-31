@@ -138,7 +138,6 @@ static struct sc_def sc_defs[] = {
 	    "sp+2 @W .W " ,
 	    "sp+4 String"
 	},
-	{ 0x102fc, "FS102fc", "sp+10 String, sp+6 String, sp+2 @L .L", "sp+6 String, sp+2 String" },
 	{ 0x10308, "Time2Text",
 	    "sp+4 @L .L , "
 	    "sp+2 @L .L , stack",
@@ -163,27 +162,6 @@ static struct sc_def sc_defs[] = {
 	{ 0x103b8, "PopProgram",
 	    "sp+2 String , sp+4 @B .B",
 	    "sp+0 @L 16 hexdump"
-	},
-#if 0
-	{ 0x10454, "FS10454",
-	    "stack , sp+4 @L 16 hexdump , sp+8 @L hexdump",
-	    "stack",
-	},
-#endif
-	{ 0x10466, "ExpInputParam",
-	    "sp+6 @L .L , "
-	    "sp+4 @L .L , "
-	    "sp+2 @L .L "
-	    ,
-	    supress
-	},
-	{ 0x1046c, "ExpInputFlag",
-	    "sp+2 @L @L 16 hexdump",
-	    supress
-	},
-	{ 0x10496, "ExpClose",
-	    "sp+2 @L @L 16 hexdump",
-	    supress
 	},
 	{ 0x10568, "Experiment",
 	    "sp+0 @L !a "

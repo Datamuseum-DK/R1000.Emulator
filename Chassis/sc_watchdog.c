@@ -25,11 +25,12 @@ fido(void *priv)
 	uint64_t last_exec = 0, last_instr = 0, last_act = 0;
 	uint64_t this_exec, this_instr, this_act;
 	struct timespec t1;
-	double d, e;
+	double d, dl, e, el;
 	char *p;
 
 	(void)priv;
 	sleep(fido_patience);
+        dl = el = 0;
 	while (1) {
 		sleep(fido_patience);
 		AZ(clock_gettime(CLOCK_REALTIME, &t1));
@@ -37,8 +38,13 @@ fido(void *priv)
 		if (e > 0) {
 			d = 1e-9 * (t1.tv_nsec - sc_t0.tv_nsec);
 			d += (t1.tv_sec - sc_t0.tv_sec);
-			printf("SC real time: %.3f\tsim time: %.3f\tratio: %.3f\n",
+			printf("FIDO: real: %.3f  sim: %.3f  ratio: %.3f",
 			    d, e, d / e);
+                        if (e - el > 0)
+				printf("  ratio': %.3f", (d - dl) / (e - el));
+			printf("\n");
+			el = e;
+			dl = d;
 		}
 
 		this_exec = this_instr = this_act = 0;

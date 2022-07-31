@@ -35,12 +35,15 @@ extern "C" {
 #endif
 
 struct ctx {
-	uint32_t	magic;
-#define CTX_MAGIC	0x6e706c8e
+	/* Keep job, do_trace and activations in a single cache line */
+	int32_t		job;
 	uint32_t	do_trace;
 	uint64_t	activations;
+
+	uint32_t	magic;
+#define CTX_MAGIC	0x6e706c8e
 	uint32_t	length;
-	char		ident[108];
+	char		ident[104];
 };
 
 void *CTX_Get(const char *kind, const char *ident, uint32_t length);
