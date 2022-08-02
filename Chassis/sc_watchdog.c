@@ -46,6 +46,7 @@ fido(void *priv)
 			cp = CTX_Iter(&ctx_iter_priv);
 			if (cp == NULL)
 				break;
+			this_act += cp->activations;
 			if (strstr(cp->ident, "PROC") == NULL)
 				continue;
 			ccp = *cp;
@@ -62,7 +63,6 @@ fido(void *priv)
 				    (uintmax_t)dctx->executions
 				);
 			}
-			this_act += cp->activations;
 			this_exec += dctx->executions;
 			this_instr += dctx->instructions;
 		}
