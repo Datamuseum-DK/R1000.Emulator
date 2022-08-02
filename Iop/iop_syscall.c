@@ -155,10 +155,6 @@ static struct sc_def sc_defs[] = {
 	    "sp+2 @L .L , "
 	    "sp+0 @L .L"
 	},
-	{ 0x103b0, "PushProgram",
-	    "sp+7 String , sp+5 String , sp+4 @B .B",
-	    "sp+0 .L ' => ' sp+0 @L .L ' => ' sp+0 @L @L .L"
-	},
 	{ 0x103b8, "PopProgram",
 	    "sp+2 String , sp+4 @B .B",
 	    "sp+0 @L 16 hexdump"
