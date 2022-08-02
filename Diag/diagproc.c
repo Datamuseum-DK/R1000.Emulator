@@ -306,26 +306,28 @@ diagproc_istep(struct diagproc_ctrl *dc, struct diagproc_context *dctx)
 		    dp->mcs51->pc, dp->mcs51->progmem[dp->mcs51->pc],
 		    dp->mcs51->tracebuf, npc, dp->idle
 		);
-	if ((*dp->do_trace & 4) && (dp->flags[npc] & FLAG_DUMP_MEM)) {
+	if (dp->flags[npc] & FLAG_DUMP_MEM) {
 		dctx->executions++;
-		p = buf;
-		for (ptr = 0x10; ptr < dp->pc0 + 16U && ptr < 0x100U; ptr++) {
-			if (!(ptr & 3))
-				*p++ = ' ';
-			sprintf(p, " %02x", dp->mcs51->iram[ptr]);
-			p = strchr(p, '\0');
-			AN(p);
-		}
+		if (*dp->do_trace & 4) {
+			p = buf;
+			for (ptr = 0x10; ptr < dp->pc0 + 16U && ptr < 0x100U; ptr++) {
+				if (!(ptr & 3))
+					*p++ = ' ';
+				sprintf(p, " %02x", dp->mcs51->iram[ptr]);
+				p = strchr(p, '\0');
+				AN(p);
+			}
 
-		ptr = MCS51_REG(dp->mcs51, 0);
-		sc_tracef(dp->name, "Exec %02x | %02x %02x %02x %02x | %s",
-		    ptr,
-		    dp->mcs51->iram[ptr],
-		    dp->mcs51->iram[ptr + 1],
-		    dp->mcs51->iram[ptr + 2],
-		    dp->mcs51->iram[ptr + 3],
-		    buf
-		);
+			ptr = MCS51_REG(dp->mcs51, 0);
+			sc_tracef(dp->name, "Exec %02x | %02x %02x %02x %02x | %s",
+			    ptr,
+			    dp->mcs51->iram[ptr],
+			    dp->mcs51->iram[ptr + 1],
+			    dp->mcs51->iram[ptr + 2],
+			    dp->mcs51->iram[ptr + 3],
+			    buf
+			);
+		}
 	}
 	dp->mcs51->pc = npc;
 	if (dp->flags[npc] & FLAG_NOT_CODE) {
