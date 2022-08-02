@@ -24,28 +24,21 @@ fido(void *priv)
 	const struct diagproc_context *dctx;
 	uint64_t last_exec = 0, last_instr = 0, last_act = 0;
 	uint64_t this_exec, this_instr, this_act;
-	struct timespec t1;
-	double d, dl, e, el;
+	struct timespec t0, t1;
+	double d, dl, e, el, dt;
 	char *p;
 
 	(void)priv;
 	sleep(fido_patience);
         dl = el = 0;
+	AZ(clock_gettime(CLOCK_REALTIME, &t1));
 	while (1) {
+		t0 = t1;
 		sleep(fido_patience);
 		AZ(clock_gettime(CLOCK_REALTIME, &t1));
 		e = sc_when();
-		if (e > 0) {
-			d = 1e-9 * (t1.tv_nsec - sc_t0.tv_nsec);
-			d += (t1.tv_sec - sc_t0.tv_sec);
-			printf("FIDO: real: %.3f  sim: %.3f  ratio: %.3f",
-			    d, e, d / e);
-                        if (e - el > 0)
-				printf("  ratio': %.3f", (d - dl) / (e - el));
-			printf("\n");
-			el = e;
-			dl = d;
-		}
+		dt = 1e-9 * (t1.tv_nsec - t0.tv_nsec);
+		dt += (t1.tv_sec - t0.tv_sec);
 
 		this_exec = this_instr = this_act = 0;
 		ctx_iter_priv = NULL;
@@ -61,21 +54,34 @@ fido(void *priv)
 				*p = '\0';
 			
 			dctx = (const void*)(cp+1);
-			printf("FIDO barks: %s act %ju mcs51 %ju exp %ju\n",
-			    ccp.ident,
-			    (uintmax_t)cp->activations,
-			    (uintmax_t)dctx->instructions,
-			    (uintmax_t)dctx->executions
-			);
+			if (!fido_dont_bite) {
+				printf("FIDO barks: %s act %ju mcs51 %ju exp %ju\n",
+				    ccp.ident,
+				    (uintmax_t)cp->activations,
+				    (uintmax_t)dctx->instructions,
+				    (uintmax_t)dctx->executions
+				);
+			}
 			this_act += cp->activations;
 			this_exec += dctx->executions;
 			this_instr += dctx->instructions;
 		}
-		printf("FIDO rate: act %.2f mcs51 %.2f exp %.2f (/s)\n",
-		    (double)(this_act - last_act) / (double)fido_patience,
-		    (double)(this_instr - last_instr) / (double)fido_patience,
-		    (double)(this_exec - last_exec) / (double)fido_patience
-		);
+		if (e > 0) {
+			d = 1e-9 * (t1.tv_nsec - sc_t0.tv_nsec);
+			d += (t1.tv_sec - sc_t0.tv_sec);
+			printf("FIDO: r %.3f s %.6f ds %.6f / %.3f",
+			    d, e, e - el, d / e);
+                        if (e - el > 0)
+				printf("  d/' %.3f", (d - dl) / (e - el));
+                        else
+				printf("  d/' %.3f", 0.0 );
+			printf(" da %.0f", (double)(this_act - last_act) / dt);
+			printf(" dm %.1f", (double)(this_instr - last_instr) / dt);
+			printf(" de %.1f", (double)(this_exec - last_exec) / dt);
+			printf("\n");
+			el = e;
+			dl = d;
+		}
 		if (fido_dont_bite ||
                     (this_exec > last_exec && this_instr > last_instr)) {
 			last_act = this_act;
@@ -115,7 +121,7 @@ cli_sc_watchdog(struct cli *cli)
 	} else {
 		patience = strtoul(cli->av[1], NULL, 0);
 	}
-	if (patience < 5) {
+	if (patience < 1) {
 		Cli_Error(cli, "Too short patience for fido: %d\n", patience);
 		return;
 	}
