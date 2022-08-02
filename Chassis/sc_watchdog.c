@@ -66,22 +66,24 @@ fido(void *priv)
 			this_exec += dctx->executions;
 			this_instr += dctx->instructions;
 		}
-		if (e > 0) {
+
+		if (el > 0) {
 			d = 1e-9 * (t1.tv_nsec - sc_t0.tv_nsec);
 			d += (t1.tv_sec - sc_t0.tv_sec);
 			printf("FIDO: r %.3f s %.6f ds %.6f / %.3f",
 			    d, e, e - el, d / e);
-                        if (e - el > 0)
+			if (e - el > 0)
 				printf("  d/' %.3f", (d - dl) / (e - el));
-                        else
+			else
 				printf("  d/' %.3f", 0.0 );
 			printf(" da %.0f", (double)(this_act - last_act) / dt);
 			printf(" dm %.1f", (double)(this_instr - last_instr) / dt);
 			printf(" de %.1f", (double)(this_exec - last_exec) / dt);
 			printf("\n");
-			el = e;
-			dl = d;
 		}
+		el = e;
+		dl = d;
+
 		if (fido_dont_bite ||
                     (this_exec > last_exec && this_instr > last_instr)) {
 			last_act = this_act;
