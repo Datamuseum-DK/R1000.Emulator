@@ -42,32 +42,122 @@ class XEQ(PartFactory):
 
     ''' F521 8-Bit Identity Comparator (and multiples) '''
 
+    def state(self, file):
+        if "CONST" in self.comp.partname:
+             file.write("\tuint64_t const_b;\n")
+
+    def init(self, file):
+        if "CONST" in self.comp.partname:
+            file.write('\tstate->const_b = strtoul(arg, NULL, 16);\n')
+
     def doit(self, file):
         ''' The meat of the doit() function '''
 
         super().doit(file)
 
-        file.fmt('''
+        if "E" in self.comp.nodes:
+            file.fmt('''
 		|	if (PIN_E=>) {
 		|		PIN_AeqB<=(true);
-		|	} else {
-		|		uint64_t a, b;
-		|		BUS_A_READ(a);
-		|		BUS_B_READ(b);
-		|		PIN_AeqB<=((a != b));
+		|		TRACE ( << " e " << PIN_E?);
+		|		next_trigger(PIN_E.negedge_event());
+		|		return;
 		|	}
+		|
+		|''')
+
+        if "CONST" in self.comp.partname:
+            file.fmt('''
+		|	uint64_t a;
+		|	BUS_A_READ(a);
+		|	PIN_AeqB<=((a != state->const_b));
+		|
+		|	TRACE (
+		|	    << "a " << BUS_A_TRACE()
+		|	    << " b " << std::hex << state->const_b
+		|	);
+		|''')
+        else:
+            file.fmt('''
+		|	uint64_t a, b;
+		|	BUS_A_READ(a);
+		|	BUS_B_READ(b);
+		|	PIN_AeqB<=((a != b));
+		|
 		|	TRACE (
 		|	    << "a " << BUS_A_TRACE()
 		|	    << " b " << BUS_B_TRACE()
-		|	    << " e " << PIN_E?
 		|	);
 		|''')
+
+class ModelXeq(PartModel):
+    ''' comparator '''
+
+    def assign(self, comp):
+
+        # Eliminate PIN_E if pulled down
+        node_e = comp.nodes["E"]
+        if node_e.net.is_pd():
+            node_e.remove()
+
+        # Eliminate constant, identical A-B pairs
+        l = []
+        for i in range(len(comp.nodes)//2):
+            a = comp.nodes.get("A%d" % i)
+            b = comp.nodes.get("B%d" % i)
+            if a is None or b is None:
+                break;
+            if a.net.is_pu() and b.net.is_pu():
+                a.remove()
+                b.remove()
+                continue
+            if a.net.is_pd() and b.net.is_pd():
+                a.remove()
+                b.remove()
+                continue
+            l.append((a, b))
+        for n, i in enumerate(l):
+            a, b = i
+            a.remove()
+            a.pin.name = "A%d" % n
+            a.insert()
+            b.remove()
+            b.pin.name = "B%d" % n
+            b.insert()
+
+        # Find out if the B-side is constant
+        bconst = True
+        bval = {}
+        for node in comp.nodes.values():
+            if node.pin.name[0] != "B":
+                continue
+            if not node.net.is_const():
+                bconst = False
+                break
+            else:
+                bval[node.pin.name] = node.net.is_pu()
+        if not bconst:
+            super().assign(comp)
+            return
+
+        # B is constant
+        j = 0
+        for i in range(len(bval)):
+            if bval["B%d" % i]:
+                j |= 1 << (len(bval) - i)
+        j >>= 1
+        for node in list(comp.nodes.values()):
+            if node.pin.name[0] == "B":
+                node.remove()
+        comp.value = hex(j)
+        comp.partname += "CONST"
+        super().assign(comp)
 
 def register(board):
     ''' Register component model '''
 
-    board.add_part("F521", PartModel("F521", XEQ))
-    board.add_part("XEQ16", PartModel("XEQ16", XEQ))
-    board.add_part("XEQ20", PartModel("XEQ20", XEQ))
-    board.add_part("XEQ32", PartModel("XEQ32", XEQ))
-    board.add_part("XEQ40", PartModel("XEQ40", XEQ))
+    board.add_part("F521", ModelXeq("F521", XEQ))
+    board.add_part("XEQ16", ModelXeq("XEQ16", XEQ))
+    board.add_part("XEQ20", ModelXeq("XEQ20", XEQ))
+    board.add_part("XEQ32", ModelXeq("XEQ32", XEQ))
+    board.add_part("XEQ40", ModelXeq("XEQ40", XEQ))
