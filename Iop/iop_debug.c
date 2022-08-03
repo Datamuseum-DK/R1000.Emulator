@@ -249,7 +249,10 @@ RPN_REGS
 	RPN_SP(9) \
 	RPN_SP(10) \
 	RPN_SP(11) \
-	RPN_SP(12)
+	RPN_SP(12) \
+	RPN_SP(14) \
+	RPN_SP(16) \
+	RPN_SP(18)
 
 #define RPN_SP(nbr)						\
 	static void v_matchproto_(rpn_op_f)			\
