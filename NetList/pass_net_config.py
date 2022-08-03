@@ -49,6 +49,7 @@ class NetBus():
         self.nets = []
         self.nodes = {}
         self.cname = None
+        self.ctype = None
 
         self.nets.append(net)
         for node in net.nnodes:
@@ -171,14 +172,22 @@ class NetBus():
             net.netbus = self
             for node in net.nnodes:
                 node.netbus = self
+        if net.sc_type != "bool":
+            self.ctype = "_rv <%d>" % len(self.nets)
+        elif len(self.nets) <= 16:
+            self.ctype = "uint16_t"
+        elif len(self.nets) <= 32:
+            self.ctype = "uint32_t"
+        else:
+            self.ctype = "uint64_t"
 
     def write_decl(self, net, file):
         if net == self.nets[0]:
             lname = self.cname.split(".")[-1]
-            if net.sc_type == "bool":
-                file.write("\tsc_signal <uint64_t> %s;\n" % lname)
-            else:
+            if net.sc_type != "bool":
                 file.write("\tsc_signal_rv <%d> %s;\n" % (len(self.nets), lname))
+            else:
+                file.write("\tsc_signal <%s> %s;\n" % (self.ctype, lname))
 
     def write_init(self, net, file):
         if net == self.nets[0]:

@@ -193,6 +193,12 @@ class PinBus():
         file.write("#define BUS_%s_READ(dstvar) \\\n" % self.name)
         file.write("\tdo { \\\n")
         file.write("\t\t(dstvar) = 0; \\\n")
+        if self.width <= 16:
+            ctype = "uint16_t"
+        elif self.width <= 32:
+            ctype = "uint32_t"
+        else:
+            ctype = "uint64_t"
         for nbr, pin in enumerate(self.pins):
             i = self.width - nbr - 1
             node = nodes[pin]
@@ -204,7 +210,7 @@ class PinBus():
                 ))
             elif node.net.netbus.nets[0] == node.net:
                 shift = self.width - (nbr + len(node.net.netbus))
-                file.write("\t\t(dstvar) |= PINB_%s << %d; \\\n" % (pin.name, shift))
+                file.write("\t\t(dstvar) |= (%s)PINB_%s << %d; \\\n" % (ctype, pin.name, shift))
                 
         file.write("\t} while(0)\n")
 

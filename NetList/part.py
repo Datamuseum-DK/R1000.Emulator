@@ -312,10 +312,10 @@ class PartFactory(Part):
 
                     pbname = "\tPINB_%s;" % node.pin.name
 
-                    if node.net.sc_type == "bool":
-                        sctype = " <uint64_t>"
-                    else:
+                    if node.net.sc_type != "bool":
                         sctype = "_rv <%d>" % len(node.netbus.nets)
+                    else:
+                        sctype = " <%s>" % node.netbus.ctype
 
                     if node.pin.role in ("c_output", "tri_state"):
                         yield "sc_out" + sctype + pbname
