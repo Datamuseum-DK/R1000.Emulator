@@ -37,11 +37,14 @@ sc_boards() {
 	do
 	    echo "$*" | grep -q -i ${brd} || cli diproc dummy -TIMEOUT ${brd}
 	done
-	cli 'sc watchdog -dont_bite'
+	cli 'sc watchdog -dont_bite 5' 
 	cli 'sc trace IOC.*CLNAN2 1'
+	cli 'sc trace IOC.*TRAM 1'
 }
 
 cli_prompt() {
+	cli "iop syscall internal"  
+
 	cli '# => cli_prompt'
 	cli iop reset
 	cli 'console match expect "Boot from (Tn or Dn)  [D0] : "'
