@@ -43,11 +43,11 @@ class XEQ(PartFactory):
     ''' F521 8-Bit Identity Comparator (and multiples) '''
 
     def state(self, file):
-        if "CONST" in self.comp.partname:
+        if "CONST" in self.name:
              file.write("\tuint64_t const_b;\n")
 
     def init(self, file):
-        if "CONST" in self.comp.partname:
+        if "CONST" in self.name:
             file.write('\tstate->const_b = strtoul(arg, NULL, 16);\n')
 
     def doit(self, file):
@@ -66,7 +66,7 @@ class XEQ(PartFactory):
 		|
 		|''')
 
-        if "CONST" in self.comp.partname:
+        if "CONST" in self.name:
             file.fmt('''
 		|	uint64_t a;
 		|	BUS_A_READ(a);
@@ -150,8 +150,13 @@ class ModelXeq(PartModel):
             if node.pin.name[0] == "B":
                 node.remove()
         comp.value = hex(j)
-        comp.partname += "CONST"
         super().assign(comp)
+
+    def make_signature(self, comp):
+        sig = super().make_signature(comp)
+        if "B0" not in comp.nodes:
+            sig += "_CONST"
+        return sig
 
 def register(board):
     ''' Register component model '''
