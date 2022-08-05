@@ -93,4 +93,5 @@ run() {
 		-T /critter/_r1000 \
 		"include ${R1K_CLIFILE}" 2>&1 | tee ${R1K_PFX}.log
 	python3 Context/context.py > ${R1K_PFX}.ctx
+	python3 Context/utrace.py > ${R1K_PFX}.utrace
 }
