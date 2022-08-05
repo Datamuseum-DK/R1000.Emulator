@@ -131,13 +131,6 @@ static struct sc_def sc_defs[] = {
 	{ 0x10294, "?divs_d3_d4", ".D3 , .D4", ".D3 , .D4" },
 	{ 0x10298, "?divu_d3_d4", ".D3 , .D4", ".D3 , .D4" },
 
-	{ 0x102c4, "FillString",
-	    "sp+6 .L , "
-	    "sp+4 @L sp+2 @W ascii , "
-	    "sp+3 @W .W , "
-	    "sp+2 @W .W " ,
-	    "sp+4 String"
-	},
 	{ 0x10308, "Time2Text",
 	    "sp+4 @L .L , "
 	    "sp+2 @L .L , stack",
