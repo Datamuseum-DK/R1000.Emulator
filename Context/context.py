@@ -34,7 +34,7 @@ class Context():
     def __repr__(self):
         return self.kind + "::" + self.ident
 
-def contexts(filename):
+def contexts(filename=CONTEXT_FILE):
     with open(filename, "rb") as file:
         while True:
             try:
