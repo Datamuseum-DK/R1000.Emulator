@@ -216,7 +216,7 @@ cli_sc_launch(struct cli *cli)
 	while (sc_started < 2)
 		AZ(pthread_cond_wait(&sc_cond, &sc_mtx));
 
-	AZ(clock_gettime(CLOCK_REALTIME, &sc_t0));
+	AZ(clock_gettime(CLOCK_MONOTONIC, &sc_t0));
 	systemc_t_zero = simclock;
 	sc_started = 3;
 	AZ(pthread_mutex_unlock(&sc_mtx));
@@ -310,7 +310,7 @@ cli_sc_rate(struct cli *cli)
 		return;
 	}
 
-	AZ(clock_gettime(CLOCK_REALTIME, &t1));
+	AZ(clock_gettime(CLOCK_MONOTONIC, &t1));
 	e = sc_when();
 	d = 1e-9 * (t1.tv_nsec - sc_t0.tv_nsec);
 	d += (t1.tv_sec - sc_t0.tv_sec);

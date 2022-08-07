@@ -31,11 +31,11 @@ fido(void *priv)
 	(void)priv;
 	sleep(fido_patience);
         dl = el = 0;
-	AZ(clock_gettime(CLOCK_REALTIME, &t1));
+	AZ(clock_gettime(CLOCK_MONOTONIC, &t1));
 	while (1) {
 		t0 = t1;
 		sleep(fido_patience);
-		AZ(clock_gettime(CLOCK_REALTIME, &t1));
+		AZ(clock_gettime(CLOCK_MONOTONIC, &t1));
 		e = sc_when();
 		dt = 1e-9 * (t1.tv_nsec - t0.tv_nsec);
 		dt += (t1.tv_sec - t0.tv_sec);
