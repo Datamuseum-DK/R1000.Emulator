@@ -136,10 +136,6 @@ main(int argc, char **argv)
 	setbuf(stdout, NULL);
 	setbuf(stderr, NULL);
 
-	diagbus_init();
-	mem_init();
-	ioc_init();
-
 
 	while ((ch = getopt(argc, argv, ARG_SPEC)) != -1) {
 		switch (ch) {
@@ -176,6 +172,10 @@ main(int argc, char **argv)
 		exit(2);
 	}
 	CTX_init(tracepath);
+	diagbus_init();
+	mem_init();
+	ioc_init();
+
 
 	for (i = 0; i < argc; i++) {
 		if (Cli_Exec(argv[i]))

@@ -82,7 +82,7 @@ class Range():
         ''' Emit .h file stuff '''
 
         fo.write("extern struct memdesc %s;\n" % self.struct_name)
-        fo.write("extern uint8_t %s[0x%x];\n" % (self.rd_space, self.length))
+        fo.write("extern uint8_t *%s;\n" % self.rd_space)
         if not self.bidir:
             fo.write("extern uint8_t %s[0x%x];\n" % (self.wr_space, self.length))
         if self.pre_read:
@@ -94,7 +94,7 @@ class Range():
         ''' Produce the data parts of .c '''
 
         peglength = (self.length + 1) // 2
-        fo.write("uint8_t %s[0x%x];\n" % (self.rd_space, self.length))
+        fo.write("uint8_t *%s;\n" % self.rd_space)
         if not self.bidir:
             fo.write("uint8_t %s[0x%x];\n" % (self.wr_space, self.length))
         fo.write("static uint8_t %s[0x%x];\n" % (self.pegs, peglength))
@@ -107,12 +107,15 @@ class Range():
         else:
             fo.write('\t.mask = 0xffffffff,\n')
 
-        fo.write('\t.rd_space = %s,\n' % self.rd_space)
-        fo.write('\t.wr_space = %s,\n' % self.wr_space)
         fo.write('\t.pegs = %s,\n' % (self.pegs))
         fo.write('\t.space_length = 0x%x,\n' % self.length)
         fo.write('\t.pegs_length = 0x%x,\n' % peglength)
         fo.write('};\n')
+
+    def produce_init(self, fo):
+        fo.write('\tptr = CTX_Get("iop_%s", "IOP.%s", sizeof (struct ctx) + %d);\n' % (self.rd_space, self.rd_space, self.length))
+        fo.write("\t%s = ((uint8_t*)ptr) + sizeof (struct ctx);\n" % self.rd_space);
+        fo.write("\tassert(%s != NULL);\n" % self.rd_space)
 
     def peg_check(self, fo, what, val, width):
         ''' call the peg_check function '''
@@ -242,11 +245,13 @@ class System():
     def produce_c(self, filename):
         ''' Produce the *.c file '''
         fo = open(filename + ".c", "w")
+        fo.write('#include <assert.h>\n')
         fo.write('#include <stdint.h>\n')
         fo.write('#include <stdio.h>\n')
         fo.write('\n')
         fo.write('#include "Infra/vend.h"\n')
         fo.write('#include "Infra/vqueue.h"\n')
+        fo.write('#include "Infra/context.h"\n')
         fo.write('#include "Iop/iop_sc_68k20.hh"\n')
         fo.write('#include "Iop/memspace.h"\n')
         self.produce_data(fo)
@@ -257,11 +262,22 @@ class System():
             self.produce_write_x_bit("debug_write", i, fo)
         self.produce_peg_find(fo)
 
+        fo.write('\n')
+        fo.write('void\n')
+        fo.write('Memory_Init(void)\n')
+        fo.write('{\n')
+        fo.write('\tvoid *ptr;\n')
+        fo.write('\n')
+        for i in self.ranges:
+            i.produce_init(fo)
+        fo.write('}\n')
+
     def produce_h(self, filename):
         ''' Produce the *.h file '''
         fo = open(filename + ".h", "w")
         for i in self.ranges:
             i.produce_h(fo)
+        fo.write('void Memory_Init(void);\n')
 
     def produce_data(self, fo):
         ''' Produce the data part of *.c '''

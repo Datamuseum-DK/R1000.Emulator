@@ -96,6 +96,7 @@ mem_init(void)
 	struct memdesc *md;
 	unsigned u;
 
+	Memory_Init();
 	for(u = 0; u < n_memdesc; u++) {
 		md = memdesc[u];
 		VTAILQ_INIT(&md->events);

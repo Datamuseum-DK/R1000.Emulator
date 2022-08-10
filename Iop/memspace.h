@@ -11,8 +11,6 @@ struct memdesc {
 	uint32_t		lo;
 	uint64_t		hi;
 	uint32_t		mask;
-	uint8_t			*rd_space;
-	uint8_t			*wr_space;
 	uint8_t			*pegs;
 	size_t			space_length;
 	size_t			pegs_length;
