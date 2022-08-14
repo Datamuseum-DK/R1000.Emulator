@@ -57,6 +57,7 @@ class XIOPRAM(PartFactory):
 		|	struct ctx *c1 = CTX_Find("IOP.ram_space iop_ram_space");
 		|	assert(c1 != NULL);
 		|	state->ram = (uint32_t*)(c1 + 1);
+		|	state->ctx.do_trace = 1;
 		|''')
 
     def doit(self, file):
