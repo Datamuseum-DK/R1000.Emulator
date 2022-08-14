@@ -58,6 +58,7 @@ class Net():
         self.sc_type = "sc_logic"
         self.no_bool = False
         self.cname = None
+        self.bcname = None
 
         self.insert()
 
@@ -158,6 +159,8 @@ class Net():
         if self.netbus:
             self.netbus.write_decl(self, file)
         else:
+            if self.bcname is None:
+                raise Exception("NO net.sc_type", self)
             if self.sc_type == "bool":
                 text = "\tsc_signal <bool> " + self.bcname + ";\t"
             else:

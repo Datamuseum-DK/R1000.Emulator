@@ -121,3 +121,4 @@ def register(board):
     board.add_part("XTAGRAM", ThisRam("XTAGRAM", XRFRAM))
     board.add_part("16KX4", ThisRam("16KX4", XRFRAM))
     board.add_part("16KX8", ThisRam("16KX8", XRFRAM))
+    board.add_part("16KX16", ThisRam("16KX16", XRFRAM))

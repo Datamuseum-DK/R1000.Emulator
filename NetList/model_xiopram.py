@@ -43,16 +43,35 @@ class XIOPRAM(PartFactory):
 
     def state(self, file):
         file.fmt('''
-		|	uint32_t ram[1<<17];
+		|	uint32_t *ram;
 		|''')
 
     def sensitive(self):
         yield "PIN_CS"
 
+    def init(self, file):
+
+        super().init(file)
+
+        file.fmt('''
+		|	struct ctx *c1 = CTX_Find("IOP.ram_space iop_ram_space");
+		|	assert(c1 != NULL);
+		|	state->ram = (uint32_t*)(c1 + 1);
+		|''')
+
     def doit(self, file):
         ''' The meat of the doit() function '''
 
         super().doit(file)
+
+        file.fmt('''
+		|	TRACE(
+		|	    << " a " << BUS_A_TRACE()
+		|	    << " d " << BUS_D_TRACE()
+		|	    << " we " << BUS_WE_TRACE()
+		|	    << " cs " << PIN_CS?
+		|	);
+		|''')
         return
 
         file.fmt('''
