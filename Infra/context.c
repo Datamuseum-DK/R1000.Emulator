@@ -101,7 +101,7 @@ CTX_Get(const char *kind, const char *ident, uint32_t length)
 	return (ctx);
 }
 
-const struct ctx *
+struct ctx *
 CTX_Iter(void **priv)
 {
 	struct ctx *retval;
@@ -117,4 +117,18 @@ CTX_Iter(void **priv)
 		*next += retval->length;
 	}
 	return (retval);
+}
+
+struct ctx *
+CTX_Find(const char *name)
+{
+	void *ctx_iter_priv = NULL;
+	struct ctx *cp;
+
+	while (1) {
+		cp = CTX_Iter(&ctx_iter_priv);
+		if (cp != NULL && !strcmp(cp->ident, name))
+			return (cp);
+	}
+	return (NULL);
 }
