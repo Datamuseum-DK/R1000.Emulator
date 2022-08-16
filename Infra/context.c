@@ -39,6 +39,10 @@
 #include "Infra/r1000.h"
 #include "Infra/context.h"
 
+#ifndef MAP_NOSYNC	// OSX
+#  define MAP_NOSYNC 0
+#endif
+
 static ssize_t context_size = 100<<20;
 
 static int context_fd = -1;

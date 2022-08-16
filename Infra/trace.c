@@ -153,7 +153,7 @@ Trace(int flag, const char *fmt, ...)
 	AZ(pthread_mutex_lock(&trace_mtx));
 	trace_init();
 
-	VSB_printf(trace_vsb, "%12jd ", simclock);
+	VSB_printf(trace_vsb, "%12jd ", (intmax_t)simclock);
 	va_start(ap, fmt);
 	VSB_vprintf(trace_vsb, fmt, ap);
 	va_end(ap);
@@ -174,7 +174,7 @@ TraceDump(int flag, const void *ptr, size_t len, const char *fmt, ...)
 	AZ(pthread_mutex_lock(&trace_mtx));
 	trace_init();
 
-	VSB_printf(trace_vsb, "%12jd ", simclock);
+	VSB_printf(trace_vsb, "%12jd ", (intmax_t)simclock);
 	va_start(ap, fmt);
 	VSB_vprintf(trace_vsb, fmt, ap);
 	va_end(ap);

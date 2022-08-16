@@ -110,8 +110,10 @@ finish(int status, const char *why)
 
 	AZ(getrusage(RUSAGE_SELF, &rus));
 
-	printf("  %5ld.%03ld s\t\tUser time\n", rus.ru_utime.tv_sec, rus.ru_utime.tv_usec / 1000);
-	printf("  %5ld.%03ld s\t\tSystem time\n", rus.ru_stime.tv_sec, rus.ru_stime.tv_usec / 1000);
+	printf("  %5ld.%03ld s\t\tUser time\n",
+	    rus.ru_utime.tv_sec, rus.ru_utime.tv_usec / 1000L);
+	printf("  %5ld.%03ld s\t\tSystem time\n",
+	    rus.ru_stime.tv_sec, rus.ru_stime.tv_usec / 1000L);
 	printf("%7ld\t\t\tMax RSS\n", rus.ru_maxrss);
 
 	printf("End statistics\n");
