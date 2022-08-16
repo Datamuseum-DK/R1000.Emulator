@@ -194,7 +194,7 @@ Tracev(int flag, const char *pfx, const char *fmt, va_list ap)
 	AZ(pthread_mutex_lock(&trace_mtx));
 	trace_init();
 
-	VSB_printf(trace_vsb, "%12jd ", simclock);
+	VSB_printf(trace_vsb, "%12jd ", (intmax_t)simclock);
 	if (pfx != NULL)
 		VSB_cat(trace_vsb, pfx);
 	VSB_vprintf(trace_vsb, fmt, ap);
