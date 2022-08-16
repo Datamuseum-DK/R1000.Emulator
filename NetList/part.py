@@ -124,24 +124,6 @@ class LibPartSexp(Part):
         board.add_part(self.name, self)
         board.add_part(self.name + "_O", self)
 
-    def hookup_pin(self, file, comp, pin_no, node, cmt="", suf=""):
-        ''' Text formatting for hooking up a single pin '''
-        text = "\t%s.%s(" % (comp.name + suf, pin_no)
-        text += node.net.cname
-        text += ");"
-        if cmt:
-            while len(text.expandtabs()) < 64:
-                text += "\t"
-            text += "// " + cmt
-        file.write(text + "\n")
-
-    def hookup(self, file, comp):
-        ''' Emit the SystemC code to hook this component up '''
-        for pin in sorted(self.pins.values()):
-            node = comp.nodes[pin.name]
-            if not node.netbus:
-                self.hookup_pin(file, comp, "pin" + pin.ident, node, cmt=str(pin))
-
 class PartModel(Part):
 
     ''' Parts with a python model '''

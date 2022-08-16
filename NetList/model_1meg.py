@@ -83,10 +83,12 @@ class DRAM1MEGWIDE(PartFactory):
 		|	}
 		|	if (!PIN_CAS=> || (state->ctx.do_trace & 2)) {
 		|		TRACE(
-		|		    << " ras " << PIN_RAS?
-		|		    << " cas " << PIN_CAS?
+		|		    << " ras " << PIN_RAS.negedge()
+		|		    << " cas " << PIN_CAS.negedge()
 		|		    << " we " << PIN_WE?
 		|		    << " a " << BUS_A_TRACE()
+		|		    << " ra " << std::hex << state->ras
+		|		    << " ca " << std::hex << state->cas
 		|		    << " dq " << BUS_DQ_TRACE()
 		|		);
 		|	}

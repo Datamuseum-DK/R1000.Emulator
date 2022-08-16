@@ -34,6 +34,10 @@
 #ifndef VEND_H_INCLUDED
 #define VEND_H_INCLUDED
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /* Alignment-agnostic encode/decode bytestream to/from little/big endian. */
 
 static __inline uint16_t
@@ -145,6 +149,10 @@ vle64enc(void *pp, uint64_t u)
 
 	vle32enc(p, (uint32_t)(u & 0xffffffffU));
 	vle32enc(p + 4, (uint32_t)(u >> 32));
+}
+#endif
+
+#ifdef __cplusplus
 }
 #endif
 

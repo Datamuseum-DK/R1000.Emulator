@@ -23,7 +23,9 @@ sed '
 / `KC03_Wait_Disk_IO/d
 /mul[su]_d3_d4/d
 /div[su]_d3_d4/d
+
 /SCCALL.*Is_fc07_one_or_three/,/SCEXIT.*Is_fc07_one_or_three/d
+
 
 /SCCALL.*WriteWords/,/SCEXIT.*WriteWords/{
   /RW_Sectors/d
@@ -123,6 +125,24 @@ sed '
   /Subtract/d
 }
 
+/SCCALL.*OpenFile/,/SCEXIT.*OpenFile/{
+  /`RW_Sectors/d
+}
+
+/SCCALL.*ExpXmit/,/SCEXIT.*ExpXmit/{
+  /`KC15_DiagBus/d
+}
+
+/SCCALL.*ExpRun/,/SCEXIT.*ExpRun/{
+  /`KC12_Sleep/d
+  /`DiProcPing/d
+}
+
+/SCCALL.*`ExpUpload/,/SCEXIT.*`ExpUpload/{
+  /DiagBus_Response/d
+  /`KC15_DiagBus/d
+}
+
 /SCCALL.*ExpLoad/,/SCEXIT.*ExpLoad/{
   /RW_Sectors/d
   /OpenFile/d
@@ -131,8 +151,27 @@ sed '
   /CloseFile/d
 }
 
+/SCCALL.*IPC_..tBool/,/SCEIIT.*IPC_..tBool/{
+  /`CopyBytes/d
+  /MEMTRACE/d
+}
+
+/SCCALL.*IPC_..tString/,/SCEIIT.*IPC_..tString/{
+  /`CopyBytes/d
+  /MEMTRACE/d
+}
+
+/SCCALL.*IPC_..tEnd/,/SCEIIT.*IPC_..tEnd/{
+  /`CopyBytes/d
+  /MEMTRACE/d
+}
+
 /SCCALL.*SC=0x00010568/,/SCEXIT.*SC=0x00010568/{
   /GetConsoleConfig/d
+}
+
+/SCCALL.*ReadClusterNo/,/SCEXIT.*ReadClusterNo/{
+  /`ReadConfig/d
 }
 
 s/PC=.*//

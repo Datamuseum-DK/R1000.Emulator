@@ -41,13 +41,18 @@ class XIOPRAM(PartFactory):
 
     ''' 128KX4X9 SRAM '''
 
+    def extra(self, file):
+        file.include("Infra/vend.h")
+        super().extra(file)
+
     def state(self, file):
         file.fmt('''
-		|	uint32_t *ram;
+		|	uint8_t *ram;
 		|''')
 
     def sensitive(self):
         yield "PIN_CS"
+        yield "BUS_WE_SENSITIVE()"
 
     def init(self, file):
 
@@ -56,7 +61,7 @@ class XIOPRAM(PartFactory):
         file.fmt('''
 		|	struct ctx *c1 = CTX_Find("IOP.ram_space iop_ram_space");
 		|	assert(c1 != NULL);
-		|	state->ram = (uint32_t*)(c1 + 1);
+		|	state->ram = (uint8_t*)(c1 + 1);
 		|	state->ctx.do_trace = 1;
 		|''')
 
@@ -66,56 +71,35 @@ class XIOPRAM(PartFactory):
         super().doit(file)
 
         file.fmt('''
-		|	TRACE(
-		|	    << " a " << BUS_A_TRACE()
-		|	    << " d " << BUS_D_TRACE()
-		|	    << " we " << BUS_WE_TRACE()
-		|	    << " cs " << PIN_CS?
-		|	);
-		|''')
-        return
-
-        file.fmt('''
-		|	unsigned adr;
-		|	BUS_A_READ(adr);
+		|	uint32_t adr, data, we;
 		|
-		|	if (!PIN_WE=>) {
-		|		BUS_D_READ(state->ram[adr]);
+		|	BUS_A_READ(adr);
+		|	data = vbe32dec(state->ram + (adr << 2));
+		|
+		|	BUS_WE_READ(we);
+		|	if (!PIN_CS=> && we == BUS_WE_MASK) {
 		|		TRACE(
-		|		    << " w a " << BUS_A_TRACE()
+		|		    << " R "
+		|		    << " a " << BUS_A_TRACE()
 		|		    << " d " << BUS_D_TRACE()
-		|		    << " we "
-		|		    << PIN_WE?
-		|		    << " adr "
-		|		    << std::hex << adr
-		|		    << " data "
-		|		    << std::hex << (unsigned)state->ram[adr]
+		|		    << " we " << BUS_WE_TRACE()
+		|		    << " cs " << PIN_CS?
+		|		    << " adr " << std::hex << (adr << 2)
+		|		    << " data " << std::hex << data
 		|		);
-		|		next_trigger(
-		|		    PIN_WE.posedge_event() | BUS_D_EVENTS()
-		|		);
+		|		BUS_Q_WRITE(data);
 		|	} else {
 		|		TRACE(
-		|		    << " r a " << BUS_A_TRACE()
-		|		    << " d "
-		|		    <<AS(state->ram[adr] & 0x80)
-		|		    <<AS(state->ram[adr] & 0x40)
-		|		    <<AS(state->ram[adr] & 0x20)
-		|		    <<AS(state->ram[adr] & 0x10)
-		|		    <<AS(state->ram[adr] & 0x08)
-		|		    <<AS(state->ram[adr] & 0x04)
-		|		    <<AS(state->ram[adr] & 0x02)
-		|		    <<AS(state->ram[adr] & 0x01)
-		|		    << " we "
-		|		    << PIN_WE?
-		|		    << " adr "
-		|		    << std::hex << adr
-		|		    << " data "
-		|		    << std::hex << (unsigned)state->ram[adr]
+		|		    << " Z"
+		|		    << " a " << BUS_A_TRACE()
+		|		    << " d " << BUS_D_TRACE()
+		|		    << " we " << BUS_WE_TRACE()
+		|		    << " cs " << PIN_CS?
 		|		);
+		|		BUS_Q_WRITE(BUS_Q_MASK);
 		|	}
-		|	BUS_Q_WRITE(state->ram[adr]);
 		|''')
+
 
 def register(board):
     ''' Register component model '''
