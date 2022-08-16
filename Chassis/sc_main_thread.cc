@@ -33,7 +33,7 @@ SC_MODULE(PowerSequencer)
 {
 	sc_out <bool> clamp;	// CLAMP
 	sc_out <sc_logic> reset;	// RESET
-	int do_trace = 0;
+	uint32_t do_trace = 0;
 
 	SC_CTOR(PowerSequencer)
 	{

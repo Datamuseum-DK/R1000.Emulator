@@ -31,7 +31,7 @@ struct diagproc_priv {
 	struct mcs51 *mcs51;
 	int version;
 	int idle;
-	int *do_trace;
+	uint32_t *do_trace;
 	struct elastic_subscriber *diag_bus;
 	pthread_mutex_t mtx;
 	int did_io;

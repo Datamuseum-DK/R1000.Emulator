@@ -18,7 +18,7 @@ static int fido_dont_bite = 0;
 static void *
 fido(void *priv)
 {
-	const struct ctx *cp;
+	struct ctx *cp;
 	struct ctx ccp;
 	void *ctx_iter_priv;
 	const struct diagproc_context *dctx;

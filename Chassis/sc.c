@@ -51,7 +51,7 @@
 struct component {
 	VTAILQ_ENTRY(component)	list;
 	char			*name;
-	int			*flags;
+	uint32_t		*flags;
 };
 
 int sc_boards;

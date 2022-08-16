@@ -46,7 +46,7 @@ struct mcs51 {
 	char		tracebuf[256];
 	char		*traceptr;
 
-	int		do_trace;
+	uint32_t	do_trace;
 
 	int		irq_state;
 
