@@ -126,7 +126,7 @@ class PinBus():
         for pin in self.pins:
             if not pin.netbus:
                 continue
-            mynodes = pin.netbus.nodes[comp]
+            mynodes = pin.netbus.nodes[(comp, pin.pinbus)]
             node0 = mynodes[pin.netbus.nets[0]]
             pin.netbusname = "PINB_" + node0.pin.name
 
