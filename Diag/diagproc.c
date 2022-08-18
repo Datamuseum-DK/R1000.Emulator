@@ -334,14 +334,6 @@ diagproc_istep(struct diagproc_ctrl *dc, struct diagproc_context *dctx)
 		sc_tracef(dp->name, "OUT OF PROGRAM next PC 0x%04x", npc);
 		exit(2);
 	}
-	switch (npc) {
-	case 0x472: dc->next_needs_p3 = 1; break;
-	case 0x498: dc->next_needs_p3 = 1; break;
-	case 0x631: dc->next_needs_p3 = 1; break;
-	case 0x634: dc->next_needs_p1 = 1; break;
-	case 0x636: dc->next_needs_p1 = 1; break;
-	default: break;
-	}
 	dc->next_needs_p1 = 1;
 	dc->next_needs_p2 = 1;
 	dc->next_needs_p3 = 1;
