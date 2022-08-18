@@ -83,10 +83,9 @@ class XFIFO(PartFactory):
 		|			state->wptr &= 0xff;
 		|		}
 		|		if (PIN_RD.posedge()) {
-		|			state->rptr++;
+		|			state->oreg = state->ram[state->rptr++];
 		|			state->rptr &= 0xff;
 		|		}
-		|		state->oreg = state->ram[state->rptr];
 		|	}
 		|	if (!PIN_OEnot)
 		|		BUS_Q_WRITE(state->oreg);
