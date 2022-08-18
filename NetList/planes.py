@@ -35,6 +35,7 @@
 
 import transit
 import srcfile
+import util
 
 class PlaneSignal():
     ''' ... '''
@@ -43,6 +44,7 @@ class PlaneSignal():
         self.cpu = cpu
         self.planename = name
         self.name = name
+        self.sortkey = util.sortkey(name)
         self.nets = []
         self.net = None
         self.boards = {}
@@ -61,6 +63,9 @@ class PlaneSignal():
                 l.append("-")
         return "".join(x.ljust(19) for x in l)
 
+    def __lt__(self, other):
+        return self.sortkey < other.sortkey
+
     def add_net(self, net):
         self.is_supply |= net.is_supply
         self.nets.append(net)
@@ -72,6 +77,7 @@ class PlaneSignal():
         if self.is_supply and self.name not in {"PD", "PU"}:
             return
         self.divine_better_name()
+        self.sortkey = util.sortkey(self.name)
         self.net = self.nets.pop(0)
         self.net.is_plane = self
         self.net.board.del_net(self.net)
@@ -168,7 +174,7 @@ class Planes():
 		|{
 		|''')
 
-        for signame, psig in sorted(self.psig.items()):
+        for psig in sorted(self.psig.values()):
             psig.net.write_decl(self.hfile)
 
         self.hfile.fmt('''
@@ -210,7 +216,7 @@ class Planes():
 		|	sc_module(name)
 		|''')
 
-        for signame, psig in sorted(self.psig.items()):
+        for psig in sorted(self.psig.values()):
             if psig.is_supply:
                 continue
             psig.net.write_init(self.cfile)
