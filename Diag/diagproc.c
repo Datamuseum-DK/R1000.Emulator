@@ -424,6 +424,7 @@ DiagProcCreate(const char *name, const char *arg, uint32_t *do_trace)
 		dp->mod = strtoul(p + 3, &q, 0);
 		assert(q != NULL);
 		assert(*q == '\0');
+		printf("%s MOD %d\n", name, dp->mod);
 	}
 
 	dp->mcs51 = MCS51_Create(name);
@@ -454,6 +455,7 @@ DiagProcCreate(const char *name, const char *arg, uint32_t *do_trace)
 	if (strstr(name, "MEM") == NULL) {
 		dp->version = 1;
 		load_programmable(name, firmware, sizeof firmware, "P8052AH_9028");
+		diproc1_mod(firmware, dp->mod);
 		diagproc_set_serialflags(dp, 0x646);
 		dp->flags[0x17d] |= FLAG_IDLE;
 		dp->flags[0x17f] |= FLAG_IDLE;

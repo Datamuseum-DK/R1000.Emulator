@@ -54,5 +54,6 @@ cli_func_f cli_diproc_dummy;
 void cli_diproc_help_status(struct cli *cli);
 void cli_diproc_help_board(struct cli *cli);
 
+void diproc1_mod(uint8_t *firmware, unsigned mod);
 
 #endif /* DIAG_DIAG_H */
