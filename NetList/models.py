@@ -97,6 +97,7 @@ import model_xpar64
 import model_xreg
 import model_xrfram
 import model_xrot
+import model_xsrn
 import model_xstkram
 import model_xvmux
 import model_xvnand
@@ -170,6 +171,7 @@ def register(where):
     model_xreg.register(where)
     model_xrfram.register(where)
     model_xrot.register(where)
+    model_xsrn.register(where)
     model_xstkram.register(where)
     model_xvmux.register(where)
     model_xvnand.register(where)
