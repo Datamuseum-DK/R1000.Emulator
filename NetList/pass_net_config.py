@@ -288,7 +288,7 @@ class PassNetConfig():
                 if not maybebus.unordered(file):
                     accepted.append(maybebus)
                     break
-                if len(maybebus.best) < 2:
+                if len(maybebus.best) < MIN_BUS_WIDTH:
                     break
 
                 target = set(maybebus.best)
@@ -299,6 +299,7 @@ class PassNetConfig():
                 newbus = NetBus(maybebus.sig, target.pop(0))
                 while target:
                     newbus.add_net(target.pop(0))
+                accepted.append(newbus)
 
                 maybebus = NetBus(maybebus.sig, rest.pop(0))
                 while rest:
