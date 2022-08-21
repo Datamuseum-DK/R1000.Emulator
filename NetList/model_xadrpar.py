@@ -41,71 +41,79 @@ class XADRPAR(PartFactory):
 
     ''' Address bus parity checker '''
 
-    def state(self, file):
-        file.fmt('''
-		|       unsigned par;
-		|''')
-
-    def sensitive(self):
-        yield ("PIN_CLK.pos()")
-        yield ("PIN_OE")
-
     def doit(self, file):
         ''' The meat of the doit() function '''
 
         super().doit(file)
 
         file.fmt('''
-		|	uint64_t a, tmp;
+		|	uint32_t tmp, tmp2, out = 0;
 		|
-		|	if (PIN_CLK.posedge()) {
-		|		state->par = 0;
-		|		BUS_A_READ(a);
-		|		tmp = a;
-		|		tmp = (tmp ^ (tmp >> 4)) & 0x0f0f0f0f0f000000;
-		|		tmp = (tmp ^ (tmp >> 2)) & 0x0303030303000000;
-		|		tmp = (tmp ^ (tmp >> 1)) & 0x0101010101000000;
+		|	BUS_S_READ(tmp);
+		|	tmp = (tmp ^ (tmp >> 2)) & 0x03;
+		|	tmp = (tmp ^ (tmp >> 1)) & 0x01;
+		|	if (tmp)
+		|		out |= 0x100;
 		|
-		|		if (tmp & (1ULL<<56)) state->par |= 0x80;
-		|		if (tmp & (1ULL<<48)) state->par |= 0x40;
-		|		if (tmp & (1ULL<<40)) state->par |= 0x20;
-		|		if (tmp & (1ULL<<32)) state->par |= 0x10;
-		|		if (tmp & (1ULL<<24)) state->par |= 0x8;
+		|	BUS_N_READ(tmp);
+		|	tmp = (tmp ^ (tmp >> 4)) & 0x0f0f0f0f;
+		|	tmp = (tmp ^ (tmp >> 2)) & 0x03030303;
+		|	tmp = (tmp ^ (tmp >> 1)) & 0x01010101;
+		|	if (tmp & 0x01000000)
+		|		out |= 0x80;
+		|	if (tmp & 0x010000)
+		|		out |= 0x40;
+		|	if (tmp & 0x0100)
+		|		out |= 0x20;
+		|	if (tmp & 0x01)
+		|		out |= 0x10;
 		|
-		|		tmp = (a & 0xffe000) >> 13;
-		|		tmp = (tmp ^ (tmp >> 8)) & 0xff;
-		|		tmp = (tmp ^ (tmp >> 4)) & 0x0f;
-		|		tmp = (tmp ^ (tmp >> 2)) & 0x03;
-		|		tmp = (tmp ^ (tmp >> 1)) & 0x01;
-		|		if (tmp & 1) state->par |= 0x4;
+		|	BUS_O_READ(tmp2);
 		|
-		|		tmp = (a & 0x1f80) >> 7;
-		|		tmp = (tmp ^ (tmp >> 4)) & 0x0f;
-		|		tmp = (tmp ^ (tmp >> 2)) & 0x03;
-		|		tmp = (tmp ^ (tmp >> 1)) & 0x01;
-		|		if (tmp & 1) state->par |= 0x2;
+		|	tmp = tmp2 >> 17;
+		|	tmp = (tmp ^ (tmp >> 4)) & 0x0f;
+		|	tmp = (tmp ^ (tmp >> 2)) & 0x03;
+		|	tmp = (tmp ^ (tmp >> 1)) & 0x01;
+		|	if (tmp & 0x01)
+		|		out |= 0x8;
 		|
-		|		tmp = a & 0x7f;
-		|		tmp = (tmp ^ (tmp >> 4)) & 0x0f;
-		|		tmp = (tmp ^ (tmp >> 2)) & 0x03;
-		|		tmp = (tmp ^ (tmp >> 1)) & 0x01;
-		|		if (tmp & 1) state->par |= 0x1;
+		|	tmp = (tmp2 >> 6) & 0x7ff;
+		|	tmp = (tmp ^ (tmp >> 8)) & 0xff;
+		|	tmp = (tmp ^ (tmp >> 4)) & 0x0f;
+		|	tmp = (tmp ^ (tmp >> 2)) & 0x03;
+		|	tmp = (tmp ^ (tmp >> 1)) & 0x01;
+		|	if (tmp & 0x01)
+		|		out |= 0x4;
 		|
-		|		if (PIN_ODD=>)
-		|			state->par ^= 0xff;
-		|	}
-		|	if (PIN_OE=>) {
-		|		BUS_AP_WRITE(state->par);
-		|	} else {
-		|		BUS_AP_Z();
-		|	}
+		|	tmp = tmp2 & 0x3f;
+		|	tmp = (tmp ^ (tmp >> 4)) & 0x0f;
+		|	tmp = (tmp ^ (tmp >> 2)) & 0x03;
+		|	tmp = (tmp ^ (tmp >> 1)) & 0x01;
+		|	if (tmp & 0x01)
+		|		out |= 0x2;
+		|
+		|	BUS_B_READ(tmp);
+		|	tmp = (tmp ^ (tmp >> 4)) & 0x0f;
+		|	tmp = (tmp ^ (tmp >> 2)) & 0x03;
+		|	tmp = (tmp ^ (tmp >> 1)) & 0x01;
+		|	if (tmp & 0x01)
+		|		out |= 0x1;
+		|
+		|	if (PIN_TST=>)
+		|		out ^= BUS_PEV_MASK;
 		|
 		|	TRACE(
-		|	    << " a " << BUS_A_TRACE()
-		|	    << " clk " << PIN_CLK.posedge()
-		|	    << " oe " << PIN_OE
-		|	    << " ap " << std::hex << state->par
+		|	    << " s " << BUS_S_TRACE()
+		|	    << " n " << BUS_N_TRACE()
+		|	    << " o " << BUS_O_TRACE()
+		|	    << " b " << BUS_B_TRACE()
+		|	    << " tst " << PIN_TST?
+		|	    << " out " << std::hex << out
 		|	);
+		|
+		|	BUS_POD_WRITE(out);
+		|	out ^= BUS_PEV_MASK;
+		|	BUS_PEV_WRITE(out);
 		|
 		|''')
 

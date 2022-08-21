@@ -272,7 +272,7 @@ class PassNetConfig():
 
         for sig, maybebus in list(self.netbusses.items()):
             maybebus.sort_nets()
-            if len(maybebus.nets) < 2:
+            if len(maybebus.nets) < MIN_BUS_WIDTH:
                 del self.netbusses[sig]
                 continue
             if maybebus.invalid(file):
