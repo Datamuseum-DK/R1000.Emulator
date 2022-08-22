@@ -235,3 +235,4 @@ def register(board):
     board.add_part("XFBUF32", ModelXbuf(False))
     board.add_part("XBUF48", ModelXbuf(False))
     board.add_part("XBUF64", ModelXbuf(False))
+    board.add_part("XBUF67", ModelXbuf(False))
