@@ -59,13 +59,13 @@ hotfix_ioc_functional(void)
 {
 
 	ioc_breakpoint_rpn(0x80000088,
-	    "'Hit self-test fail. ' regs ' ' stack ' ' stop");
+	    "'Hit self-test fail. ' regs ' ' stack ' ' finish");
 
 	ioc_breakpoint_rpn(0x800000b4,
-	    "'Self-test at ' .A6 ' Failed ' regs ' ' stack ' ' stop");
+	    "'Self-test at ' .A6 ' Failed ' regs ' ' stack ' ' finish");
 
 	ioc_breakpoint_rpn(0x80004d08,
-	    "'Hit debugger ' regs ' ' stack ' ' stop");
+	    "'Hit debugger ' regs ' ' stack ' ' finish");
 
 	skip_code(0x80000568, 0x800007d0, "Memory parity");
 	skip_code(0x800007f4, 0x800009b2, "I/O Bus control");
@@ -141,13 +141,13 @@ static void
 ioc_hotfix_resha_functional(void)
 {
 	ioc_breakpoint_rpn(0x00071286,
-	    "'Hit RESHA self-test fail. ' regs ' ' stack ' ' stop");
+	    "'Hit RESHA self-test fail. ' regs ' ' stack ' ' finish");
 
 	ioc_breakpoint_rpn(0x0007056e,
-	    "'Hit RESHA self-test fail. ' regs ' ' stack ' ' stop");
+	    "'Hit RESHA self-test fail. ' regs ' ' stack ' ' finish");
 
 	ioc_breakpoint_rpn(0x000766a2,
-	    "'Hit RESHA self-test fail. ' regs ' ' stack ' ' stop");
+	    "'Hit RESHA self-test fail. ' regs ' ' stack ' ' finish");
 
 	/*
 	 * 0007678a 4e f0 01 e1 00 04          JMP     ((#4))

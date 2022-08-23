@@ -459,6 +459,14 @@ rpn_stop(struct rpn *rpn)
 	printf("\nIOC CPU stopped by breakpoint\n");
 }
 
+static void v_matchproto_(rpn_op_f)
+rpn_finish(struct rpn *rpn)
+{
+	(void)rpn;
+	ioc_stop_cpu();
+	finish(4, "Finish from RPN");
+}
+
 void
 ioc_debug_init(void)
 {
@@ -487,4 +495,5 @@ ioc_debug_init(void)
 	Rpn_AddOp("stop", rpn_stop);
 	Rpn_AddOp("hexdump", rpn_hexdump);
 	Rpn_AddOp("ascii", rpn_ascii);
+	Rpn_AddOp("finish", rpn_finish);
 }
