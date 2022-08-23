@@ -71,17 +71,30 @@ class XIOPRAM(PartFactory):
         super().doit(file)
 
         file.fmt('''
-		|	uint32_t adr, data, we;
+		|	uint32_t adr, data, we, tmp;
 		|
 		|	BUS_A_READ(adr);
+		|	BUS_WE_READ(we);
 		|	data = vbe32dec(state->ram + (adr << 2));
 		|
-		|	BUS_WE_READ(we);
-		|	if (!PIN_CS=> && we == BUS_WE_MASK) {
+		|	if (PIN_CS=>) {
+		|		TRACE(<<"Z");
+		|		//next_trigger(PIN_CS.negedge_event());
+		|	} else if (we == BUS_WE_MASK) {
+		|		if (BUS_Q_WIDTH == 4) {
+		|			tmp = (data ^ (data >> 4)) & 0x0f0f0f0f;
+		|			tmp = (tmp ^ (tmp >> 2)) & 0x03030303;
+		|			tmp = (tmp ^ (tmp >> 1)) & 0x01010101;
+		|			tmp ^= 0x01010101;
+		|			data = 0;
+		|			if (tmp & 0x1) data |= 0x1;
+		|			if (tmp & 0x100) data |= 0x2;
+		|			if (tmp & 0x10000) data |= 0x4;
+		|			if (tmp & 0x1000000) data |= 0x8;
+		|		}
 		|		TRACE(
 		|		    << " R "
 		|		    << " a " << BUS_A_TRACE()
-		|		    << " d " << BUS_D_TRACE()
 		|		    << " we " << BUS_WE_TRACE()
 		|		    << " cs " << PIN_CS?
 		|		    << " adr " << std::hex << (adr << 2)
@@ -89,14 +102,19 @@ class XIOPRAM(PartFactory):
 		|		);
 		|		BUS_Q_WRITE(data);
 		|	} else {
+		|		BUS_D_READ(data);
 		|		TRACE(
-		|		    << " Z"
+		|		    << " W"
 		|		    << " a " << BUS_A_TRACE()
 		|		    << " d " << BUS_D_TRACE()
 		|		    << " we " << BUS_WE_TRACE()
 		|		    << " cs " << PIN_CS?
+		|		    << " adr " << std::hex << (adr << 2)
+		|		    << " data " << std::hex << data
 		|		);
-		|		BUS_Q_WRITE(BUS_Q_MASK);
+		|		if (BUS_Q_WIDTH == 32)
+		|			vbe32enc(state->ram + (adr << 2), data);
+		|		BUS_Q_WRITE(data);
 		|	}
 		|''')
 
