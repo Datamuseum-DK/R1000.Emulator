@@ -33,7 +33,7 @@
    ========================
 '''
 
-MIN_BUS_WIDTH = 8
+MIN_BUS_WIDTH = 6
 
 import util
 import sys

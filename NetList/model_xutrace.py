@@ -41,6 +41,10 @@ class XUTRACE(PartFactory):
 
     ''' Ucode tracer '''
 
+    def sensitive(self):
+        yield "PIN_CLK.pos()"
+        yield "BUS_ST_SENSITIVE()"
+
     def doit(self, file):
         ''' The meat of the doit() function '''
 
@@ -50,12 +54,11 @@ class XUTRACE(PartFactory):
 		|	unsigned ua;
 		|
 		|	BUS_UA_READ(ua);
-		|	ua ^= BUS_UA_MASK;
 		|	TRACE(
 		|	    << " clk↑ " << PIN_CLK.posedge()
-		|	    << " UA " << BUS_UA_TRACE()
-		|	    << " " << std::hex << ua
-		|	    << " STOP " << BUS_ST_TRACE()
+		|	    // << " UA " << BUS_UA_TRACE()
+		|	    << " st " << BUS_ST_TRACE()
+		|	    << " ua " << std::hex << ua
 		|	);
 		|''')
 
