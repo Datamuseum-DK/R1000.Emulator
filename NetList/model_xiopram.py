@@ -78,7 +78,7 @@ class XIOPRAM(PartFactory):
 		|	data = vbe32dec(state->ram + (adr << 2));
 		|
 		|	if (PIN_CS=>) {
-		|		TRACE(<<"Z");
+		|		// TRACE(<<"Z");
 		|		//next_trigger(PIN_CS.negedge_event());
 		|	} else if (we == BUS_WE_MASK) {
 		|		if (BUS_Q_WIDTH == 4) {
