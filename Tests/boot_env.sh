@@ -24,6 +24,8 @@ cli 'sc trace DI*PROC 0'
 cli 'sc quota add 5000'
 cli 'sc quota exit'
 
+cli "console > ${rundir}/_.console"
+cli "modem > ${rundir}/_.modem"
 
 # LOADER microcode get started 2s -> 1.5s
 cli 'dfs patch LOADER.M200 0x122e 0x00 0x00 0x72 0x70'
