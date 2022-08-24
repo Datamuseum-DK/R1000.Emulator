@@ -125,6 +125,7 @@ extern unsigned irq_level;
 unsigned irq_getvector(unsigned int arg);
 
 void irq_raise(struct irq_vector *vp);
+void irq_edge(struct irq_vector *vp);
 void irq_lower(struct irq_vector *vp);
 
 void ioc_load_eeproms(void);

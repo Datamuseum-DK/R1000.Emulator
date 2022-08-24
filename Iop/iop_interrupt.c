@@ -10,6 +10,7 @@ struct irq_vector {
 	unsigned			level;
 	unsigned			priority;
 	unsigned			pending;
+	unsigned			edge;
 	VTAILQ_ENTRY(irq_vector)	list;
 };
 
@@ -53,6 +54,43 @@ irq_raise(struct irq_vector *vp)
 }
 
 void
+irq_edge(struct irq_vector *vp)
+{
+	struct irq_vector *vp2;
+
+	AZ(pthread_mutex_lock(&irq_mtx));
+	vp->edge = 1;
+	if (!vp->pending) {
+		Trace(trace_ioc_interrupt, "IRQ +%s", vp->name);
+		vp->pending = 1;
+		VTAILQ_FOREACH(vp2, &pending, list) {
+			if (vp2->priority > vp->priority) {
+				VTAILQ_INSERT_BEFORE(vp2, vp, list);
+				break;
+			}
+		}
+		if (vp2 == NULL)
+			VTAILQ_INSERT_TAIL(&pending, vp,  list);
+		vp = VTAILQ_FIRST(&pending);
+		irq_level = vp->level;
+	} else {
+		Trace(trace_ioc_interrupt, "IRQ (+%s)", vp->name);
+	}
+	AZ(pthread_mutex_unlock(&irq_mtx));
+}
+
+static void
+set_new_level(void)
+{
+	struct irq_vector *vp;
+	vp = VTAILQ_FIRST(&pending);
+	if (vp != NULL)
+		irq_level = vp->level;
+	else
+		irq_level = 0;
+}
+
+void
 irq_lower(struct irq_vector *vp)
 {
 	AZ(pthread_mutex_lock(&irq_mtx));
@@ -60,12 +98,7 @@ irq_lower(struct irq_vector *vp)
 		Trace(trace_ioc_interrupt, "IRQ -%s", vp->name);
 		vp->pending = 0;
 		VTAILQ_REMOVE(&pending, vp, list);
-		vp = VTAILQ_FIRST(&pending);
-		if (vp != NULL) {
-			irq_level = vp->level;
-		} else {
-			irq_level = 0;
-		}
+		set_new_level();
 	} else {
 		Trace(trace_ioc_interrupt, "IRQ (-%s)", vp->name);
 	}
@@ -82,6 +115,12 @@ irq_getvector(unsigned int arg)
 	vp = VTAILQ_FIRST(&pending);
 	if (vp != NULL) {
 		retval = vp->vector;
+		if (vp->edge) {
+			vp->edge = 0;
+			vp->pending = 0;
+			VTAILQ_REMOVE(&pending, vp, list);
+			set_new_level();
+		}
 		Trace(trace_ioc_interrupt,
 		    "VECTOR 0x%x %s (arg=0x%x)", retval,
 		    vp->name, arg);

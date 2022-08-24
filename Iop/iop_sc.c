@@ -119,7 +119,7 @@ static void
 iack_cb(uint32_t data)
 {
 	printf("IACK 0x%x\n", data);
-	irq_raise(&IRQ_REQUEST_FIFO);
+	irq_edge(&IRQ_REQUEST_FIFO);
 }
 
 void
