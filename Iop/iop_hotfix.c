@@ -318,6 +318,9 @@ hotfix_kernel_4_2_18(void)
 	 * 00009b68 0c 00 00 42                CMPI.B  #0x42,D0
 	 */
 	ioc_breakpoint_rpn(0x00009b5a, "D0 0x20 min !D0");
+
+	ioc_breakpoint_rpn(0x00008ab8,
+	    "'Hit Estop. ' regs ' ' stack ' ' finish");
 }
 
 static int v_matchproto_(ioc_bpt_f)
