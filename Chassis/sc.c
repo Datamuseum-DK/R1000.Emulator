@@ -295,7 +295,7 @@ cli_sc_wait(struct cli *cli)
 	e = strtod(cli->av[1], NULL);
 	do
 		usleep(10000);
-	while (e < sc_when());
+	while (e > sc_when());
 }
 
 static void v_matchproto_(cli_func_f)
