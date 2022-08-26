@@ -43,6 +43,8 @@
 static struct vsb *debug_vsb;
 static pthread_mutex_t bpt_mtx = PTHREAD_MUTEX_INITIALIZER;
 
+static int rpn_dofinish = 0;
+
 struct breakpoint {
 	uint32_t			adr;
 	ioc_bpt_f			*func;
@@ -121,6 +123,8 @@ ioc_breakpoint_rpn_func(void *priv, uint32_t adr)
 	if (i)
 		printf("\nBad RPN in breakpoint 0x%08x: %s\n",
 		    adr, (const char *)priv);
+	if (rpn_dofinish)
+		finish(4, "Finish from RPN");
 	return (0);
 }
 
@@ -463,8 +467,7 @@ static void v_matchproto_(rpn_op_f)
 rpn_finish(struct rpn *rpn)
 {
 	(void)rpn;
-	ioc_stop_cpu();
-	finish(4, "Finish from RPN");
+	rpn_dofinish = 1;
 }
 
 void
