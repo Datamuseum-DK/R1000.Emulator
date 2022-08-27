@@ -161,9 +161,9 @@ mem_peg_expunge(const void *priv)
 static int
 is_covered(unsigned adr)
 {
-	if (adr >= 0x0400 && adr < 0x0420)
+	if (adr >= 0x0400 && adr < 0x0800)
 		return (1);
-	if (adr >= 0xe610 && adr < 0xe710)
+	if (adr >= 0xe610 && adr < 0xe810)
 		return (1);
 	if (adr >= 0x40000 && adr < 0x54010)
 		return (1);
