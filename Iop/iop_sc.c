@@ -118,8 +118,19 @@ ioc_sc_bus_done(struct ioc_sc_bus_xact **bxpa)
 static void
 iack_cb(uint32_t data)
 {
-	printf("IACK 0x%x\n", data);
-	irq_edge(&IRQ_REQUEST_FIFO);
+	Trace(trace_ioc_interrupt, "IACK SC End 0x%08x", data);
+	switch (data >> 24) {
+	case 0x4d:
+		irq_edge(&IRQ_RESPONSE_FIFO);
+		break;
+	case 0x4e:
+		irq_edge(&IRQ_REQUEST_FIFO);
+		break;
+	default:
+		Trace(trace_ioc_interrupt, "Ignoring IACK 0x%08x", data);
+		printf("Ignoring IACK 0x%08x\n", data);
+		break;
+	}
 }
 
 void
@@ -128,7 +139,7 @@ ioc_sc_bus_start_iack(unsigned ipl_pins)
 
 	ipl_pins ^= 7;
 	if (ipl_pins > irq_level) {
-		printf("START IACK pins=%x level=%x\n", ipl_pins, irq_level);
+		Trace(trace_ioc_interrupt, "IACK SC Start pins=%x level=%x", ipl_pins, irq_level);
 		(void)ioc_bus_xact_schedule_cb(
 		     0x7,
 		     0xfffffff1 | (ipl_pins << 1),
