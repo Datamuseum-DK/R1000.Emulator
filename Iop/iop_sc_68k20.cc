@@ -51,12 +51,12 @@
 		<< " D " << std::hex << data
 	);
 	switch (state->xact->sc_state) {
-	case 100:
+	case 100: // ↑	WRITE
 		PIN_ECS = 0;
 		BUS_FC_WRITE(state->xact->fc);
 		BUS_A_WRITE(state->xact->address);
 		BUS_SIZ_WRITE(state->xact->width);
-		PIN_WR = state->xact->is_write == 0;
+		PIN_WR = 0;
 		next_trigger(PIN_CLK.negedge_event());
 		state->xact->sc_state++;
 		break;
@@ -78,18 +78,14 @@
 		state->xact->sc_state++;
 		break;
 	case 104:
-		PIN_DS = 1;
+		BUS_DSACK_READ(dsack);
+		if (dsack == 0)
+			state->xact->sc_state++;
 		next_trigger(PIN_CLK.negedge_event());
-		state->xact->sc_state++;
 		break;
 	case 105:
-	case 106:
-	case 107:
-	case 108:
-	case 109:
-	case 110:
-	case 111:
-		next_trigger(PIN_CLK.negedge_event());
+		PIN_AS = 1;
+		PIN_DS = 1;
 		state->xact->sc_state++;
 		break;
 
@@ -120,11 +116,15 @@
 		break;
 	case 204:
 		BUS_DSACK_READ(dsack);
-		if (dsack != 3) {
+		if (dsack != 3)
 			state->xact->sc_state++;
-			BUS_D_READ(state->xact->data);
-		}
 		next_trigger(PIN_CLK.posedge_event());
+		break;
+	case 205:
+		BUS_DSACK_READ(dsack);
+		state->xact->sc_state++;
+		BUS_D_READ(state->xact->data);
+		TRACE( << "READ " << std::hex << state->xact->data << " | " << data);
 		break;
 	default:
 		if (state->xact->sc_state < 1000) {
