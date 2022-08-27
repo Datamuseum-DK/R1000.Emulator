@@ -1,10 +1,14 @@
 #include <pthread.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 
 #include "Infra/r1000.h"
+#include "Infra/vend.h"
 
+#include "Iop/iop.h"
 #include "Iop/memspace.h"
+#include "Iop/iop_sc_68k20.hh"
 
 struct memevent {
 	VTAILQ_ENTRY(memevent)	list;
@@ -149,3 +153,103 @@ mem_peg_expunge(const void *priv)
 	}
 	AZ(pthread_mutex_unlock(&mem_mtx));
 }
+
+/**********************************************************************
+ * SystemC interface for IOP RAM
+ */
+
+static int
+is_covered(unsigned adr)
+{
+	if (adr >= 0x0400 && adr < 0x0420)
+		return (1);
+	if (adr >= 0xe610 && adr < 0xe710)
+		return (1);
+	if (adr >= 0x40000 && adr < 0x54010)
+		return (1);
+	return (0);
+}
+
+
+void
+ram_pre_read(int debug, uint8_t *space, unsigned width, unsigned adr)
+{
+	uint32_t u, a2;
+
+	(void)debug;
+	if (is_covered(adr) || is_covered(adr + width - 1)) {
+		a2 = adr & ~3;
+		while (adr + width > a2) {
+			u = ioc_bus_xact_schedule(5, a2, 0, 4, 0);
+			Trace(trace_ioc_dma, "RPR 0x%08x <= 0x%08x", a2, u);
+			vbe32enc(space + a2, u);
+			a2 += 4;
+		}
+	}
+}
+
+void
+ram_post_write(int debug, uint8_t *space, unsigned width, unsigned adr)
+{
+	uint32_t u, a2;
+
+	(void)debug;
+	if (is_covered(adr) || is_covered(adr + width - 1)) {
+		a2 = adr & ~3;
+		while (adr + width > a2) {
+			u = vbe32dec(space + a2);
+			Trace(trace_ioc_dma, "RPW 0x%08x => 0x%08x", a2, u);
+			(void)ioc_bus_xact_schedule(5, a2, u, 4, 1);
+			a2 += 4;
+		}
+	}
+}
+
+/**********************************************************************
+ * I/O Address mapping
+ *
+ * The 0x600 comes from pin 6 & 10 pull-ups on L41 IOCp33
+ */
+
+void
+dma_write(unsigned segment, unsigned address, void *src, unsigned len)
+{
+	unsigned int u, v, w;
+
+	u = 0x600;
+	u |= (segment & 0x7) << 6;
+	u |= address >> 10;
+	v = vbe32dec(io_map_space + u * 4L);
+	v |= (address & 0x3ff);
+	Trace(trace_ioc_dma, "DMA [0x%x] => 0x%08x", len, v);
+	memcpy(ram_space + v, src, len);
+	if (is_covered(v) || is_covered(v + len - 1)) {
+		Trace(trace_ioc_dma, "DMA=>SC [0x%x] => 0x%08x", len, v);
+		for (u = 0; u < len; u += 4) {
+			w = vbe32dec(ram_space + v + u);
+			(void)ioc_bus_xact_schedule(5, v + u, w, 4, 1);
+		}
+	}
+}
+
+void
+dma_read(unsigned segment, unsigned address, void *src, unsigned len)
+{
+	unsigned int u, v, w;
+
+	u = 0x600;
+	u |= address >> 10;
+	u |= (segment & 0x7) << 6;
+	v = vbe32dec(io_map_space + u * 4L);
+	v |= (address & 0x3ff);
+	Trace(trace_ioc_dma, "DMA [0x%x] <= 0x%08x", len, v);
+	if (is_covered(v) || is_covered(v + len - 1)) {
+		Trace(trace_ioc_dma, "DMA<=SC [0x%x] => 0x%08x", len, v);
+		for (u = 0; u < len; u += 4) {
+			w = ioc_bus_xact_schedule(5, v + u, 0, 4, 0);
+			vbe32enc(ram_space + v + u, w );
+		}
+	}
+	memcpy(src, ram_space + v, len);
+}
+

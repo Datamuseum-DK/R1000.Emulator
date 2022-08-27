@@ -73,7 +73,10 @@ ${OBJDIR}/iop_main.o: \
 OBJS += ${OBJDIR}/iop_memory.o
 ${OBJDIR}/iop_memory.o: \
     Iop/iop_memory.c \
+    Infra/vend.h \
     Iop/memspace.h \
+    Iop/iop.h \
+    Iop/iop_sc_68k20.hh \
     ${R1000DEP}
 	${CC} ${CFLAGS} -c Iop/iop_memory.c -o ${OBJDIR}/iop_memory.o
 

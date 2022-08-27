@@ -199,40 +199,6 @@ cli_ioc_maxins(struct cli *cli)
 	ioc_maxins = strtoumax(cli->av[0], NULL, 0);
 }
 
-/**********************************************************************
- * I/O Address mapping
- *
- * The 0x600 comes from pin 6 & 10 pull-ups on L41 IOCp33
- */
-
-void
-dma_write(unsigned segment, unsigned address, void *src, unsigned len)
-{
-	unsigned int u, v;
-
-	u = 0x600;
-	u |= (segment & 0x7) << 6;
-	u |= address >> 10;
-	v = vbe32dec(io_map_space + u * 4L);
-	v |= (address & 0x3ff);
-	Trace(trace_ioc_dma, "DMA [0x%x] => 0x%08x", len, v);
-	memcpy(ram_space + v, src, len);
-}
-
-void
-dma_read(unsigned segment, unsigned address, void *src, unsigned len)
-{
-	unsigned int u, v;
-
-	u = 0x600;
-	u |= address >> 10;
-	u |= (segment & 0x7) << 6;
-	v = vbe32dec(io_map_space + u * 4L);
-	v |= (address & 0x3ff);
-	Trace(trace_ioc_dma, "DMA [0x%x] <= 0x%08x", len, v);
-	memcpy(src, ram_space + v, len);
-}
-
 /**********************************************************************/
 
 void v_matchproto_(mem_pre_read)
