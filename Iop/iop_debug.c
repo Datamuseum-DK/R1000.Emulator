@@ -362,7 +362,7 @@ rpn_dirent(struct rpn *rpn)
 
 	RPN_POP(a);
 	u = m68k_debug_read_memory_32((unsigned)a);
-        if (u == 1) {
+	if (u == 1) {
 		Rpn_Printf(rpn, "Dirent@0x%08x{}", u);
 		return;
 	}
