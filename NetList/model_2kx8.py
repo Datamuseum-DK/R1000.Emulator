@@ -55,6 +55,7 @@ class SRAM2KX8(PartFactory):
 		|	unsigned adr = 0;
 		|	unsigned data = 0;
 		|
+		|#if 0
 		|	TRACE(
 		|	    << " a " << BUS_A_TRACE()
 		|	    << " d " << BUS_IO_TRACE()
@@ -62,6 +63,7 @@ class SRAM2KX8(PartFactory):
 		|	    << " oe " << PIN_OE?
 		|	    << " we " << PIN_WE?
 		|	);
+		|#endif
 		|
 		|	if (PIN_CS=> || PIN_OE=> || !PIN_WE=>) {
 		|		BUS_IO_Z();

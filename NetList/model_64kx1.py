@@ -95,6 +95,7 @@ class SRAM64KXN(PartFactory):
 		|	BUS_A_READ(adr);
 		|	if (!PIN_CS=> && !PIN_WE=>)
 		|		BUS_D_READ(state->ram[adr]);
+		|    if(!PIN_CS=>)
 		|	TRACE(
 		|	    << " a " << BUS_A_TRACE()
 		|	    << " CS# " << PIN_CS?
