@@ -66,6 +66,8 @@ static struct sc_def sc_kernel[] = {
 	{ 0x37d0, "DiagBus_KC15_CMD1", supress, supress },
 	{ 0x3840, "DiagBus_KC15_CMD5", supress, supress },
 #endif
+
+#if 0
 	{ 0x09d6e, "Timeout_Stop_PIT",
 	    "'A1=' A1 .L",
 	    supress
@@ -82,10 +84,13 @@ static struct sc_def sc_kernel[] = {
 	    "'func=' A2 .L",
 	    supress
 	},
+#endif
+#if 0
 	{ 0x09e74, "Await_Interrupt",
 	    supress,
 	    "'Got awaited Interrupt'"
 	},
+#endif
 	{ 1U<<31, NULL, NULL, NULL },
 };
 
@@ -126,10 +131,12 @@ static struct sc_def sc_defs[] = {
 	},
 	{ 0x10280, "StartProg", ".A7", noreturn },
 
+#if 0
 	{ 0x1028c, "?muls_d3_d4_to_d4", ".D3 , .D4", ".D3 , .D4" },
 	{ 0x10290, "?mulu_d3_d4_to_d4", ".D3 , .D4", ".D3 , .D4" },
 	{ 0x10294, "?divs_d3_d4", ".D3 , .D4", ".D3 , .D4" },
 	{ 0x10298, "?divu_d3_d4", ".D3 , .D4", ".D3 , .D4" },
+#endif
 
 	{ 0x10308, "Time2Text",
 	    "sp+4 @L .L , "
@@ -312,7 +319,7 @@ start_syscall_tracing(int intern)
 	a = 0x10200;
 	while (a < 0x1061c) {
 		if (scp3->address == a && scp->address == a) {
-                        printf("DUP BREAKPOINT 0x%x\n", a);
+			printf("DUP BREAKPOINT 0x%x\n", a);
 			scp2 = scp3++;
 			assert(scp3->address > a);
 			scp++;
