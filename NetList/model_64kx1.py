@@ -41,9 +41,53 @@ class SRAM64KX1(PartFactory):
 
     ''' 64Kx1 SRAM '''
 
+    def extra(self, file):
+        file.include("Infra/vend.h")
+        super().extra(file)
+
     def state(self, file):
         file.fmt('''
-		|	bool ram[1<<16];
+		|	uint32_t *iopram;
+		|	uint32_t mymask;
+		|	bool parity;
+		|''')
+
+    def init(self, file):
+        file.fmt('''
+		|	struct ctx *c1 = CTX_Find("IOP.ram_space iop_ram_space");
+		|	assert(c1 != NULL);
+		|	state->iopram = (uint32_t*)(c1 + 1);
+		|	const char *p = strchr(this->name(), 'M');
+		|	assert(p != NULL);
+		|	p++;
+		|	if (p[0] == 'P') {
+		|		state->parity = true;
+		|		p++;
+		|	}
+		|	int nbr = atoi(p);
+		|	if (state->parity) {
+		|		if (nbr >= 10) {
+		|			state->iopram += 0x10000;
+		|			nbr %= 10;
+		|		}
+		|		state->mymask = 0xff << (24 - (8 * nbr));
+		|	} else {
+		|		if (nbr >= 100) {
+		|			state->iopram += 0x10000;
+		|			nbr %= 100;
+		|		}
+		|		state->mymask = 1U << (31 - nbr);
+		|	}
+		|	cout
+		|		<< this->name()
+		|		<< " "
+		|		<< nbr
+		|		<< " "
+		|		<< std::hex
+		|		<< state->mymask
+		|		<< " "
+		|		<< state->parity
+		|		<< "\\n";
 		|''')
 
     def doit(self, file):
@@ -52,23 +96,42 @@ class SRAM64KX1(PartFactory):
         super().doit(file)
 
         file.fmt('''
-		|	unsigned adr = 0;
+		|	unsigned adr = 0, data;
 		|
-		|	BUS_A_READ(adr);
-		|	if (!PIN_CS=> && !PIN_WE=>)
-		|		state->ram[adr] = PIN_D=>;
-		|	TRACE(
-		|	    << " a " << BUS_A_TRACE()
-		|	    << " CS# " << PIN_CS?
-		|	    << " WE# " << PIN_WE?
-		|	    << " D " << PIN_D?
-		|	    << " adr "
-		|	    << std::hex << adr
-		|	    << " data "
-		|	    << state->ram[adr]
-		|	);
 		|	if (!PIN_CS=>) {
-		|		PIN_Q<=(state->ram[adr]);
+		|		BUS_A_READ(adr);
+		|		adr ^= BUS_A_MASK;
+		|		data = vbe32dec(state->iopram + adr);
+		|		if (!PIN_WE=> && !state->parity) {
+		|			if (PIN_D=>)
+		|				data |= state->mymask;
+		|			else
+		|				data &= ~state->mymask;
+		|			vbe32enc(state->iopram + adr, data);
+		|		}
+		|		TRACE(
+		|		    << " a " << BUS_A_TRACE()
+		|		    << " CS# " << PIN_CS?
+		|		    << " WE# " << PIN_WE?
+		|		    << " D " << PIN_D?
+		|		    << " adr "
+		|		    << std::hex << (adr << 2)
+		|		    << " data "
+		|		    << (data & state->mymask)
+		|		);
+		|		if (state->parity) {
+		|			uint32_t par = data;
+		|			par &= state->mymask;
+		|			par ^= (par >> 16);
+		|			par ^= (par >> 8);
+		|			par ^= (par >> 4);
+		|			par ^= (par >> 2);
+		|			par ^= (par >> 1);
+		|			PIN_Q<=(!(par & 1));
+		|		} else if (data & state->mymask)
+		|			PIN_Q<=(true);
+		|		else
+		|			PIN_Q<=(false);
 		|	} else {
 		|		PIN_Q = sc_logic_Z;
 		|		next_trigger(PIN_CS.negedge_event());
