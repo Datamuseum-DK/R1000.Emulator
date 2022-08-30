@@ -13,7 +13,7 @@ def main():
     ''' IOC memory layout '''
     ioc = System("ioc", 0, 1<<32)
 
-    ioc += Range("ram", 0x00000000, 0x00080000, pre_read = True, post_write = True)
+    ioc += Range("ram", 0x00000000, 0x00080000)
 
     ioc += Range("ioc_eeprom", 0x80000000, 0x80008000)
 

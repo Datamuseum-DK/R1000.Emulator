@@ -67,6 +67,8 @@ static struct sc_def sc_kernel[] = {
 	{ 0x3840, "DiagBus_KC15_CMD5", supress, supress },
 #endif
 
+	{ 0x08a7a, "FifoReqRx()", "pace", supress },
+
 #if 0
 	{ 0x09d6e, "Timeout_Stop_PIT",
 	    "'A1=' A1 .L",

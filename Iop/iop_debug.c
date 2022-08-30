@@ -33,6 +33,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <unistd.h>
 
 #include "Infra/r1000.h"
 #include "Musashi/m68k.h"
@@ -470,6 +471,13 @@ rpn_finish(struct rpn *rpn)
 	rpn_dofinish = 1;
 }
 
+static void v_matchproto_(rpn_op_f)
+rpn_pace(struct rpn *rpn)
+{
+	(void)rpn;
+	usleep(10000);
+}
+
 void
 ioc_debug_init(void)
 {
@@ -499,4 +507,5 @@ ioc_debug_init(void)
 	Rpn_AddOp("hexdump", rpn_hexdump);
 	Rpn_AddOp("ascii", rpn_ascii);
 	Rpn_AddOp("finish", rpn_finish);
+	Rpn_AddOp("pace", rpn_pace);
 }
