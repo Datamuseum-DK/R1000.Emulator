@@ -136,10 +136,24 @@ iack_cb(uint32_t data)
 void
 ioc_sc_bus_start_iack(unsigned ipl_pins)
 {
+	static unsigned stable, last, holddown;
 
 	ipl_pins ^= 7;
-	if (ipl_pins > irq_level) {
-		Trace(trace_ioc_interrupt, "IACK SC Start pins=%x level=%x", ipl_pins, irq_level);
+        if (ipl_pins != last) {
+		Trace(trace_ioc_interrupt, "IACK SC Start pins=%x level=%x last=%x stable=%x", ipl_pins, irq_level, last, stable);
+		stable = 0;
+		last = ipl_pins;
+		return;
+	} else if (holddown) {
+		holddown--;
+	} else if (stable < 10) {
+		stable++;
+		return;
+	} else if (ipl_pins > irq_level) {
+		Trace(trace_ioc_interrupt, "IACK SC Start pins=%x level=%x last=%x stable=%x", ipl_pins, irq_level, last, stable);
+		stable = 0;
+		last = 0;
+		holddown = 100;
 		(void)ioc_bus_xact_schedule_cb(
 		     0x7,
 		     0xfffffff1 | (ipl_pins << 1),

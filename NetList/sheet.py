@@ -120,7 +120,7 @@ class Sheet():
     def produce_cc(self, scm):
         ''' ... '''
         scm.write("#include <systemc.h>\n")
-        scm.include("Chassis/%s/planes.hh" % self.board.branch)
+        scm.include(self.board.cpu.planes_hh)
         scm.include(self.board.scm_globals.hh)
         scm.include(self.scm.hh)
         scm.include(self.scm.pub)

@@ -11,9 +11,8 @@
 		if (ipl != state->last_ipl) {
 			TRACE(<< "IPL-CHANGE " << BUS_IPL_TRACE() << " " << std::hex << ipl);
 			state->last_ipl = ipl;
-			if (ipl != 7)
-				ioc_sc_bus_start_iack(ipl);
 		}
+		ioc_sc_bus_start_iack(ipl);
 
 		PIN_DS = 1;
 		PIN_AS = 1;

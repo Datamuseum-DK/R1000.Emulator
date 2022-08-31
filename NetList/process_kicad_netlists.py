@@ -56,8 +56,9 @@ class R1000Cpu():
 
     ''' A R1000 CPU '''
 
-    def __init__(self, branch, netlists):
+    def __init__(self, workdir, branch, netlists):
         ''' ... '''
+        self.workdir = workdir
         self.branch = branch
         self.netlists = netlists
         self.part_catalog = {}
@@ -66,8 +67,11 @@ class R1000Cpu():
         self.nets = {}
         self.plane = None
 
-        os.makedirs("Chassis", exist_ok=True)
-        os.makedirs(os.path.join("Chassis", branch), exist_ok=True)
+        self.cdir = os.path.join(workdir, "Chassis", branch)
+        self.tstamp = os.path.join(self.cdir, "_timestamp")
+        self.planes_hh = os.path.join(self.cdir, "planes.hh")
+
+        os.makedirs(self.cdir, exist_ok=True)
 
         if self.already_current():
             print("Already up to date")
@@ -76,7 +80,7 @@ class R1000Cpu():
         models.register(self)
 
         self.do_build()
-        open(os.path.join("Chassis", self.branch, "_timestamp"), "w").write("\n")
+        open(self.tstamp, "w").write("\n")
         self.report_bom()
 
     def add_part(self, name, part):
@@ -86,12 +90,12 @@ class R1000Cpu():
 
     def sc_mod(self, basename):
         ''' ... '''
-        return SC_Mod(os.path.join("Chassis", self.branch, basename), self.chassis_makefile)
+        return SC_Mod(os.path.join(self.cdir, basename), self.chassis_makefile)
 
     def already_current(self):
         ''' Check if generated files are newer than netlists '''
         try:
-            t_old = os.stat(os.path.join("Chassis", self.branch, "_timestamp")).st_mtime
+            t_old = os.stat(self.tstamp).st_mtime
         except FileNotFoundError:
             return False
 
@@ -114,7 +118,7 @@ class R1000Cpu():
     def do_build(self):
         ''' ... '''
 
-        self.chassis_makefile = SrcFile(os.path.join("Chassis", self.branch, "Makefile.inc"))
+        self.chassis_makefile = SrcFile(os.path.join(self.cdir, "Makefile.inc"))
 
         for filename in self.netlists:
             print("Processing", filename)
@@ -184,13 +188,14 @@ def main():
         sys.stderr.write("Must run %s from root of R1000.Emulator project\n" % ME)
         sys.exit(2)
 
-    if len(sys.argv) < 3:
-        sys.stderr.write("Usage:\n\t%s <branch> <KiCad netlist-file> …\n" % ME)
+    if len(sys.argv) < 4:
+        sys.stderr.write("Usage:\n\t%s <workdir> <branch> <KiCad netlist-file> …\n" % ME)
         sys.exit(2)
 
-    branch = sys.argv[1]
+    workdir = sys.argv[1]
+    branch = sys.argv[2]
 
-    R1000Cpu(branch, sys.argv[2:])
+    R1000Cpu(workdir, branch, sys.argv[3:])
 
 if __name__ == "__main__":
     main()

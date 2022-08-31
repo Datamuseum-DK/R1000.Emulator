@@ -5,7 +5,7 @@
 sc_boards seq fiu
 
 cli 'sc trace DI*PROC 4'
-cli 'sc quota add 30'
+cli 'sc quota add 20'
 
 expmon_prompt
 

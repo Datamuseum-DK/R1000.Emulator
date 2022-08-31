@@ -33,6 +33,8 @@
    ==================
 '''
 
+import os
+
 import transit
 import srcfile
 import util
@@ -128,7 +130,7 @@ class Planes():
     def __init__(self, cpu):
         self.cpu = cpu
         self.psig = {}
-        self.pfx = "Chassis/%s/planes" % cpu.branch
+        self.pfx = os.path.join(cpu.cdir, "planes")
         self.cfile = srcfile.SrcFile(self.pfx + ".cc")
         self.hfile = srcfile.SrcFile(self.pfx + ".hh")
 

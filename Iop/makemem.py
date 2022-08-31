@@ -47,7 +47,7 @@ def main():
     ioc += Range("f000", 0xfffff000, 0x3)
 
     # IO_CPU_GET_REQUEST_p69
-    ioc += Range("fifo_req_latch", 0xfffff100, 0x3, sc_read = True)
+    ioc += Range("fifo_req_latch", 0xfffff100, 0x3, pre_read = True)
 
     # IO_FRONT_PANEL_LED_p27
     ioc += Range("pnlreg", 0xfffff200, 0x3, post_write = True, sc_write = True)
@@ -62,10 +62,10 @@ def main():
     ioc += Range("fifo_init", 0xfffff500, 0x3, sc_write = True)
 
     # IO_CPU_RESPONSE_p68
-    ioc += Range("fifo_response", 0xfffff600, 0x3, sc_write = True)
+    ioc += Range("fifo_response", 0xfffff600, 0x3, post_write = True)
 
     # IO_CPU_REQUEST_p69
-    ioc += Range("fifo_request", 0xfffff700, 0x3, sc_write=True)
+    ioc += Range("fifo_request", 0xfffff700, 0x3, post_write = True)
 
     # IO_READ_STATUS_p24
     ioc += Range("io_sreg8", 0xfffff800, 0x3, pre_read = True)

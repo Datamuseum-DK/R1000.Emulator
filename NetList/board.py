@@ -53,7 +53,11 @@ class Board():
         self.sexp = SExp(None)
         self.sexp.parse(open(netlist).read())
         self.find_board_name()
-        self.dstdir = self.name.capitalize() + "/" + self.branch
+        self.dstdir = os.path.join(
+             cpu.workdir,
+             self.name.capitalize(),
+             self.branch
+        )
         os.makedirs(self.dstdir, exist_ok=True)
         self.srcs = []
         self.part_catalog = self.cpu.part_catalog
@@ -178,7 +182,7 @@ class Board():
     def produce_board_cc(self, scm):
         ''' ... '''
         scm.write("#include <systemc.h>\n")
-        scm.include("Chassis/%s/planes.hh" % self.branch)
+        scm.include(self.cpu.planes_hh)
         scm.include(self.scm_board.hh)
         scm.include(self.scm_board.pub)
         scm.fmt('''

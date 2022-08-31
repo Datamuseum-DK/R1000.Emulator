@@ -13,23 +13,23 @@ ${OBJDIR}/sc_main_thread.o: \
     Chassis/sc_main_thread.cc \
     Chassis/r1000sc.h \
     Chassis/r1000sc_priv.h \
-    Chassis/${SC_BRANCH}/planes.hh \
-    Emu/${SC_BRANCH}/emu_board_pub.hh \
-    Fiu/${SC_BRANCH}/fiu_board_pub.hh \
-    Ioc/${SC_BRANCH}/ioc_board_pub.hh \
-    Mem32/${SC_BRANCH}/mem32_board_pub.hh \
-    Seq/${SC_BRANCH}/seq_board_pub.hh \
-    Typ/${SC_BRANCH}/typ_board_pub.hh \
-    Val/${SC_BRANCH}/val_board_pub.hh 
+    ${WORKDIR}/Chassis/${BRANCH}/planes.hh \
+    ${WORKDIR}/Emu/${BRANCH}/emu_board_pub.hh \
+    ${WORKDIR}/Fiu/${BRANCH}/fiu_board_pub.hh \
+    ${WORKDIR}/Ioc/${BRANCH}/ioc_board_pub.hh \
+    ${WORKDIR}/Mem32/${BRANCH}/mem32_board_pub.hh \
+    ${WORKDIR}/Seq/${BRANCH}/seq_board_pub.hh \
+    ${WORKDIR}/Typ/${BRANCH}/typ_board_pub.hh \
+    ${WORKDIR}/Val/${BRANCH}/val_board_pub.hh 
 	${SC_CC} \
-		-IEmu/${SC_BRANCH}/ \
-		-IFiu/${SC_BRANCH}/ \
-		-IIoc/${SC_BRANCH}/ \
-		-IMem32/${SC_BRANCH}/ \
-		-ISeq/${SC_BRANCH}/ \
-		-ITyp/${SC_BRANCH}/ \
-		-IVal/${SC_BRANCH}/ \
-		-IChassis/${SC_BRANCH}/ \
+		-I${WORKDIR}/Emu/${BRANCH}/ \
+		-I${WORKDIR}/Fiu/${BRANCH}/ \
+		-I${WORKDIR}/Ioc/${BRANCH}/ \
+		-I${WORKDIR}/Mem32/${BRANCH}/ \
+		-I${WORKDIR}/Seq/${BRANCH}/ \
+		-I${WORKDIR}/Typ/${BRANCH}/ \
+		-I${WORKDIR}/Val/${BRANCH}/ \
+		-I${WORKDIR}/Chassis/${BRANCH}/ \
 		-o ${OBJDIR}/sc_main_thread.o \
 		Chassis/sc_main_thread.cc
 

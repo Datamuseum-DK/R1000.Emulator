@@ -133,12 +133,10 @@ static struct sc_def sc_defs[] = {
 	},
 	{ 0x10280, "StartProg", ".A7", noreturn },
 
-#if 0
-	{ 0x1028c, "?muls_d3_d4_to_d4", ".D3 , .D4", ".D3 , .D4" },
-	{ 0x10290, "?mulu_d3_d4_to_d4", ".D3 , .D4", ".D3 , .D4" },
-	{ 0x10294, "?divs_d3_d4", ".D3 , .D4", ".D3 , .D4" },
-	{ 0x10298, "?divu_d3_d4", ".D3 , .D4", ".D3 , .D4" },
-#endif
+	{ 0x1028c, "Muls", ".D3 , .D4", ".D3 , .D4" },
+	{ 0x10290, "Mulu", ".D3 , .D4", ".D3 , .D4" },
+	{ 0x10294, "Divs", ".D3 , .D4", ".D3 , .D4" },
+	{ 0x10298, "Divu", ".D3 , .D4", ".D3 , .D4" },
 
 	{ 0x10308, "Time2Text",
 	    "sp+4 @L .L , "

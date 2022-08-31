@@ -2,7 +2,9 @@
 set -e
 R1K_TESTNAME=`basename $0 .sh`
 
-R1K_PFX=Tests/_${R1K_TESTNAME}
+R1K_WORKDIR=`make workdir`
+
+R1K_PFX=${R1K_WORKDIR}/_${R1K_TESTNAME}
 
 rm -f ${R1K_PFX}.*
 
@@ -23,10 +25,13 @@ cli() {
 }
 
 cli '# => Standard prefix'
-cli 'disk mount 0 /critter/R1K/DiskImages/PE_R1K_Disk0.dd'
-cli 'disk mount 1 /critter/R1K/DiskImages/PE_R1K_Disk1.dd'
+
+make diskcli | while read i
+do
+	cli "$i"
+done
+
 cli 'console >' ${R1K_PFX}.console
-cli 'console serial /dev/nmdm0B'
 standard_patches
 
 sc_boards() {
@@ -38,12 +43,14 @@ sc_boards() {
 	    echo "$*" | grep -q -i ${brd} || cli diproc dummy -TIMEOUT ${brd}
 	done
 	cli 'sc watchdog -dont_bite 5' 
+	# cli sc trace UTRACE 1
 }
 
 cli_prompt() {
 	cli "iop syscall internal"  
 
 	cli '# => cli_prompt'
+	cli 'sc wait 1e-6'
 	cli iop reset
 	cli 'console match expect "Boot from (Tn or Dn)  [D0] : "'
 	cli 'console << ""'
@@ -88,7 +95,7 @@ run() {
 	cli sc rate
 	cli exit
 	echo "exit" | ./r1000sim \
-		-T /critter/_r1000 \
+		-T ${R1K_WORKDIR}/_r1000 \
 		"include ${R1K_CLIFILE}" 2>&1 | tee ${R1K_PFX}.log
 	python3 Context/context.py > ${R1K_PFX}.ctx
 	python3 Context/utrace.py > ${R1K_PFX}.utrace
