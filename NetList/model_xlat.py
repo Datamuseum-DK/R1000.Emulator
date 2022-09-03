@@ -141,4 +141,5 @@ def register(board):
     board.add_part("F373", ModelXlat("F373"))
     board.add_part("XLAT16", ModelXlat("XLAT16"))
     board.add_part("XLAT32", ModelXlat("XLAT32"))
+    board.add_part("XLAT56", ModelXlat("XLAT56"))
     board.add_part("XLAT64", ModelXlat("XLAT64"))
