@@ -50,3 +50,6 @@ workdir:
 diskcli:
 	@echo "disk mount 0 ${DISK0_IMAGE}"
 	@echo "disk mount 1 ${DISK1_IMAGE}"
+
+setup:
+	git clone https://github.com/Datamuseum-DK/Musashi
