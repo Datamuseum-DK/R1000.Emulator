@@ -1,4 +1,4 @@
-/* MACHINE GENERATED, see fetch_firmware.py */
+/* MACHINE GENERATED, see make_firmware_c.py */
 
 #include <stdint.h>
 #include <stdint.h>

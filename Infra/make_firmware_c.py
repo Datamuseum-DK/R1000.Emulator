@@ -90,7 +90,7 @@ def main():
 
     namelist = []
     with open("Infra/firmware.c", "w", encoding="ASCII") as file:
-        file.write('/* MACHINE GENERATED, see fetch_firmware.py */\n')
+        file.write('/* MACHINE GENERATED, see make_firmware_c.py */\n')
         file.write('\n')
         file.write('#include <stdint.h>\n')
         file.write('#include <stdint.h>\n')
