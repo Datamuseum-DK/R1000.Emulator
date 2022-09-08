@@ -18,16 +18,21 @@ def main():
     ioc += Range("ioc_eeprom", 0x80000000, 0x80008000)
 
     ioc += Range("resha_page", 0x9303e00a, 0x3, post_write = True)
+    ioc += Range("resha_status2", 0x9303e008, 0x1);
 
     ioc += Range("resha_eeprom", 0x9303e300, 0xff, pre_read = True)
 
-    ioc += Range("scsi_dma", 0x9303e100, 0xf, post_write = True)
+    ioc += Range("scsi_dma", 0x9303e100, 0x9303e10a, post_write = True)
+    ioc += Range("vme_std", 0x9303e10a, 0x9303e10c)
+    ioc += Range("vme_ctl", 0x9303e10c, 0x9303e10e)
 
     ioc += Range("scsi_ctl", 0x9303e000, 0xf, pre_read = True, post_write = True)
 
     ioc += Range("scsi_d", 0x9303e800, 0x9303e900, mask = 0x1f, pre_read = 1, post_write = 1)
 
     ioc += Range("scsi_t", 0x9303ec00, 0x9303ec20, mask = 0x1f, pre_read = 1, post_write = 1)
+
+    ioc += Range("vme_window", 0x9303f000, 0x9303f400, pre_read = True, post_write = True)
 
     ioc += Range("io_map", 0xa1000000, 0xa1002000)
 

@@ -55,6 +55,7 @@ void ioc_duart_init(void);
 void ioc_scsi_d_init(void);
 void ioc_scsi_t_init(void);
 void ioc_rtc_init(void);
+void ioc_vme_init(void);
 void ioc_init(void);
 
 extern uintmax_t ioc_nins;

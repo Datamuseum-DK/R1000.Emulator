@@ -51,7 +51,7 @@ mem_peg_set(unsigned lo, unsigned hi, unsigned pegval)
 	for(u = lo; u < hi; u += 2) {
 		peg = mem_find_peg(u);
 		if (peg == NULL) {
-			printf("No PEG at 0x%x\n", u);
+			// printf("No PEG at 0x%x\n", u);
 			continue;
 		}
 		AN(peg);

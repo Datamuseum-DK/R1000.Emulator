@@ -140,6 +140,15 @@ ${OBJDIR}/iop_syscall.o: \
     ${R1000DEP}
 	${CC} ${CFLAGS} -c Iop/iop_syscall.c -o ${OBJDIR}/iop_syscall.o
 
+OBJS += ${OBJDIR}/iop_vme.o
+${OBJDIR}/iop_vme.o: \
+    Iop/iop_vme.c \
+    Iop/iop.h \
+    Infra/context.h \
+    Infra/vend.h \
+    ${R1000DEP}
+	${CC} ${CFLAGS} -c Iop/iop_vme.c -o ${OBJDIR}/iop_vme.o
+
 OBJS += ${OBJDIR}/iop_uart.o
 ${OBJDIR}/iop_uart.o: \
     Iop/iop_uart.c \
@@ -152,6 +161,7 @@ OBJS += ${OBJDIR}/_memcfg.o
 ${OBJDIR}/_memcfg.o: \
     Iop/_memcfg.c \
     Iop/_memcfg.h \
+    Infra/context.h \
     Infra/vend.h \
     Infra/vqueue.h \
     Iop/memspace.h

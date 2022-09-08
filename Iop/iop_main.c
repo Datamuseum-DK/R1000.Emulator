@@ -406,6 +406,7 @@ ioc_init(void)
 	ioc_scsi_d_init();
 	ioc_scsi_t_init();
 	ioc_rtc_init();
+	ioc_vme_init();
 
 	AZ(pthread_create(&ioc_cpu, NULL, main_ioc, NULL));
 }

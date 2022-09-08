@@ -114,6 +114,7 @@ class Range():
 
     def produce_init(self, fo):
         fo.write('\tptr = CTX_Get("iop_%s", "IOP.%s", sizeof (struct ctx) + %d);\n' % (self.rd_space, self.rd_space, self.length))
+        fo.write("\tassert(ptr != NULL);\n");
         fo.write("\t%s = ((uint8_t*)ptr) + sizeof (struct ctx);\n" % self.rd_space);
         fo.write("\tassert(%s != NULL);\n" % self.rd_space)
 
