@@ -44,13 +44,13 @@ sc_boards() {
 	done
 	cli 'sc watchdog -dont_bite 5' 
 	# cli sc trace UTRACE 1
+	cli 'sc wait 1e-6'
 }
 
 cli_prompt() {
 	cli "iop syscall internal"  
 
 	cli '# => cli_prompt'
-	cli 'sc wait 1e-6'
 	cli iop reset
 	cli 'console match expect "Boot from (Tn or Dn)  [D0] : "'
 	cli 'console << ""'
