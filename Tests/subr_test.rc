@@ -97,6 +97,34 @@ run() {
 	echo "exit" | ./r1000sim \
 		-T ${R1K_WORKDIR}/_r1000 \
 		"include ${R1K_CLIFILE}" 2>&1 | tee ${R1K_PFX}.log
-	python3 Context/context.py > ${R1K_PFX}.ctx
-	python3 Context/utrace.py > ${R1K_PFX}.utrace
+	python3 Context/context.py ${R1K_WORKDIR}/_r1000.ctx > ${R1K_PFX}.ctx
+	python3 Context/utrace.py ${R1K_WORKDIR}/_r1000.ctx > ${R1K_PFX}.utrace
+}
+
+single() {
+	brd=$1
+	shift
+
+	if [ "x$1" == "x" ] ; then
+		EXP=TEST_WCS_ADDRESS
+	else
+		EXP=$1
+	fi
+
+	sc_boards $brd
+
+	cli 'sc trace DI*PROC 4'
+
+	cli 'sc trace DUIRG[0-6] 1'
+
+	cli 'sc quota add 12'
+	cli 'sc quota exit'
+
+	cli "dfs read ${EXP}.${brd} ${R1K_PFX}.exp"
+
+	cli "diproc experiment ${brd} ${R1K_PFX}.exp"
+	cli "diproc wait ${brd}"
+	cli "diproc status ${brd}"
+
+	run
 }
