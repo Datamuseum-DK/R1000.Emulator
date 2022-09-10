@@ -7,7 +7,6 @@
 import struct
 import context
 
-
 def main():
     ''' ... '''
     tram = [0] * 2048

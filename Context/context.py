@@ -1,6 +1,6 @@
-import struct
+import sys
 
-CONTEXT_FILE = "/critter/_r1000.ctx"
+import struct
 
 class Context():
 
@@ -34,7 +34,9 @@ class Context():
     def __repr__(self):
         return self.kind + "::" + self.ident
 
-def contexts(filename=CONTEXT_FILE):
+def contexts(filename=None):
+    if filename is None:
+        filename = sys.argv[1]
     with open(filename, "rb") as file:
         while True:
             try:
@@ -47,7 +49,7 @@ def main():
     nact = 0
     lines = []
     summ = {}
-    for ctx in contexts(CONTEXT_FILE):
+    for ctx in contexts():
         i = ctx.activations
         nact += i
         lines.append((i, str(ctx)))
