@@ -44,7 +44,6 @@ sc_boards() {
 	done
 	cli 'sc watchdog -dont_bite 5' 
 	# cli sc trace UTRACE 1
-	cli 'sc wait 1e-6'
 }
 
 cli_prompt() {
@@ -92,6 +91,7 @@ fru_prompt() {
 }
 
 run() {
+	cli 'sc wait 1e-6'
 	cli sc rate
 	cli exit
 	echo "exit" | ./r1000sim \
