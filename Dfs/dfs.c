@@ -215,7 +215,7 @@ dfs_open(const char *filename, struct dfs_dirent *dep, int flags)
 	struct dfs_dirent de[2];
 
 	while(dfs_iter_dirent(&iter, de)) {
-		if (!strcmp(de->name, filename)) {
+		if (!strcasecmp(de->name, filename)) {
 			*dep = de[0];
 			while(dfs_iter_dirent(&iter, de + 1))
 				continue;
