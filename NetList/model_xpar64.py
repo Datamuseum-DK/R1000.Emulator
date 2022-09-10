@@ -85,9 +85,9 @@ class XPAR18(PartFactory):
 		|
 		|''')
 
-class XPAR32(PartFactory):
+class XPAR64(PartFactory):
 
-    ''' 4x8 parity checker '''
+    ''' 8x8 parity checker '''
 
     def doit(self, file):
         ''' The meat of the doit() function '''
@@ -132,9 +132,9 @@ class XPAR32(PartFactory):
 		|
 		|''')
 
-class XPAR64(PartFactory):
+class XPAR32(PartFactory):
 
-    ''' 8x8 parity checker '''
+    ''' 4x8 parity checker '''
 
     def doit(self, file):
         ''' The meat of the doit() function '''
