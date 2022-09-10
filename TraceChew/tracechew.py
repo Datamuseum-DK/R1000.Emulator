@@ -19,6 +19,8 @@ from seq import SEQ_Board
 
 class Main():
     def __init__(self):
+
+        fn = sys.argv[1]
         self.boards = {
             "IOC": IOC_Board(),
             "FIU": FIU_Board(),
@@ -28,7 +30,7 @@ class Main():
             "MEM0": MEM_Board(0),
             "MEM2": MEM_Board(2),
         }
-        self.consume("/critter/_r1000.trace")
+        self.consume(fn)
 
     def consume(self, fn):
         for i in open(fn):
