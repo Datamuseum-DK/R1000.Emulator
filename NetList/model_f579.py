@@ -52,7 +52,8 @@ class F579(PartFactory):
         yield "PIN_CLK.pos()"
         if not self.comp.nodes["MR"].net.is_const():
             yield "PIN_MR"
-        yield "PIN_OE"
+        if not self.comp.nodes["OE"].net.is_const():
+            yield "PIN_OE"
         if not self.comp.nodes["CS"].net.is_const():
             yield "PIN_CS"
         if not self.comp.nodes["CEP"].net.is_const():
