@@ -152,7 +152,13 @@ class PartModel(Part):
         ''' Produce a signature for this hookup '''
 
         i = []
+        lastbus = None
         for node in comp:
+            if lastbus is not None and node.pin.pinbus == lastbus:
+                pass
+            else:
+                i.append(node.pin.name.lower())
+                lastbus = node.pin.pinbus
             if node.pin.pinbus is None and node.net.is_pu():
                 i.append("U")
             elif node.pin.pinbus is None and node.net.is_pd():
