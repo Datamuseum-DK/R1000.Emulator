@@ -67,7 +67,7 @@ class Pin():
             self.sortkey.insert(0, "_")
 
     def __repr__(self):
-        return "_".join(("Pin", self.ident, self.name, self.role))
+        return "_".join(("Pin", self.name, self.role))
 
     def __lt__(self, other):
         return self.sortkey < other.sortkey
