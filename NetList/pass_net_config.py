@@ -126,7 +126,7 @@ class NetBus():
         self.decide_cname()
         file.write(pfx + "BUS")
         file.write(" %d×%d" % (len(self.nets), len(self.nodes)))
-        file.write(" \t" + str(self.cname) + "\n")
+        file.write(" \t" + str(self.cname) + " " + str(self.ctype) + "\n")
         file.write(pfx + "   [" + self.sig + "]\n")
 
         i = [""]
