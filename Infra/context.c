@@ -129,10 +129,10 @@ CTX_Find(const char *name)
 	void *ctx_iter_priv = NULL;
 	struct ctx *cp;
 
-	while (1) {
+	do {
 		cp = CTX_Iter(&ctx_iter_priv);
 		if (cp != NULL && !strcmp(cp->ident, name))
 			return (cp);
-	}
-	return (NULL);
+	} while (cp != NULL);
+	return (cp);
 }
