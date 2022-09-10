@@ -85,9 +85,9 @@ class XPAR18(PartFactory):
 		|
 		|''')
 
-class XPAR64(PartFactory):
+class XPAR32(PartFactory):
 
-    ''' 8x8 parity checker '''
+    ''' 4x8 parity checker '''
 
     def doit(self, file):
         ''' The meat of the doit() function '''
@@ -132,8 +132,51 @@ class XPAR64(PartFactory):
 		|
 		|''')
 
+class XPAR64(PartFactory):
+
+    ''' 8x8 parity checker '''
+
+    def doit(self, file):
+        ''' The meat of the doit() function '''
+
+        super().doit(file)
+
+        file.fmt('''
+		|	uint32_t tmp, total = 0, par = 0;
+		|
+		|	BUS_I_READ(tmp);
+		|	tmp = (tmp ^ (tmp >> 4)) & 0x0f0f0f0f;
+		|	tmp = (tmp ^ (tmp >> 2)) & 0x03030303;
+		|	tmp = (tmp ^ (tmp >> 1)) & 0x01010101;
+		|
+		|	if (PIN_ODD=>)
+		|		tmp ^= 0x01010101;
+		|
+		|	if (tmp & (1ULL<<24)) par |= 0x8;
+		|	if (tmp & (1ULL<<16)) par |= 0x4;
+		|	if (tmp & (1ULL<<8)) par |= 0x2;
+		|	if (tmp & (1ULL<<0)) par |= 0x1;
+		|	BUS_P_WRITE(par);
+		|
+		|	total = (tmp ^ (tmp >> 16)) & 0x0101;
+		|	total = (total ^ (total >> 8)) & 0x01;
+		|
+		|	if (PIN_ODD=>)
+		|		total ^= 0x1;
+		|
+		|	TRACE(
+		|	    << " i " << BUS_I_TRACE()
+		|	    << " p " << std::hex << par
+		|	    << " a " << total
+		|	);
+		|
+		|	PIN_PALL<=(total & 1);
+		|
+		|''')
+
 def register(board):
     ''' Register component model '''
 
     board.add_part("XPAR18", PartModel("XPAR18", XPAR18))
+    board.add_part("XPAR32", PartModel("XPAR32", XPAR32))
     board.add_part("XPAR64", PartModel("XPAR64", XPAR64))
