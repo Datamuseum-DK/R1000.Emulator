@@ -5,7 +5,6 @@ import struct
 class Context():
 
     def __init__(self, file=None):
-        self.kind = None
         self.ident = None
         self.activations = None
         self.length = None
@@ -27,12 +26,12 @@ class Context():
             raise ValueError
         self.length = hdr[4]
         self.activations = hdr[2]
-        self.ident, self.kind = hdr[5].rstrip(b'\x00').decode("utf-8").split()
+        self.ident = hdr[5].rstrip(b'\x00').decode("utf-8")
         self.body = file.read(self.length - 128)
         return self
 
     def __repr__(self):
-        return self.kind + "::" + self.ident
+        return self.ident
 
 def contexts(filename=None):
     if filename is None:
@@ -54,8 +53,6 @@ def main():
         nact += i
         lines.append((i, str(ctx)))
         j = "page " + ctx.ident.split(".")[1]
-        summ[j] = summ.get(j, 0) + i
-        j = "kind " + ctx.kind
         summ[j] = summ.get(j, 0) + i
 
     for i, j in summ.items():

@@ -87,9 +87,9 @@ CTX_Get(const char *kind, const char *ident, uint32_t length)
 
 	struct ctx *ctx;
 
+	(void)kind;
 	assert(context_fd > -1);
 	assert(sizeof *ctx == 128);
-	// assert(strlen(kind) + 1 <= sizeof ctx->kind);
 	assert(strlen(ident) + 1 <= sizeof ctx->ident);
 	if (length & 0xf) {
 		length |= 0xf;
@@ -101,7 +101,7 @@ CTX_Get(const char *kind, const char *ident, uint32_t length)
 	AN(ctx);
 	ctx->magic = CTX_MAGIC;
 	ctx->length = length;
-	bprintf(ctx->ident, "%s %s", ident, kind);
+	bprintf(ctx->ident, "%s", ident);
 	return (ctx);
 }
 

@@ -54,7 +54,7 @@ class SRAM64KX1(PartFactory):
 
     def init(self, file):
         file.fmt('''
-		|	struct ctx *c1 = CTX_Find("IOP.ram_space iop_ram_space");
+		|	struct ctx *c1 = CTX_Find("IOP.iop_ram_space");
 		|	assert(c1 != NULL);
 		|	state->iopram = (uint32_t*)(c1 + 1);
 		|	const char *p = strchr(this->name(), 'M');
