@@ -149,15 +149,18 @@ class ModelMux2(PartModel):
         super().__init__("MUX2")
         self.invert = invert
 
-    def configure(self, board, comp):
+    def assign(self, comp):
         for pin_name in ("E", "OE"):
             node = comp.nodes.get(pin_name)
             if node and node.net.is_pd():
-                comp.del_node(node)
+                node.remove()
         if "OE" not in comp.nodes:
            for node in comp:
                if node.pin.name[0] == "Y":
                    node.pin.role = 'c_output'
+        super().assign(comp)
+
+    def configure(self, board, comp):
         sig = self.make_signature(comp)
         ident = self.name + "_" + sig
         invert = self.invert
