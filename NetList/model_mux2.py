@@ -189,6 +189,7 @@ def register(board):
     board.add_part("XMUX10", ModelMux2(invert=None))
     board.add_part("XMUX12", ModelMux2(invert=None))
     board.add_part("XMUX16", ModelMux2(invert=None))
+    board.add_part("XMUX17", ModelMux2(invert=None))
     board.add_part("XMUX20", ModelMux2(invert=None))
     board.add_part("XMUX24", ModelMux2(invert=None))
     board.add_part("XMUX32", ModelMux2(invert=None))

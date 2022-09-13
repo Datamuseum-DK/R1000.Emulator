@@ -54,8 +54,8 @@ class XMUX_1(PartFactory):
 		|	BUS_S_READ(adr);
 		|	BUS_I_READ(tmp);
 		|	y = tmp & (1ULL << ((BUS_I_WIDTH - 1) - adr));
-		|	PIN_Y<=(y);
-		|	PIN_Ynot<=(!y);
+		|	PIN_Y<=(y != 0);
+		|	PIN_Ynot<=(y == 0);
 		|
 		|	TRACE(
 		|	    << " s " << BUS_S_TRACE()
