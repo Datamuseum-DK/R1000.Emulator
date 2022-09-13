@@ -55,7 +55,10 @@ class Net():
         self.is_plane = None
         self.is_local = None
         self.is_supply = netname in ("GND", "+5V", "PU", "PD")
-        self.sc_type = "sc_logic"
+        if self.is_supply:
+            self.sc_type = "bool"
+        else:
+            self.sc_type = "sc_logic"
         self.no_bool = False
         self.cname = None
         self.bcname = None

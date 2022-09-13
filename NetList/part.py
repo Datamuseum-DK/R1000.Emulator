@@ -338,9 +338,9 @@ class PartFactory(Part):
         ''' Hook instance into SystemC model '''
 
         for node in comp:
-            if node.pin.pinbus is None and node.net.is_pu():
-                continue
-            if node.pin.pinbus is None and node.net.is_pd():
+            if node.pin.pinbus is None and (node.net.is_pd() or node.net.is_pu()):
+                if node.pin.role not in ('c_input',):
+                    print("BAD NODE ? ", node.net, node.pin.role, node.component)
                 continue
             if not node.netbus:
                 file.write("\t%s.PIN_%s(%s);\n" % (comp.name, node.pin.name, node.net.cname))

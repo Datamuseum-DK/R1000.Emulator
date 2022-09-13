@@ -223,6 +223,9 @@ class PassNetConfig():
         for _gnam, net in sorted(self.cpu.nets.items()):
             if net.no_bool:
                 continue
+            if net.is_supply:
+                net.sc_type = "bool"
+                continue
             i = {}
             for node in net.iter_nodes():
                 i[node.pin.role] = 1 + i.setdefault(node.pin.role, 0)
