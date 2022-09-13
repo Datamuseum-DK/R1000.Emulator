@@ -54,6 +54,8 @@ def main():
         lines.append((i, str(ctx)))
         j = "page " + ctx.ident.split(".")[1]
         summ[j] = summ.get(j, 0) + i
+        j = "board " + ctx.ident.split(".")[1].split('_')[0]
+        summ[j] = summ.get(j, 0) + i
 
     for i, j in summ.items():
         lines.append((j, i))
