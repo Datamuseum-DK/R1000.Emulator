@@ -37,7 +37,7 @@
 
 from part import PartModel, PartFactory
 
-class XMUX16_1(PartFactory):
+class XMUX_1(PartFactory):
 
     ''' XMUX16_1 16-Input Multiplexer '''
 
@@ -47,12 +47,13 @@ class XMUX16_1(PartFactory):
         super().doit(file)
 
         file.fmt('''
-		|	unsigned adr = 0, tmp;
+		|	unsigned adr = 0;
+		|	uint64_t tmp = 0;
 		|	bool y;
 		|
 		|	BUS_S_READ(adr);
 		|	BUS_I_READ(tmp);
-		|	y = tmp & (1 << (15 - adr));
+		|	y = tmp & (1ULL << ((BUS_I_WIDTH - 1) - adr));
 		|	PIN_Y<=(y);
 		|	PIN_Ynot<=(!y);
 		|
@@ -67,4 +68,5 @@ class XMUX16_1(PartFactory):
 def register(board):
     ''' Register component model '''
 
-    board.add_part("XMUX16_1", PartModel("XMUX16_1", XMUX16_1))
+    board.add_part("XMUX16_1", PartModel("XMUX16_1", XMUX_1))
+    board.add_part("XMUX64_1", PartModel("XMUX64_1", XMUX_1))
