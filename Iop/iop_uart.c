@@ -12,6 +12,7 @@
 #include <fcntl.h>
 #include <string.h>
 #include <unistd.h>
+#include <vis.h>
 
 #include "Infra/r1000.h"
 #include "Iop/iop.h"
@@ -61,11 +62,14 @@ thr_console_rx(void *priv)
 {
 	uint8_t buf[1];
 	ssize_t sz;
+	char visbuf[16];
 
 	(void)priv;
 	while (1) {
 		sz = elastic_get(cons->ep, buf, 1);
 		assert(sz == 1);
+		(void)vis(visbuf, buf[0], VIS_WHITE | VIS_CSTYLE, '0');
+		Trace(trace_console, "CONSOLE RX %s", visbuf);
 		AZ(pthread_mutex_lock(&uart_mtx));
 		while (!(cons->cmd & 0x04) || (cons->status & 0x02))
 			AZ(pthread_cond_wait(&cons_cond, &uart_mtx));
@@ -83,6 +87,7 @@ static void
 cons_txshift_done(void * priv)
 {
 	(void)priv;
+	char visbuf[16];
 
 	AZ(pthread_mutex_lock(&uart_mtx));
 	if (!(cons->cmd & 0x01)) {			// Tx disabled
@@ -102,8 +107,11 @@ cons_txshift_done(void * priv)
 		if (cons->status & 0x01) {		// txhold is empty
 			cons->status |= 0x04;		// TxEmt
 		} else {
-			if (!cons->loopback)
+			if (!cons->loopback) {
+				(void)vis(visbuf, cons->txhold, VIS_WHITE | VIS_CSTYLE, '0');
+				Trace(trace_console, "CONSOLE TX %s", visbuf);
 				elastic_put(cons->ep, &cons->txhold, 1);
+			}
 			cons->txshift = cons->txhold;
 			cons->txshiftfull = 1;
 			callout_callback(cons_txshift_done,

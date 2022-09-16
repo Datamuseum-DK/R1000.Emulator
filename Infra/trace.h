@@ -1,5 +1,6 @@
 
 #define TRACERS								\
+	TRACER(console, "Console characters")				\
 	TRACER(ioc_instructions, "IOC CPU instruction execution")	\
 	TRACER(ioc_interrupt, "IOC interrupts")				\
 	TRACER(ioc_dma, "IOC DMA")					\

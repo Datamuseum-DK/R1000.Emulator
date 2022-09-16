@@ -78,6 +78,7 @@ ${OBJDIR}/rpn.o: \
 OBJS += ${OBJDIR}/trace.o
 ${OBJDIR}/trace.o: \
     Infra/trace.c \
+    Infra/trace.h \
     Infra/vsb.h \
     ${R1000DEP}
 	${CC} ${CFLAGS} -c Infra/trace.c -o ${OBJDIR}/trace.o
