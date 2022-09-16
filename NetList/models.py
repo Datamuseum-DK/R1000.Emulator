@@ -72,6 +72,7 @@ import model_f299
 import model_f381
 import model_f579
 import model_f652
+import model_fiforam
 import model_ls125
 import model_mux2
 import model_nand
@@ -148,6 +149,7 @@ def register(where):
     model_f381.register(where)
     model_f579.register(where)
     model_f652.register(where)
+    model_fiforam.register(where)
     model_ls125.register(where)
     model_mux2.register(where)
     model_nand.register(where)
