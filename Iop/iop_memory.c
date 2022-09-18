@@ -204,13 +204,39 @@ dump_mailbox(const char *dir, uint32_t mb)
 		    mb,
 		    adr
 		);
+		adr = 0x40000 + (mb << 10);
+		TraceDump(
+		    1,
+		    ram_space + adr,
+		    0x20,
+		    "%s SecBuf[%u @ 0x%04x] ",
+		    dir,
+		    mb,
+		    adr
+		);
 	} else {
 		Trace(1, "%s Mailbox[0x%08x] ?", dir, mb);
 	}
 }
 
+static void
+fifo_delay(void)
+{
+	int i;
+
+	for (i = 0; i < 5; i++) {
+		(void)ioc_bus_xact_schedule(
+		    5,
+		    mem_desc_io_sreg8.lo,
+		    0,
+		    4,
+		    0
+		);
+	}
+}
+
 void
-fifo_req_latch_pre_read(int debug, uint8_t *space, unsigned width, unsigned adr)
+fifo_req_oe_pre_read(int debug, uint8_t *space, unsigned width, unsigned adr)
 {
 	uint32_t value;
 
@@ -218,13 +244,32 @@ fifo_req_latch_pre_read(int debug, uint8_t *space, unsigned width, unsigned adr)
 	assert(width == 4);
 	value = ioc_bus_xact_schedule(
 	    5,
-	    adr + mem_desc_fifo_req_latch.lo,
+	    adr + mem_desc_fifo_req_oe.lo,
 	    0,
 	    4,
 	    0
 	);
 	vbe32enc(space + adr, value);
 	dump_mailbox("ReqL", value & 0xffff);
+}
+
+void
+fifo_request_pre_read(int debug, uint8_t *space, unsigned width, unsigned adr)
+{
+	uint32_t value;
+
+	(void)debug;
+	assert(width == 4);
+	value = ioc_bus_xact_schedule(
+	    5,
+	    adr + mem_desc_fifo_request.lo,
+	    0,
+	    4,
+	    0
+	);
+	dump_mailbox("ReqPR", value & 0xffff);
+	vbe32enc(space + adr, value);
+	fifo_delay();
 }
 
 void
@@ -235,7 +280,7 @@ fifo_request_post_write(int debug, uint8_t *space, unsigned width, unsigned adr)
 	(void)debug;
 	assert(width == 4);
 	value = vbe32dec(space + adr);
-	dump_mailbox("Req", value & 0xffff);
+	dump_mailbox("ReqPW", value & 0xffff);
 	(void)ioc_bus_xact_schedule(
 	    5,
 	    adr + mem_desc_fifo_request.lo,
@@ -243,6 +288,7 @@ fifo_request_post_write(int debug, uint8_t *space, unsigned width, unsigned adr)
 	    4,
 	    1
 	);
+	fifo_delay();
 }
 
 void
