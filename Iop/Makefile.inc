@@ -58,6 +58,8 @@ OBJS += ${OBJDIR}/iop_interrupt.o
 ${OBJDIR}/iop_interrupt.o: \
     Iop/iop_interrupt.c \
     Iop/iop.h \
+    Infra/vend.h \
+    Iop/memspace.h \
     ${R1000DEP}
 	${CC} ${CFLAGS} -c Iop/iop_interrupt.c -o ${OBJDIR}/iop_interrupt.o
 

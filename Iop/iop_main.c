@@ -213,25 +213,6 @@ io_sreg8_pre_read(int debug, uint8_t *space, unsigned width, unsigned adr)
 
 /**********************************************************************/
 
-void v_matchproto_(mem_pre_read)
-irq_vector_pre_read(int debug, uint8_t *space, unsigned width, unsigned adr)
-{
-	unsigned v;
-
-	if (debug) return;
-	if (ioc_fc == 7) {
-		v = irq_getvector(0);
-		if (width == 1)
-			space[adr] = v;
-		else if (width == 2)
-			vbe16enc(space + adr, v);
-		else
-			vbe32enc(space + adr, v);
-		Trace(trace_ioc_interrupt,
-		    "IRQ_VECTOR %x/%x (%x))", v, width, adr);
-	}
-}
-
 unsigned int
 m68k_read_disassembler_16(unsigned int address)
 {
