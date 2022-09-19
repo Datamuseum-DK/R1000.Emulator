@@ -115,52 +115,13 @@ ioc_sc_bus_done(struct ioc_sc_bus_xact **bxpa)
 		free(bxp);
 }
 
-static void
-iack_cb(uint32_t data)
-{
-	Trace(trace_ioc_interrupt, "IACK SC End 0x%08x", data);
-	switch (data >> 24) {
-	case 0x4d:
-		irq_edge(&IRQ_RESPONSE_FIFO);
-		break;
-	case 0x4e:
-		irq_edge(&IRQ_REQUEST_FIFO);
-		break;
-	default:
-		Trace(trace_ioc_interrupt, "Ignoring IACK 0x%08x", data);
-		printf("Ignoring IACK 0x%08x\n", data);
-		break;
-	}
-}
-
 void
 ioc_sc_bus_start_iack(unsigned ipl_pins)
 {
-	static unsigned stable, last, holddown;
 
-	ipl_pins ^= 7;
-        if (ipl_pins != last) {
-		Trace(trace_ioc_interrupt, "IACK SC Start pins=%x level=%x last=%x stable=%x", ipl_pins, irq_level, last, stable);
-		stable = 0;
-		last = ipl_pins;
-		return;
-	} else if (holddown) {
-		holddown--;
-	} else if (stable < 10) {
-		stable++;
-		return;
-	} else if (ipl_pins > irq_level) {
-		Trace(trace_ioc_interrupt, "IACK SC Start pins=%x level=%x last=%x stable=%x", ipl_pins, irq_level, last, stable);
-		stable = 0;
-		last = 0;
-		holddown = 100;
-		(void)ioc_bus_xact_schedule_cb(
-		     0x7,
-		     0xfffffff1 | (ipl_pins << 1),
-		     0,
-		     1,
-		     0,
-		     iack_cb
-		);
-	}
+	Trace(trace_ioc_interrupt, "SC-IPL pins=%x", ipl_pins);
+	if (ipl_pins == 6)
+		irq_raise(&IRQ_REQUEST_FIFO);
+	else
+		irq_lower(&IRQ_REQUEST_FIFO);
 }

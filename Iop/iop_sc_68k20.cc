@@ -3,17 +3,17 @@
 
 	unsigned ipl, dsack, data;
 
+	BUS_IPL_READ(ipl);
+	if (ipl != state->last_ipl) {
+		TRACE(<< "IPL-CHANGE " << BUS_IPL_TRACE() << " " << std::hex << ipl);
+		state->last_ipl = ipl;
+		ioc_sc_bus_start_iack(ipl);
+	}
+
 	if (!state->xact)
 		state->xact = ioc_sc_bus_get_xact();
 
 	if (!state->xact) {
-		BUS_IPL_READ(ipl);
-		if (ipl != state->last_ipl) {
-			TRACE(<< "IPL-CHANGE " << BUS_IPL_TRACE() << " " << std::hex << ipl);
-			state->last_ipl = ipl;
-		}
-		ioc_sc_bus_start_iack(ipl);
-
 		PIN_DS = 1;
 		PIN_AS = 1;
 		PIN_DBEN = 1;
