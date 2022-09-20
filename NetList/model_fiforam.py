@@ -43,11 +43,11 @@ class FIFORAM(PartFactory):
 
     def sensitive(self):
         yield "PIN_WE"
-        yield "BUS_RA_SENSITIVE()"
+        yield "BUS_AR_SENSITIVE()"
 
     def state(self, file):
         file.fmt('''
-		|	uint16_t ram[1<<8];
+		|	uint16_t ram[1<<BUS_AR_WIDTH];
 		|''')
 
     def doit(self, file):
@@ -70,7 +70,7 @@ class FIFORAM(PartFactory):
 		|#endif
 		|
 		|	BUS_AW_READ(wadr);
-		|	BUS_RA_READ(radr);
+		|	BUS_AR_READ(radr);
 		|
 		|	if (PIN_WE.posedge()) {
 		|		BUS_I_READ(data);
