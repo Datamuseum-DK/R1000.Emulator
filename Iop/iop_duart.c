@@ -218,7 +218,7 @@ ioc_duart_pace_downloads(struct chan *chp)
 			    chp->txshift[0],
 			    chp->txshift[1]
 			);
-			usleep(100000);
+			usleep(10000);
 		}
 	}
 }
