@@ -324,7 +324,7 @@ cli_sc_trace(struct cli *cli)
 	regex_t rex;
 	char errbuf[BUFSIZ];
 	const char *regexp;
-	int onoff = 0;
+	unsigned onoff = 0;
 	int nmatch = 0, err;
 
 	if (cli->help || cli->ac != 3) {
@@ -351,11 +351,13 @@ cli_sc_trace(struct cli *cli)
 	VTAILQ_FOREACH(comp, &component_list, list) {
 		if (!regexec(&rex, comp->name, 0, 0, 0)) {
 			nmatch++;
+			if (*comp->flags != onoff) {
+				Cli_Printf(
+				    cli,
+				    "    0x%x %s\n", *comp->flags, comp->name
+				);
+			}
 			*comp->flags = onoff;
-			Cli_Printf(
-			    cli,
-			    "    0x%x %s\n", *comp->flags, comp->name
-			);
 		}
 	}
 	regfree(&rex);
