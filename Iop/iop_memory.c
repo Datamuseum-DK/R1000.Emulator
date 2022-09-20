@@ -280,7 +280,6 @@ fifo_request_post_write(int debug, uint8_t *space, unsigned width, unsigned adr)
 	(void)debug;
 	assert(width == 4);
 	value = vbe32dec(space + adr);
-	dump_mailbox("ReqPW", value & 0xffff);
 	(void)ioc_bus_xact_schedule(
 	    5,
 	    adr + mem_desc_fifo_request.lo,
