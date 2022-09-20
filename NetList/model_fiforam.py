@@ -41,10 +41,6 @@ class FIFORAM(PartFactory):
 
     ''' Dualport 256x16 SRAM'''
 
-    def sensitive(self):
-        yield "PIN_WE"
-        yield "BUS_AR_SENSITIVE()"
-
     def state(self, file):
         file.fmt('''
 		|	uint16_t ram[1<<BUS_AR_WIDTH];
