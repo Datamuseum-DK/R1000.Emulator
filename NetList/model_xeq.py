@@ -162,6 +162,7 @@ def register(board):
     ''' Register component model '''
 
     board.add_part("F521", ModelXeq("F521", XEQ))
+    board.add_part("XEQ9", ModelXeq("XEQ9", XEQ))
     board.add_part("XEQ16", ModelXeq("XEQ16", XEQ))
     board.add_part("XEQ20", ModelXeq("XEQ20", XEQ))
     board.add_part("XEQ32", ModelXeq("XEQ32", XEQ))
