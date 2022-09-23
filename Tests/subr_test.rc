@@ -18,6 +18,18 @@ standard_patches() {
 
 	# Poll experiment completion four times more often
 	cli 'dfs patch FS_0.M200 0x93c6 0x00 0x14'
+
+	# Allow operator to enter CLI immediately [N] ? y
+	cli dfs patch STANDARD.M200_CONFIG 0x3 0x1
+
+	# Allow operator to enter CLI prior to starting the cluster [N] ? y
+	cli dfs patch STANDARD.M200_CONFIG 0x5 0x1
+
+	# Wait for remote debugging on kernel crashes [Y] ? n
+	cli dfs patch STANDARD.M200_CONFIG 0x2a 0x0
+
+	# Call Rational on kernel crash [Y] ? n
+	cli dfs patch STANDARD.M200_CONFIG 0x2d 0x0
 }
 
 cli() {
@@ -102,7 +114,7 @@ run() {
 }
 
 single() {
-	brd=$1
+	single_brd=$1
 	shift
 
 	if [ "x$1" == "x" ] ; then
@@ -111,8 +123,6 @@ single() {
 		EXP=$1
 	fi
 
-	sc_boards $brd
-
 	cli 'sc trace DI*PROC 4'
 
 	cli 'sc trace DUIRG[0-6] 1'
@@ -120,11 +130,11 @@ single() {
 	cli 'sc quota add 12'
 	cli 'sc quota exit'
 
-	cli "dfs read ${EXP}.${brd} ${R1K_PFX}.exp"
+	cli "dfs read ${EXP}.${single_brd} ${R1K_PFX}.exp"
 
-	cli "diproc experiment ${brd} ${R1K_PFX}.exp"
-	cli "diproc wait ${brd}"
-	cli "diproc status ${brd}"
+	cli "diproc experiment ${single_brd} ${R1K_PFX}.exp"
+	cli "diproc wait ${single_brd}"
+	cli "diproc status ${single_brd}"
 
 	run
 }
