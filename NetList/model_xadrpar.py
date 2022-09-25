@@ -49,35 +49,16 @@ class XADRPAR(PartFactory):
         file.fmt('''
 		|	uint32_t tmp, tmp2, out = 0;
 		|
-		|	BUS_S_READ(tmp);
-		|	tmp = (tmp ^ (tmp >> 2)) & 0x03;
-		|	tmp = (tmp ^ (tmp >> 1)) & 0x01;
-		|	if (tmp)
-		|		out |= 0x100;
+		|	BUS_I_READ(tmp2);
 		|
-		|	BUS_N_READ(tmp);
-		|	tmp = (tmp ^ (tmp >> 4)) & 0x0f0f0f0f;
-		|	tmp = (tmp ^ (tmp >> 2)) & 0x03030303;
-		|	tmp = (tmp ^ (tmp >> 1)) & 0x01010101;
-		|	if (tmp & 0x01000000)
-		|		out |= 0x80;
-		|	if (tmp & 0x010000)
-		|		out |= 0x40;
-		|	if (tmp & 0x0100)
-		|		out |= 0x20;
-		|	if (tmp & 0x01)
-		|		out |= 0x10;
-		|
-		|	BUS_O_READ(tmp2);
-		|
-		|	tmp = tmp2 >> 17;
+		|	tmp = tmp2 >> 24;
 		|	tmp = (tmp ^ (tmp >> 4)) & 0x0f;
 		|	tmp = (tmp ^ (tmp >> 2)) & 0x03;
 		|	tmp = (tmp ^ (tmp >> 1)) & 0x01;
 		|	if (tmp & 0x01)
 		|		out |= 0x8;
 		|
-		|	tmp = (tmp2 >> 6) & 0x7ff;
+		|	tmp = (tmp2 >> 13) & 0x7ff;
 		|	tmp = (tmp ^ (tmp >> 8)) & 0xff;
 		|	tmp = (tmp ^ (tmp >> 4)) & 0x0f;
 		|	tmp = (tmp ^ (tmp >> 2)) & 0x03;
@@ -85,15 +66,15 @@ class XADRPAR(PartFactory):
 		|	if (tmp & 0x01)
 		|		out |= 0x4;
 		|
-		|	tmp = tmp2 & 0x3f;
+		|	tmp = (tmp2 >> 7) & 0x3f;
 		|	tmp = (tmp ^ (tmp >> 4)) & 0x0f;
 		|	tmp = (tmp ^ (tmp >> 2)) & 0x03;
 		|	tmp = (tmp ^ (tmp >> 1)) & 0x01;
 		|	if (tmp & 0x01)
 		|		out |= 0x2;
 		|
-		|	BUS_B_READ(tmp);
-		|	tmp = (tmp ^ (tmp >> 4)) & 0x0f;
+		|	tmp = tmp2 & 0x7f;
+		|	tmp = (tmp2 ^ (tmp >> 4)) & 0x0f;
 		|	tmp = (tmp ^ (tmp >> 2)) & 0x03;
 		|	tmp = (tmp ^ (tmp >> 1)) & 0x01;
 		|	if (tmp & 0x01)
@@ -103,10 +84,7 @@ class XADRPAR(PartFactory):
 		|		out ^= BUS_PEV_MASK;
 		|
 		|	TRACE(
-		|	    << " s " << BUS_S_TRACE()
-		|	    << " n " << BUS_N_TRACE()
-		|	    << " o " << BUS_O_TRACE()
-		|	    << " b " << BUS_B_TRACE()
+		|	    << " i " << BUS_I_TRACE()
 		|	    << " tst " << PIN_TST?
 		|	    << " out " << std::hex << out
 		|	);

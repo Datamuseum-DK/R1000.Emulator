@@ -29,8 +29,8 @@
 # SUCH DAMAGE.
 
 '''
-   128KX4X9 SRAM
-   =============
+   IOP RAM
+   =======
 
 '''
 
@@ -39,7 +39,7 @@ from part import PartModel, PartFactory
 
 class XIOPRAM(PartFactory):
 
-    ''' 128KX4X9 SRAM '''
+    ''' IOP RAM '''
 
     def extra(self, file):
         file.include("Infra/vend.h")
@@ -59,7 +59,7 @@ class XIOPRAM(PartFactory):
         super().init(file)
 
         file.fmt('''
-		|	struct ctx *c1 = CTX_Find("IOP.ram_space iop_ram_space");
+		|	struct ctx *c1 = CTX_Find("IOP.ram_space");
 		|	assert(c1 != NULL);
 		|	state->ram = (uint8_t*)(c1 + 1);
 		|''')
