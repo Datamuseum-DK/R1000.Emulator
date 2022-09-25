@@ -32,7 +32,7 @@ static uint8_t rtcregs[32] = {
 
 	0x00,	// NVRAM - Milliseconds
 	20,	// NVRAM - (Year - 1)
-	0x00,	// NVRAM - Seconds
+	0x02,	// NVRAM - Seconds
 	0x00,	// NVRAM - Minutes
 
 	0x00,	// NVRAM - Hours

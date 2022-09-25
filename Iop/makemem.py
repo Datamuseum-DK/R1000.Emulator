@@ -22,6 +22,10 @@ def main():
 
     ioc += Range("resha_eeprom", 0x9303e300, 0xff, pre_read = True)
 
+    ioc += Range("vme_short", 0x9303e102, 0x9303e104)
+    ioc += Range("vme_standard", 0x9303e10a, 0x9303e10c)
+    ioc += Range("vme_control", 0x9303e00c, 0x9303e00e)
+
     ioc += Range("scsi_dma", 0x9303e100, 0x9303e10a, post_write = True)
     ioc += Range("vme_std", 0x9303e10a, 0x9303e10c)
     ioc += Range("vme_ctl", 0x9303e10c, 0x9303e10e)
@@ -33,6 +37,8 @@ def main():
     ioc += Range("scsi_t", 0x9303ec00, 0x9303ec20, mask = 0x1f, pre_read = 1, post_write = 1)
 
     ioc += Range("vme_window", 0x9303f000, 0x9303f400, pre_read = True, post_write = True)
+
+    ioc += Range("resha_wildcard", 0x93030000, 0x93040000)
 
     ioc += Range("io_map", 0xa1000000, 0xa1002000)
 
@@ -46,7 +52,7 @@ def main():
     ioc += Range("io_duart", 0xffffa000, 0xf, bidir = False, pre_read = 1, post_write = 1)
 
     # INT MODEM
-    ioc += Range("io_mosart", 0xffffb000, 0xf, pre_read = True, post_write = True)
+    ioc += Range("io_mosart", 0xffffb002, 0x1, pre_read = True, post_write = True)
 
     # IO_CLR_RUN (reset IOC RUNNING LED)
     ioc += Range("f000", 0xfffff000, 0x3)

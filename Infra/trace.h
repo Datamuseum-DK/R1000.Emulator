@@ -7,6 +7,7 @@
 	TRACER(ioc_io, "IOC IO")					\
 	TRACER(ioc_pit, "IOC PIT timer")				\
 	TRACER(ioc_sc, "IOC SystemC cycles")				\
+	TRACER(ioc_modem, "IOC Internal Modem")				\
 	TRACER(diagbus_bytes, "All bytes on DiagBus")			\
 	TRACER(diagbus_download, "Downloads on DiagBus")		\
 	TRACER(diagbus_upload, "Uploads on DiagBus")			\
