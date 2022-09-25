@@ -59,7 +59,7 @@ class XALU(PartFactory):
 		|	BUS_S_READ(s);
 		|
 		|	for (tour = 0; tour < BUS_A_WIDTH; tour += 4) {
-		|		if (!(tour & 1))
+		|		if (!(tour & 4))
 		|			eqb = 1;
 		|		idx = 0;
 		|		if (ci) idx |= 1 << 13;
@@ -74,8 +74,8 @@ class XALU(PartFactory):
 		|			eqb = 0;
 		|		}
 		|		ci = (val & 0x02);
-		|		if (tour & 1)
-		|			ebus |= eqb << (tour >> 1);
+		|		if (tour & 4)
+		|			ebus |= eqb << ((tour-4) >> 3);
 		|	}
 		|
 		|	TRACE(
