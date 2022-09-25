@@ -117,6 +117,15 @@ single() {
 	single_brd=$1
 	shift
 
+        if [ "x${single_brd}" = "xmem0" ] ; then
+		single_suff="m32"
+		cli 'sc trace DFSM 1'
+	else
+		single_suff="${single_brd}"
+		cli 'sc trace DUIRG 1'
+	fi
+
+
 	if [ "x$1" == "x" ] ; then
 		EXP=TEST_WCS_ADDRESS
 	else
@@ -125,12 +134,10 @@ single() {
 
 	cli 'sc trace DI*PROC 4'
 
-	cli 'sc trace DUIRG[0-6] 1'
-
 	cli 'sc quota add 12'
 	cli 'sc quota exit'
 
-	cli "dfs read ${EXP}.${single_brd} ${R1K_PFX}.exp"
+	cli "dfs read ${EXP}.${single_suff} ${R1K_PFX}.exp"
 
 	cli "diproc experiment ${single_brd} ${R1K_PFX}.exp"
 	cli "diproc wait ${single_brd}"

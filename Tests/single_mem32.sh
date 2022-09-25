@@ -2,6 +2,6 @@
 
 . Tests/subr_test.rc
 
-sc_boards val
+sc_boards mem0
 
-single val $*
+single mem0 $*
