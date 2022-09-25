@@ -51,7 +51,7 @@ class XALU(PartFactory):
         super().doit(file)
 
         file.fmt('''
-		|	unsigned idx, a, b, s, tour, ci, y = 0, eq = 1;
+		|	unsigned idx, a, b, s, tour, ci, y = 0, eq = 1, eqb, ebus = 0;
 		|
 		|	ci = PIN_CI=>;
 		|	BUS_A_READ(a);
@@ -59,6 +59,8 @@ class XALU(PartFactory):
 		|	BUS_S_READ(s);
 		|
 		|	for (tour = 0; tour < BUS_A_WIDTH; tour += 4) {
+		|		if (!(tour & 1))
+		|			eqb = 1;
 		|		idx = 0;
 		|		if (ci) idx |= 1 << 13;
 		|		if (PIN_M=>) idx |= 1 << 12;
@@ -67,9 +69,13 @@ class XALU(PartFactory):
 		|		idx |= s;
 		|		unsigned val = lut181[idx];
 		|		y |= ((val >> 4) & 0xf) << tour;
-		|		if (!(val & 0x08))
+		|		if (!(val & 0x08)) {
 		|			eq = 0;
+		|			eqb = 0;
+		|		}
 		|		ci = (val & 0x02);
+		|		if (tour & 1)
+		|			ebus |= eqb << (tour >> 1);
 		|	}
 		|
 		|	TRACE(
@@ -85,11 +91,15 @@ class XALU(PartFactory):
 		|	PIN_AeqB<=(eq);
 		|	PIN_CO<=(ci);
 		|	BUS_Y_WRITE(y);
+		|#ifdef BUS_EQ_MASK
+		|	BUS_EQ_WRITE(ebus);
+		|#endif
 		|''')
 
 def register(board):
     ''' Register component model '''
 
     board.add_part("XALU8", PartModel("XALU8", XALU))
-    board.add_part("XALU16", PartModel("XALU8", XALU))
-    board.add_part("XALU20", PartModel("XALU8", XALU))
+    board.add_part("XALU20", PartModel("XALU20", XALU))
+    board.add_part("XALU24", PartModel("XALU20", XALU))
+    board.add_part("XALU32", PartModel("XALU32", XALU))
