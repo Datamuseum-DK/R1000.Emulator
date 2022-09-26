@@ -74,7 +74,7 @@ class XADRPAR(PartFactory):
 		|		out |= 0x2;
 		|
 		|	tmp = tmp2 & 0x7f;
-		|	tmp = (tmp2 ^ (tmp >> 4)) & 0x0f;
+		|	tmp = (tmp ^ (tmp >> 4)) & 0x0f;
 		|	tmp = (tmp ^ (tmp >> 2)) & 0x03;
 		|	tmp = (tmp ^ (tmp >> 1)) & 0x01;
 		|	if (tmp & 0x01)
