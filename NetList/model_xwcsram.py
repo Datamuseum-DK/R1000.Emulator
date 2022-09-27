@@ -46,6 +46,10 @@ class XWCSRAM(PartFactory):
 		|	uint64_t ram[1<<14];
 		|''')
 
+    def sensitive(self):
+        yield "BUS_A_SENSITIVE()"
+        yield "PIN_WE"
+
     def doit(self, file):
         ''' The meat of the doit() function '''
 
@@ -68,7 +72,7 @@ class XWCSRAM(PartFactory):
 		|		    << std::hex << (unsigned)state->ram[adr]
 		|		);
 		|		next_trigger(
-		|		    PIN_WE.posedge_event() | BUS_D_EVENTS()
+		|		    PIN_WE.posedge_event() | BUS_D_EVENTS() | BUS_A_EVENTS()
 		|		);
 		|	} else {
 		|		TRACE(
