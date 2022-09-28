@@ -50,6 +50,7 @@ class NetBus():
         self.nodes = {}
         self.cname = None
         self.ctype = None
+        self.tries = 0
 
         self.nets.append(net)
         for node in net.nnodes:
@@ -94,6 +95,9 @@ class NetBus():
         return False
 
     def unordered(self, file):
+        if self.tries > 100000:
+            return False
+        self.tries += 1
         for key in self.components:
             comp, pinbus = key
             sks = list(self.nodes[key][net].pin.sortkey for net in self.nets)

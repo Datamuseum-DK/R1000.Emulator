@@ -49,7 +49,7 @@ class XSRN(PartFactory):
     def state(self, file):
         ''' Extra state variable '''
 
-        file.write("\tunsigned out;\n")
+        file.write("\tuint64_t out;\n")
 
     def init(self, file):
         ''' Extra initialization '''
@@ -64,7 +64,7 @@ class XSRN(PartFactory):
 
         file.fmt('''
 		|	const char *what = NULL;
-		|	unsigned nxt, mode = 0, tmp, i, j;
+		|	uint64_t nxt, mode = 0, tmp, i, j;
 		|	const unsigned w = BUS_D_WIDTH / BUS_R_WIDTH;
 		|
 		|	if (state->ctx.job) {
@@ -172,3 +172,4 @@ def register(board):
     ''' Register component model '''
 
     board.add_part("XSR8X4", PartModel("XSR8X4", XSRN))
+    board.add_part("XSR8X5", PartModel("XSR8X5", XSRN))
