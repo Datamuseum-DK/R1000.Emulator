@@ -86,7 +86,7 @@ mod_fiu_uir_move(uint8_t *firmware, unsigned from, unsigned to)
 	a_from = base + (from >> 3) + 9 * (7 - (from & 7));
 	a_to = base + (to >> 3) + 9 * (7 - (to & 7));
 
-	printf("FROM %d 0x%x TO %d 0x%x\n", from, a_from, to, a_to);
+	printf("FROM %d 0x%x TO %d 0x%x (0x%02x)\n", from, a_from, to, a_to, firmware[a_from]);
 	assert(firmware[a_to] == 0x1f);
 	firmware[a_to] = firmware[a_from];
 	firmware[a_from] = 0x1f;
@@ -109,6 +109,7 @@ mod_fiu_uir_move(uint8_t *firmware, unsigned from, unsigned to)
 static void
 mod_fiu_uir(uint8_t *firmware)
 {
+	unsigned i, j;
 
 	mod_fiu_uir_move(firmware, 31, 23); // load_mdr
 	mod_fiu_uir_move(firmware, 27, 31); // tivi_src3
@@ -133,7 +134,21 @@ mod_fiu_uir(uint8_t *firmware)
 	mod_fiu_uir_move(firmware,  8,  9); // lfl1
 	mod_fiu_uir_move(firmware,  7,  8); // lfl0
 	mod_fiu_uir_move(firmware, 21,  7); // oreg_src
-	mod_fiu_uir_move(firmware, 15, 21); // oreg_src
+	mod_fiu_uir_move(firmware, 15, 21); // load_tar
+	mod_fiu_uir_move(firmware, 40, 15); // length_src
+	mod_fiu_uir_move(firmware, 41, 19); // offs_src
+	mod_fiu_uir_move(firmware, 39, 38); // parity
+
+	for (i = 0; i < 8; i++) {
+		for (j = 0 ; j < 9; j++) {
+			printf(" %02x", firmware[0xd4e + i * 9 + j]);
+		}
+		printf("\n");
+	}
+	for (i = 0; i < 9; i++) {
+		printf(" %02x", firmware[0xd97 + i]);
+	}
+	printf("\n");
 }
 
 void
