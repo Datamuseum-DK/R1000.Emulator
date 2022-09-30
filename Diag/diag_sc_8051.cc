@@ -80,7 +80,7 @@
 			p0val = state->diag_ctrl->movx_data;
 			p0mask = 0xff;
 			TRACE(<< "P0 data " << std::hex << (unsigned)p0val);
-			PORT0(SETPORT, p0);
+			BUS_A_WRITE(p0val);
 		}
 		if (state->diag_ctrl->do_movx && state->cycle == 3) {
 			TRACE(<< "WR low");
@@ -92,7 +92,7 @@
 		}
 		if (state->diag_ctrl->do_movx && state->cycle == 11) {
 			TRACE(<< "P0 back " << std::hex << (unsigned)state->diag_ctrl->p0val);
-			PORT0(SETPORT, state->diag_ctrl->p0);
+			BUS_A_WRITE(state->diag_ctrl->p0val);
 		}
 		if (++state->cycle < 12) {
 			if (state->diag_ctrl->do_movx) {
@@ -106,12 +106,12 @@
 		state->diag_ctrl->pin9_reset = PIN_RST;
 		if (state->diag_ctrl->next_needs_p1) {
 			state->diag_ctrl->p1val = 0;
-			PORT1(READPORT, 0);
+			BUS_B_READ(state->diag_ctrl->p1val);
 			// TRACE(<< "Need P1 " << std::hex << state->diag_ctrl->p1val);
 		}
 		if (state->diag_ctrl->next_needs_p2) {
 			state->diag_ctrl->p2val = 0;
-			PORT2(READPORT, 0);
+			BUS_C_READ(state->diag_ctrl->p2val);
 			// TRACE(<< "Need P2 " << std::hex << state->diag_ctrl->p2val);
 		}
 		if (state->diag_ctrl->next_needs_p3) {
@@ -127,7 +127,11 @@
 			    << "::"
 			    << std::hex << state->diag_ctrl->p1val
 			);
-			PORT1(SETPORT, state->diag_ctrl->p1);
+			if (state->diag_ctrl->p1val == 0xff)
+				BUS_B_Z();
+			else
+				BUS_B_WRITE(state->diag_ctrl->p1val);
+				
 			state->diag_ctrl->p1mask = 0;
 		}
 		if (state->diag_ctrl->p2mask) {
@@ -137,7 +141,10 @@
 			    << "::"
 			    << std::hex << state->diag_ctrl->p2val
 			);
-			PORT2(SETPORT, state->diag_ctrl->p2);
+			if (state->diag_ctrl->p2val == 0xff)
+				BUS_C_Z();
+			else
+				BUS_C_WRITE(state->diag_ctrl->p2val);
 			state->diag_ctrl->p2mask = 0;
 		}
 		if (state->diag_ctrl->p3mask) {
@@ -166,7 +173,7 @@
 			p0val = state->diag_ctrl->movx_adr;
 			p0mask = 0xff;
 			TRACE(<< "P0 adr " << std::hex << (unsigned)p0val);
-			PORT0(SETPORT, p0);
+			BUS_A_WRITE(p0val);
 		}
 	}
 	// DBG();

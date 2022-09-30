@@ -76,12 +76,11 @@ class I8051(PartFactory):
 
         self.scm.cc.include("Diag/diag_sc_8051.cc")
 
-class Model8081(PartModel):
+class Model8051(PartModel):
     ''' i8051'''
 
     def __init__(self, *args):
         super().__init__(*args)
-        self.busable = False
 
     def assign(self, comp):
         for node in comp:
@@ -97,4 +96,4 @@ class Model8081(PartModel):
 def register(board):
     ''' Register component model '''
 
-    board.add_part("8051", Model8081("8051", I8051))
+    board.add_part("8051", Model8051("8051", I8051))
