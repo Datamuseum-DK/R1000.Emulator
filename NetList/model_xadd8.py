@@ -37,9 +37,9 @@
 
 from part import PartModel, PartFactory
 
-class XADD8(PartFactory):
+class XADD(PartFactory):
 
-    ''' 8 bit adder '''
+    ''' N bit adder '''
 
     def doit(self, file):
         ''' The meat of the doit() function '''
@@ -61,10 +61,11 @@ class XADD8(PartFactory):
 		|	    << " | " << std::hex << sum
 		|	);
 		|	BUS_Y_WRITE(sum);
-		|	PIN_CO<=(sum >> 8);
+		|	PIN_CO<=(sum >> BUS_Y_WIDTH);
 		|''')
 
 def register(board):
     ''' Register component model '''
 
-    board.add_part("XADD8", PartModel("XADD8", XADD8))
+    board.add_part("XADD8", PartModel("XADD8", XADD))
+    board.add_part("XADD14", PartModel("XADD14", XADD))
