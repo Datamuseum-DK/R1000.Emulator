@@ -64,8 +64,36 @@ class XADD(PartFactory):
 		|	PIN_CO<=(sum >> BUS_Y_WIDTH);
 		|''')
 
+class XSUB(PartFactory):
+
+    ''' N bit adder '''
+
+    def doit(self, file):
+        ''' The meat of the doit() function '''
+
+        super().doit(file)
+
+        file.fmt('''
+		|	unsigned a, b, diff;
+		|
+		|	BUS_A_READ(a);
+		|	BUS_B_READ(b);
+		|	diff = b - a;
+		|	if (!PIN_CI=>)
+		|		diff--;	// Unused at fiu_33
+		|	TRACE (
+		|	    << "a " << BUS_A_TRACE()
+		|	    << " b " << BUS_B_TRACE()
+		|	    << " ci " << PIN_CI?
+		|	    << " | " << std::hex << diff
+		|	);
+		|	BUS_Y_WRITE(diff);
+		|	PIN_CO<=(diff >> BUS_Y_WIDTH);
+		|''')
+
 def register(board):
     ''' Register component model '''
 
     board.add_part("XADD8", PartModel("XADD8", XADD))
+    board.add_part("XSUB8", PartModel("XSUB8", XSUB))
     board.add_part("XADD14", PartModel("XADD14", XADD))
