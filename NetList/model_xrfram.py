@@ -104,6 +104,77 @@ class XRFRAM(PartFactory):
 		|	);
 		|''')
 
+
+class XRFRAMD(PartFactory):
+
+    ''' NXM SRAM '''
+
+    def state(self, file):
+        file.fmt('''
+		|	uint64_t ram[1<<BUS_AR_WIDTH];
+		|	uint64_t last;
+		|	const char *what;
+		|''')
+
+    def extra(self, file):
+        super().extra(file)
+        file.fmt('''
+		|static const char *READING = "r";
+		|static const char *WRITING = "w";
+		|static const char *ZZZING = "z";
+		|''')
+
+    def doit(self, file):
+        ''' The meat of the doit() function '''
+
+        super().doit(file)
+
+        file.fmt('''
+		|	unsigned adr = 0;
+		|	uint64_t data = 0;
+		|
+		|	if (PIN_CS=>) {
+		|		if (state->what == READING) {
+		|			BUS_DQ_Z();
+		|		} else if (state->what == WRITING) {
+		|			BUS_AR_READ(adr);
+		|			BUS_DQ_READ(data);
+		|			state->ram[adr] = data;
+		|		}
+		|		next_trigger(PIN_CS.negedge_event());
+		|		state->what = ZZZING;
+		|	} else if (!PIN_WE=>) {
+		|		if (state->what == READING)
+		|			BUS_DQ_Z();
+		|		BUS_DQ_READ(data);
+		|		BUS_AW_READ(adr);
+		|		state->ram[adr] = data;
+		|		state->what = WRITING;
+		|	} else {
+		|		if (state->what == WRITING) {
+		|			BUS_AW_READ(adr);
+		|			BUS_DQ_READ(data);
+		|			state->ram[adr] = data;
+		|		}
+		|		BUS_AR_READ(adr);
+		|		data = state->ram[adr];
+		|		if (state->what != READING || data != state->last) {
+		|			BUS_DQ_WRITE(data);
+		|			state->last = data;
+		|		}
+		|		state->what = READING;
+		|	}
+		|
+		|	TRACE(
+		|	    << state->what
+		|	    << " we " << PIN_WE?
+		|	    << " cs " << PIN_CS?
+		|	    << " ar " << BUS_AR_TRACE()
+		|	    << " aw " << BUS_AW_TRACE()
+		|	    << " d " << BUS_DQ_TRACE()
+		|	);
+		|''')
+
 class ThisRam(PartModel):
     ''' ... '''
 
@@ -117,6 +188,7 @@ class ThisRam(PartModel):
 def register(board):
     ''' Register component model '''
 
+    board.add_part("XRFRAMD", PartModel("XRFRAMD", XRFRAMD))
     board.add_part("XRFRAM", PartModel("XRFRAM", XRFRAM))
     board.add_part("XTAGRAM", ThisRam("XTAGRAM", XRFRAM))
     board.add_part("16KX4", ThisRam("16KX4", XRFRAM))
