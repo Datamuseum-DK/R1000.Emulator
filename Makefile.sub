@@ -53,63 +53,11 @@ ${R1000BIN}:	${OBJS}
 	${CXX} -o ${R1000BIN} ${R1000SIM} ${SC_CFLAGS} ${LDFLAGS} ${OBJS} ${SC_L}
 
 
-#LDFLAGS	+= -lm
-#
-#PARANOIA = -Wall -Werror `sh cflags.sh "${CC}"`
-#
-## SANITIZE = -fsanitize=address
-#
-#CFLAGS += ${PARANOIA} ${SANITIZE}
-#
-#SC_OPT = -O2
-#SC_WARN = ${PARANOIA} -Wno-cast-qual -Wno-cast-align -Wno-unused-parameter
-#SC_WARN += ${SANITIZE}
-#
-#
-#R1000DEP = Infra/r1000.h Infra/vqueue.h Infra/trace.h
-#
-#all:	netlist
-#	@echo "# of automatic symbols: `grep OBJS -c Chassis/${SC_BRANCH}/Makefile.inc`"
-#	${MAKE} r1000sim
-#
-#branchname:
-#	@echo ${SC_BRANCH}
-#
-#.PHONY: netlist
-#
-#netlist:
-#	-mkdir -p ${OBJDIR}
-#	python3 -u NetList/process_kicad_netlists.py ${SC_BRANCH} ${NETLISTS}
-#
-#R1000SIM=${OBJDIR}/r1000sim.${SC_BRANCH}
-#
-#${R1000SIM}:	${OBJS}
-#	@${CXX} -o ${R1000SIM} ${CFLAGS} ${LDFLAGS} ${OBJS} \
-#		-L /usr/local/lib -lsystemc
-#
-#size: r1000sim
-#	@size ${OBJS} | sort -n
-#	@size r1000sim
-#
-#.PHONY: r1000sim
-#
-#r1000sim: ${R1000SIM}
-#	-rm -f r1000sim
-#	ln -s ${R1000SIM} r1000sim
-#
-#clean:
-#	rm -f ${OBJS} ${CLEANFILES} *.tmp r1000sim*
-#
-#flint:
-#	flexelint flint.lnt \
-#		${CFLAGSMINUSD} \
-#		${CFLAGSMINUSI} \
-#		Dfs/*.c \
-#		Diag/*.c \
-#		Infra/*.c \
-#		Iop/*.c \
-#		Chassis/*.c \
-#
-#setup:
-#	git clone https://github.com/Datamuseum-DK/Musashi
-#	python3 -u fetch_firmware.py all
+flint: ${OBJS}
+	flexelint flint.lnt \
+		${R1000SIM} ${CFLAGSMINUSI} ${CFLAGSMINUSD} \
+		Dfs/*.c \
+		Diag/*.c \
+		Infra/*.c \
+		Iop/*.c \
+		Chassis/*.c \

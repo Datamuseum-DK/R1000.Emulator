@@ -38,6 +38,13 @@ r1000sim:
 		OPTIMIZE=${OPTIMIZE} \
 		r1000sim
 
+flint:
+	${MAKE} -f Makefile.sub \
+		WORKDIR=${WORKDIR} \
+		BRANCH=${BRANCH} \
+		OPTIMIZE=${OPTIMIZE} \
+		flint
+
 clean:
 	rm -rf ${WORKDIR}/_obj
 
