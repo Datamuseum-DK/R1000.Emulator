@@ -86,7 +86,7 @@ mod_fiu_uir_move(uint8_t *firmware, unsigned from, unsigned to)
 	a_from = base + (from >> 3) + 9 * (7 - (from & 7));
 	a_to = base + (to >> 3) + 9 * (7 - (to & 7));
 
-	printf("FROM %d 0x%x TO %d 0x%x (0x%02x)\n", from, a_from, to, a_to, firmware[a_from]);
+	printf("FROM %u 0x%x TO %u 0x%x (0x%02x)\n", from, a_from, to, a_to, firmware[a_from]);
 	assert(firmware[a_to] == 0x1f);
 	firmware[a_to] = firmware[a_from];
 	firmware[a_from] = 0x1f;
@@ -99,7 +99,7 @@ mod_fiu_uir_move(uint8_t *firmware, unsigned from, unsigned to)
 				k |= 1;
 		}
 		if (k != firmware[base + i * 9 + 8]) {
-			printf("I %d k 0x%02x was 0x%02x\n", i, k, firmware[base + i * 9 + 8]);
+			printf("I %u k 0x%02x was 0x%02x\n", i, k, firmware[base + i * 9 + 8]);
 			firmware[base + i * 9 + 8] = k;
 			firmware[base2 + i] = k;
 		}
@@ -155,7 +155,7 @@ void
 diproc1_mod(uint8_t *firmware, unsigned mod)
 {
 
-	printf("DIPROC FW1 mod %d\n", mod);
+	printf("DIPROC FW1 mod %u\n", mod);
 	switch (mod) {
 	case 0:
 		break;
@@ -167,6 +167,6 @@ diproc1_mod(uint8_t *firmware, unsigned mod)
 		mod_fiu_uir(firmware);
 		break;
 	default:
-		assert("WRONG DIPROC1 mod" == NULL);
+		WRONG();
 	}
 }

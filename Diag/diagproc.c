@@ -64,7 +64,7 @@ diagproc_movx8_write(struct mcs51 *mcs51, uint8_t adr, int data)
 }
 
 static unsigned
-diagproc_sfrfunc(struct mcs51 *mcs51, uint8_t sfr_adr, int what)
+diagproc_sfrfunc(struct mcs51 * mcs51, uint8_t sfr_adr, int what)
 {
 	struct diagproc_ctrl *dc;
 	struct diagproc_priv *dp;
@@ -424,7 +424,7 @@ DiagProcCreate(const char *name, const char *arg, uint32_t *do_trace)
 		dp->mod = strtoul(p + 3, &q, 0);
 		assert(q != NULL);
 		assert(*q == '\0');
-		printf("%s MOD %d\n", name, dp->mod);
+		printf("%s MOD %u\n", name, dp->mod);
 	}
 
 	dp->mcs51 = MCS51_Create(name);

@@ -368,6 +368,7 @@ cli_scsi_disk_mount(struct cli *cli)
 	cli->av++;
 
 	sd = cli_scsi_get_disk(cli, 1);
+	AN(sd);
 
 	if (cli_scsi_dev_map_file(cli, sd, cli->av[0]) < 0)
 		return;
