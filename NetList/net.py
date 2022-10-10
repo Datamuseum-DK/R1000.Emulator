@@ -62,6 +62,7 @@ class Net():
         self.no_bool = False
         self.cname = None
         self.bcname = None
+        self.default = True
 
         self.insert()
 
@@ -176,10 +177,14 @@ class Net():
         ''' Write a C initialization of this net '''
         if self.netbus:
             self.netbus.write_init(self, file)
-        elif self.sc_type == "bool":
+        elif self.sc_type == "bool" and self.default:
             file.write(",\n\t" + self.bcname + '("' + self.bcname + '", true)')
-        else:
+        elif self.sc_type == "bool":
+            file.write(",\n\t" + self.bcname + '("' + self.bcname + '", false)')
+        elif self.default:
             file.write(",\n\t" + self.bcname + '("' + self.bcname + '", sc_logic_1)')
+        else:
+            file.write(",\n\t" + self.bcname + '("' + self.bcname + '", sc_logic_0)')
 
 class NetSexp(Net):
     ''' ... '''

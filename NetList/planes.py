@@ -89,6 +89,10 @@ class PlaneSignal():
         for net in self.nets:
             self.net.adopt(net)
 
+        if "ECC_STOP.EN" in self.name:
+            # In case there is no IOC board to drive this.
+            self.net.default = False
+
     def divine_better_name(self):
         ''' Divine a better name '''
 

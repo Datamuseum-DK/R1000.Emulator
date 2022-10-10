@@ -114,9 +114,6 @@ sc_main(int argc, char *argv[])
 	planes.PD = false;
 	planes.PU = true;
 
-	if (!(sc_boards & R1K_BOARD_IOC))
-		planes.ECC_STOP_EN = false;
-
 	planes.B_SLOT0 = false;
 	planes.B_SLOT1 = false;
 
