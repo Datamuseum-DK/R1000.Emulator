@@ -233,6 +233,18 @@ class PassNetConfig():
             i = {}
             for node in net.iter_nodes():
                 i[node.pin.role] = 1 + i.setdefault(node.pin.role, 0)
+
+            j = 0
+            for role in (
+                'sc_inout_resolved',
+                'c_output',
+                'tri_state',
+                'sc_out <sc_logic>',
+            ):
+                j += i.get(role, 0)
+            if i and j < 1:
+                print("Undriven", i, net)
+
             if len(i) == 1 and ('c_input' in i or 'c_output' in i):
                 # print(net, '=>', "bool", "(unconnected)")
                 net.sc_type = "bool"
