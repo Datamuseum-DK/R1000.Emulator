@@ -1,5 +1,6 @@
 import sys
 
+import re
 import struct
 
 class Context():
@@ -33,16 +34,19 @@ class Context():
     def __repr__(self):
         return self.ident
 
-def contexts(filename=None):
+def contexts(filename=None, regex=None):
     if filename is None:
         filename = sys.argv[1]
+    if regex != None:
+        regex = re.compile(regex)
     with open(filename, "rb") as file:
         while True:
             try:
                 ctx = Context(file)
             except EOFError:
                 return
-            yield ctx
+            if not regex or regex.match(ctx.ident):
+                yield ctx
 
 def main():
     nact = 0
