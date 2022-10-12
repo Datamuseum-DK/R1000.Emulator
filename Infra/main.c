@@ -84,7 +84,7 @@ finish(int status, const char *why)
 {
 	struct rusage rus;
 	struct timespec tx;
-	double ds, dr, dt = 0;
+	double ds, dr, dt;
 
 	printf("Begin statistics\n");
 
