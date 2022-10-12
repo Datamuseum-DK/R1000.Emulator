@@ -56,4 +56,8 @@ void cli_diproc_help_board(struct cli *cli);
 
 void diproc1_mod(uint8_t *firmware, unsigned mod);
 
+struct diagproc_exp_priv;
+void diagproc_exp_init(struct diagproc_exp_priv **, const char *name);
+int diagproc_exp_download(struct diagproc_exp_priv *, uint8_t length, uint8_t *ram, uint8_t *ip);
+
 #endif /* DIAG_DIAG_H */

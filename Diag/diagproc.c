@@ -13,6 +13,7 @@
 #include "Diag/diagproc.h"
 #include "Diag/i8052_emul.h"
 #include "Infra/elastic.h"
+#include "Infra/vsb.h"
 #include "Diag/diag.h"
 
 #define FLAG_RX_SPIN		(1)
@@ -23,6 +24,9 @@
 #define FLAG_NOT_CODE		(1<<5)
 #define FLAG_DUMP_MEM		(1<<6)
 #define FLAG_LONGWAIT_DFSM	(1<<7)
+#define FLAG_DOWNLOAD_LEN	(1<<8)
+#define FLAG_DOWNLOAD_RUN	(1<<9)
+#define FLAG_UPLOAD		(1<<10)
 
 struct diagproc_priv {
 	char *name;
@@ -36,11 +40,15 @@ struct diagproc_priv {
 	pthread_mutex_t mtx;
 	int did_io;
 	int longwait;
+	struct vsb *vsb;
 
 	int8_t pc0;
-	uint8_t flags[0x2000];
+	unsigned flags[0x2000];
+	uint8_t download_len;
 
 	char scratch[1024];
+
+	struct diagproc_exp_priv *exp;
 };
 
 static void
@@ -266,8 +274,8 @@ diagproc_istep(struct diagproc_ctrl *dc, struct diagproc_context *dctx)
 	struct diagproc_priv *dp;
 	uint16_t opc, npc;
 	char buf[BUFSIZ], *p;
-	unsigned ptr;
-	uint8_t flags;
+	unsigned ptr, u, v;
+	uint16_t flags;
 
 	assert(dc != NULL);
 	assert(dc->priv != NULL);
@@ -284,9 +292,37 @@ diagproc_istep(struct diagproc_ctrl *dc, struct diagproc_context *dctx)
 	npc = MCS51_SingleStep(dp->mcs51);
 	dctx->instructions++;
 
+	assert(npc < 0x2000);
 	flags = dp->flags[npc];
+	if (flags & FLAG_DOWNLOAD_LEN)
+		dp->download_len = dp->mcs51->sfr[SFR_ACC];
 	if (flags & FLAG_DOWNLOAD)
 		dp->pc0 = dp->mcs51->iram[0x10];
+	if (flags & FLAG_DOWNLOAD_RUN) {
+		if (*dp->do_trace & 16) {
+			VSB_clear(dp->vsb);
+			VSB_printf(dp->vsb, "%02x ", dp->download_len);
+			for (u = 0; u < dp->download_len - 1; u++)
+				VSB_printf(dp->vsb, "%02x", dp->mcs51->iram[0x10 + u]);
+			AZ(VSB_finish(dp->vsb));
+			sc_tracef(dp->name, "Download %s", VSB_data(dp->vsb));
+		}
+		if (dp->mod & 0x10) {
+			(void)diagproc_exp_download(dp->exp, dp->download_len, dp->mcs51->iram, &dp->mcs51->sfr[SFR_IP]);
+		}
+	}
+	if (flags & FLAG_UPLOAD) {
+		if (*dp->do_trace & 16) {
+			VSB_clear(dp->vsb);
+			v = dp->mcs51->iram[0x00];
+			VSB_printf(dp->vsb, "%02x ", v);
+			VSB_printf(dp->vsb, "%02x ", dp->mcs51->iram[0x01]);
+			for (u = 0; u < dp->mcs51->iram[0x01]; u++)
+				VSB_printf(dp->vsb, "%02x", dp->mcs51->iram[v + u]);
+			AZ(VSB_finish(dp->vsb));
+			sc_tracef(dp->name, "Upload %s", VSB_data(dp->vsb));
+		}
+	}
 
 	if (flags & FLAG_RX_DISABLE) {
 		/*
@@ -345,7 +381,7 @@ DiagProcStep(struct diagproc_ctrl *dc, struct diagproc_context *dctx)
 {
 	struct diagproc_priv *dp;
 	uint16_t retval;
-	uint8_t flags;
+	uint16_t flags;
 	int i;
 
 	assert(dc != NULL);
@@ -366,6 +402,7 @@ DiagProcStep(struct diagproc_ctrl *dc, struct diagproc_context *dctx)
 	}
 
 	do {
+		assert(dp->mcs51->pc < 0x2000);
 		flags = dp->flags[dp->mcs51->pc];
 		if ((dc->p3val & 0x08) && (flags & FLAG_WAIT_DFSM))
 			return;
@@ -373,6 +410,7 @@ DiagProcStep(struct diagproc_ctrl *dc, struct diagproc_context *dctx)
 		retval = diagproc_istep(dc, dctx);
 		dctx->profile[retval]++;
 		assert(pthread_mutex_unlock(&dp->mtx) == 0);
+		assert(retval < 0x2000);
 		flags = dp->flags[retval];
 		if (flags & FLAG_LONGWAIT_DFSM) {
 			dp->longwait = 5;
@@ -389,9 +427,13 @@ static void
 diagproc_set_serialflags(struct diagproc_priv *dp, unsigned serial_rx_byte)
 {
 	dp->flags[serial_rx_byte] |= FLAG_RX_SPIN;
+	dp->flags[serial_rx_byte + 0x94] |= FLAG_DOWNLOAD_LEN;
 	dp->flags[serial_rx_byte + 0x9d] |= FLAG_RX_SPIN;
 	dp->flags[serial_rx_byte + 0xaf] |= FLAG_DOWNLOAD;
+	dp->flags[serial_rx_byte + 0xb2] |= FLAG_DOWNLOAD_RUN;
+	dp->flags[serial_rx_byte + 0xc1] |= FLAG_UPLOAD;
 	dp->flags[serial_rx_byte + 0xf7] |= FLAG_RX_DISABLE;
+
 }
 
 struct diagproc_ctrl *
@@ -412,6 +454,9 @@ DiagProcCreate(const char *name, const char *arg, uint32_t *do_trace)
 	assert(dc != NULL);
 	dc->priv = dp;
 
+	dp->vsb = VSB_new_auto();
+	AN(dp->vsb);
+
 	dp->name = strdup(name);
 	assert(dp->name != NULL);
 
@@ -426,6 +471,9 @@ DiagProcCreate(const char *name, const char *arg, uint32_t *do_trace)
 		assert(*q == '\0');
 		printf("%s MOD %u\n", name, dp->mod);
 	}
+
+	if (dp->mod & 0x10)
+		diagproc_exp_init(&dp->exp, name);
 
 	dp->mcs51 = MCS51_Create(name);
 	assert(dp->mcs51 != NULL);
@@ -477,7 +525,7 @@ DiagProcCreate(const char *name, const char *arg, uint32_t *do_trace)
 		dp->flags[0x1345] |= FLAG_WAIT_DFSM;
 		dp->flags[0x1367] |= FLAG_WAIT_DFSM;
 		dp->flags[0x1380] |= FLAG_WAIT_DFSM;
-		for (u = 0x1426; u < sizeof dp->flags; u++)
+		for (u = 0x1426; u < sizeof dp->flags / sizeof dp->flags[0]; u++)
 			dp->flags[u] |= FLAG_NOT_CODE;
 	} else {
 		dp->version = 2;
@@ -489,7 +537,7 @@ DiagProcCreate(const char *name, const char *arg, uint32_t *do_trace)
 		dp->flags[0x10a9] |= FLAG_WAIT_DFSM;
 		dp->flags[0x10d8] |= FLAG_WAIT_DFSM;
 		dp->flags[0x1109] |= FLAG_WAIT_DFSM;
-		for (u = 0x11c9; u < sizeof dp->flags; u++)
+		for (u = 0x11c9; u < sizeof dp->flags / sizeof dp->flags[0]; u++)
 			dp->flags[u] |= FLAG_NOT_CODE;
 	}
 
@@ -497,6 +545,6 @@ DiagProcCreate(const char *name, const char *arg, uint32_t *do_trace)
 
 	dp->diag_bus = elastic_subscribe(diag_elastic, diagproc_busrx, dp);
 
-	sc_tracef(dp->name, "DIAGPROC Instantiated");
+	sc_tracef(dp->name, "DIAGPROC Instantiated (mod 0x%x)", dp->mod);
 	return (dc);
 }

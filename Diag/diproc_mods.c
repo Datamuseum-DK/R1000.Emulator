@@ -166,6 +166,11 @@ diproc1_mod(uint8_t *firmware, unsigned mod)
 		mod_fiu_mar(firmware);
 		mod_fiu_uir(firmware);
 		break;
+	case 16:
+		break;
+	case 17:
+		mod_fiu_mar(firmware);
+		break;
 	default:
 		WRONG();
 	}

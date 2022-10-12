@@ -15,9 +15,26 @@ ${OBJDIR}/diagproc.o: \
     Diag/diagproc.h \
     Diag/i8052_emul.h \
     Infra/elastic.h \
+    Infra/vsb.h \
     Diag/diag.h \
     ${R1000DEP}
 	${CC} ${CFLAGS} -c Diag/diagproc.c -o ${OBJDIR}/diagproc.o
+
+OBJS    += ${OBJDIR}/diproc_exp.o
+${OBJDIR}/diproc_exp.o: \
+    Diag/diproc_exp.c \
+    Diag/diag.h \
+    Chassis/r1000sc.h \
+    Infra/context.h \
+    ${R1000DEP}
+	${CC} ${CFLAGS} -c Diag/diproc_exp.c -o ${OBJDIR}/diproc_exp.o
+
+
+OBJS    += ${OBJDIR}/diproc_mods.o
+${OBJDIR}/diproc_mods.o: \
+    Diag/diproc_mods.c \
+    Diag/diag.h
+	${CC} ${CFLAGS} -c Diag/diproc_mods.c -o ${OBJDIR}/diproc_mods.o
 
 OBJS    += ${OBJDIR}/dummy_diproc.o
 ${OBJDIR}/dummy_diproc.o: \
@@ -42,9 +59,3 @@ ${OBJDIR}/i8052_emul.o: \
     Diag/i8052_emul.c \
     Diag/i8052_emul.h
 	${CC} ${CFLAGS} -c Diag/i8052_emul.c -o ${OBJDIR}/i8052_emul.o
-
-OBJS    += ${OBJDIR}/diproc_mods.o
-${OBJDIR}/diproc_mods.o: \
-    Diag/diproc_mods.c \
-    Diag/diag.h
-	${CC} ${CFLAGS} -c Diag/diproc_mods.c -o ${OBJDIR}/diproc_mods.o

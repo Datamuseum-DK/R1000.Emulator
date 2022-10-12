@@ -131,7 +131,7 @@
 				BUS_B_Z();
 			else
 				BUS_B_WRITE(state->diag_ctrl->p1val);
-				
+
 			state->diag_ctrl->p1mask = 0;
 		}
 		if (state->diag_ctrl->p2mask) {
