@@ -15,6 +15,7 @@
 #include "Infra/context.h"
 
 #include "Diag/diproc_seq_wcs.h"
+#include "Diag/diproc_fiu_wcs.h"
 
 typedef int board_func_t(struct diagproc_exp_priv *dep, uint8_t length);
 
@@ -96,6 +97,8 @@ fiu_board(struct diagproc_exp_priv *dep, uint8_t length)
 	struct ctx *ctx;
 	uint8_t *dst;
 	uint16_t ctr;
+	uint64_t w;
+	unsigned u;
 
 	if (length == 0x52 && dep->ram[0x10] == 0x2f) {
 		sc_tracef(dep->name, "Exp read_novram_data.fiu");
@@ -154,6 +157,64 @@ fiu_board(struct diagproc_exp_priv *dep, uint8_t length)
 			dst++;
 		}
 		return (1);
+	}
+	if (length == 0x9a && dep->ram[0x10] == 0x99) {
+		ctx = CTX_Find("FIU.fiu_36.WCSRAM");
+		AN(ctx);
+		dep->dst1 = (uint8_t*)(ctx + 1) + 0x800;
+	}
+	if ((length == 0x9a || length == 0x88) && dep->ram[0x10] == 0x99) {
+		sc_tracef(dep->name, "Exp load_control_store_200.fiu");
+#define BITPOS(octet, bitno) \
+		do { \
+			w += w; \
+			w += ((dep->ram[u + 7 - bitno] >> (7 - octet)) & 1); \
+		} while(0)
+		for(u = 0x18; u < 0x98; u += 8) {
+			w = 0;
+			FIU_WCS_OFFS_LIT_0();
+			FIU_WCS_OFFS_LIT_1();
+			FIU_WCS_OFFS_LIT_2();
+			FIU_WCS_OFFS_LIT_3();
+			FIU_WCS_OFFS_LIT_4();
+			FIU_WCS_OFFS_LIT_5();
+			FIU_WCS_OFFS_LIT_6();
+			FIU_WCS_OREG_SRC();
+			FIU_WCS_LFL_0();
+			FIU_WCS_LFL_1();
+			FIU_WCS_LFL_2();
+			FIU_WCS_LFL_3();
+			FIU_WCS_LFL_4();
+			FIU_WCS_LFL_5();
+			FIU_WCS_LFL_6();
+			FIU_WCS_LENGTH_SRC();
+			FIU_WCS_LFREG_CNTL_0();
+			FIU_WCS_LFREG_CNTL_1();
+			FIU_WCS_FILL_MODE_SRC();
+			FIU_WCS_OFFS_SRC();
+			FIU_WCS_LOAD_OREG();
+			FIU_WCS_LOAD_TAR();
+			FIU_WCS_LOAD_VAR();
+			FIU_WCS_LOAD_MDR();
+			FIU_WCS_OP_SEL_0();
+			FIU_WCS_OP_SEL_1();
+			FIU_WCS_VMUX_SEL_0();
+			FIU_WCS_VMUX_SEL_1();
+			FIU_WCS_TIVI_SRC_0();
+			FIU_WCS_TIVI_SRC_1();
+			FIU_WCS_TIVI_SRC_2();
+			FIU_WCS_TIVI_SRC_3();
+			FIU_WCS_MEM_START_0();
+			FIU_WCS_MEM_START_1();
+			FIU_WCS_MEM_START_2();
+			FIU_WCS_MEM_START_3();
+			FIU_WCS_MEM_START_4();
+			FIU_WCS_RDATA_SRC();
+			FIU_WCS_PARITY();
+			memcpy(dep->dst1, &w, sizeof w);
+			dep->dst1 += sizeof w;
+		}
+		return(1);
 	}
 	return (0);
 }
@@ -219,13 +280,13 @@ seq_board(struct diagproc_exp_priv *dep, uint8_t length)
 		AN(ctx);
 		dep->dst1 = (uint8_t*)(ctx + 1) + 0x800;
 	}
-#define BITPOS(octet, bitno) \
-	do { \
-		w += w; \
-		w += ((dep->ram[u + 7 - bitno] >> (7 - octet)) & 1); \
-	} while(0)
 	if ((length == 0x9a || length == 0x88) && dep->ram[0x10] == 0x99) {
 		sc_tracef(dep->name, "Exp load_control_store_200.seq");
+#define BITPOS(octet, bitno) \
+		do { \
+			w += w; \
+			w += ((dep->ram[u + 7 - bitno] >> (7 - octet)) & 1); \
+		} while(0)
 		for(u = 0x18; u < 0x98; u += 8) {
 			w = 0;
 			SEQ_WCS_BRANCH_ADR_0();
@@ -274,6 +335,7 @@ seq_board(struct diagproc_exp_priv *dep, uint8_t length)
 			dep->dst1 += sizeof w;
 		}
 		return (1);
+#undef BITPOS
 	}
 	return (0);
 }
