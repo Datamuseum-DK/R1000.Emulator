@@ -45,7 +45,7 @@ def contexts(filename=None, regex=None):
                 ctx = Context(file)
             except EOFError:
                 return
-            if not regex or regex.match(ctx.ident):
+            if not regex or regex.search(ctx.ident):
                 yield ctx
 
 def main():
