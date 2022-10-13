@@ -24,6 +24,7 @@ OBJS    += ${OBJDIR}/diproc_exp.o
 ${OBJDIR}/diproc_exp.o: \
     Diag/diproc_exp.c \
     Diag/diag.h \
+    Diag/diproc_seq_wcs.h \
     Chassis/r1000sc.h \
     Infra/context.h \
     ${R1000DEP}

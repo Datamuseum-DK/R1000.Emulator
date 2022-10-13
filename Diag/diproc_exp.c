@@ -13,10 +13,8 @@
 #include "Chassis/r1000sc.h"
 #include "Diag/diag.h"
 #include "Infra/context.h"
-//#include "Diag/i8052_emul.h"
-//#include "Infra/elastic.h"
-//#include "Infra/vsb.h"
-//#include "Diag/diag.h"
+
+#include "Diag/diproc_seq_wcs.h"
 
 typedef int board_func_t(struct diagproc_exp_priv *dep, uint8_t length);
 
@@ -206,11 +204,75 @@ mem0_board(struct diagproc_exp_priv *dep, uint8_t length)
 static int
 seq_board(struct diagproc_exp_priv *dep, uint8_t length)
 {
+	struct ctx *ctx;
+	uint64_t w;
+	unsigned u;
 
 	if (length == 0x45 && dep->ram[0x10] == 0x27) {
 		sc_tracef(dep->name, "Exp read_novram_data.seq");
 		upload(dep->ram + 0x1a, "2d294b0205b82c");
 		SET_PT(dep);
+		return (1);
+	}
+	if (length == 0x9a && dep->ram[0x10] == 0x99) {
+		ctx = CTX_Find("SEQ.seq_70.WCS");
+		AN(ctx);
+		dep->dst1 = (uint8_t*)(ctx + 1) + 0x800;
+	}
+#define BITPOS(octet, bitno) \
+	do { \
+		w += w; \
+		w += ((dep->ram[u + 7 - bitno] >> (7 - octet)) & 1); \
+	} while(0)
+	if ((length == 0x9a || length == 0x88) && dep->ram[0x10] == 0x99) {
+		sc_tracef(dep->name, "Exp load_control_store_200.seq");
+		for(u = 0x18; u < 0x98; u += 8) {
+			w = 0;
+			SEQ_WCS_BRANCH_ADR_0();
+			SEQ_WCS_BRANCH_ADR_1();
+			SEQ_WCS_BRANCH_ADR_2();
+			SEQ_WCS_BRANCH_ADR_3();
+			SEQ_WCS_BRANCH_ADR_4();
+			SEQ_WCS_BRANCH_ADR_5();
+			SEQ_WCS_BRANCH_ADR_6();
+			SEQ_WCS_BRANCH_ADR_7();
+			SEQ_WCS_BRANCH_ADR_8();
+			SEQ_WCS_BRANCH_ADR_9();
+			SEQ_WCS_BRANCH_ADR_10();
+			SEQ_WCS_BRANCH_ADR_11();
+			SEQ_WCS_BRANCH_ADR_12();
+			SEQ_WCS_BRANCH_ADR_13();
+			SEQ_WCS_PARITY();
+			SEQ_WCS_LATCH();
+			SEQ_WCS_BR_TYPE_0();
+			SEQ_WCS_BR_TYPE_1();
+			SEQ_WCS_BR_TYPE_2();
+			SEQ_WCS_BR_TYPE_3();
+			SEQ_WCS_BR_TIMING_0();
+			SEQ_WCS_BR_TIMING_1();
+			SEQ_WCS_COND_SEL_0();
+			SEQ_WCS_COND_SEL_1();
+			SEQ_WCS_COND_SEL_2();
+			SEQ_WCS_COND_SEL_3();
+			SEQ_WCS_COND_SEL_4();
+			SEQ_WCS_COND_SEL_5();
+			SEQ_WCS_COND_SEL_6();
+			SEQ_WCS_LEX_ADR_0();
+			SEQ_WCS_LEX_ADR_1();
+			SEQ_WCS_EN_MICRO();
+			SEQ_WCS_INT_READS_0();
+			SEQ_WCS_INT_READS_1();
+			SEQ_WCS_INT_READS_2();
+			SEQ_WCS_RANDOM_0();
+			SEQ_WCS_RANDOM_1();
+			SEQ_WCS_RANDOM_2();
+			SEQ_WCS_RANDOM_3();
+			SEQ_WCS_RANDOM_4();
+			SEQ_WCS_RANDOM_5();
+			SEQ_WCS_RANDOM_6();
+			memcpy(dep->dst1, &w, sizeof w);
+			dep->dst1 += sizeof w;
+		}
 		return (1);
 	}
 	return (0);
