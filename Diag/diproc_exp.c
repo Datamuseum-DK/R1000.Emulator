@@ -14,10 +14,17 @@
 #include "Diag/diag.h"
 #include "Infra/context.h"
 
-#include "Diag/diproc_seq_wcs.h"
 #include "Diag/diproc_fiu_wcs.h"
+#include "Diag/diproc_seq_wcs.h"
+#include "Diag/diproc_val_wcs.h"
 
 typedef int board_func_t(struct diagproc_exp_priv *dep, uint8_t length);
+
+#define BITPOS(octet, bitno, xor) \
+	do { \
+		w += w; \
+		w += xor ^ ((dep->ram[u + 7 - bitno] >> (7 - octet)) & 1); \
+	} while(0)
 
 static board_func_t fiu_board;
 static board_func_t ioc_board;
@@ -165,11 +172,6 @@ fiu_board(struct diagproc_exp_priv *dep, uint8_t length)
 	}
 	if ((length == 0x9a || length == 0x88) && dep->ram[0x10] == 0x99) {
 		sc_tracef(dep->name, "Exp load_control_store_200.fiu");
-#define BITPOS(octet, bitno) \
-		do { \
-			w += w; \
-			w += ((dep->ram[u + 7 - bitno] >> (7 - octet)) & 1); \
-		} while(0)
 		for(u = 0x18; u < 0x98; u += 8) {
 			w = 0;
 			FIU_WCS_OFFS_LIT_0();
@@ -282,11 +284,6 @@ seq_board(struct diagproc_exp_priv *dep, uint8_t length)
 	}
 	if ((length == 0x9a || length == 0x88) && dep->ram[0x10] == 0x99) {
 		sc_tracef(dep->name, "Exp load_control_store_200.seq");
-#define BITPOS(octet, bitno) \
-		do { \
-			w += w; \
-			w += ((dep->ram[u + 7 - bitno] >> (7 - octet)) & 1); \
-		} while(0)
 		for(u = 0x18; u < 0x98; u += 8) {
 			w = 0;
 			SEQ_WCS_BRANCH_ADR_0();
@@ -335,7 +332,6 @@ seq_board(struct diagproc_exp_priv *dep, uint8_t length)
 			dep->dst1 += sizeof w;
 		}
 		return (1);
-#undef BITPOS
 	}
 	return (0);
 }
@@ -430,6 +426,9 @@ typ_board(struct diagproc_exp_priv *dep, uint8_t length)
 static int
 val_board(struct diagproc_exp_priv *dep, uint8_t length)
 {
+	struct ctx *ctx;
+	uint64_t w;
+	unsigned u;
 
 	if (length == 0x40 && dep->ram[0x10] == 0x26) {
 		sc_tracef(dep->name, "Exp read_novram_data.val");
@@ -440,6 +439,62 @@ val_board(struct diagproc_exp_priv *dep, uint8_t length)
 
 	if (typ_val_rfload(dep, length, "VAL.val_18.ARAM", "VAL.val_20.BRAM", "val"))
 		return (1);
+	if (length == 0x9a && dep->ram[0x10] == 0x99) {
+		ctx = CTX_Find("VAL.val_54.WCSRAM");
+		AN(ctx);
+		dep->dst1 = (uint8_t*)(ctx + 1) + 0x800;
+	}
+	if ((length == 0x9a || length == 0x88) && dep->ram[0x10] == 0x99) {
+		sc_tracef(dep->name, "Exp load_control_store_200.val");
+		for(u = 0x18; u < 0x98; u += 8) {
+			w = 0;
+			VAL_WCS_A_0();
+			VAL_WCS_A_1();
+			VAL_WCS_A_2();
+			VAL_WCS_A_3();
+			VAL_WCS_A_4();
+			VAL_WCS_A_5();
+			VAL_WCS_B_0();
+			VAL_WCS_B_1();
+			VAL_WCS_B_2();
+			VAL_WCS_B_3();
+			VAL_WCS_B_4();
+			VAL_WCS_B_5();
+			VAL_WCS_FRAME_0();
+			VAL_WCS_FRAME_1();
+			VAL_WCS_FRAME_2();
+			VAL_WCS_FRAME_3();
+			VAL_WCS_FRAME_4();
+			VAL_WCS_C_MUX_SEL_0();
+			VAL_WCS_C_MUX_SEL_1();
+			VAL_WCS_RAND_0();
+			VAL_WCS_RAND_1();
+			VAL_WCS_RAND_2();
+			VAL_WCS_RAND_3();
+			VAL_WCS_C_0();
+
+			VAL_WCS_C_1();
+			VAL_WCS_C_2();
+			VAL_WCS_C_3();
+			VAL_WCS_C_4();
+			VAL_WCS_C_5();
+			VAL_WCS_M_A_SRC_0();
+			VAL_WCS_M_A_SRC_1();
+			VAL_WCS_M_B_SRC_0();
+
+			VAL_WCS_M_B_SRC_1();
+			VAL_WCS_ALU_FUNC_0();
+			VAL_WCS_ALU_FUNC_1();
+			VAL_WCS_ALU_FUNC_2();
+			VAL_WCS_ALU_FUNC_3();
+			VAL_WCS_ALU_FUNC_4();
+			VAL_WCS_C_SOURCE();
+			VAL_WCS_PARITY();
+			memcpy(dep->dst1, &w, sizeof w);
+			dep->dst1 += sizeof w;
+		}
+		return (1);
+	}
 
 	return (0);
 }
