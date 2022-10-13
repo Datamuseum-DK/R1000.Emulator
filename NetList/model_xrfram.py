@@ -43,7 +43,15 @@ class XRFRAM(PartFactory):
 
     def state(self, file):
         file.fmt('''
+		|#if BUS_DQ_WIDTH <= 8
+		|	uint8_t ram[1<<BUS_A_WIDTH];
+		|#elif BUS_DQ_WIDTH <= 16
+		|	uint16_t ram[1<<BUS_A_WIDTH];
+		|#elif BUS_DQ_WIDTH <= 32
+		|	uint32_t ram[1<<BUS_A_WIDTH];
+		|#else
 		|	uint64_t ram[1<<BUS_A_WIDTH];
+		|#endif
 		|	uint64_t last;
 		|	const char *what;
 		|''')
