@@ -16,6 +16,7 @@
 
 #include "Diag/diproc_fiu_wcs.h"
 #include "Diag/diproc_seq_wcs.h"
+#include "Diag/diproc_typ_wcs.h"
 #include "Diag/diproc_val_wcs.h"
 
 typedef int board_func_t(struct diagproc_exp_priv *dep, uint8_t length);
@@ -409,6 +410,9 @@ typ_val_rfload(struct diagproc_exp_priv *dep, uint8_t length, const char *aram, 
 static int
 typ_board(struct diagproc_exp_priv *dep, uint8_t length)
 {
+	struct ctx *ctx;
+	uint64_t w;
+	unsigned u;
 
 	if (length == 0x40 && dep->ram[0x10] == 0x26) {
 		sc_tracef(dep->name, "Exp read_novram_data.typ");
@@ -419,6 +423,72 @@ typ_board(struct diagproc_exp_priv *dep, uint8_t length)
 
 	if (typ_val_rfload(dep, length, "TYP.typ_16.ARAM", "TYP.typ_18.BRAM", "typ"))
 		return (1);
+
+	if (length == 0x9a && dep->ram[0x10] == 0x99) {
+		ctx = CTX_Find("TYP.typ_50.WCSRAM");
+		AN(ctx);
+		dep->dst1 = (uint8_t*)(ctx + 1) + 0x800;
+	}
+	if ((length == 0x9a || length == 0x88) && dep->ram[0x10] == 0x99) {
+		sc_tracef(dep->name, "Exp load_control_store_200.typ");
+		for(u = 0x18; u < 0x98; u += 8) {
+			w = 0;
+			TYP_WCS_A_0();
+			TYP_WCS_A_1();
+			TYP_WCS_A_2();
+			TYP_WCS_A_3();
+			TYP_WCS_A_4();
+			TYP_WCS_A_5();
+			TYP_WCS_B_0();
+			TYP_WCS_B_1();
+
+			TYP_WCS_B_2();
+			TYP_WCS_B_3();
+			TYP_WCS_B_4();
+			TYP_WCS_B_5();
+			TYP_WCS_FRAME_0();
+			TYP_WCS_FRAME_1();
+			TYP_WCS_FRAME_2();
+			TYP_WCS_FRAME_3();
+
+			TYP_WCS_FRAME_4();
+			TYP_WCS_C_LIT_0();
+			TYP_WCS_C_LIT_1();
+			TYP_WCS_RAND_0();
+			TYP_WCS_RAND_1();
+			TYP_WCS_RAND_2();
+			TYP_WCS_RAND_3();
+			TYP_WCS_C_0();
+
+			TYP_WCS_C_1();
+			TYP_WCS_C_2();
+			TYP_WCS_C_3();
+			TYP_WCS_C_4();
+			TYP_WCS_C_5();
+			TYP_WCS_PRIV_CHK_0();
+			TYP_WCS_PRIV_CHK_1();
+			TYP_WCS_PRIV_CHK_2();
+
+			TYP_WCS_C_MUX_SEL();
+			TYP_WCS_ALU_FUNC_0();
+			TYP_WCS_ALU_FUNC_1();
+			TYP_WCS_ALU_FUNC_2();
+			TYP_WCS_ALU_FUNC_3();
+			TYP_WCS_ALU_FUNC_4();
+			TYP_WCS_C_SOURCE();
+			TYP_WCS_MAR_CNTL_0();
+			TYP_WCS_MAR_CNTL_1();
+			TYP_WCS_MAR_CNTL_2();
+			TYP_WCS_MAR_CNTL_3();
+			TYP_WCS_CSA_CNTL_0();
+			TYP_WCS_CSA_CNTL_1();
+			TYP_WCS_CSA_CNTL_2();
+			TYP_WCS_PARITY();
+			memcpy(dep->dst1, &w, sizeof w);
+			dep->dst1 += sizeof w;
+		}
+		return (1);
+	}
 
 	return (0);
 }

@@ -26,6 +26,7 @@ ${OBJDIR}/diproc_exp.o: \
     Diag/diag.h \
     Diag/diproc_fiu_wcs.h \
     Diag/diproc_seq_wcs.h \
+    Diag/diproc_typ_wcs.h \
     Diag/diproc_val_wcs.h \
     Chassis/r1000sc.h \
     Infra/context.h \
