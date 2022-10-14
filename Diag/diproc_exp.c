@@ -1,13 +1,9 @@
 
-//#include <assert.h>
 #include <ctype.h>
-//#include <fcntl.h>
-//#include <pthread.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-//#include <unistd.h>
 
 #include "Infra/r1000.h"
 #include "Chassis/r1000sc.h"
@@ -94,8 +90,26 @@ upload(uint8_t *ptr, const char *hexstr)
 static int
 ioc_board(struct diagproc_exp_priv *dep, uint8_t length)
 {
-	(void)dep;
-	(void)length;
+	struct ctx *ctx;
+	uint8_t u;
+
+	if (length == 0x40 && dep->ram[0x10] == 0x38) {
+		ctx = CTX_Find("IOC.ioc_52.CSRAM0");
+		AN(ctx);
+		dep->dst1 = (uint8_t*)(ctx + 1) + 0x100;
+		ctx = CTX_Find("IOC.ioc_52.CSRAM1");
+		AN(ctx);
+		dep->dst2 = (uint8_t*)(ctx + 1) + 0x100;
+	}
+	if ((length == 0x40 || length == 0x28) && dep->ram[0x10] == 0x38) {
+		sc_tracef(dep->name, "Exp load_control_store_200.ioc");
+		for(u = 0x18; u < 0x38; u += 2) {
+			*dep->dst1++ = dep->ram[u];
+			*dep->dst2++ = dep->ram[u + 1];
+		}
+		return (1);
+
+	}
 	return (0);
 }
 
