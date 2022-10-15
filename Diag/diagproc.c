@@ -416,11 +416,10 @@ DiagProcStep(struct diagproc_ctrl *dc, struct diagproc_context *dctx)
 			dp->longwait = 5;
 			break;
 		}
+		i = dp->mcs51->iram[3];
+		if (0 < i && i < 16)
+			diprocs[i].status = dp->mcs51->iram[4];
 	} while(!(flags & (FLAG_IDLE | FLAG_RX_SPIN)) && !dp->did_io);
-
-	i = dp->mcs51->iram[3];
-	if (0 < i && i < 16)
-		diprocs[i].status = dp->mcs51->iram[4];
 }
 
 static void
