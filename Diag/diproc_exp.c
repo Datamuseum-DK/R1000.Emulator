@@ -280,29 +280,12 @@ mem0_board(struct diagproc_exp_priv *dep, uint8_t length)
 	return (mem32_board(dep, length, 0));
 }
 
-static uint8_t *
-seq_decdst(struct diagproc_exp_priv *dep, const char *c1, const char *c2)
-{
-	struct ctx *ctx;
-	uint8_t *dst;
-
-	if (dep->ram[0x11]) {
-		ctx = CTX_Find(c2);
-		if (ctx == NULL) printf("NOT FOUND %s\n", c2);
-	} else {
-		ctx = CTX_Find(c1);
-		if (ctx == NULL) printf("NOT FOUND %s\n", c1);
-	}
-	AN(ctx);
-	dst = (uint8_t*)(ctx + 1);
-	return (dst);
-}
-
 static int
 seq_board(struct diagproc_exp_priv *dep, uint8_t length)
 {
 	struct ctx *ctx;
 	uint8_t *dst;
+	uint16_t *dst2;
 	uint16_t off;
 	uint64_t w;
 	unsigned u;
@@ -376,7 +359,12 @@ seq_board(struct diagproc_exp_priv *dep, uint8_t length)
 		if (!dep->ram[0x11])
 			off >>= 6;
 
-		dst = seq_decdst(dep, "SEQ.seq_48.CLSDC0", "SEQ.seq_48.CLSDC1") + off;
+		ctx = CTX_Find("SEQ.seq_48.CLSDC");
+		AN(ctx);
+		dst = (uint8_t*)(ctx + 1);
+		if (!dep->ram[0x11])
+			dst += 1024;
+		dst += off;
 		for(u = 0x1a; u < 0x9a; u += 8) {
 			w = 0;
 			SEQ_DEC_CUR_CLASS_0();
@@ -386,35 +374,40 @@ seq_board(struct diagproc_exp_priv *dep, uint8_t length)
 			*dst++ = w;
 		}
 
-		dst = seq_decdst(dep, "SEQ.seq_49.DECRM0", "SEQ.seq_49.DECRM1") + off;
-		for(u = 0x1a; u < 0x9a; u += 8) {
-			w = 0;
-			SEQ_DEC_UADR_0();
-			SEQ_DEC_UADR_1();
-			SEQ_DEC_UADR_4();
-			SEQ_DEC_UADR_5();
-			SEQ_DEC_UADR_7();
-			SEQ_DEC_UADR_8();
-			SEQ_DEC_UADR_10();
-			SEQ_DEC_UADR_11();
-			*dst++ = w;
-		}
+		ctx = CTX_Find("SEQ.seq_49.DECRM0");
+		AN(ctx);
+		dst2 = (uint16_t*)(ctx + 1);
+		if (!dep->ram[0x11])
+			dst2 += 1024;
+		dst2 += off;
 
-		dst = seq_decdst(dep, "SEQ.seq_49.DECRM2", "SEQ.seq_49.DECRM3") + off;
 		for(u = 0x1a; u < 0x9a; u += 8) {
 			w = 0;
-			SEQ_DEC_UADR_2();
-			SEQ_DEC_UADR_3();
-			SEQ_DEC_UADR_6();
-			SEQ_DEC_UADR_9();
-			SEQ_DEC_UADR_12();
-			SEQ_DEC_PARITY();
 			SEQ_DEC_USES_TOS();
 			SEQ_DEC_IBUFF_FILL();
-			*dst++ = w;
+			SEQ_DEC_UADR_0();
+			SEQ_DEC_UADR_1();
+			SEQ_DEC_UADR_2();
+			SEQ_DEC_UADR_3();
+			SEQ_DEC_UADR_4();
+			SEQ_DEC_UADR_5();
+			SEQ_DEC_UADR_6();
+			SEQ_DEC_UADR_7();
+			SEQ_DEC_UADR_8();
+			SEQ_DEC_UADR_9();
+			SEQ_DEC_UADR_10();
+			SEQ_DEC_UADR_11();
+			SEQ_DEC_UADR_12();
+			SEQ_DEC_PARITY();
+			*dst2++ = w;
 		}
 
-		dst = seq_decdst(dep, "SEQ.seq_49.DECRM8", "SEQ.seq_49.DECRM9") + off;
+		ctx = CTX_Find("SEQ.seq_49.DECRM8");
+		AN(ctx);
+		dst = (uint8_t*)(ctx + 1);
+		if (!dep->ram[0x11])
+			dst += 1024;
+		dst += off;
 		for(u = 0x1a; u < 0x9a; u += 8) {
 			w = 0;
 			SEQ_DEC_CSA_VALID_1();

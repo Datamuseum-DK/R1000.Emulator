@@ -87,6 +87,7 @@ import model_xadd8
 import model_xadrpar
 import model_xalu
 import model_xbuf
+import model_xdecram
 import model_xecc
 import model_xeq
 import model_xclkgen
@@ -165,6 +166,7 @@ def register(where):
     model_xalu.register(where)
     model_xbuf.register(where)
     model_xclkgen.register(where)
+    model_xdecram.register(where)
     model_xecc.register(where)
     model_xeq.register(where)
     model_xfifo.register(where)

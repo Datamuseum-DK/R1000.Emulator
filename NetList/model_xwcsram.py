@@ -48,7 +48,8 @@ class XWCSRAM(PartFactory):
 
     def sensitive(self):
         yield "BUS_A_SENSITIVE()"
-        yield "PIN_WE"
+        if not self.comp.nodes["WE"].net.is_const():
+            yield "PIN_WE"
 
     def doit(self, file):
         ''' The meat of the doit() function '''
@@ -59,6 +60,10 @@ class XWCSRAM(PartFactory):
 		|	unsigned adr;
 		|	BUS_A_READ(adr);
 		|
+		|''')
+
+        if not self.comp.nodes["WE"].net.is_pu():
+            file.fmt('''
 		|	if (!PIN_WE=>) {
 		|		BUS_D_READ(state->ram[adr]);
 		|		TRACE(
@@ -74,7 +79,11 @@ class XWCSRAM(PartFactory):
 		|		next_trigger(
 		|		    PIN_WE.posedge_event() | BUS_D_EVENTS() | BUS_A_EVENTS()
 		|		);
-		|	} else {
+		|	} else
+		|''')
+
+        file.fmt('''
+		|	{
 		|		TRACE(
 		|		    << " r a " << BUS_A_TRACE()
 		|		    << " d "

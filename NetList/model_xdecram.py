@@ -29,28 +29,29 @@
 # SUCH DAMAGE.
 
 '''
-   2149 CMOS Static RAM 1024 x 4 bit
-   =================================
+   Decode RAM
+   ==========
 
 '''
 
 
 from part import PartModel, PartFactory
 
-class SRAM2149(PartFactory):
+class XDECRAM(PartFactory):
 
-    ''' 2149 CMOS Static RAM 1024 x 4 bit '''
+    ''' Decode RAM '''
 
     def state(self, file):
         file.fmt('''
-		|	uint8_t ram[1024];
-		|	bool writing;
+		|#if BUS_Q_WIDTH <= 8
+		|	uint8_t ram[2048];
+		|#else
+		|	uint16_t ram[2048];
+		|#endif
 		|''')
 
     def sensitive(self):
         yield "BUS_A_SENSITIVE()"
-        if not self.comp.nodes["WE"].net.is_const():
-            yield "PIN_WE"
         if not self.comp.nodes["CS"].net.is_pd():
             yield "PIN_CS"
 
@@ -63,8 +64,6 @@ class SRAM2149(PartFactory):
 		|	unsigned adr = 0;
 		|
 		|	BUS_A_READ(adr);
-		|	if (state->writing)
-		|		BUS_DQ_READ(state->ram[adr]);
 		|
 		|''')
 
@@ -72,9 +71,8 @@ class SRAM2149(PartFactory):
             file.fmt('''
 		|	if (PIN_CS=>) {
 		|		TRACE(<< "z");
-		|		BUS_DQ_Z();
+		|		BUS_Q_Z();
 		|		next_trigger(PIN_CS.negedge_event());
-		|		state->writing = false;
 		|		return;
 		|	}
 		|''')
@@ -82,27 +80,15 @@ class SRAM2149(PartFactory):
         file.fmt('''
 		|
 		|
-		|	if (!PIN_WE=>) {
-		|		BUS_DQ_Z();
-		|		state->writing = true;
-		|	} else {
-		|		state->writing = false;
-		|		BUS_DQ_WRITE(state->ram[adr]);
-		|	}
-		|	TRACE(
-		|	    << " cs " << PIN_CS?
-		|	    << " we " << PIN_WE?
-		|	    << " a " << BUS_A_TRACE()
-		|	    << " dq " << BUS_DQ_TRACE()
-		|	    << " | "
-		|	    << std::hex << adr
-		|	    << " "
-		|	    << std::hex << (unsigned)(state->ram[adr])
-		|	);
+		|	if (adr < 1024)
+		|		BUS_Q_WRITE(state->ram[adr]);
+		|	else
+		|		BUS_Q_WRITE(state->ram[1024 + (adr >> 6)]);
 		|''')
 
 def register(board):
     ''' Register component model '''
 
-    board.add_part("2149", PartModel("2149", SRAM2149))
-    board.add_part("2149X2", PartModel("2149X2", SRAM2149))
+    board.add_part("XDECRAM4", PartModel("XDECRAM4", XDECRAM))
+    board.add_part("XDECRAM8", PartModel("XDECRAM8", XDECRAM))
+    board.add_part("XDECRAM16", PartModel("XDECRAM16", XDECRAM))
