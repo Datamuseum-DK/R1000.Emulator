@@ -25,6 +25,7 @@ ${OBJDIR}/diproc_exp.o: \
     Diag/diproc_exp.c \
     Diag/diag.h \
     Diag/diproc_fiu_wcs.h \
+    Diag/diproc_seq_dec.h \
     Diag/diproc_seq_wcs.h \
     Diag/diproc_typ_wcs.h \
     Diag/diproc_val_wcs.h \
