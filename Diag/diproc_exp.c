@@ -39,6 +39,7 @@ struct diagproc_exp_priv {
 	uint8_t		*ip;
 	uint8_t		*dst1;
 	uint8_t		*dst2;
+	uint16_t	*dst3;
 	board_func_t	*board;
 };
 
@@ -352,6 +353,19 @@ seq_board(struct diagproc_exp_priv *dep, uint8_t length)
 		}
 		return (1);
 	}
+	if (length == 0xb2 && dep->ram[0x10] == 0x9b) {
+		ctx = CTX_Find("SEQ.seq_48.CLSDC");
+		AN(ctx);
+		dep->dst1 = (uint8_t*)(ctx + 1);
+
+		ctx = CTX_Find("SEQ.seq_49.DECRM8");
+		AN(ctx);
+		dep->dst2 = (uint8_t*)(ctx + 1);
+
+		ctx = CTX_Find("SEQ.seq_49.DECRM0");
+		AN(ctx);
+		dep->dst3 = (uint16_t*)(ctx + 1);
+	}
 	if ((length == 0xb2 || length == 0x8a) && dep->ram[0x10] == 0x9b) {
 		sc_tracef(dep->name, "Exp load_dispatch_rams_200.seq");
 		off = dep->ram[0x18] << 8;
@@ -359,9 +373,7 @@ seq_board(struct diagproc_exp_priv *dep, uint8_t length)
 		if (!dep->ram[0x11])
 			off >>= 6;
 
-		ctx = CTX_Find("SEQ.seq_48.CLSDC");
-		AN(ctx);
-		dst = (uint8_t*)(ctx + 1);
+		dst = dep->dst1;
 		if (!dep->ram[0x11])
 			dst += 1024;
 		dst += off;
@@ -374,9 +386,7 @@ seq_board(struct diagproc_exp_priv *dep, uint8_t length)
 			*dst++ = w;
 		}
 
-		ctx = CTX_Find("SEQ.seq_49.DECRM0");
-		AN(ctx);
-		dst2 = (uint16_t*)(ctx + 1);
+		dst2 = dep->dst3;
 		if (!dep->ram[0x11])
 			dst2 += 1024;
 		dst2 += off;
@@ -402,9 +412,7 @@ seq_board(struct diagproc_exp_priv *dep, uint8_t length)
 			*dst2++ = w;
 		}
 
-		ctx = CTX_Find("SEQ.seq_49.DECRM8");
-		AN(ctx);
-		dst = (uint8_t*)(ctx + 1);
+		dst = dep->dst2;
 		if (!dep->ram[0x11])
 			dst += 1024;
 		dst += off;
@@ -661,13 +669,15 @@ int
 diagproc_exp_download(struct diagproc_exp_priv *dep, uint8_t length, uint8_t *ram, uint8_t *ip)
 {
 	uint8_t first = ram[0x10];
+	int retval = 0;
 
 	dep->ram = ram;
 	dep->ip = ip;
 	if (dep->board(dep, length)) {
 		ram[0x04] = 1;
+		retval = 1;
 	} else {
 		sc_tracef(dep->name, "Exp [0x%02x] @0x%02x 0x%02x 0x%02x 0x%02x", length, first, ram[first], ram[first+1], ram[first+2]);
 	}
-	return (0);
+	return (retval);
 }

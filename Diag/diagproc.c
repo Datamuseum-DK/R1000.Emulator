@@ -49,6 +49,10 @@ struct diagproc_priv {
 	char scratch[1024];
 
 	struct diagproc_exp_priv *exp;
+
+	uint8_t dl_ptr;
+	uint8_t dl_cnt;
+	uint8_t dl_sum;
 };
 
 static void
@@ -236,31 +240,99 @@ Explain_Diag_Byte(char msgbuf[1024], const uint8_t serbuf[2])
 }
 
 static void
+diagproc_fast_dload(struct diagproc_priv *dp, const uint8_t *ptr)
+{
+	if (dp->dl_cnt == 0 && dp->dl_ptr == 0 && dp->dl_sum == 0) {
+		//sc_tracef(dp->name, "DIAGBUS FDL 1 %02x%02x %02x# %02x> %02x+", ptr[0], ptr[1], dp->dl_cnt, dp->dl_ptr, dp->dl_sum);
+		assert(ptr[0] == 1);
+		assert((ptr[1] & 0xe0) == 0xa0);
+		dp->dl_cnt = 1;
+	} else if (dp->dl_cnt == 1 && dp->dl_ptr == 0 && dp->dl_sum == 0) {
+		//sc_tracef(dp->name, "DIAGBUS FDL 2 %02x%02x %02x# %02x> %02x+", ptr[0], ptr[1], dp->dl_cnt, dp->dl_ptr, dp->dl_sum);
+		dp->dl_cnt = ptr[1] + 1;
+		dp->download_len = ptr[1];
+		dp->dl_ptr = 0x10;
+		dp->dl_sum += ptr[1];
+	} else if (dp->dl_cnt > 1 && dp->dl_ptr > 0) {
+		//sc_tracef(dp->name, "DIAGBUS FDL 3 %02x%02x %02x# %02x> %02x+ (%02x++)", ptr[0], ptr[1], dp->dl_cnt, dp->dl_ptr, dp->dl_sum, dp->mcs51->iram[2]);
+		dp->dl_sum += ptr[1];
+		dp->mcs51->iram[dp->dl_ptr] = ptr[1];
+		dp->dl_cnt--;
+		dp->dl_ptr++;
+	} else if (dp->dl_ptr > 0) {
+		//sc_tracef(dp->name, "DIAGBUS FDL 4 %02x%02x %02x# %02x> %02x+", ptr[0], ptr[1], dp->dl_cnt, dp->dl_ptr, dp->dl_sum);
+		assert(dp->dl_sum == ptr[1]);
+		dp->dl_cnt = 0;
+		dp->dl_ptr = 0;
+		dp->dl_sum = 0;
+
+		if (dp->mcs51->iram[0x11] & 0x01)
+			dp->mcs51->sfr[SFR_IP] |= 0x01;
+		else
+			dp->mcs51->sfr[SFR_IP] &= ~0x01;
+
+		if (dp->mcs51->iram[0x11] & 0x02)
+			dp->mcs51->sfr[SFR_IP] |= 0x02;
+		else
+			dp->mcs51->sfr[SFR_IP] &= ~0x02;
+
+		if ((dp->mod & 0x10) && diagproc_exp_download(dp->exp, dp->download_len, dp->mcs51->iram, &dp->mcs51->sfr[SFR_IP])) {
+			// pass
+		} else {
+			dp->mcs51->iram[0x04] = 0x06;
+		}
+	} else {
+		sc_tracef(dp->name, "DIAGBUS FDL ? %02x%02x %02x# %02x> %02x+", ptr[0], ptr[1], dp->dl_cnt, dp->dl_ptr, dp->dl_sum);
+	}
+}
+
+
+static void
 diagproc_busrx(void *priv, const void *ptr, size_t len)
 {
 	struct diagproc_priv *dp = priv;
 	uint8_t serbuf[2];
+	int fast = 0;
 
 	assert(len == 2);
 	memcpy(serbuf, ptr, len);
+
 	assert(pthread_mutex_lock(&dp->mtx) == 0);
-	/*
-	 * The DIPROC firmware reads SBUF twice, at both 0x649 and 0x64d, so we cannot
-	 * use the SCON.RI bit for flow-control.
-	 * Instead, wait if:
-	 *	Interrupted and not spinning in 0x646 or 0x6e3
-	 *	or if SCON.RI is already set
-	 *	of if SCON.REN is not set
-	 */
-	while (
-	    (dp->mcs51->irq_state && !(dp->flags[dp->mcs51->pc] & FLAG_RX_SPIN)) ||
-	    (dp->mcs51->sfr[SFR_SCON] & 0x01) ||
-	    (!(dp->mcs51->sfr[SFR_SCON] & 0x10))) {
-		assert(pthread_mutex_unlock(&dp->mtx) == 0);
-		usleep(1000);
-		assert(pthread_mutex_lock(&dp->mtx) == 0);
+
+	if (dp->dl_cnt) {
+		fast = 1;
+	} else if (!serbuf[0]) {
+		// pass
+	} else if ((serbuf[1] & 0x1f) != dp->mcs51->iram[3]) {
+		// pass
+	} else if ((serbuf[1] & 0xe0) != 0xa0) {
+		// pass
+	} else if (dp->mcs51->iram[4] == 6) {
+		// pass
+	} else {
+		fast = 1;
 	}
-	MCS51_Rx(dp->mcs51, serbuf[1], serbuf[0]);
+	if (fast) {
+		diagproc_fast_dload(dp, serbuf);
+	} else {
+		/*
+		 * The DIPROC firmware reads SBUF twice, at both 0x649 and 0x64d, so we cannot
+		 * use the SCON.RI bit for flow-control.
+		 * Instead, wait if:
+		 *	Interrupted and not spinning in 0x646 or 0x6e3
+		 *	or if SCON.RI is already set
+		 *	of if SCON.REN is not set
+		 */
+		while (
+		    (dp->mcs51->irq_state && !(dp->flags[dp->mcs51->pc] & FLAG_RX_SPIN)) ||
+		    (dp->mcs51->sfr[SFR_SCON] & 0x01) ||
+		    (!(dp->mcs51->sfr[SFR_SCON] & 0x10))) {
+			assert(pthread_mutex_unlock(&dp->mtx) == 0);
+			usleep(1000);
+			assert(pthread_mutex_lock(&dp->mtx) == 0);
+		}
+		MCS51_Rx(dp->mcs51, serbuf[1], serbuf[0]);
+	}
 	assert(pthread_mutex_unlock(&dp->mtx) == 0);
 	if ((*dp->do_trace & 4) && (dp->mcs51->irq_state || serbuf[0])) {
 		sc_tracef(dp->name, "DIAGBUS RX %s",
