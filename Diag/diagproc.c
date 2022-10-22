@@ -292,11 +292,15 @@ diagproc_busrx(void *priv, const void *ptr, size_t len)
 {
 	struct diagproc_priv *dp = priv;
 	uint8_t serbuf[2];
-	int fast = 0;
+	int i, fast = 0;
 
 	assert(len == 2);
 	memcpy(serbuf, ptr, len);
 
+	if ((*dp->do_trace & 4) && (dp->mcs51->irq_state || serbuf[0])) {
+		sc_tracef(dp->name, "DIAGBUS RX %s",
+		    Explain_Diag_Byte(dp->scratch, serbuf));
+	}
 	assert(pthread_mutex_lock(&dp->mtx) == 0);
 
 	if (dp->dl_cnt) {
@@ -307,12 +311,17 @@ diagproc_busrx(void *priv, const void *ptr, size_t len)
 		// pass
 	} else if ((serbuf[1] & 0xe0) != 0xa0) {
 		// pass
-	} else if (dp->mcs51->iram[4] == 6) {
+	} else if (dp->mcs51->iram[4] == DIPROC_RESPONSE_RUNNING) {
 		// pass
 	} else {
 		fast = 1;
 	}
 	if (fast) {
+		while (!dp->idle) {
+			assert(pthread_mutex_unlock(&dp->mtx) == 0);
+			usleep(1000);
+			assert(pthread_mutex_lock(&dp->mtx) == 0);
+		}
 		diagproc_fast_dload(dp, serbuf);
 	} else {
 		/*
@@ -333,11 +342,10 @@ diagproc_busrx(void *priv, const void *ptr, size_t len)
 		}
 		MCS51_Rx(dp->mcs51, serbuf[1], serbuf[0]);
 	}
+	i = dp->mcs51->iram[3];
+	if (0 < i && i < 16)
+		diprocs[i].status = dp->mcs51->iram[4];
 	assert(pthread_mutex_unlock(&dp->mtx) == 0);
-	if ((*dp->do_trace & 4) && (dp->mcs51->irq_state || serbuf[0])) {
-		sc_tracef(dp->name, "DIAGBUS RX %s",
-		    Explain_Diag_Byte(dp->scratch, serbuf));
-	}
 }
 
 static uint16_t

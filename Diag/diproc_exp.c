@@ -674,7 +674,7 @@ diagproc_exp_download(struct diagproc_exp_priv *dep, uint8_t length, uint8_t *ra
 	dep->ram = ram;
 	dep->ip = ip;
 	if (dep->board(dep, length)) {
-		ram[0x04] = 1;
+		ram[0x04] = DIPROC_RESPONSE_OK;
 		retval = 1;
 	} else {
 		sc_tracef(dep->name, "Exp [0x%02x] @0x%02x 0x%02x 0x%02x 0x%02x", length, first, ram[first], ram[first+1], ram[first+2]);
