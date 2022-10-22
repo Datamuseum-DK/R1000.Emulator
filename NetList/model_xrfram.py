@@ -61,6 +61,10 @@ class XRFRAM(PartFactory):
         file.fmt('''
 		|static const char *READING = "r";
 		|static const char *WRITING = "w";
+		|''')
+
+        if not self.comp.nodes["CS"].net.is_pd():
+            file.fmt('''
 		|static const char *ZZZING = "z";
 		|''')
 
@@ -75,6 +79,10 @@ class XRFRAM(PartFactory):
 		|
 		|	BUS_A_READ(adr);
 		|
+		|''')
+
+        if not self.comp.nodes["CS"].net.is_pd():
+            file.fmt('''
 		|	if (PIN_CS=>) {
 		|		if (state->what == READING) {
 		|			BUS_DQ_Z();
@@ -84,7 +92,11 @@ class XRFRAM(PartFactory):
 		|		}
 		|		next_trigger(PIN_CS.negedge_event());
 		|		state->what = ZZZING;
-		|	} else if (!PIN_WE=>) {
+		|	} else
+		|''')
+
+        file.fmt('''
+		|	if (!PIN_WE=>) {
 		|		if (state->what == READING)
 		|			BUS_DQ_Z();
 		|		BUS_DQ_READ(data);
