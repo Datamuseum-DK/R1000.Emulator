@@ -5,6 +5,7 @@
 	macro(SEQ, seq, 2) \
 	macro(FIU, fiu, 3) \
 	macro(IOC, ioc, 4) \
+	macro(ANY, any, 5) \
 	macro(TYP, typ, 6) \
 	macro(VAL, val, 7) \
 	macro(MEM0, mem0, 12) \
@@ -22,6 +23,22 @@
 	macro(7, RESERVED1) \
 	macro(8, RESERVED2) \
 	macro(9, TIMEOUT)
+
+#define CMD_TABLE(macro) \
+	macro(STATUS, status, 0) \
+	macro(UPLOAD, upload, 1) \
+	macro(DISABLE, disable, 2) \
+	macro(ENABLE, enable, 3) \
+	macro(RESET, reset, 4) \
+	macro(DOWNLOAD, download, 5) \
+	macro(UNPAUSE, unpause, 6) \
+	macro(UNLOOP, unloop, 7)
+
+enum diproc_cmd {
+#define CMD(upper, lower, num)	DIPROC_CMD_##upper = num,
+CMD_TABLE(CMD)
+#undef CMD
+};
 
 enum diproc_response {
 #define RESPONSE(num, name)	DIPROC_RESPONSE_##name = num,

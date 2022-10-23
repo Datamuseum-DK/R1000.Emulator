@@ -46,8 +46,6 @@ struct diagproc_priv {
 	unsigned flags[0x2000];
 	uint8_t download_len;
 
-	char scratch[1024];
-
 	struct diagproc_exp_priv *exp;
 
 	uint8_t dl_ptr;
@@ -202,41 +200,30 @@ diagproc_bitfunc(struct mcs51 *mcs51, uint8_t bit_adr, int what)
 }
 
 
-static const char *
-Explain_Diag_Byte(char msgbuf[1024], const uint8_t serbuf[2])
+static void
+Explain_Diag_Byte(struct diagproc_priv *dp, const uint8_t serbuf[2])
 {
-	sprintf(msgbuf, "%d%02x", serbuf[0], serbuf[1]);
+
+	VSB_clear(dp->vsb);
+
+	VSB_printf(dp->vsb, "%d%02x", serbuf[0], serbuf[1]);
 	if (serbuf[0] == 0) {
-		strcat(msgbuf, " payload");
-		return (msgbuf);
+		VSB_cat(dp->vsb, " payload");
+	} else {
+		switch(serbuf[1] >> 5) {
+#define CMD(upper, lower, nbr) case nbr: VSB_cat(dp->vsb, " " #upper); break;
+		CMD_TABLE(CMD)
+#undef CMD
+		default: WRONG();
+		}
+		switch(serbuf[1] & 0x1f) {
+#define BRD(upper, lower, nbr) case nbr: VSB_cat(dp->vsb, " " #upper); break;
+		BOARD_TABLE(BRD)
+#undef BRD
+		default: WRONG();
+		}
 	}
-	switch(serbuf[1] & 0xe0) {
-	case 0x00: strcat(msgbuf, " 0_STATUS"); break;
-	case 0x20: strcat(msgbuf, " 2_UPLOAD"); break;
-	case 0x40: strcat(msgbuf, " 4_DISABLE"); break;
-	case 0x60: strcat(msgbuf, " 6_ENABLE"); break;
-	case 0x80: strcat(msgbuf, " 8_RESET"); break;
-	case 0xa0: strcat(msgbuf, " A_DOWNLOAD"); break;
-	case 0xc0: strcat(msgbuf, " C_UNPAUSE"); break;
-	case 0xe0: strcat(msgbuf, " E_UNLOOP"); break;
-	default: WRONG();
-	}
-	switch(serbuf[1] & 0x1f) {
-	case 0x02: strcat(msgbuf, " SEQ"); break;
-	case 0x03: strcat(msgbuf, " FIU"); break;
-	case 0x04: strcat(msgbuf, " IOC"); break;
-	case 0x05: strcat(msgbuf, " ANY"); break;
-	case 0x06: strcat(msgbuf, " TYP"); break;
-	case 0x07: strcat(msgbuf, " VAL"); break;
-	case 0x0c: strcat(msgbuf, " MEM0"); break;
-	case 0x0d: strcat(msgbuf, " MEM1"); break;
-	case 0x0e: strcat(msgbuf, " MEM2"); break;
-	case 0x0f: strcat(msgbuf, " MEM3"); break;
-	default:
-		sprintf(strchr(msgbuf, '\0'), " <0x%02x", serbuf[1] & 0x1f);
-		break;
-	}
-	return (msgbuf);
+	AZ(VSB_finish(dp->vsb));
 }
 
 static void
@@ -279,6 +266,7 @@ diagproc_fast_dload(struct diagproc_priv *dp, const uint8_t *ptr)
 		if ((dp->mod & 0x10) && diagproc_exp_download(dp->exp, dp->download_len, dp->mcs51->iram, &dp->mcs51->sfr[SFR_IP])) {
 			// pass
 		} else {
+			dp->pc0 = dp->mcs51->iram[0x10];
 			dp->mcs51->iram[0x04] = 0x06;
 		}
 	} else {
@@ -297,11 +285,11 @@ diagproc_busrx(void *priv, const void *ptr, size_t len)
 	assert(len == 2);
 	memcpy(serbuf, ptr, len);
 
-	if ((*dp->do_trace & 4) && (dp->mcs51->irq_state || serbuf[0])) {
-		sc_tracef(dp->name, "DIAGBUS RX %s",
-		    Explain_Diag_Byte(dp->scratch, serbuf));
-	}
 	assert(pthread_mutex_lock(&dp->mtx) == 0);
+	if ((*dp->do_trace & 4) && (dp->mcs51->irq_state || serbuf[0])) {
+		Explain_Diag_Byte(dp, serbuf);
+		sc_tracef(dp->name, "DIAGBUS RX %s", VSB_data(dp->vsb));
+	}
 
 	if (dp->dl_cnt) {
 		fast = 1;
@@ -353,7 +341,6 @@ diagproc_istep(struct diagproc_ctrl *dc, struct diagproc_context *dctx)
 {
 	struct diagproc_priv *dp;
 	uint16_t opc, npc;
-	char buf[BUFSIZ], *p;
 	unsigned ptr, u, v;
 	uint16_t flags;
 
@@ -425,14 +412,13 @@ diagproc_istep(struct diagproc_ctrl *dc, struct diagproc_context *dctx)
 	if (dp->flags[npc] & FLAG_DUMP_MEM) {
 		dctx->executions++;
 		if (*dp->do_trace & 4) {
-			p = buf;
+			VSB_clear(dp->vsb);
 			for (ptr = 0x10; ptr < dp->pc0 + 16U && ptr < 0x100U; ptr++) {
 				if (!(ptr & 3))
-					*p++ = ' ';
-				sprintf(p, " %02x", dp->mcs51->iram[ptr]);
-				p = strchr(p, '\0');
-				AN(p);
+					VSB_putc(dp->vsb, ' ');
+				VSB_printf(dp->vsb, " %02x", dp->mcs51->iram[ptr]);
 			}
+			AZ(VSB_finish(dp->vsb));
 
 			ptr = MCS51_REG(dp->mcs51, 0);
 			sc_tracef(dp->name, "Exec %02x | %02x %02x %02x %02x | %s",
@@ -441,7 +427,7 @@ diagproc_istep(struct diagproc_ctrl *dc, struct diagproc_context *dctx)
 			    dp->mcs51->iram[ptr + 1],
 			    dp->mcs51->iram[ptr + 2],
 			    dp->mcs51->iram[ptr + 3],
-			    buf
+			    VSB_data(dp->vsb)
 			);
 		}
 	}
