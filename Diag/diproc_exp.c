@@ -103,6 +103,12 @@ ioc_board(struct diagproc_exp_priv *dep, uint8_t length)
 		AN(ctx);
 		dep->dst2 = (uint8_t*)(ctx + 1) + 0x100;
 	}
+
+	if (length == 0x51 && dep->ram[0x10] == 0x30) {
+		sc_tracef(dep->name, "Exp load_wcs_address.ioc");
+		return (1);
+	}
+
 	if ((length == 0x40 || length == 0x28) && dep->ram[0x10] == 0x38) {
 		sc_tracef(dep->name, "Exp load_control_store_200.ioc");
 		for(u = 0x18; u < 0x38; u += 2) {
@@ -128,6 +134,11 @@ fiu_board(struct diagproc_exp_priv *dep, uint8_t length)
 		sc_tracef(dep->name, "Exp read_novram_data.fiu");
 		upload(dep->ram + 0x22, "2c272b0204b6a1");
 		SET_PT(dep);
+		return(1);
+	}
+
+        if (length == 0x4d && dep->ram[0x10] == 0x38) {
+		sc_tracef(dep->name, "Exp load_counter.fiu");
 		return(1);
 	}
 
@@ -297,6 +308,11 @@ seq_board(struct diagproc_exp_priv *dep, uint8_t length)
 		SET_PT(dep);
 		return (1);
 	}
+        if (length == 0x12 && dep->ram[0x10] == 0x1a) {
+		sc_tracef(dep->name, "Exp load_counter.seq");
+		return(1);
+	}
+
 	if (length == 0x9a && dep->ram[0x10] == 0x99) {
 		ctx = CTX_Find("SEQ.seq_70.WCS");
 		AN(ctx);
@@ -517,6 +533,11 @@ typ_board(struct diagproc_exp_priv *dep, uint8_t length)
 		return (1);
 	}
 
+        if (length == 0x14 && dep->ram[0x10] == 0x1a) {
+		sc_tracef(dep->name, "Exp load_diag_counter.typ");
+		return(1);
+	}
+
 	if (typ_val_rfload(dep, length, "TYP.typ_16.ARAM", "TYP.typ_18.BRAM", "typ"))
 		return (1);
 
@@ -601,6 +622,11 @@ val_board(struct diagproc_exp_priv *dep, uint8_t length)
 		upload(dep->ram + 0x19, "2a28060103b796");
 		SET_PT(dep);
 		return (1);
+	}
+
+        if (length == 0x14 && dep->ram[0x10] == 0x1a) {
+		sc_tracef(dep->name, "Exp load_diag_counter.val");
+		return(1);
 	}
 
 	if (typ_val_rfload(dep, length, "VAL.val_18.ARAM", "VAL.val_20.BRAM", "val"))
