@@ -21,13 +21,6 @@ sc_now(void)
 #include "typ_board_pub.hh"
 #include "val_board_pub.hh"
 
-static char Emu_how[] = "+";
-static char Fiu_how[] = "++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++";
-static char Ioc_how[] = "++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++";
-static char Mem32_how[] = "+++++++++++++++++++++++++++++++++++++++++++++++";
-static char Seq_how[] = "+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++";
-static char Typ_how[] = "++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++";
-static char Val_how[] = "+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++";
 
 SC_MODULE(PowerSequencer)
 {
@@ -95,21 +88,21 @@ sc_main(int argc, char *argv[])
 
 	// Order as seen from front L…R
 	if (sc_boards & R1K_BOARD_MEM32_2)
-		mem32_2 = make_mod_mem32("MEM2", planes, Mem32_how);
+		mem32_2 = make_mod_mem32("MEM2", planes, NULL);
 	if (sc_boards & R1K_BOARD_MEM32_0)
-		mem32_0 = make_mod_mem32("MEM0", planes, Mem32_how);
+		mem32_0 = make_mod_mem32("MEM0", planes, NULL);
 	if (sc_boards & R1K_BOARD_SEQ)
-		seq = make_mod_seq("SEQ", planes, Seq_how);
+		seq = make_mod_seq("SEQ", planes, NULL);
 	if (sc_boards & R1K_BOARD_TYP)
-		typ = make_mod_typ("TYP", planes, Typ_how);
+		typ = make_mod_typ("TYP", planes, NULL);
 	if (sc_boards & R1K_BOARD_VAL)
-		val = make_mod_val("VAL", planes, Val_how);
+		val = make_mod_val("VAL", planes, NULL);
 	if (sc_boards & R1K_BOARD_FIU)
-		fiu = make_mod_fiu("FIU", planes, Fiu_how);
+		fiu = make_mod_fiu("FIU", planes, NULL);
 	if (sc_boards & R1K_BOARD_IOC)
-		ioc = make_mod_ioc("IOC", planes, Ioc_how);
+		ioc = make_mod_ioc("IOC", planes, NULL);
 
-	emu = make_mod_emu("EMU", planes, Emu_how);
+	emu = make_mod_emu("EMU", planes, NULL);
 
 	planes.PD = false;
 	planes.PU = true;
