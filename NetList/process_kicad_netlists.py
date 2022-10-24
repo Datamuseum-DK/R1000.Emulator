@@ -49,6 +49,7 @@ from pass_pupd import PassPuPd
 from pass_assign_part import PassAssignPart
 from pass_net_config import PassNetConfig
 from pass_part_config import PassPartConfig
+from pass_bus_pins import PassBusPins
 
 ME = os.path.basename(__file__)
 
@@ -128,6 +129,9 @@ class R1000Cpu():
         self.boards.sort()
 
         self.plane = planes.Planes(self)
+
+        for board in self.boards:
+            PassBusPins(board)
 
         PassPuPd(self)
 

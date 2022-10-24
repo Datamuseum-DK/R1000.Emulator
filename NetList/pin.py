@@ -41,6 +41,7 @@ class Pin():
 
     def __init__(self, pinident, pinname, pinrole):
         self.ident = pinident	# Not always numeric!
+        self.rawname = pinname
         self.name = pinname
         self.role = pinrole.replace("+no_connect", "")
         self.pinbus = None
@@ -65,6 +66,25 @@ class Pin():
         self.sortkey = util.sortkey(self.name)
         if isinstance(self.sortkey[0], int):
             self.sortkey.insert(0, "_")
+
+    def buspin(self):
+       ''' This might be a buspin '''
+       if self.rawname[0] == '=':
+           base = self.rawname[1:]
+       elif self.rawname[-1] == '=':
+           base = self.rawname[:-1]
+       else:
+           return None
+
+       bus = ""
+       while base and base[0].isalpha():
+           bus += base[0]
+           base = base[1:]
+
+       if base.isdigit():
+           return (bus, base)
+
+       return None
 
     def __repr__(self):
         return "_".join(("Pin", self.name, self.role))
