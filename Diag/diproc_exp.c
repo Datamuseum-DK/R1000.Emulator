@@ -325,6 +325,13 @@ seq_board(struct diagproc_exp_priv *dep, uint8_t length)
 		return(1);
 	}
 
+#if 0
+        if (length == 0x45 && dep->ram[0x10] == 0x3d) {
+		sc_tracef(dep->name, "Exp prep_load_dispatch_rams.seq");
+		return(1);
+	}
+#endif
+
         if (length == 0x12 && dep->ram[0x10] == 0x1a) {
 		sc_tracef(dep->name, "Exp load_counter.seq");
 		return(1);
@@ -555,6 +562,11 @@ typ_board(struct diagproc_exp_priv *dep, uint8_t length)
 		return(1);
 	}
 
+        if (length == 0x23 && dep->ram[0x10] == 0x27) {
+		sc_tracef(dep->name, "Exp prep_load_register_file.typ");
+		return(1);
+	}
+
         if (length == 0x14 && dep->ram[0x10] == 0x1a) {
 		sc_tracef(dep->name, "Exp load_diag_counter.typ");
 		return(1);
@@ -653,6 +665,11 @@ val_board(struct diagproc_exp_priv *dep, uint8_t length)
 
         if (length == 0x14 && dep->ram[0x10] == 0x1a) {
 		sc_tracef(dep->name, "Exp load_diag_counter.val");
+		return(1);
+	}
+
+        if (length == 0x22 && dep->ram[0x10] == 0x26) {
+		sc_tracef(dep->name, "Exp prep_load_register_file.val");
 		return(1);
 	}
 

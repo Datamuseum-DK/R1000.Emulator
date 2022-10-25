@@ -4,4 +4,6 @@
 
 sc_boards fiu
 
+cli 'sc trace HRAM 1'
+
 single fiu $*

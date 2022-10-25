@@ -132,9 +132,9 @@ single() {
 		EXP=$1
 	fi
 
-	cli 'sc trace DI*PROC 4'
+	cli 'sc trace DI*PROC 0x15'
 
-	cli 'sc quota add 12'
+	cli 'sc quota add 60'
 	cli 'sc quota exit'
 
 	cli "dfs read ${EXP}.${single_suff} ${R1K_PFX}.exp"
