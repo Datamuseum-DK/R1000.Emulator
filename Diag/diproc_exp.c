@@ -137,6 +137,11 @@ fiu_board(struct diagproc_exp_priv *dep, uint8_t length)
 		return(1);
 	}
 
+        if (length == 0x0f && dep->ram[0x10] == 0x18) {
+		sc_tracef(dep->name, "Exp clear_parity.fiu");
+		return(1);
+	}
+
         if (length == 0x4d && dep->ram[0x10] == 0x38) {
 		sc_tracef(dep->name, "Exp load_counter.fiu");
 		return(1);
@@ -264,6 +269,12 @@ mem32_board(struct diagproc_exp_priv *dep, uint8_t length, int board)
 		SET_PT(dep);
 		return(1);
 	}
+
+        if (length == 0x1e && dep->ram[0x10] == 0x18) {
+		sc_tracef(dep->name, "Exp clear_parity_errors.m32");
+		return(1);
+	}
+
 	if (length == 0x41 && dep->ram[0x10] == 0x22) {
 		sc_tracef(dep->name, "Exp clear_tagstore.m32");
 
@@ -308,6 +319,12 @@ seq_board(struct diagproc_exp_priv *dep, uint8_t length)
 		SET_PT(dep);
 		return (1);
 	}
+
+        if (length == 0x1e && dep->ram[0x10] == 0x21) {
+		sc_tracef(dep->name, "Exp clear_parity.seq");
+		return(1);
+	}
+
         if (length == 0x12 && dep->ram[0x10] == 0x1a) {
 		sc_tracef(dep->name, "Exp load_counter.seq");
 		return(1);
@@ -533,6 +550,11 @@ typ_board(struct diagproc_exp_priv *dep, uint8_t length)
 		return (1);
 	}
 
+        if (length == 0x0f && dep->ram[0x10] == 0x18) {
+		sc_tracef(dep->name, "Exp clear_parity.typ");
+		return(1);
+	}
+
         if (length == 0x14 && dep->ram[0x10] == 0x1a) {
 		sc_tracef(dep->name, "Exp load_diag_counter.typ");
 		return(1);
@@ -622,6 +644,11 @@ val_board(struct diagproc_exp_priv *dep, uint8_t length)
 		upload(dep->ram + 0x19, "2a28060103b796");
 		SET_PT(dep);
 		return (1);
+	}
+
+        if (length == 0x0f && dep->ram[0x10] == 0x18) {
+		sc_tracef(dep->name, "Exp clear_parity.val");
+		return(1);
 	}
 
         if (length == 0x14 && dep->ram[0x10] == 0x1a) {
