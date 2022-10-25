@@ -224,6 +224,7 @@ def register(board):
 
     board.add_part("F244", ModelXbuf(False))
     board.add_part("F240", ModelXbuf(True))
+    board.add_part("XBUF4", ModelXbuf(False))
     board.add_part("XBUF6", ModelXbuf(False))
     board.add_part("XBUF8", ModelXbuf(False))
     board.add_part("XBUF9", ModelXbuf(False))
