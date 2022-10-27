@@ -197,10 +197,10 @@ class NetBus():
     def write_init(self, net, file):
         if net == self.nets[0]:
             lname = self.cname.split(".")[-1]
-            if net.sc_type == "bool":
-                file.write(',\n\t%s("%s", (1ULL << %d) - 1)' % (lname, lname, len(self.nets)))
-            else:
+            if net.sc_type != "bool":
                 file.write(',\n\t%s("%s", "%s")' % (lname, lname, "z" * len(self.nets)))
+            else:
+                file.write(',\n\t%s("%s", 0x%xULL)' % (lname, lname, (1 << len(self.nets)) - 1))
 
 class PassNetConfig():
 
