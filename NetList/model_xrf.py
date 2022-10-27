@@ -36,6 +36,80 @@
 
 from part import PartModel, PartFactory
 
+class XRFTB(PartFactory):
+
+    ''' TYP RF B '''
+
+    def state(self, file):
+        file.fmt('''
+		|	uint64_t ram[1<<BUS_AW_WIDTH];
+		|''')
+
+    def sensitive(self):
+         yield "PIN_WE.pos()"
+         # yield "PIN_CS"
+         #yield "BUS_AW_SENSITIVE()"
+         #yield "BUS_AR_SENSITIVE()"
+         yield "PIN_RD.pos()"
+
+    def doit(self, file):
+        ''' The meat of the doit() function '''
+
+        super().doit(file)
+
+        file.fmt('''
+		|	unsigned adr = 0, b = 0, a2;
+		|	uint64_t data = 0;
+		|	const char *what = "?";
+		|
+		|	if (PIN_WE.posedge() && !PIN_CS=>) {
+		|		BUS_D_READ(data);
+		|		BUS_AW_READ(adr);
+		|		state->ram[adr] = data;
+		|		what = "W";
+		|	} else if (PIN_WE.posedge()) {
+		|		printf("TYP supressed write\\n");
+		|	} else {
+		|		BUS_B_READ(b);
+		|		if (b == 0x2c) {
+		|			BUS_CNT_READ(adr);
+		|		} else {
+		|			if (!(b & 0x20)) {
+		|				BUS_FRM_READ(adr);
+		|				adr <<= 5;
+		|			}
+		|			adr |= b & 0x10;
+		|			if ((b & 0x30) != 0x20) {
+		|				adr |= (b & 0xf);
+		|			} else if ((b & 0x3c) == 0x28) {
+		|				BUS_CSA_READ(a2);
+		|				adr |= a2;
+		|			} else {
+		|				BUS_TOS_READ(a2);
+		|				adr |= a2;
+		|			}
+		|				
+		|		}
+		|		data = state->ram[adr];
+		|		BUS_Q_WRITE(data);
+		|		what = "R";
+		|	}
+		|
+		|	TRACE(
+		|	    << what
+		|	    << " cs " << PIN_CS
+		|	    << " we^ " << PIN_WE.posedge()
+		|	    << " aw " << BUS_AW_TRACE()
+		|	    << " rd^ " << PIN_RD.posedge()
+		|	    << " frm " << BUS_FRM_TRACE()
+		|	    << " csa " << BUS_CSA_TRACE()
+		|	    << " tos " << BUS_TOS_TRACE()
+		|	    << " cnt " << BUS_CNT_TRACE()
+		|	    << " d " << BUS_Q_TRACE()
+		|	);
+		|''')
+
+
 class XRFVB(PartFactory):
 
     ''' VAL RF B '''
@@ -92,15 +166,17 @@ class XRFVB(PartFactory):
 		|		BUS_AW_READ(adr);
 		|		state->ram[adr] = data;
 		|		what = "w";
+		|	} else if (PIN_WE.posedge()) {
+		|		printf("VAL supressed write\\n");
 		|	}
 		|
 		|	TRACE(
 		|	    << what
 		|	    << " cs " << PIN_CS?
-		|	    << " we " << PIN_WE.posedge()
+		|	    << " we^ " << PIN_WE.posedge()
 		|	    << " aw " << BUS_AW_TRACE()
 		|	    << " dw " << BUS_D_TRACE()
-		|	    << " q1 " << PIN_RD.posedge()
+		|	    << " rd^ " << PIN_RD.posedge()
 		|	    << " b " << BUS_B_TRACE()
 		|	    << " frm " << BUS_FRM_TRACE()
 		|	    << " csa " << BUS_CSA_TRACE()
@@ -114,4 +190,5 @@ class XRFVB(PartFactory):
 def register(board):
     ''' Register component model '''
 
+    board.add_part("XRFTB", PartModel("XRFTB", XRFTB))
     board.add_part("XRFVB", PartModel("XRFVB", XRFVB))
