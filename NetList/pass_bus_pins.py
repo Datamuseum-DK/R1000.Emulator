@@ -68,8 +68,8 @@ class PassBusPins():
                 while nn_hi[-1].isdigit():
                     nn_i_hi = nn_hi[-1] + nn_i_hi
                     nn_hi = nn_hi[:-1]
+                print("BUSPINS", comp, nn_lo, nn_i_lo, "…", nn_i_hi, nn_lo)
                 assert nn_lo == nn_hi
-                print("BUSPINS", comp, nn_lo, nn_i_lo, "…", nn_i_hi)
                 for idx, pin_no in enumerate(range(int(n_lo), int(n_hi) + 1)):
                     net = board.nets.get(nn_lo + str(pin_no))
                     assert net
