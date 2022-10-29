@@ -71,8 +71,15 @@ class XRFTB(PartFactory):
 		|		printf("TYP supressed write\\n");
 		|	} else {
 		|		BUS_B_READ(b);
-		|		if (b == 0x2c) {
+		|		if (b == 0x29 && PIN_TRCV=>) {
+		|			BUS_TYP_READ(data);
+		|			data ^= BUS_TYP_MASK;
+		|			what = "T";
+		|			next_trigger(PIN_WE.posedge_event() | PIN_RD.default_event() | BUS_TYP_EVENTS());
+		|		} else if (b == 0x2c) {
 		|			BUS_CNT_READ(adr);
+		|			data = state->ram[adr];
+		|			what = "C";
 		|		} else {
 		|			if (!(b & 0x20)) {
 		|				BUS_FRM_READ(adr);
@@ -88,11 +95,10 @@ class XRFTB(PartFactory):
 		|				BUS_TOS_READ(a2);
 		|				adr |= a2;
 		|			}
-		|				
+		|			data = state->ram[adr];
+		|			what = "R";
 		|		}
-		|		data = state->ram[adr];
 		|		BUS_Q_WRITE(data);
-		|		what = "R";
 		|	}
 		|
 		|	TRACE(
@@ -101,10 +107,13 @@ class XRFTB(PartFactory):
 		|	    << " we^ " << PIN_WE.posedge()
 		|	    << " aw " << BUS_AW_TRACE()
 		|	    << " rd^ " << PIN_RD.posedge()
+		|	    << " b " << BUS_B_TRACE()
 		|	    << " frm " << BUS_FRM_TRACE()
 		|	    << " csa " << BUS_CSA_TRACE()
 		|	    << " tos " << BUS_TOS_TRACE()
 		|	    << " cnt " << BUS_CNT_TRACE()
+		|	    << " trcv " << PIN_TRCV
+		|	    << " typ " << BUS_TYP_TRACE()
 		|	    << " d " << BUS_Q_TRACE()
 		|	);
 		|''')
@@ -152,11 +161,11 @@ class XRFVB(PartFactory):
 		|		} else if (b == 0x2c) {
 		|			BUS_CNT_READ(adr);
 		|		} else {
-		|			BUS_BTOS_READ(a2);
+		|			BUS_TOS_READ(a2);
 		|			adr |= a2;
 		|		}
 		|
-		|		data = state->ram[adr];
+		|		data = state->ram[adr] ^ BUS_Q_MASK;
 		|		BUS_Q_WRITE(data);
 		|		what = "r";
 		|	}
@@ -180,7 +189,7 @@ class XRFVB(PartFactory):
 		|	    << " b " << BUS_B_TRACE()
 		|	    << " frm " << BUS_FRM_TRACE()
 		|	    << " csa " << BUS_CSA_TRACE()
-		|	    << " btos " << BUS_BTOS_TRACE()
+		|	    << " btos " << BUS_TOS_TRACE()
 		|	    << " cnt " << BUS_CNT_TRACE()
 		|	    << " q " << BUS_Q_TRACE()
 		|	);

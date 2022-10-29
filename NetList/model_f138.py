@@ -72,7 +72,51 @@ class F138(PartFactory):
 		|	PIN_Y0_<=(adr != 0);
 		|''')
 
+class F154(PartFactory):
+
+    ''' F138 1-of-8 decoder/demultiplexer '''
+
+    def doit(self, file):
+        ''' The meat of the doit() function '''
+
+        super().doit(file)
+
+        file.fmt('''
+		|	unsigned adr;
+		|
+		|	BUS_S_READ(adr);
+		|	if (PIN_E1=> || PIN_E2=>)
+		|		adr |= 16;
+		|	TRACE(
+		|	    << " s "
+		|	    << BUS_S_TRACE()
+		|	    << " e1 "
+		|	    << PIN_E1?
+		|	    << " e2 "
+		|	    << PIN_E2?
+		|	    << " | "
+		|	    << std::hex << adr
+		|	);
+		|	PIN_Y15<=(adr != 15);
+		|	PIN_Y14<=(adr != 14);
+		|	PIN_Y13<=(adr != 13);
+		|	PIN_Y12<=(adr != 12);
+		|	PIN_Y11<=(adr != 11);
+		|	PIN_Y10<=(adr != 10);
+		|	PIN_Y9<=(adr != 9);
+		|	PIN_Y8<=(adr != 8);
+		|	PIN_Y7<=(adr != 7);
+		|	PIN_Y6<=(adr != 6);
+		|	PIN_Y5<=(adr != 5);
+		|	PIN_Y4<=(adr != 4);
+		|	PIN_Y3<=(adr != 3);
+		|	PIN_Y2<=(adr != 2);
+		|	PIN_Y1<=(adr != 1);
+		|	PIN_Y0<=(adr != 0);
+		|''')
+
 def register(board):
     ''' Register component model '''
 
     board.add_part("F138", PartModel("F138", F138))
+    board.add_part("F154", PartModel("F154", F154))
