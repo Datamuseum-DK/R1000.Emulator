@@ -75,7 +75,6 @@ class XRFTB(PartFactory):
 		|			BUS_TYP_READ(data);
 		|			data ^= BUS_TYP_MASK;
 		|			what = "T";
-		|			next_trigger(PIN_WE.posedge_event() | PIN_RD.default_event() | BUS_TYP_EVENTS());
 		|		} else if (b == 0x2c) {
 		|			BUS_CNT_READ(adr);
 		|			data = state->ram[adr];
@@ -140,7 +139,7 @@ class XRFVB(PartFactory):
         file.fmt('''
 		|	unsigned adr = 0, a2;
 		|	unsigned b = 0;
-		|	uint64_t data = 0;
+		|	uint64_t data = 0, val;
 		|	const char *what = "?";
 		|
 		|	if (!PIN_CS=>) {
@@ -153,6 +152,7 @@ class XRFVB(PartFactory):
 		|
 		|		adr |= b & 0x10;
 		|
+		|		what = "r";
 		|		if ((b & 0x30) != 0x20) {
 		|			adr |= b & 0x0f;
 		|		} else if ((b & 0x2c) == 0x28) {
@@ -160,14 +160,25 @@ class XRFVB(PartFactory):
 		|			adr |= a2;
 		|		} else if (b == 0x2c) {
 		|			BUS_CNT_READ(adr);
+		|			what = "c";
 		|		} else {
 		|			BUS_TOS_READ(a2);
 		|			adr |= a2;
 		|		}
 		|
-		|		data = state->ram[adr] ^ BUS_Q_MASK;
+		|		data = state->ram[adr];
+		|		if (!PIN_VALOE=>) {
+		|			BUS_VAL_READ(data);
+		|			data ^= BUS_VAL_MASK;
+		|			what = "v";
+		|		} else if (!PIN_GETLIT=>) {
+		|			BUS_VAL_READ(val);
+		|			val ^= BUS_VAL_MASK;
+		|			data &= 0xffffffffffffff00ULL;
+		|			data |= val & 0xffULL;
+		|			what = "l";
+		|		}
 		|		BUS_Q_WRITE(data);
-		|		what = "r";
 		|	}
 		|
 		|	if (PIN_WE.posedge() && !PIN_CS=>) {
@@ -181,16 +192,19 @@ class XRFVB(PartFactory):
 		|
 		|	TRACE(
 		|	    << what
-		|	    << " cs " << PIN_CS?
 		|	    << " we^ " << PIN_WE.posedge()
+		|	    << " cs " << PIN_CS?
 		|	    << " aw " << BUS_AW_TRACE()
-		|	    << " dw " << BUS_D_TRACE()
+		|	    << " d " << BUS_D_TRACE()
 		|	    << " rd^ " << PIN_RD.posedge()
 		|	    << " b " << BUS_B_TRACE()
+		|	    << " cnt " << BUS_CNT_TRACE()
 		|	    << " frm " << BUS_FRM_TRACE()
 		|	    << " csa " << BUS_CSA_TRACE()
-		|	    << " btos " << BUS_TOS_TRACE()
-		|	    << " cnt " << BUS_CNT_TRACE()
+		|	    << " tos " << BUS_TOS_TRACE()
+		|	    << " getlit " << PIN_GETLIT?
+		|	    << " valoe " << PIN_VALOE?
+		|	    << " val " << BUS_VAL_TRACE()
 		|	    << " q " << BUS_Q_TRACE()
 		|	);
 		|''')
