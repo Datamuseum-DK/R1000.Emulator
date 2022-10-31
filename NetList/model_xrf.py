@@ -36,6 +36,98 @@
 
 from part import PartModel, PartFactory
 
+class XRFTA(PartFactory):
+
+    ''' TYP RF A '''
+
+    def state(self, file):
+        file.fmt('''
+		|	uint64_t ram[1<<BUS_AW_WIDTH];
+		|	const char *what;
+		|''')
+
+    def extra(self, file):
+        super().extra(file)
+        file.fmt('''
+		|static const char *READING = "r";
+		|static const char *WRITING = "w";
+		|static const char *ZZZING = "z";
+		|''')
+
+    def sensitivex(self):
+         yield "PIN_WE"
+         yield "PIN_CS"
+         yield "PIN_RD.pos()"
+
+    def doit(self, file):
+        ''' The meat of the doit() function '''
+
+        super().doit(file)
+
+        file.fmt('''
+		|	unsigned adr = 0, a, a2;
+		|	uint64_t data = 0;
+		|
+		|	if (PIN_CS=>) {
+		|		if (state->what == READING) {
+		|			BUS_Q_Z();
+		|		} else if (state->what == WRITING) {
+		|			BUS_AW_READ(adr);
+		|			BUS_D_READ(data);
+		|			state->ram[adr] = data;
+		|		}
+		|		next_trigger(PIN_CS.negedge_event());
+		|		state->what = ZZZING;
+		|	} else if (!PIN_WE=>) {
+		|		if (state->what == READING)
+		|			BUS_Q_Z();
+		|		BUS_AW_READ(adr);
+		|		BUS_D_READ(data);
+		|		state->ram[adr] = data;
+		|		state->what = WRITING;
+		|	} else {
+		|		if (state->what == WRITING) {
+		|			BUS_AW_READ(adr);
+		|			BUS_D_READ(data);
+		|			state->ram[adr] = data;
+		|		}
+		|		adr = 0;
+		|		BUS_A_READ(a);
+		|		if (a == 0x2c) {
+		|			BUS_CNT_READ(adr);
+		|		} else {
+		|			if (!(a & 0x20)) {
+		|				BUS_FRM_READ(a2);
+		|				adr |= a2 << 5;
+		|			}
+		|			adr |= (a & 0x10);
+		|			if ((a & 0x30) == 0x20) {
+		|				BUS_TOS_READ(a2);
+		|				adr |= a2;
+		|			} else {
+		|				adr |= (a & 0xf);
+		|			}
+		|		}
+		|		data = state->ram[adr];
+		|		BUS_Q_WRITE(data);
+		|		state->what = READING;
+		|	}
+		|
+		|	TRACE(
+		|	   << state->what
+		|	   << " we " << PIN_WE?
+		|	   << " cs " << PIN_CS?
+		|	   << " aw " << BUS_AW_TRACE()
+		|	   << " rd " << PIN_RD?
+		|	   << " d " << BUS_D_TRACE()
+		|	   << " a " << BUS_A_TRACE()
+		|	   << " frm " << BUS_AW_TRACE()
+		|	   << " tos " << BUS_TOS_TRACE()
+		|	   << " q " << BUS_Q_TRACE()
+		|	);
+		|''')
+
+
 class XRFTB(PartFactory):
 
     ''' TYP RF B '''
@@ -47,9 +139,6 @@ class XRFTB(PartFactory):
 
     def sensitive(self):
          yield "PIN_WE.pos()"
-         # yield "PIN_CS"
-         #yield "BUS_AW_SENSITIVE()"
-         #yield "BUS_AR_SENSITIVE()"
          yield "PIN_RD.pos()"
 
     def doit(self, file):
@@ -68,7 +157,7 @@ class XRFTB(PartFactory):
 		|		state->ram[adr] = data;
 		|		what = "W";
 		|	} else if (PIN_WE.posedge()) {
-		|		printf("TYP supressed write\\n");
+		|		printf("TYP.B supressed write\\n");
 		|	} else {
 		|		BUS_B_READ(b);
 		|		if (b == 0x29 && PIN_TRCV=>) {
@@ -113,7 +202,7 @@ class XRFTB(PartFactory):
 		|	    << " cnt " << BUS_CNT_TRACE()
 		|	    << " trcv " << PIN_TRCV
 		|	    << " typ " << BUS_TYP_TRACE()
-		|	    << " d " << BUS_Q_TRACE()
+		|	    << " q " << BUS_Q_TRACE()
 		|	);
 		|''')
 
@@ -167,7 +256,7 @@ class XRFVB(PartFactory):
 		|		}
 		|
 		|		data = state->ram[adr];
-		|		if (!PIN_VALOE=>) {
+		|		if (b == 0x29 && (PIN_LHIT=> || PIN_VALDRV)) {
 		|			BUS_VAL_READ(data);
 		|			data ^= BUS_VAL_MASK;
 		|			what = "v";
@@ -203,7 +292,8 @@ class XRFVB(PartFactory):
 		|	    << " csa " << BUS_CSA_TRACE()
 		|	    << " tos " << BUS_TOS_TRACE()
 		|	    << " getlit " << PIN_GETLIT?
-		|	    << " valoe " << PIN_VALOE?
+		|	    << " lhit " << PIN_LHIT?
+		|	    << " valdrv " << PIN_VALDRV?
 		|	    << " val " << BUS_VAL_TRACE()
 		|	    << " q " << BUS_Q_TRACE()
 		|	);
@@ -213,5 +303,6 @@ class XRFVB(PartFactory):
 def register(board):
     ''' Register component model '''
 
+    board.add_part("XRFTA", PartModel("XRFTA", XRFTA))
     board.add_part("XRFTB", PartModel("XRFTB", XRFTB))
     board.add_part("XRFVB", PartModel("XRFVB", XRFVB))
