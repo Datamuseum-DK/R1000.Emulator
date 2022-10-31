@@ -22,13 +22,16 @@ sc_boards ioc fiu mem0 seq typ val
 
 cli 'sc trace DI*PROC 0x14'
 # cli 'sc trace TYP.*DI*PROC 0x16'
-cli 'sc trace SEQ.*DSPDV 0x1'
-cli 'sc trace IOC.*DUIRG 0x1'
-cli 'sc trace SEQ.*DUIRG 0x1'
-cli 'sc trace FIU.*DUIRG 0x1'
-cli 'sc trace TYP.*DUIRG 0x1'
-cli 'sc trace VAL.*DUIRG 0x1'
-cli 'sc trace MEM.*DFSM 0x1'
+# cli 'sc trace TYP.*ARAM 0x1'
+if false ; then
+	cli 'sc trace SEQ.*DSPDV 0x1'
+	cli 'sc trace IOC.*DUIRG 0x1'
+	cli 'sc trace SEQ.*DUIRG 0x1'
+	cli 'sc trace FIU.*DUIRG 0x1'
+	cli 'sc trace TYP.*DUIRG 0x1'
+	cli 'sc trace VAL.*DUIRG 0x1'
+	cli 'sc trace MEM.*DFSM 0x1'
+fi
 cli 'sc quota add 5000'
 cli 'sc quota exit'
 

@@ -475,7 +475,7 @@ static void v_matchproto_(rpn_op_f)
 rpn_pace(struct rpn *rpn)
 {
 	(void)rpn;
-	usleep(10000);
+	usleep(15000);
 }
 
 void

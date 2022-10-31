@@ -93,8 +93,18 @@ class XRFTA(PartFactory):
 		|		}
 		|		adr = 0;
 		|		BUS_A_READ(a);
-		|		if (a == 0x2c) {
+		|		if (a == 0x28) {
+		|			BUS_CNT_READ(data);
+		|			data |= (BUS_Q_MASK & ~0x3ffULL);
+		|		} else if (a == 0x29) {
+		|			data = BUS_Q_MASK;
+		|		} else if (a == 0x2a) {
+		|			data = BUS_Q_MASK;
+		|		} else if (a == 0x2b) {
+		|			data = BUS_Q_MASK;
+		|		} else if (a == 0x2c) {
 		|			BUS_CNT_READ(adr);
+		|			data = state->ram[adr];
 		|		} else {
 		|			if (!(a & 0x20)) {
 		|				BUS_FRM_READ(a2);
@@ -107,8 +117,8 @@ class XRFTA(PartFactory):
 		|			} else {
 		|				adr |= (a & 0xf);
 		|			}
+		|			data = state->ram[adr];
 		|		}
-		|		data = state->ram[adr];
 		|		BUS_Q_WRITE(data);
 		|		state->what = READING;
 		|	}
