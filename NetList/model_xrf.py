@@ -70,7 +70,6 @@ class XRFTA(PartFactory):
 		|
 		|	if (PIN_CS=>) {
 		|		if (state->what == READING) {
-		|			BUS_Q_Z();
 		|		} else if (state->what == WRITING) {
 		|			BUS_AW_READ(adr);
 		|			BUS_D_READ(data);
@@ -79,8 +78,6 @@ class XRFTA(PartFactory):
 		|		next_trigger(PIN_CS.negedge_event());
 		|		state->what = ZZZING;
 		|	} else if (!PIN_WE=>) {
-		|		if (state->what == READING)
-		|			BUS_Q_Z();
 		|		BUS_AW_READ(adr);
 		|		BUS_D_READ(data);
 		|		state->ram[adr] = data;
