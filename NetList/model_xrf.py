@@ -43,21 +43,12 @@ class XRFTA(PartFactory):
     def state(self, file):
         file.fmt('''
 		|	uint64_t ram[1<<BUS_AW_WIDTH];
-		|	const char *what;
-		|''')
-
-    def extra(self, file):
-        super().extra(file)
-        file.fmt('''
-		|static const char *READING = "r";
-		|static const char *WRITING = "w";
-		|static const char *ZZZING = "z";
 		|''')
 
     def sensitivex(self):
-         yield "PIN_WE"
-         yield "PIN_CS"
+         yield "PIN_WE.pos()"
          yield "PIN_RD.pos()"
+         yield "BUS_B_SENSITIVE()"
 
     def doit(self, file):
         ''' The meat of the doit() function '''
@@ -68,26 +59,14 @@ class XRFTA(PartFactory):
 		|	unsigned adr = 0, a, a2;
 		|	uint64_t data = 0;
 		|
-		|	if (PIN_CS=>) {
-		|		if (state->what == READING) {
-		|		} else if (state->what == WRITING) {
-		|			BUS_AW_READ(adr);
-		|			BUS_D_READ(data);
-		|			state->ram[adr] = data;
-		|		}
-		|		next_trigger(PIN_CS.negedge_event());
-		|		state->what = ZZZING;
-		|	} else if (!PIN_WE=>) {
-		|		BUS_AW_READ(adr);
+		|	if (PIN_WE.posedge() && !PIN_CS=>) {
 		|		BUS_D_READ(data);
+		|		BUS_AW_READ(adr);
 		|		state->ram[adr] = data;
-		|		state->what = WRITING;
-		|	} else {
-		|		if (state->what == WRITING) {
-		|			BUS_AW_READ(adr);
-		|			BUS_D_READ(data);
-		|			state->ram[adr] = data;
-		|		}
+		|	} else if (PIN_WE.posedge()) {
+		|		printf("TYP.A supressed write\\n");
+		|	}
+		|	{
 		|		adr = 0;
 		|		BUS_A_READ(a);
 		|		if (a == 0x28) {
@@ -117,11 +96,9 @@ class XRFTA(PartFactory):
 		|			data = state->ram[adr];
 		|		}
 		|		BUS_Q_WRITE(data);
-		|		state->what = READING;
 		|	}
 		|
 		|	TRACE(
-		|	   << state->what
 		|	   << " we " << PIN_WE?
 		|	   << " cs " << PIN_CS?
 		|	   << " aw " << BUS_AW_TRACE()
