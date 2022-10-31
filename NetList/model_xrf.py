@@ -45,10 +45,10 @@ class XRFTA(PartFactory):
 		|	uint64_t ram[1<<BUS_AW_WIDTH];
 		|''')
 
-    def sensitivex(self):
+    def sensitive(self):
          yield "PIN_WE.pos()"
          yield "PIN_RD.pos()"
-         yield "BUS_B_SENSITIVE()"
+         yield "BUS_A_SENSITIVE()"
 
     def doit(self, file):
         ''' The meat of the doit() function '''
@@ -102,9 +102,10 @@ class XRFTA(PartFactory):
 		|	   << " we " << PIN_WE?
 		|	   << " cs " << PIN_CS?
 		|	   << " aw " << BUS_AW_TRACE()
-		|	   << " rd " << PIN_RD?
 		|	   << " d " << BUS_D_TRACE()
+		|	   << " rd " << PIN_RD?
 		|	   << " a " << BUS_A_TRACE()
+		|	   << " cnt " << BUS_CNT_TRACE()
 		|	   << " frm " << BUS_AW_TRACE()
 		|	   << " tos " << BUS_TOS_TRACE()
 		|	   << " q " << BUS_Q_TRACE()
