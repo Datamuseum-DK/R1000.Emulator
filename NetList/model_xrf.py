@@ -66,37 +66,35 @@ class XRFTA(PartFactory):
 		|	} else if (PIN_WE.posedge()) {
 		|		printf("TYP.A supressed write\\n");
 		|	}
-		|	{
-		|		adr = 0;
-		|		BUS_A_READ(a);
-		|		if (a == 0x28) {
-		|			BUS_CNT_READ(data);
-		|			data |= (BUS_Q_MASK & ~0x3ffULL);
-		|		} else if (a == 0x29) {
-		|			data = BUS_Q_MASK;
-		|		} else if (a == 0x2a) {
-		|			data = BUS_Q_MASK;
-		|		} else if (a == 0x2b) {
-		|			data = BUS_Q_MASK;
-		|		} else if (a == 0x2c) {
-		|			BUS_CNT_READ(adr);
-		|			data = state->ram[adr];
-		|		} else {
-		|			if (!(a & 0x20)) {
-		|				BUS_FRM_READ(a2);
-		|				adr |= a2 << 5;
-		|			}
-		|			adr |= (a & 0x10);
-		|			if ((a & 0x30) == 0x20) {
-		|				BUS_TOS_READ(a2);
-		|				adr |= a2;
-		|			} else {
-		|				adr |= (a & 0xf);
-		|			}
-		|			data = state->ram[adr];
+		|	adr = 0;
+		|	BUS_A_READ(a);
+		|	if (a == 0x28) {
+		|		BUS_CNT_READ(data);
+		|		data |= (BUS_Q_MASK & ~0x3ffULL);
+		|	} else if (a == 0x29) {
+		|		data = BUS_Q_MASK;
+		|	} else if (a == 0x2a) {
+		|		data = BUS_Q_MASK;
+		|	} else if (a == 0x2b) {
+		|		data = BUS_Q_MASK;
+		|	} else if (a == 0x2c) {
+		|		BUS_CNT_READ(adr);
+		|		data = state->ram[adr];
+		|	} else {
+		|		if (!(a & 0x20)) {
+		|			BUS_FRM_READ(a2);
+		|			adr |= a2 << 5;
 		|		}
-		|		BUS_Q_WRITE(data);
+		|		adr |= (a & 0x10);
+		|		if ((a & 0x30) == 0x20) {
+		|			BUS_TOS_READ(a2);
+		|			adr |= a2;
+		|		} else {
+		|			adr |= (a & 0xf);
+		|		}
+		|		data = state->ram[adr];
 		|	}
+		|	BUS_Q_WRITE(data);
 		|
 		|	TRACE(
 		|	   << " we " << PIN_WE?
@@ -190,6 +188,105 @@ class XRFTB(PartFactory):
 		|	    << " q " << BUS_Q_TRACE()
 		|	);
 		|''')
+
+class XRFVA(PartFactory):
+
+    ''' VAL RF A '''
+
+    def state(self, file):
+        file.fmt('''
+		|	uint64_t ram[1<<BUS_AW_WIDTH];
+		|	uint64_t last;
+		|	const char *what;
+		|''')
+
+    def sensitive(self):
+         yield "PIN_CS"
+         yield "PIN_WE"
+         yield "PIN_RD"
+         yield "BUS_A_SENSITIVE()"
+
+    def extra(self, file):
+        super().extra(file)
+        file.fmt('''
+		|static const char *READING = "r";
+		|static const char *WRITING = "w";
+		|static const char *ZZZING = "z";
+		|''')
+
+    def doit(self, file):
+        ''' The meat of the doit() function '''
+
+        super().doit(file)
+
+        file.fmt('''
+		|	unsigned adr = 0, a, a2;
+		|	uint64_t data = 0;
+		|
+		|	if (PIN_CS=>) {
+		|		if (state->what == READING) {
+		|			BUS_Q_Z();
+		|		} else if (state->what == WRITING) {
+		|			BUS_AW_READ(adr);
+		|			BUS_D_READ(data);
+		|			state->ram[adr] = data;
+		|		}
+		|		next_trigger(PIN_CS.negedge_event());
+		|		state->what = ZZZING;
+		|	} else if (!PIN_WE=>) {
+		|		if (state->what == READING)
+		|			BUS_Q_Z();
+		|		BUS_D_READ(data);
+		|		BUS_AW_READ(adr);
+		|		state->ram[adr] = data;
+		|		state->what = WRITING;
+		|	} else {
+		|		if (state->what == WRITING) {
+		|			BUS_AW_READ(adr);
+		|			BUS_D_READ(data);
+		|			state->ram[adr] = data;
+		|		}
+		|		BUS_A_READ(a);
+		|		if (a == 0x2c) {
+		|			BUS_CNT_READ(adr);
+		|			data = state->ram[adr];
+		|		} else {
+		|			adr = 0;
+		|			if (!(a & 0x20)) {
+		|				BUS_FRM_READ(adr);
+		|				adr <<= 5;
+		|			}
+		|			adr |= (a & 0x10);
+		|			if ((a & 0x30) == 0x20) {
+		|				BUS_TOS_READ(a2);
+		|				adr |= a2;
+		|			} else {
+		|				adr |= (a & 0x0f);
+		|			}
+		|			data = state->ram[adr];
+		|		}
+		|		if (state->what != READING || data != state->last) {
+		|			BUS_Q_WRITE(data);
+		|			state->last = data;
+		|		}
+		|		state->what = READING;
+		|	}
+		|
+		|	TRACE(
+		|	    << state->what
+		|	    << " cs " << PIN_CS?
+		|	    << " we " << PIN_WE?
+		|	    << " aw " << BUS_AW_TRACE()
+		|	    << " d " << BUS_D_TRACE()
+		|	    << " rd " << PIN_RD?
+		|	    << " a " << BUS_A_TRACE()
+		|	    << " cnt " << BUS_CNT_TRACE()
+		|	    << " frm " << BUS_FRM_TRACE()
+		|	    << " tos " << BUS_TOS_TRACE()
+		|	    << " q " << BUS_Q_TRACE()
+		|	);
+		|''')
+
 
 
 class XRFVB(PartFactory):
@@ -290,4 +387,5 @@ def register(board):
 
     board.add_part("XRFTA", PartModel("XRFTA", XRFTA))
     board.add_part("XRFTB", PartModel("XRFTB", XRFTB))
+    board.add_part("XRFVA", PartModel("XRFVA", XRFVA))
     board.add_part("XRFVB", PartModel("XRFVB", XRFVB))
