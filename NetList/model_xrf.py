@@ -223,9 +223,9 @@ class XRFVA(PartFactory):
 		|	unsigned adr = 0, a, a2;
 		|	uint64_t data = 0;
 		|
+		|	BUS_A_READ(a);
 		|	if (PIN_CS=>) {
 		|		if (state->what == READING) {
-		|			BUS_Q_Z();
 		|		} else if (state->what == WRITING) {
 		|			BUS_AW_READ(adr);
 		|			BUS_D_READ(data);
@@ -234,8 +234,6 @@ class XRFVA(PartFactory):
 		|		next_trigger(PIN_CS.negedge_event());
 		|		state->what = ZZZING;
 		|	} else if (!PIN_WE=>) {
-		|		if (state->what == READING)
-		|			BUS_Q_Z();
 		|		BUS_D_READ(data);
 		|		BUS_AW_READ(adr);
 		|		state->ram[adr] = data;
@@ -246,7 +244,6 @@ class XRFVA(PartFactory):
 		|			BUS_D_READ(data);
 		|			state->ram[adr] = data;
 		|		}
-		|		BUS_A_READ(a);
 		|		if (a == 0x2c) {
 		|			BUS_CNT_READ(adr);
 		|			data = state->ram[adr];
@@ -271,6 +268,34 @@ class XRFVA(PartFactory):
 		|		}
 		|		state->what = READING;
 		|	}
+		|	BUS_A_READ(a);
+		|	if (a == 0x28) {
+		|		PIN_AOE<=(false);
+		|		PIN_LOOPOE<=(false);
+		|		PIN_MULTOE<=(true);
+		|		PIN_ZEROOE<=(true);
+		|	} else if (a == 0x29) {
+		|		PIN_AOE<=(false);
+		|		PIN_LOOPOE<=(true);
+		|		PIN_MULTOE<=(false);
+		|		PIN_ZEROOE<=(true);
+		|	} else if (a == 0x2a) {
+		|		PIN_AOE<=(false);
+		|		PIN_LOOPOE<=(true);
+		|		PIN_MULTOE<=(true);
+		|		PIN_ZEROOE<=(false);
+		|	} else if (a == 0x2b) {
+		|		PIN_AOE<=(false);
+		|		PIN_LOOPOE<=(true);
+		|		PIN_MULTOE<=(true);
+		|		PIN_ZEROOE<=(true);
+		|	} else {
+		|		PIN_AOE<=(true);
+		|		PIN_LOOPOE<=(true);
+		|		PIN_MULTOE<=(true);
+		|		PIN_ZEROOE<=(true);
+		|	}
+		|	
 		|
 		|	TRACE(
 		|	    << state->what
