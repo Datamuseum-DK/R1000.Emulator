@@ -270,27 +270,27 @@ class XRFVA(PartFactory):
 		|	}
 		|	BUS_A_READ(a);
 		|	if (a == 0x28) {
-		|		PIN_AOE<=(false);
+		|		PIN_AOE<=(true);
 		|		PIN_LOOPOE<=(false);
 		|		PIN_MULTOE<=(true);
 		|		PIN_ZEROOE<=(true);
 		|	} else if (a == 0x29) {
-		|		PIN_AOE<=(false);
+		|		PIN_AOE<=(true);
 		|		PIN_LOOPOE<=(true);
 		|		PIN_MULTOE<=(false);
 		|		PIN_ZEROOE<=(true);
 		|	} else if (a == 0x2a) {
-		|		PIN_AOE<=(false);
+		|		PIN_AOE<=(true);
 		|		PIN_LOOPOE<=(true);
 		|		PIN_MULTOE<=(true);
 		|		PIN_ZEROOE<=(false);
 		|	} else if (a == 0x2b) {
-		|		PIN_AOE<=(false);
+		|		PIN_AOE<=(true);
 		|		PIN_LOOPOE<=(true);
 		|		PIN_MULTOE<=(true);
 		|		PIN_ZEROOE<=(true);
 		|	} else {
-		|		PIN_AOE<=(true);
+		|		PIN_AOE<=(false);
 		|		PIN_LOOPOE<=(true);
 		|		PIN_MULTOE<=(true);
 		|		PIN_ZEROOE<=(true);
