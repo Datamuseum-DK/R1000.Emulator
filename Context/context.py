@@ -67,10 +67,10 @@ def main():
     for i, ctx in sorted(lines):
         print(
             "%12d" % i,
-            "%7.3f" % (i / nact),
+            "%7.4f" % (i / nact),
             ctx
         )
-    print("%12d" % nact, "%7.3f" % (nact / nact), "Total")
+    print("%12d" % nact, "%7.4f" % (nact / nact), "Total")
 
 if __name__ == "__main__":
     main()
