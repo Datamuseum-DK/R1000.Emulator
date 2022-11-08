@@ -275,6 +275,16 @@ mem32_board(struct diagproc_exp_priv *dep, uint8_t length, int board)
 		return(1);
 	}
 
+        if (length == 0x23 && dep->ram[0x10] == 0x19) {
+		sc_tracef(dep->name, "Exp set_hit.m32");
+		return(1);
+	}
+
+        if (length == 0x0d && dep->ram[0x10] == 0x18) {
+		sc_tracef(dep->name, "Exp clear_hits.m32");
+		return(1);
+	}
+
 	if (length == 0x41 && dep->ram[0x10] == 0x22) {
 		sc_tracef(dep->name, "Exp clear_tagstore.m32");
 
