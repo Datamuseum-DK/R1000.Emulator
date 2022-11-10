@@ -220,7 +220,10 @@ Explain_Diag_Byte(struct diagproc_priv *dp, const uint8_t serbuf[2])
 #define BRD(upper, lower, nbr) case nbr: VSB_cat(dp->vsb, " " #upper); break;
 		BOARD_TABLE(BRD)
 #undef BRD
-		default: WRONG();
+		default:
+			fprintf(stderr, "UNKNOWN DIAG BOARD 0x%x\n", serbuf[1]);
+			VSB_printf(dp->vsb, " BRD%d", serbuf[1] & 0x1f);
+			break;
 		}
 	}
 	AZ(VSB_finish(dp->vsb));
