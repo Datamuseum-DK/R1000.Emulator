@@ -1,20 +1,28 @@
 #ifndef DIAG_DIAG_H
 #define DIAG_DIAG_H
 
+// See FS_0.M200 at 0x18479
 #define BOARD_TABLE(macro) \
+	macro(IOA, seq, 0) \
+	macro(WIDGET, seq, 1) \
 	macro(SEQ, seq, 2) \
 	macro(FIU, fiu, 3) \
 	macro(IOC, ioc, 4) \
-	macro(ANY, any, 5) \
+	macro(ALL, any, 5) \
 	macro(TYP, typ, 6) \
 	macro(VAL, val, 7) \
+	macro(ALLMEM, val, 8) \
+	macro(FIUMEM, val, 9) \
+	macro(TVSQ, val, 10) \
+	macro(NOTMEM, val, 11) \
 	macro(MEM0, mem0, 12) \
 	macro(MEM1, mem1, 13) \
 	macro(MEM2, mem2, 14) \
 	macro(MEM3, mem3, 15)
 
+// See FS_0.M200 at 0x18519
 #define RESPONSE_TABLE(macro) \
-	macro(1, OK) \
+	macro(1, DONE) \
 	macro(2, LOOPING) \
 	macro(3, PAUSED) \
 	macro(4, ERROR) \

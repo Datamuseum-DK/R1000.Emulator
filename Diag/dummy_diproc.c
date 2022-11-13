@@ -168,7 +168,7 @@ void v_matchproto_(cli_func_f)
 cli_diproc_dummy(struct cli *cli)
 {
 	int i;
-	unsigned response = (int)DIPROC_RESPONSE_OK;
+	unsigned response = (int)DIPROC_RESPONSE_DONE;
 
 	if (cli->help || cli->ac < 2) {
 		Cli_Usage(cli, "[-<status>] <board> …",
