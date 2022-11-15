@@ -43,8 +43,11 @@ class XLRULOGIC(PartFactory):
 
     def state(self, file):
         file.fmt('''
-		|	unsigned qd;	// PAR6,49,50,MOD,LRU0,LRU1,LRU2,LRU3
-		|	unsigned hd;	// SOIL,LPAR,LRU0,LRU1,LRU2,LRU3,PAR6,HIT
+		|	unsigned qd;		// PAR6,49,50,MOD,LRU0,LRU1,LRU2,LRU3
+		|	unsigned hd;		// SOIL,LPAR,LRU0,LRU1,LRU2,LRU3,PAR6,HIT
+		|	unsigned lrud;		// LRU#~D
+		|	unsigned lruupd;	// LRU#~UPD
+		|	unsigned luxx;		// LRU#~D,PAR~D,PAR~UPD,LRU#~UPD
 		|''')
 
     def sensitive(self):
@@ -71,6 +74,20 @@ class XLRULOGIC(PartFactory):
 		|	}
 		|	PIN_HIT<=(hit);
 		|
+		|	if (PIN_CLK.posedge()) {
+		|		// LUXXPAL
+		|		bool mruisf = PIN_MRUIS_F=>;
+		|		state->luxx = 0;
+		|		if (state->hd & 0x01) {
+		|			state->lrud = (state->hd & 0x3c) >> 2;
+		|		} else if (mruisf) {
+		|			state->lrud = 0xf;
+		|		} else {
+		|			state->lrud = 0x7;
+		|		}
+		|		state->luxx = ((~state->lrud) & 0xf) << 6;
+		|	}
+		|
 		|	if (PIN_CLK.negedge()) {
 		|		state->hd = (state->qd & 0xf) << 2;
 		|		state->hd |= (state->qd >> 7) << 1;
@@ -92,10 +109,16 @@ class XLRULOGIC(PartFactory):
 		|	unsigned tmp = state->qd & 0x0f;
 		|	tmp |= state->hd << 4;
 		|	tmp |= (state->qd & 0x70) << 8;
+		|	tmp |= state->luxx << 15;
 		|	BUS_TMP_WRITE(tmp);
 		|
 		|	BUS_TAG_Z();
 		|	BUS_HITLRU_Z();
+		|	TRACE(
+		|	    << " lrud " << std::hex << state->lrud
+		|	    << " luxx " << std::hex << state->luxx
+		|	    << " tmp " << std::hex << tmp
+		|	);
 		|''')
 
 def register(board):
