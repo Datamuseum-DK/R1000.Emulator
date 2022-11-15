@@ -56,6 +56,7 @@ class XLRULOGIC(PartFactory):
         yield "PIN_NMATCH"
         yield "PIN_OMATCH"
         yield "PIN_LOGQ"
+        yield "BUS_LHIT_SENSITIVE()"
 
     def doit(self, file):
         ''' The meat of the doit() function '''
@@ -80,13 +81,25 @@ class XLRULOGIC(PartFactory):
 		|		state->luxx = 0;
 		|		if (state->hd & 0x01) {
 		|			state->lrud = (state->hd & 0x3c) >> 2;
+		|			state->lruupd = ( (state->hd & 0x3c) >> 2) - 1;
 		|		} else if (mruisf) {
 		|			state->lrud = 0xf;
+		|			state->lruupd = 0xf;
 		|		} else {
 		|			state->lrud = 0x7;
+		|			state->lruupd = 0x7;
 		|		}
+		|
 		|		state->luxx = ((~state->lrud) & 0xf) << 6;
+		|		state->luxx = ((~state->lruupd) & 0xf);
 		|	}
+		|
+		|	unsigned lhit;
+		|	BUS_LHIT_READ(lhit);
+		|	if ((0x0f ^ state->lrud) < lhit)
+		|		state->luxx |= 1 << 10;
+		|	else
+		|		state->luxx &= ~(1 << 10);
 		|
 		|	if (PIN_CLK.negedge()) {
 		|		state->hd = (state->qd & 0xf) << 2;
@@ -116,6 +129,7 @@ class XLRULOGIC(PartFactory):
 		|	BUS_HITLRU_Z();
 		|	TRACE(
 		|	    << " lrud " << std::hex << state->lrud
+		|	    << " lruupd " << std::hex << state->lruupd
 		|	    << " luxx " << std::hex << state->luxx
 		|	    << " tmp " << std::hex << tmp
 		|	);
