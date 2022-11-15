@@ -95,6 +95,7 @@ import model_xfifo
 import model_xhash
 import model_xiopram
 import model_xlat
+import model_xlrulogic
 import model_xmux_1
 import model_xpar64
 import model_xreg
@@ -175,6 +176,7 @@ def register(where):
     model_xhash.register(where)
     model_xiopram.register(where)
     model_xlat.register(where)
+    model_xlrulogic.register(where)
     model_xmux_1.register(where)
     model_xpar64.register(where)
     model_xreg.register(where)
