@@ -48,6 +48,8 @@ class XLRULOGIC(PartFactory):
 		|	unsigned lrud;		// LRU#~D
 		|	unsigned lruupd;	// LRU#~UPD
 		|	unsigned luxx;		// LRU#~D,PAR~D,PAR~UPD,LRU#~UPD
+		|	bool par_d;
+		|	bool par_upd;
 		|''')
 
     def sensitive(self):
@@ -95,8 +97,8 @@ class XLRULOGIC(PartFactory):
 		|			state->lruupd = 0x7;
 		|		}
 		|
-		|		state->luxx |= ((~state->lrud) & 0xf) << 6;
-		|		state->luxx |= ((~state->lruupd) & 0xf);
+		|		// state->luxx |= ((~state->lrud) & 0xf) << 6;
+		|		// state->luxx |= ((~state->lruupd) & 0xf);
 		|
 		|		unsigned par_d = state->hd >> 1; // PAR6
 		|		if (!(state->hd & 0x01)) {
@@ -105,8 +107,11 @@ class XLRULOGIC(PartFactory):
 		|			if (mruisf) par_d++;
 		|			par_d += 1;
 		|		}
+		|		state->par_d = !(par_d & 1);
+		|#if 0
 		|		if (!(par_d & 1))
 		|			state->luxx |= 1 << 5;
+		|#endif
 		|
 		|		unsigned par_upd = 0;
 		|		if (!(state->hd & 0x01)) {
@@ -138,16 +143,34 @@ class XLRULOGIC(PartFactory):
 		|				break;
 		|			}
 		|		}
+		|		state->par_upd = !(par_upd & 1);
+		|#if 0
 		|		if (!(par_upd & 1))
 		|			state->luxx |= 1 << 4;
+		|#endif
 		|
 		|	}
 		|	tmp |= state->luxx << 15;
 		|
 		|	unsigned lhit;
 		|	BUS_LHIT_READ(lhit);
-		|	if ((0x0f ^ state->lrud) < lhit)
-		|		tmp |= 1 << 25;
+		|	if ((0x0f ^ state->lrud) < lhit) {
+		|		// tmp |= 1 << 25;
+		|		tmp |= ((~state->lruupd) & 0xf) << 15;
+		|		if (state->par_upd)
+		|			tmp |= 1 << 19;
+		|	} else {
+		|		tmp |= ((~state->lrud) & 0xf) << 15;
+		|		if (state->par_d)
+		|			tmp |= 1 << 19;
+		|	}
+		|
+		|#if 0
+		|	if (state->par_d)
+		|		tmp |= 1 << 20;
+		|	if (state->par_upd)
+		|		tmp |= 1 << 19;
+		|#endif
 		|
 		|	if (PIN_CLK.negedge()) {
 		|		state->hd = (state->qd & 0xf) << 2;
