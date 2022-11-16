@@ -98,15 +98,49 @@ class XLRULOGIC(PartFactory):
 		|		state->luxx |= ((~state->lrud) & 0xf) << 6;
 		|		state->luxx |= ((~state->lruupd) & 0xf);
 		|
-		|		unsigned par = 0;
-		|		par = state->hd >> 1; // PAR6
+		|		unsigned par_d = state->hd >> 1; // PAR6
 		|		if (!(state->hd & 0x01)) {
-		|			if (state->hd & 0x80) par++;	// SOIL
-		|			if (state->hd & 0x40) par++;	// LPAR
-		|			if (mruisf) par++;
+		|			if (state->hd & 0x80) par_d++;	// SOIL
+		|			if (state->hd & 0x40) par_d++;	// LPAR
+		|			if (mruisf) par_d++;
+		|			par_d += 1;
 		|		}
-		|		if (!(par & 1))
-		|			state->luxx |= 0 << 5;
+		|		if (!(par_d & 1))
+		|			state->luxx |= 1 << 5;
+		|
+		|		unsigned par_upd = 0;
+		|		if (!(state->hd & 0x01)) {
+		|			if (state->hd & 0x02) par_upd++;	// PAR6
+		|			if (state->hd & 0x80) par_upd++;	// SOIL
+		|			if (state->hd & 0x40) par_upd++;	// LPAR
+		|			if (mruisf) par_upd++;
+		|			par_upd += 1;
+		|		} else {
+		|			switch(lru) {
+		|			case 0x2:
+		|			case 0x6:
+		|			case 0x8:
+		|			case 0xa:
+		|			case 0xe:
+		|				par_upd = state->hd >> 1;
+		|				break;
+		|			case 0x1:
+		|			case 0x3:
+		|			case 0x4:
+		|			case 0x5:
+		|			case 0x7:
+		|			case 0x9:
+		|			case 0xb:
+		|			case 0xc:
+		|			case 0xd:
+		|			case 0xf:
+		|				par_upd = 1 ^ (state->hd >> 1);
+		|				break;
+		|			}
+		|		}
+		|		if (!(par_upd & 1))
+		|			state->luxx |= 1 << 4;
+		|
 		|	}
 		|	tmp |= state->luxx << 15;
 		|
