@@ -65,6 +65,7 @@ class XLRULOGIC(PartFactory):
 
         file.fmt('''
 		|	bool hit;
+		|	unsigned tmp = 0;
 		|
 		|	if (PIN_HITQ=>) {
 		|		hit = false;
@@ -78,10 +79,14 @@ class XLRULOGIC(PartFactory):
 		|	if (PIN_CLK.posedge()) {
 		|		// LUXXPAL
 		|		bool mruisf = PIN_MRUIS_F=>;
+		|		unsigned lru = (state->hd & 0x3c) >> 2;
 		|		state->luxx = 0;
 		|		if (state->hd & 0x01) {
-		|			state->lrud = (state->hd & 0x3c) >> 2;
-		|			state->lruupd = ( (state->hd & 0x3c) >> 2) - 1;
+		|			state->lrud = lru;
+		|			if (lru > 1)
+		|				state->lruupd = lru - 1;
+		|			else
+		|				state->lruupd = 0x0;
 		|		} else if (mruisf) {
 		|			state->lrud = 0xf;
 		|			state->lruupd = 0xf;
@@ -90,16 +95,25 @@ class XLRULOGIC(PartFactory):
 		|			state->lruupd = 0x7;
 		|		}
 		|
-		|		state->luxx = ((~state->lrud) & 0xf) << 6;
-		|		state->luxx = ((~state->lruupd) & 0xf);
+		|		state->luxx |= ((~state->lrud) & 0xf) << 6;
+		|		state->luxx |= ((~state->lruupd) & 0xf);
+		|
+		|		unsigned par = 0;
+		|		par = state->hd >> 1; // PAR6
+		|		if (!(state->hd & 0x01)) {
+		|			if (state->hd & 0x80) par++;	// SOIL
+		|			if (state->hd & 0x40) par++;	// LPAR
+		|			if (mruisf) par++;
+		|		}
+		|		if (!(par & 1))
+		|			state->luxx |= 0 << 5;
 		|	}
+		|	tmp |= state->luxx << 15;
 		|
 		|	unsigned lhit;
 		|	BUS_LHIT_READ(lhit);
 		|	if ((0x0f ^ state->lrud) < lhit)
-		|		state->luxx |= 1 << 10;
-		|	else
-		|		state->luxx &= ~(1 << 10);
+		|		tmp |= 1 << 25;
 		|
 		|	if (PIN_CLK.negedge()) {
 		|		state->hd = (state->qd & 0xf) << 2;
@@ -111,18 +125,16 @@ class XLRULOGIC(PartFactory):
 		|		if (PIN_LPAR=>)
 		|			state->hd |= 0x40;
 		|	}
+		|	tmp |= state->hd << 4;
 		|
 		|	if (PIN_LATE=> && PIN_CLK.posedge()) {
 		|		BUS_TAG_READ(state->qd);
 		|	} else if (!(PIN_LATE=>) && PIN_CLK.negedge()) {
 		|		BUS_TAG_READ(state->qd);
 		|	}
-		|
-		|	// 49_Q,50_Q,MOD_Q,SOIL_H,LRU#_H,PAR6_H,HIT_H,LRU#_Q
-		|	unsigned tmp = state->qd & 0x0f;
-		|	tmp |= state->hd << 4;
+		|	tmp |= state->qd & 0x0f;
 		|	tmp |= (state->qd & 0x70) << 8;
-		|	tmp |= state->luxx << 15;
+		|
 		|	BUS_TMP_WRITE(tmp);
 		|
 		|	BUS_TAG_Z();
