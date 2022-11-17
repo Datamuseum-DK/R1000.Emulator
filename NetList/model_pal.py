@@ -38,14 +38,122 @@ import glob
 
 from part import PartModel, PartFactory
 
+PIN_NAMES = {
+    "BUSPAL": {
+        1: "q4", 2: "cmd0", 3: "cmd1", 4: "cmd2", 5: "cmd3", 6: "mcyc2_nxt", 7: "dbusmode0",
+        8: "dbusmode1", 9: "dbusmode2", 10: "dbusmode3", 11: "seta_sel", 13: "setb_sel",
+        14: "wdrb_sel", 15: "dreg_oe", 16: "tagb_oe", 17: "taga_oe", 18: "int_boe", 19: "int_aoe",
+        20: "rdr_sel", 21: "wdra_sel", 22: "tagb_dir", 23: "taga_dir",
+    },
+    "CMDPAL": {
+        1: "h2", 2: "mcmd0", 3: "mcmd1", 4: "mcmd2", 5: "mcmd3", 6: "cmdcont", 7: "early_abort",
+        8: "mcyc1_hd", 9: "mcyc2_next_hd", 11: "mcyc2_hd", 13: "refresh", 14: "mcyc2",
+        15: "mcyc1", 16: "mcyc2_next", 17: "cmd3", 18: "cmd2", 19: "cmd1", 20: "cmd0",
+    },
+    "CNTRPAL": {
+        1: "q4", 2: "refresh", 3: "diag_0", 4: "diag_1", 5: "diag_2", 6: "diag_3", 7: "d_cnt_op0",
+        8: "d_cnt_op1", 9: "d_cnt_op2", 10: "d_cnt_op3", 11: "d_cnt_op4", 13: "cnt8_ovf",
+        14: "cnt8_en", 19: "traddr0", 20: "traddr1", 21: "traddr2", 22: "traddr3", 23: "d_cnt_ovf"
+    },
+    "DIBRPAL": {
+        1: "d_state0", 2: "br_sel0", 3: "br_sel1", 4: "br_sel2", 5: "br_sel3", 6: "cnt_ovf",
+        7: "d_mode", 8: "d_cond", 9: "par_err", 11: "d_sync", 17: "branch_a", 18: "branch_b",
+        12: "continue", 19: "nstate0",
+    },
+    "DISTPAL": {
+        1: "clk", 2: "nstate1", 3: "nstate2", 4: "nstate3", 5: "nstate0", 6: "continue",
+        7: "branch", 8: "freeze", 9: "start", 16: "state3", 17: "state2", 18: "state1",
+        19: "state0",
+    },
+    "DRADPAL": {
+        1: "clk", 2: "cmd0", 3: "cmd1", 4: "cmd2", 5: "dis_adr", 6: "h1", 7: "mcyc2",
+        8: "phys_hit26", 9: "lar2", 10: "lar3", 11: "trace_dra1", 13: "trace_dra2", 14: "bl_hit",
+        15: "be_hit", 16: "al_hit", 17: "ae_hit", 18: "drb_a2lp", 19: "dra_a2lp", 20: "drb_a1",
+        21: "dra_a1", 23: "dra2_el_sel",
+    },
+    "DRCPAL": {
+        1: "clk", 2: "cmd0", 3: "cmd1", 4: "cmd2", 5: "cmd3", 6: "h1", 7: "mcyc2_next",
+        8: "mcyc2", 9: "ahit", 10: "bhit", 11: "late_abort", 13: "d_dis_adr", 14: "col_adr_oe",
+        15: "row_adr_oe", 16: "tag_write", 17: "nameq", 18: "dr_web", 19: "dr_wea",
+        20: "cas_b", 21: "cas_a", 22: "ras_b", 23: "ras_a",
+    },
+    "LUXXPAL": {
+        4: "soil", 5: "lpar", 6: "lru0", 7: "lru1", 8: "lru2", 9: "lru3", 10: "par6",
+        11: "hit", 13: "mruisf", 23: "lru0_d", 22: "lru1_d", 21: "lru2_d", 20: "lru3_d",
+        19: "par_d", 18: "par_u", 17: "lru0_u", 16: "lru1_u", 15: "lru2_u", 14: "lru3_u",
+    },
+    "MARPAL": {
+        1: "clk", 2: "mar_mode0", 3: "mar_mode1", 4: "mar_mode2", 5: "h1", 6: "clock_stop",
+        7: "load_mar", 8: "mar_perr", 9: "freeze", 12: "mar_par_err", 13: "lar_s1", 14: "lar_s0",
+        15: "mar_par_oe", 16: "mar_par_s1", 17: "mar_par_s0", 18: "mar_s1", 19: "mar_s0",
+    },
+    "MUXEPAL": {
+        2: "lru_update", 3: "tag49_q", 4: "tag50_q", 5: "mod_q", 6: "h1", 7: "soil_h", 8: "hit_h",
+        9: "hit", 19: "lru2_oe", 18: "tag49_d", 17: "tag50_d", 16: "mod_d", 12: "lru0_oe",
+    },
+    "MUXLPAL": {
+        2: "lru_update", 3: "tag49_q", 4: "tag50_q", 5: "mod_q", 6: "h1", 7: "soil_h", 8: "hit_q",
+        19: "lru_oe", 18: "tag49_d", 17: "tag50_d", 16: "mod_d", 13: "hit_hd", 12: "lru1_oe",
+    },
+    "PHITPAL": {
+        1: "pset0", 2: "pset1", 3: "pset2", 4: "pset3", 5: "hibrd", 6: "h1", 7: "dbusmode0",
+        8: "dbusmode1", 9: "dbusmode2", 11: "dbusmode3", 13: "dforcehit", 14: "physhit26",
+        15: "setb_sel", 16: "seta_sel", 17: "phit_bl", 18: "phit_be", 19: "phit_al", 20: "phit_ae"
+    },
+    "RDRPAL": {
+        1: "clk", 2: "cmd0", 3: "cmd1", 4: "cmd2", 5: "cmd3", 6: "h2", 7: "mcyc2_next",
+        8: "seta_sel", 9: "setb_sel", 16: "vprdr", 17: "vbdr", 18: "vadr", 19: "trdr",
+    },
+    "SETPAL": {
+        6: "h1", 8: "ae_hit", 9: "al_hit", 10: "be_hit", 11: "bl_hit", 13: "drive_hit",
+        16: "bhit_456", 17: "ahit_012", 18: "hit_0246", 19: "hit_0145",
+    },
+    "TAGAPAL": {
+        1: "clk", 2: "cmd0", 3: "cmd1", 4: "cmd2", 5: "cmd3", 6: "h1", 7: "mcyc2_nxt", 8: "mcyc2",
+        9: "phys_set2", 10: "phys_set3", 11: "ts_trace_en", 13: "late_abort", 14: "tsadr_13l",
+        15: "tsadr_13e", 16: "lru_update", 17: "check_tsepar", 18: "taga13_y", 19: "taga12_y",
+        21: "d_bus_mode3", 22: "tsadr_12l", 23: "tsadr_12e",
+    },
+    "TPARPAL": {
+        1: "check_tsepar", 2: "tag_par_err", 3: "ts_par_mode0", 4: "ts_par_mode1", 5: "h1",
+        6: "tsa_perr", 7: "tsa_perr_od", 8: "tsb_perr", 9: "tsb_perr_od", 11: "mar_par_err",
+        13: "par_err", 14: "tsa_par_err", 15: "tsb_par_err", 16: "tag_par_err", 12: "ts_par_s1",
+        18: "ts_epar_dis", 19: "ts_par_s0",
+    },
+    "TRACPAL": {
+        2: "h1", 3: "t_mode0", 4: "t_mode1", 5: "t_mode2", 6: "t_mode3", 7: "refresh",
+        8: "tsa_par_out", 9: "tsb_par_out", 14: "ts_trace_en", 15: "tradr_13", 16: "tradr_12",
+        17: "ts_dram_oe", 18: "cntr8_oe", 19: "tracing", 20: "trace_oe", 21: "tradr_oe",
+        22: "tram_we", 23: "tram_ce",
+    },
+    "TSCPAL": {
+        1: "clk", 2: "cmd0", 3: "cmd1", 4: "cmd2", 5: "cmd3", 6: "h1", 7: "mcyc2_nxt", 8: "mcyc2",
+        9: "seta_sel", 10: "setb_sel", 11: "phys_set3", 13: "late_abort", 15: "tagxoe",
+        16: "tagxl_we", 17: "tagxe_we", 18: "tagxx_we", 20: "tagb_ce", 21: "taga_ce",
+        22: "tagxl_oe", 23: "tagxe_oe",
+    },
+    "TSXXPAL": {
+        1: "clk", 2: "tag_57", 3: "tag_56", 4: "tag_55", 5: "tag_54", 6: "tag_53", 7: "tag_52",
+        8: "tag_51", 9: "phit_al", 10: "phit_al2", 11: "force_hit", 13: "hit_h", 14: "cmd0",
+        15: "cmd1", 16: "mcyc1", 17: "lpar_q", 18: "soil_q", 20: "logq", 21: "hitq", 22: "cmd2",
+        23: "cmd3",
+    },
+}
+
 class PalPin():
     ''' One pin '''
-    def __init__(self, nbr):
+    def __init__(self, up, nbr):
+        self.up = up
+        self.palname = up.name.split("_")[0]
+        pin_names = PIN_NAMES.setdefault(self.palname, dict())
+        suff = pin_names.get(nbr)
+        if not suff:
+             suff = "%02d" % nbr
         self.nbr = nbr
         self.name = None
-        self.var = "p%02d" % nbr
-        self.pin = "pin%d" % nbr
-        self.out = "out%d" % nbr
+        self.var = "p_" + suff
+        self.pin = "pin_" + suff
+        self.out = "out_" + suff
         self.olmc = None
         self.output = None
         self.inverted = False
@@ -61,14 +169,14 @@ class PalPin():
     def inv(self):
         ''' invert as necessay '''
         if self.inverted:
-            return self.var
+            return "  " + self.var + " "
         return "(!" + self.var + ")"
 
     def buf(self):
         ''' invert as necessay '''
         if self.inverted:
             return "(!" + self.var + ")"
-        return self.var
+        return "  " + self.var + " "
 
 class PalRow():
     ''' One row of fuses '''
@@ -88,9 +196,9 @@ class PalRow():
                 return
             self.inputs.add(term)
             if fuses[1]:
-                self.terms.append(term.buf)
+                self.terms.append((term, term.buf))
             elif fuses[0]:
-                self.terms.append(term.inv)
+                self.terms.append((term, term.inv))
 
     def cond(self):
         ''' C++ condition string for this row '''
@@ -98,7 +206,7 @@ class PalRow():
             return "false"
         if not self.terms:
             return "true"
-        return " && ".join(i() for i in self.terms)
+        return " && ".join(i() for j, i in sorted(self.terms))
 
     def __str__(self):
         return "".join("%d" % i for i in self.bits)
@@ -131,7 +239,8 @@ class PalMacroCell():
         sep = " ||\n" + nls
         if not self.xor:
             return sep.join("(" + i.cond() + ")" for i in self.ands if not i.disabled)
-        return "!(" + sep.join("(" + i.cond() + ")" for i in self.ands if not i.disabled) + ")"
+        sep += "    "
+        return "!(\n" + nls + "    " + sep.join("(" + i.cond() + ")" for i in self.ands if not i.disabled) + "\n" + nls + ")"
 
 
 class GAL(PartFactory):
@@ -343,10 +452,10 @@ class PalMacroCell16(PalMacroCell):
         self.disabled = min(i.disabled for i in rows)
         if not self.regd:
             self.output_enable = rows[0].cond()
-        else:
+        elif "DIBR" in self.up.name:
             p11 = self.up.palpins.get(11)
             if p11 is None:
-                p11 = PalPin(11)
+                p11 = PalPin(up, 11)
                 self.up.palpins[11] = p11
             self.output_enable = "!" + p11.var
             self.inputs.add(p11)
@@ -400,7 +509,7 @@ class GAL16V8(GAL):
 
         for i in range(1, 20):
             if i != 10:
-                self.palpins[i] = PalPin(i)
+                self.palpins[i] = PalPin(self, i)
 
         if not self.palsyn:
             for nbr in range(8):
@@ -482,7 +591,7 @@ class GAL22V10(GAL):
 
         for i in range(24):
             if i not in (0, 12):
-                self.palpins[i] = PalPin(i)
+                self.palpins[i] = PalPin(self, i)
 
         for nbr in range(11):
             self.palterms.append(self.palpins[1 + nbr])
@@ -537,10 +646,12 @@ class PALModel(PartModel):
         return self.factory(board, ident, self.octets)
 
     def assign(self, comp):
-        for node in comp:
+        #for node in comp:
+            #if node.pin.name == "OE":
+            #    print("PN", node)
             # NB: For now make all outputs sc_logic
-            if "output" in node.pin.role:
-                node.pin.role = "sc_out <sc_logic>"
+            #if "output" in node.pin.role:
+            #    node.pin.role = "sc_out <sc_logic>"
         super().assign(comp)
 
 def iter_pals():
