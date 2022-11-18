@@ -85,4 +85,6 @@ struct diagproc_exp_priv;
 void diagproc_exp_init(struct diagproc_exp_priv **, const char *name);
 int diagproc_exp_download(struct diagproc_exp_priv *, uint8_t length, uint8_t *ram, uint8_t *ip);
 
+void DiagBus_Explain_Cmd(struct vsb *vsb, const uint8_t serbuf[2]);
+
 #endif /* DIAG_DIAG_H */

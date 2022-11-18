@@ -91,7 +91,7 @@ def main():
     ioc += Range("pfint", 0xfffffd00, 0x3, sc_write = True)
 
     # IO_CPU_CONTROL_PSU_MARGIN_DREG4_p13
-    ioc += Range("dreg4", 0xfffffe00, 0x3, sc_write = True)
+    ioc += Range("dreg4", 0xfffffe00, 0x3, sc_write = True, post_write = True)
 
     # IO_READ_SENSE_p25
     ioc += Range("irq_vector", 0xffffff00, 0xff, pre_read = True)

@@ -9,6 +9,7 @@
 
 #include "Infra/r1000.h"
 #include "Infra/elastic.h"
+#include "Infra/vsb.h"
 #include "Diag/diag.h"
 
 struct elastic *diag_elastic;
@@ -62,11 +63,37 @@ DiagBus_Send(const struct diproc *dp, unsigned u)
 	AN(dp);
 	AN(dp->upper);
 	assert(u <= 0x1ff);
-	Trace(trace_diagbus_bytes, "DIAGBUS TX %03x", u);
+	Trace(trace_diagbus, "EMU TX 0x%03x", u);
 	uint8_t buf[2];
 	buf[0] = u >> 8;
 	buf[1] = u & 0xff;
 	elastic_put(diag_elastic, buf, 2);
+}
+
+void
+DiagBus_Explain_Cmd(struct vsb *vsb, const uint8_t serbuf[2])
+{
+
+	if (serbuf[0] != 0) {
+		VSB_printf(vsb, "0x%x%02x", serbuf[0], serbuf[1]);
+		switch(serbuf[1] >> 5) {
+#define CMD(upper, lower, nbr) case nbr: VSB_cat(vsb, " " #upper); break;
+		CMD_TABLE(CMD)
+#undef CMD
+		default: WRONG();
+		}
+		switch(serbuf[1] & 0x1f) {
+#define BRD(upper, lower, nbr) case nbr: VSB_cat(vsb, " " #upper); break;
+		BOARD_TABLE(BRD)
+#undef BRD
+		default:
+			fprintf(stderr, "UNKNOWN DIAG BOARD 0x%x\n", serbuf[1]);
+			VSB_printf(vsb, " BRD%d", serbuf[1] & 0x1f);
+			break;
+		}
+	} else {
+		VSB_printf(vsb, "0x%02x", serbuf[1]);
+	}
 }
 
 #if 0

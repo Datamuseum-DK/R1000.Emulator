@@ -14,6 +14,7 @@
 #include "Infra/r1000.h"
 #include "Iop/iop.h"
 #include "Infra/elastic.h"
+#include "Infra/vsb.h"
 #include "Iop/memspace.h"
 #include "Diag/diag.h"
 
@@ -90,6 +91,7 @@ static const char * const wr_reg[] = {
 struct chan {
 	struct elastic		*ep;
 	const char		*name;
+	int			is_diagbus;
 	uint8_t			mode[2];
 	uint8_t			rxhold;
 	uint8_t			txshift[2];
@@ -103,6 +105,7 @@ struct chan {
 	struct irq_vector	*rx_irq;
 	struct irq_vector	*tx_irq;
 	int			inflight;
+	struct vsb		*vsb;
 };
 
 static struct ioc_duart {
@@ -212,8 +215,8 @@ ioc_duart_pace_downloads(struct chan *chp)
 		adr = chp->txshift[1] & 0x1f;
 		while ((diprocs[adr].status & 0x0f) == DIPROC_RESPONSE_RUNNING) {
 			Trace(
-			    trace_diagbus_bytes,
-			    "%s Holding Download (%x%02x)",
+			    trace_diagbus,
+			    "%s Holding Download (0x%x%02x)",
 			    chp->name,
 			    chp->txshift[0],
 			    chp->txshift[1]
@@ -228,14 +231,15 @@ ioc_duart_tx_callback(void *priv)
 {
 	struct chan *chp = priv;
 
-	if (chp->txshift_valid == 1) {
-		Trace(trace_diagbus_bytes, "%s IOC TX %02x",
-		    chp->name, chp->txshift[0]);
-	} else {
+	if (chp->is_diagbus) {
+		assert (chp->txshift_valid == 2);
+		VSB_clear(chp->vsb);
+		VSB_cat(chp->vsb, "IOP TX ");
+		DiagBus_Explain_Cmd(chp->vsb, chp->txshift);
+		AZ(VSB_finish(chp->vsb));
+		Trace(trace_diagbus, "%s", VSB_data(chp->vsb));
 		if (chp->txshift[0])
 			ioc_duart_pace_downloads(chp);
-		Trace(trace_diagbus_bytes, "%s IOC TX %x%02x",
-		    chp->name, chp->txshift[0], chp->txshift[1]);
 	}
 	elastic_put(chp->ep, chp->txshift, chp->txshift_valid);
 	chp->txshift_valid = 0;
@@ -439,6 +443,10 @@ ioc_duart_init(void)
 	ioc_duart->chan[1].rx_irq = &IRQ_DIAG_BUS_RXRDY;
 	ioc_duart->chan[1].tx_irq = &IRQ_DIAG_BUS_TXRDY;
 	ioc_duart->chan[1].name = "DIAGBUS";
+	ioc_duart->chan[1].is_diagbus = 1;
+	ioc_duart->chan[1].vsb = VSB_new_auto();
+	AN(ioc_duart->chan[1].vsb);
+	
 	// 1/10_MHz * (64 * 11_bits) = 70400 nsec
 	ioc_duart->chan[1].inflight = 70400;
 	ioc_duart->chan[1].inflight /= 2;		// hack

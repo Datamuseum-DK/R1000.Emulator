@@ -51,7 +51,7 @@ struct i8052 {
 static void
 i8052_tx_diagbus(const struct i8052 *i52, uint8_t x)
 {
-	Trace(trace_diagbus_bytes, "DIAGBUS %s TX %02x", i52->name, x);
+	Trace(trace_diagbus, "%s_DUMMY TX 0x%02x", i52->name, x);
 	elastic_inject(diag_elastic, &x, 1);
 }
 
@@ -121,8 +121,6 @@ i8052_thread(void *priv)
 			}
 			i8052_tx_diagbus(i52, csum);
 			AZ(VSB_finish(vsb));
-			Trace(trace_diagbus_upload,
-			    "DIAGBUS %s UL%s", i52->name, VSB_data(vsb));
 			break;
 		case 0x8:
 			reply = (int)DIPROC_RESPONSE_RESET;
@@ -140,8 +138,6 @@ i8052_thread(void *priv)
 				VSB_printf(vsb, " %02x", u8);
 			}
 			AZ(VSB_finish(vsb));
-			Trace(trace_diagbus_download,
-			    "DIAGBUS %s DL%s", i52->name, VSB_data(vsb));
 			assert (csum == i8052_rx_diagbus(i52));
 			break;
 		default:

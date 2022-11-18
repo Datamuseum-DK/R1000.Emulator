@@ -22,6 +22,7 @@ ${OBJDIR}/iop_duart.o: \
     Iop/iop_duart.c \
     Iop/iop.h \
     Infra/elastic.h \
+    Infra/vsb.h \
     Iop/memspace.h \
     Diag/diag.h \
     ${R1000DEP}

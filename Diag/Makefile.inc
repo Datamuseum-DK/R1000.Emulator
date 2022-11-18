@@ -4,6 +4,7 @@ OBJS    += ${OBJDIR}/diagbus.o
 ${OBJDIR}/diagbus.o: \
     Diag/diagbus.c \
     Infra/elastic.h \
+    Infra/vsb.h \
     Diag/diag.h \
     ${R1000DEP}
 	${CC} ${CFLAGS} -c Diag/diagbus.c -o ${OBJDIR}/diagbus.o

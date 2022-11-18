@@ -75,7 +75,16 @@
 
 	state->ctx.activations++;
 
+	state->diag_ctrl->pin9_reset = PIN_RST;
+	if (state->diag_ctrl->pin9_reset) {
+		state->cycle = 0;
+		state->diag_ctrl->do_movx = 0;
+		PIN_WRnot = true;
+		DiagProcStep(state->diag_ctrl, &state->dctx);
+		return;
+	}
 	if (PIN_XTAL2.posedge()) {
+
 		if (state->diag_ctrl->do_movx && state->cycle == 2) {
 			p0val = state->diag_ctrl->movx_data;
 			p0mask = 0xff;
@@ -103,7 +112,6 @@
 		PIN_WRnot = true;
 		state->cycle = 0;
 		state->diag_ctrl->do_movx = 0;
-		state->diag_ctrl->pin9_reset = PIN_RST;
 		if (state->diag_ctrl->next_needs_p1) {
 			state->diag_ctrl->p1val = 0;
 			BUS_B_READ(state->diag_ctrl->p1val);

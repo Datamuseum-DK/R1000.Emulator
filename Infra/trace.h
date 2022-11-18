@@ -8,9 +8,7 @@
 	TRACER(ioc_pit, "IOC PIT timer")				\
 	TRACER(ioc_sc, "IOC SystemC cycles")				\
 	TRACER(ioc_modem, "IOC Internal Modem")				\
-	TRACER(diagbus_bytes, "All bytes on DiagBus")			\
-	TRACER(diagbus_download, "Downloads on DiagBus")		\
-	TRACER(diagbus_upload, "Uploads on DiagBus")			\
+	TRACER(diagbus, "All bytes transmitted on DiagBus")		\
 	TRACER(disk_data, "Data to/from disk(s)")			\
 	TRACER(tape_data, "Data to/from tape(s)")			\
 	TRACER(scsi_cmd, "SCSI commands, both busses")			\

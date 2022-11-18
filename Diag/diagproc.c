@@ -101,8 +101,7 @@ diagproc_sfrfunc(struct mcs51 * mcs51, uint8_t sfr_adr, int what)
 		break;
 	case SFR_SBUF:
 		if (what >= 0) {
-			if (*dp->do_trace & 4)
-				sc_tracef(dp->name, "DIAGBUS TX %02x", what);
+			Trace(trace_diagbus, "%s TX %02x", dp->name, what);
 			txbuf[0] = what;
 			elastic_inject(diag_elastic, txbuf, 1);
 			dp->mcs51->sfr[SFR_SCON] |= 0x2;
@@ -199,58 +198,24 @@ diagproc_bitfunc(struct mcs51 *mcs51, uint8_t bit_adr, int what)
 	return (retval);
 }
 
-
-static void
-Explain_Diag_Byte(struct diagproc_priv *dp, const uint8_t serbuf[2])
-{
-
-	VSB_clear(dp->vsb);
-
-	VSB_printf(dp->vsb, "%d%02x", serbuf[0], serbuf[1]);
-	if (serbuf[0] == 0) {
-		VSB_cat(dp->vsb, " payload");
-	} else {
-		switch(serbuf[1] >> 5) {
-#define CMD(upper, lower, nbr) case nbr: VSB_cat(dp->vsb, " " #upper); break;
-		CMD_TABLE(CMD)
-#undef CMD
-		default: WRONG();
-		}
-		switch(serbuf[1] & 0x1f) {
-#define BRD(upper, lower, nbr) case nbr: VSB_cat(dp->vsb, " " #upper); break;
-		BOARD_TABLE(BRD)
-#undef BRD
-		default:
-			fprintf(stderr, "UNKNOWN DIAG BOARD 0x%x\n", serbuf[1]);
-			VSB_printf(dp->vsb, " BRD%d", serbuf[1] & 0x1f);
-			break;
-		}
-	}
-	AZ(VSB_finish(dp->vsb));
-}
-
 static void
 diagproc_fast_dload(struct diagproc_priv *dp, const uint8_t *ptr)
 {
 	if (dp->dl_cnt == 0 && dp->dl_ptr == 0 && dp->dl_sum == 0) {
-		//sc_tracef(dp->name, "DIAGBUS FDL 1 %02x%02x %02x# %02x> %02x+", ptr[0], ptr[1], dp->dl_cnt, dp->dl_ptr, dp->dl_sum);
 		assert(ptr[0] == 1);
 		assert((ptr[1] & 0xe0) == 0xa0);
 		dp->dl_cnt = 1;
 	} else if (dp->dl_cnt == 1 && dp->dl_ptr == 0 && dp->dl_sum == 0) {
-		//sc_tracef(dp->name, "DIAGBUS FDL 2 %02x%02x %02x# %02x> %02x+", ptr[0], ptr[1], dp->dl_cnt, dp->dl_ptr, dp->dl_sum);
 		dp->dl_cnt = ptr[1] + 1;
 		dp->download_len = ptr[1];
 		dp->dl_ptr = 0x10;
 		dp->dl_sum += ptr[1];
 	} else if (dp->dl_cnt > 1 && dp->dl_ptr > 0) {
-		//sc_tracef(dp->name, "DIAGBUS FDL 3 %02x%02x %02x# %02x> %02x+ (%02x++)", ptr[0], ptr[1], dp->dl_cnt, dp->dl_ptr, dp->dl_sum, dp->mcs51->iram[2]);
 		dp->dl_sum += ptr[1];
 		dp->mcs51->iram[dp->dl_ptr] = ptr[1];
 		dp->dl_cnt--;
 		dp->dl_ptr++;
 	} else if (dp->dl_ptr > 0) {
-		//sc_tracef(dp->name, "DIAGBUS FDL 4 %02x%02x %02x# %02x> %02x+", ptr[0], ptr[1], dp->dl_cnt, dp->dl_ptr, dp->dl_sum);
 		assert(dp->dl_sum == ptr[1]);
 		dp->dl_cnt = 0;
 		dp->dl_ptr = 0;
@@ -272,8 +237,6 @@ diagproc_fast_dload(struct diagproc_priv *dp, const uint8_t *ptr)
 			dp->pc0 = dp->mcs51->iram[0x10];
 			dp->mcs51->iram[0x04] = 0x06;
 		}
-	} else {
-		sc_tracef(dp->name, "DIAGBUS FDL ? %02x%02x %02x# %02x> %02x+", ptr[0], ptr[1], dp->dl_cnt, dp->dl_ptr, dp->dl_sum);
 	}
 }
 
@@ -289,10 +252,6 @@ diagproc_busrx(void *priv, const void *ptr, size_t len)
 	memcpy(serbuf, ptr, len);
 
 	assert(pthread_mutex_lock(&dp->mtx) == 0);
-	if ((*dp->do_trace & 4) && (dp->mcs51->irq_state || serbuf[0])) {
-		Explain_Diag_Byte(dp, serbuf);
-		sc_tracef(dp->name, "DIAGBUS RX %s", VSB_data(dp->vsb));
-	}
 
 	if (dp->dl_cnt) {
 		fast = 1;
@@ -459,6 +418,7 @@ DiagProcStep(struct diagproc_ctrl *dc, struct diagproc_context *dctx)
 	dp = dc->priv;
 
 	if (dc->pin9_reset) {
+		Trace(trace_diagbus, "%s RST", dp->name);
 		MCS51_Reset(dp->mcs51);
 		return;
 	}
