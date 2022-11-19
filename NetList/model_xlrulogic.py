@@ -50,6 +50,8 @@ class XLRULOGIC(PartFactory):
 		|	unsigned luxx;		// LRU#~D,PAR~D,PAR~UPD,LRU#~UPD
 		|	bool par_d;
 		|	bool par_upd;
+		|	bool lru_upd_oe;
+		|	unsigned tag_d;		// -49,50,MOD,-,-,-,-
 		|''')
 
     def sensitive(self):
@@ -67,6 +69,7 @@ class XLRULOGIC(PartFactory):
 
         file.fmt('''
 		|	bool hit;
+		|	unsigned hitbus = 0;
 		|	unsigned tmp = 0;
 		|
 		|	if (PIN_HITQ=>) {
@@ -79,6 +82,16 @@ class XLRULOGIC(PartFactory):
 		|	PIN_HIT<=(hit);
 		|
 		|	if (PIN_CLK.posedge()) {
+		|		// MUXxPAL
+		|		state->lru_upd_oe = !PIN_LRU_UPDATE;
+		|
+		|		if (PIN_LATE=>) {
+		|			// MUXLPAL
+		|			state->tag_d = 0x70 ^ (state->qd & 0x70);
+		|			if (PIN_SOIL=> && (!(state-> hd & 1)))
+		|				state->tag_d &= ~0x10;
+		|		}
+		|		
 		|		// LUXXPAL
 		|		bool mruisf = PIN_MRUIS_F=>;
 		|		unsigned lru = (state->hd & 0x3c) >> 2;
@@ -97,9 +110,6 @@ class XLRULOGIC(PartFactory):
 		|			state->lruupd = 0x7;
 		|		}
 		|
-		|		// state->luxx |= ((~state->lrud) & 0xf) << 6;
-		|		// state->luxx |= ((~state->lruupd) & 0xf);
-		|
 		|		unsigned par_d = state->hd >> 1; // PAR6
 		|		if (!(state->hd & 0x01)) {
 		|			if (state->hd & 0x80) par_d++;	// SOIL
@@ -108,10 +118,6 @@ class XLRULOGIC(PartFactory):
 		|			par_d += 1;
 		|		}
 		|		state->par_d = !(par_d & 1);
-		|#if 0
-		|		if (!(par_d & 1))
-		|			state->luxx |= 1 << 5;
-		|#endif
 		|
 		|		unsigned par_upd = 0;
 		|		if (!(state->hd & 0x01)) {
@@ -144,33 +150,28 @@ class XLRULOGIC(PartFactory):
 		|			}
 		|		}
 		|		state->par_upd = !(par_upd & 1);
-		|#if 0
-		|		if (!(par_upd & 1))
-		|			state->luxx |= 1 << 4;
-		|#endif
 		|
 		|	}
 		|	tmp |= state->luxx << 15;
 		|
+		|	if (state->lru_upd_oe)
+		|		tmp |= 1 << 25;
+		|
 		|	unsigned lhit;
 		|	BUS_LHIT_READ(lhit);
 		|	if ((0x0f ^ state->lrud) < lhit) {
-		|		// tmp |= 1 << 25;
-		|		tmp |= ((~state->lruupd) & 0xf) << 15;
-		|		if (state->par_upd)
-		|			tmp |= 1 << 19;
+		|		hitbus |= (~state->lruupd) & 0xf;
+		|		if (state->par_upd) {
+		|			hitbus |= 1 << 7;
+		|		}
 		|	} else {
-		|		tmp |= ((~state->lrud) & 0xf) << 15;
-		|		if (state->par_d)
-		|			tmp |= 1 << 19;
+		|		hitbus |= (~state->lrud) & 0xf;
+		|		if (state->par_d) {
+		|			hitbus |= 1 << 7;
+		|		}
 		|	}
-		|
-		|#if 0
-		|	if (state->par_d)
-		|		tmp |= 1 << 20;
-		|	if (state->par_upd)
-		|		tmp |= 1 << 19;
-		|#endif
+		|	hitbus |= state->tag_d;
+		|	tmp |= hitbus << 15;
 		|
 		|	if (PIN_CLK.negedge()) {
 		|		state->hd = (state->qd & 0xf) << 2;
