@@ -106,7 +106,7 @@ ioc_rtc_thread(void *priv)
 		rtcregs[1] += 0x01;
 		if ((rtcregs[1] & 0x0f) <= 0x09)
 			continue;
-		rtcregs[1] += 0x16;
+		rtcregs[1] += 0x06;
 		if ((rtcregs[1] & 0xf0 ) <= 0x9)
 			continue;
 		rtcregs[1] = 0x00;
@@ -114,7 +114,7 @@ ioc_rtc_thread(void *priv)
 		rtcregs[2] += 0x01;
 		if ((rtcregs[2] & 0x0f) <= 0x09)
 			continue;
-		rtcregs[2] += 0x16;
+		rtcregs[2] += 0x06;
 		if ((rtcregs[2] & 0xf0 ) <= 0x50)
 			continue;
 		rtcregs[2] = 0x00;
@@ -122,7 +122,7 @@ ioc_rtc_thread(void *priv)
 		rtcregs[3] += 0x01;
 		if ((rtcregs[3] & 0x0f) <= 0x09)
 			continue;
-		rtcregs[3] += 0x16;
+		rtcregs[3] += 0x06;
 		if ((rtcregs[3] & 0xf0 ) <= 0x50)
 			continue;
 		rtcregs[3] = 0x00;
@@ -131,7 +131,7 @@ ioc_rtc_thread(void *priv)
 		if (rtcregs[4] <= 0x24) {
 			if ((rtcregs[4] & 0x0f) <= 0x09)
 				continue;
-			rtcregs[4] += 0x16;
+			rtcregs[4] += 0x06;
 			continue;
 		}
 		rtcregs[4] = 0x00;
