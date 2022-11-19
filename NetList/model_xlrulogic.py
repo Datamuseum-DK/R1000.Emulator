@@ -51,6 +51,8 @@ class XLRULOGIC(PartFactory):
 		|	bool par_d;
 		|	bool par_upd;
 		|	bool lru_upd_oe;
+		|	bool hit_hd;
+		|	bool lru_1_oe;
 		|	unsigned tag_d;		// -49,50,MOD,-,-,-,-
 		|''')
 
@@ -87,9 +89,15 @@ class XLRULOGIC(PartFactory):
 		|
 		|		if (PIN_LATE=>) {
 		|			// MUXLPAL
+		|			state->hit_hd = state->hd & 1;
 		|			state->tag_d = 0x70 ^ (state->qd & 0x70);
-		|			if (PIN_SOIL=> && (!(state-> hd & 1)))
+		|			if (PIN_SOIL=> && (!(state->hd & 1)))
 		|				state->tag_d &= ~0x10;
+		|			state->lru_1_oe = !(
+		|				PIN_LRU_UPDATE=> &&
+		|				(!PIN_H1=>) &&
+		|				(!(state->hd & 1))
+		|			);
 		|		}
 		|		
 		|		// LUXXPAL
@@ -156,6 +164,10 @@ class XLRULOGIC(PartFactory):
 		|
 		|	if (state->lru_upd_oe)
 		|		tmp |= 1 << 25;
+		|	if (state->hit_hd)
+		|		tmp |= 1 << 24;
+		|	if (state->lru_1_oe)
+		|		tmp |= 1 << 23;
 		|
 		|	unsigned lhit;
 		|	BUS_LHIT_READ(lhit);
