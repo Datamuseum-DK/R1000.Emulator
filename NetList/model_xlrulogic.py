@@ -181,16 +181,25 @@ class XLRULOGIC(PartFactory):
 		|	tmp |= state->luxx << 15;
 		|
 		|	if (PIN_LATE=>) {
+		|		state->lru_0_oe = !(
+		|			(
+		|				PIN_LRU_UPDATE=> &&
+		|				(!hit)
+		|			) || (
+		|				PIN_LRU_UPDATE=> &&
+		|				PIN_HITQ=>
+		|			)
+		|		);
 		|		if (state->hit_hd)
 		|			tmp |= 1 << 24;
-		|		tmp |= 1 << 23;
-		|		if (state->lru_1_oe)
-		|			BUS_HITLRU_Z();
-		|		else
+		|		if (!state->lru_0_oe) {
+		|			BUS_HITLRU_WRITE(state->qd & 0x0f);
+		|		} else if (!state->lru_1_oe) {
 		|			BUS_HITLRU_WRITE((state->hd >> 2) & 0x0f);
+		|		} else {
+		|			BUS_HITLRU_Z();
+		|		}
 		|	} else {
-		|		tmp |= 1 << 24;
-		|		tmp |= 1 << 23;
 		|		if (!state->lru_0_oe) {
 		|			BUS_HITLRU_WRITE(state->qd & 0x0f);
 		|		} else if (!state->lru_1_oe) {
