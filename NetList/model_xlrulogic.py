@@ -183,9 +183,11 @@ class XLRULOGIC(PartFactory):
 		|	if (PIN_LATE=>) {
 		|		if (state->hit_hd)
 		|			tmp |= 1 << 24;
+		|		tmp |= 1 << 23;
 		|		if (state->lru_1_oe)
-		|			tmp |= 1 << 23;
-		|		BUS_HITLRU_Z();
+		|			BUS_HITLRU_Z();
+		|		else
+		|			BUS_HITLRU_WRITE((state->hd >> 2) & 0x0f);
 		|	} else {
 		|		tmp |= 1 << 24;
 		|		tmp |= 1 << 23;
@@ -214,21 +216,11 @@ class XLRULOGIC(PartFactory):
 		|	hitbus |= state->tag_d;
 		|	tmp |= hitbus << 15;
 		|
-		|	if (PIN_LATE=>) {
-		|		tmp |= 1 << 25;
-		|		if (state->lru_upd_oe) {
-		|			BUS_TAG_Z();
-		|		} else {
-		|			BUS_TAG_WRITE(hitbus ^ 0xff);
-		|		}		
+		|	if (state->lru_upd_oe) {
+		|		BUS_TAG_Z();
 		|	} else {
-		|		tmp |= 1 << 25;
-		|		if (state->lru_upd_oe) {
-		|			BUS_TAG_Z();
-		|		} else {
-		|			BUS_TAG_WRITE(hitbus ^ 0xff);
-		|		}		
-		|	}
+		|		BUS_TAG_WRITE(hitbus ^ 0xff);
+		|	}		
 		|
 		|	if (PIN_CLK.negedge()) {
 		|		state->hd = (state->qd & 0xf) << 2;
