@@ -187,11 +187,17 @@ class XLRULOGIC(PartFactory):
 		|			tmp |= 1 << 24;
 		|		if (state->lru_1_oe)
 		|			tmp |= 1 << 23;
+		|		BUS_HITLRU_Z();
 		|	} else {
-		|		if (state->lru_0_oe)
-		|			tmp |= 1 << 24;
-		|		if (state->lru_1_oe)
-		|			tmp |= 1 << 23;
+		|		tmp |= 1 << 24;
+		|		tmp |= 1 << 23;
+		|		if (!state->lru_0_oe) {
+		|			BUS_HITLRU_WRITE(state->qd & 0x0f);
+		|		} else if (!state->lru_1_oe) {
+		|			BUS_HITLRU_WRITE((state->hd >> 2) & 0x0f);
+		|		} else {
+		|			BUS_HITLRU_Z();
+		|		}
 		|	}
 		|
 		|	unsigned lhit;
@@ -233,7 +239,6 @@ class XLRULOGIC(PartFactory):
 		|	BUS_TMP_WRITE(tmp);
 		|
 		|	BUS_TAG_Z();
-		|	BUS_HITLRU_Z();
 		|	TRACE(
 		|	    << " lrud " << std::hex << state->lrud
 		|	    << " lruupd " << std::hex << state->lruupd
