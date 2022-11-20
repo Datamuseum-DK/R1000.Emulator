@@ -180,8 +180,6 @@ class XLRULOGIC(PartFactory):
 		|	}
 		|	tmp |= state->luxx << 15;
 		|
-		|	if (state->lru_upd_oe)
-		|		tmp |= 1 << 25;
 		|	if (PIN_LATE=>) {
 		|		if (state->hit_hd)
 		|			tmp |= 1 << 24;
@@ -216,6 +214,19 @@ class XLRULOGIC(PartFactory):
 		|	hitbus |= state->tag_d;
 		|	tmp |= hitbus << 15;
 		|
+		|	if (PIN_LATE=>) {
+		|		if (state->lru_upd_oe)
+		|			tmp |= 1 << 25;
+		|		BUS_TAG_Z();
+		|	} else {
+		|		tmp |= 1 << 25;
+		|		if (state->lru_upd_oe) {
+		|			BUS_TAG_Z();
+		|		} else {
+		|			BUS_TAG_WRITE(hitbus ^ 0xff);
+		|		}		
+		|	}
+		|
 		|	if (PIN_CLK.negedge()) {
 		|		state->hd = (state->qd & 0xf) << 2;
 		|		state->hd |= (state->qd >> 7) << 1;
@@ -238,7 +249,6 @@ class XLRULOGIC(PartFactory):
 		|
 		|	BUS_TMP_WRITE(tmp);
 		|
-		|	BUS_TAG_Z();
 		|	TRACE(
 		|	    << " lrud " << std::hex << state->lrud
 		|	    << " lruupd " << std::hex << state->lruupd
