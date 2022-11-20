@@ -215,9 +215,12 @@ class XLRULOGIC(PartFactory):
 		|	tmp |= hitbus << 15;
 		|
 		|	if (PIN_LATE=>) {
-		|		if (state->lru_upd_oe)
-		|			tmp |= 1 << 25;
-		|		BUS_TAG_Z();
+		|		tmp |= 1 << 25;
+		|		if (state->lru_upd_oe) {
+		|			BUS_TAG_Z();
+		|		} else {
+		|			BUS_TAG_WRITE(hitbus ^ 0xff);
+		|		}		
 		|	} else {
 		|		tmp |= 1 << 25;
 		|		if (state->lru_upd_oe) {
