@@ -48,7 +48,6 @@ class XLRULOGIC(PartFactory):
 		|	unsigned hd;		// SOIL,LPAR,LRU0,LRU1,LRU2,LRU3,PAR6,HIT
 		|	unsigned lrud;		// LRU#~D
 		|	unsigned lruupd;	// LRU#~UPD
-		|	unsigned luxx;		// LRU#~D,PAR~D,PAR~UPD,LRU#~UPD
 		|	bool par_d;
 		|	bool par_upd;
 		|	bool lru_upd_oe;
@@ -74,7 +73,6 @@ class XLRULOGIC(PartFactory):
         file.fmt('''
 		|	bool hit;
 		|	unsigned hitbus = 0;
-		|	unsigned tmp = 0;
 		|
 		|	if (PIN_HITQ=>) {
 		|		hit = false;
@@ -121,7 +119,6 @@ class XLRULOGIC(PartFactory):
 		|		// LUXXPAL
 		|		bool mruisf = PIN_MRUIS_F=>;
 		|		unsigned lru = (state->hd & 0x3c) >> 2;
-		|		state->luxx = 0;
 		|		if (state->hd & 0x01) {
 		|			state->lrud = lru;
 		|			if (lru > 1)
@@ -161,6 +158,7 @@ class XLRULOGIC(PartFactory):
 		|			case 0xe:
 		|				par_upd = state->hd >> 1;
 		|				break;
+		|			case 0x0:
 		|			case 0x1:
 		|			case 0x3:
 		|			case 0x4:
@@ -178,7 +176,6 @@ class XLRULOGIC(PartFactory):
 		|		state->par_upd = !(par_upd & 1);
 		|
 		|	}
-		|	tmp |= state->luxx << 15;
 		|
 		|	if (PIN_LATE=>) {
 		|		state->lru_0_oe = !(
@@ -190,23 +187,14 @@ class XLRULOGIC(PartFactory):
 		|				PIN_HITQ=>
 		|			)
 		|		);
-		|		if (state->hit_hd)
-		|			tmp |= 1 << 24;
-		|		if (!state->lru_0_oe) {
-		|			BUS_HITLRU_WRITE(state->qd & 0x0f);
-		|		} else if (!state->lru_1_oe) {
-		|			BUS_HITLRU_WRITE((state->hd >> 2) & 0x0f);
-		|		} else {
-		|			BUS_HITLRU_Z();
-		|		}
+		|	}
+		|
+		|	if (!state->lru_0_oe) {
+		|		BUS_HITLRU_WRITE(state->qd & 0x0f);
+		|	} else if (!state->lru_1_oe) {
+		|		BUS_HITLRU_WRITE((state->hd >> 2) & 0x0f);
 		|	} else {
-		|		if (!state->lru_0_oe) {
-		|			BUS_HITLRU_WRITE(state->qd & 0x0f);
-		|		} else if (!state->lru_1_oe) {
-		|			BUS_HITLRU_WRITE((state->hd >> 2) & 0x0f);
-		|		} else {
-		|			BUS_HITLRU_Z();
-		|		}
+		|		BUS_HITLRU_Z();
 		|	}
 		|
 		|	unsigned lhit;
@@ -223,7 +211,6 @@ class XLRULOGIC(PartFactory):
 		|		}
 		|	}
 		|	hitbus |= state->tag_d;
-		|	tmp |= hitbus << 15;
 		|
 		|	if (state->lru_upd_oe) {
 		|		BUS_TAG_Z();
@@ -241,23 +228,19 @@ class XLRULOGIC(PartFactory):
 		|		if (PIN_LPAR=>)
 		|			state->hd |= 0x40;
 		|	}
-		|	tmp |= state->hd << 4;
 		|
 		|	if (PIN_LATE=> && PIN_CLK.posedge()) {
 		|		BUS_TAG_READ(state->qd);
 		|	} else if (!(PIN_LATE=>) && PIN_CLK.negedge()) {
 		|		BUS_TAG_READ(state->qd);
 		|	}
-		|	tmp |= state->qd & 0x0f;
-		|	tmp |= (state->qd & 0x70) << 8;
 		|
-		|	BUS_TMP_WRITE(tmp);
+		|	PIN_TMP1<=(state->hit_hd);
+		|	PIN_TMP21<=(state->hd & 1);
 		|
 		|	TRACE(
 		|	    << " lrud " << std::hex << state->lrud
 		|	    << " lruupd " << std::hex << state->lruupd
-		|	    << " luxx " << std::hex << state->luxx
-		|	    << " tmp " << std::hex << tmp
 		|	);
 		|''')
 
