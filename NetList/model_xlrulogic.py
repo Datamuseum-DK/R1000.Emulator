@@ -54,6 +54,7 @@ class XLRULOGIC(PartFactory):
 		|	bool hit_hd;
 		|	bool lru_0_oe;
 		|	bool lru_1_oe;
+		|	bool lpar_qd;
 		|	unsigned tag_d;		// -,49,50,MOD,-,-,-,-
 		|''')
 
@@ -225,18 +226,27 @@ class XLRULOGIC(PartFactory):
 		|			state->hd |= 1;
 		|		if (PIN_SOIL=>)
 		|			state->hd |= 0x80;
-		|		if (PIN_LPAR=>)
+		|		if (state->lpar_qd)
 		|			state->hd |= 0x40;
 		|	}
 		|
-		|	if (PIN_LATE=> && PIN_CLK.posedge()) {
+		|	if ((PIN_LATE=> && PIN_CLK.posedge()) ||
+		|	   (!(PIN_LATE=>) && PIN_CLK.negedge())) {
 		|		BUS_TAG_READ(state->qd);
-		|	} else if (!(PIN_LATE=>) && PIN_CLK.negedge()) {
-		|		BUS_TAG_READ(state->qd);
+		|		// TSXXPAL
+		|		unsigned u = 0;
+		|		if (state->qd & 0x01) u++;
+		|		if (state->qd & 0x02) u++;
+		|		if (state->qd & 0x04) u++;
+		|		if (state->qd & 0x08) u++;
+		|		state->lpar_qd = u & 1;
 		|	}
 		|
-		|	PIN_TMP1<=(state->hit_hd);
-		|	PIN_TMP21<=(state->hd & 1);
+		|	if (PIN_LATE=>) {
+		|		PIN_TMP0<=(state->hit_hd);
+		|	} else {
+		|		PIN_TMP0<=(state->hd & 1);
+		|	}
 		|
 		|	TRACE(
 		|	    << " lrud " << std::hex << state->lrud
