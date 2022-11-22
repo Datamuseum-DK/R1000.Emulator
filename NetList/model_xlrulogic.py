@@ -55,6 +55,7 @@ class XLRULOGIC(PartFactory):
 		|	bool lru_0_oe;
 		|	bool lru_1_oe;
 		|	bool lpar_qd;
+		|	bool soil_qd;
 		|	unsigned tag_d;		// -,49,50,MOD,-,-,-,-
 		|''')
 
@@ -92,7 +93,7 @@ class XLRULOGIC(PartFactory):
 		|			// MUXLPAL
 		|			state->hit_hd = state->hd & 1;
 		|			state->tag_d = 0x70 ^ (state->qd & 0x70);
-		|			if (PIN_SOIL=> && (!(state->hd & 1)))
+		|			if (state->soil_qd && (!(state->hd & 1)))
 		|				state->tag_d &= ~0x10;
 		|			state->lru_1_oe = !(
 		|				PIN_LRU_UPDATE=> &&
@@ -224,7 +225,7 @@ class XLRULOGIC(PartFactory):
 		|		state->hd |= (state->qd >> 7) << 1;
 		|		if (hit)
 		|			state->hd |= 1;
-		|		if (PIN_SOIL=>)
+		|		if (state->soil_qd)
 		|			state->hd |= 0x80;
 		|		if (state->lpar_qd)
 		|			state->hd |= 0x40;
@@ -232,14 +233,25 @@ class XLRULOGIC(PartFactory):
 		|
 		|	if ((PIN_LATE=> && PIN_CLK.posedge()) ||
 		|	   (!(PIN_LATE=>) && PIN_CLK.negedge())) {
+		|
 		|		BUS_TAG_READ(state->qd);
+		|
 		|		// TSXXPAL
+		|
+		|		unsigned cmd;
+		|		BUS_CMD_READ(cmd);
+		|
 		|		unsigned u = 0;
 		|		if (state->qd & 0x01) u++;
 		|		if (state->qd & 0x02) u++;
 		|		if (state->qd & 0x04) u++;
 		|		if (state->qd & 0x08) u++;
 		|		state->lpar_qd = u & 1;
+		|
+		|		if (cmd == 0xd && !PIN_MCYC1=> && !(state->qd & 0x10))
+		|			state->soil_qd = true;
+		|		else
+		|			state->soil_qd = false;
 		|	}
 		|
 		|	if (PIN_LATE=>) {
