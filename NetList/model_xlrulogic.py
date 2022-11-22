@@ -56,6 +56,7 @@ class XLRULOGIC(PartFactory):
 		|	bool lru_1_oe;
 		|	bool lpar_qd;
 		|	bool soil_qd;
+		|	bool logq;
 		|	unsigned tag_d;		// -,49,50,MOD,-,-,-,-
 		|''')
 
@@ -64,7 +65,6 @@ class XLRULOGIC(PartFactory):
         yield "PIN_HITQ"
         yield "PIN_NMATCH"
         yield "PIN_OMATCH"
-        yield "PIN_LOGQ"
         yield "BUS_LHIT_SENSITIVE()"
 
     def doit(self, file):
@@ -78,7 +78,7 @@ class XLRULOGIC(PartFactory):
 		|
 		|	if (PIN_HITQ=>) {
 		|		hit = false;
-		|	} else if (PIN_NMATCH=> && PIN_OMATCH=> && PIN_LOGQ=>) {
+		|	} else if (PIN_NMATCH=> && PIN_OMATCH=> && state->logq) {
 		|		hit = false;
 		|	} else {
 		|		hit = true;
@@ -252,6 +252,22 @@ class XLRULOGIC(PartFactory):
 		|			state->soil_qd = true;
 		|		else
 		|			state->soil_qd = false;
+		|
+		|		bool tag56 = PIN_ITAG56=>;
+		|		bool tag57 = PIN_ITAG57=>;
+		|		state->logq = false;
+		|		if (PIN_FORCE_HIT=> && !PIN_MCYC1=>) {
+		|			if (tag57 && !tag56 &&
+		|			    (cmd == 0xc || cmd == 0xd ||
+		|			     cmd == 0x4 || cmd == 0x3))
+		|				state->logq = true;
+		|			if (tag56 && (
+		|			     cmd == 0x4 || cmd == 0x3))
+		|				state->logq = true;
+		|			if (!tag57 && tag56 && cmd == 0xc)
+		|				state->logq = true;
+		|		}
+		|		PIN_TMP1<=(state->logq);
 		|	}
 		|
 		|	if (PIN_LATE=>) {
