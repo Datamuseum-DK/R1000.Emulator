@@ -57,6 +57,8 @@ class XLRULOGIC(PartFactory):
 		|	bool lpar_qd;
 		|	bool soil_qd;
 		|	bool logq;
+		|	bool hitq;
+		|	bool hith;
 		|	unsigned tag_d;		// -,49,50,MOD,-,-,-,-
 		|''')
 
@@ -76,14 +78,15 @@ class XLRULOGIC(PartFactory):
 		|	bool hit;
 		|	unsigned hitbus = 0;
 		|
-		|	if (PIN_HITQ=>) {
+		|	if (PIN_HITQ=> ^ state->hitq)
+		|		printf("HITQ %d %d\\n", PIN_HITQ=> != 0, state->hitq);
+		|	if (state->hitq) {
 		|		hit = false;
 		|	} else if (PIN_NMATCH=> && PIN_OMATCH=> && state->logq) {
 		|		hit = false;
 		|	} else {
 		|		hit = true;
 		|	}
-		|	PIN_HIT<=(hit);
 		|
 		|	if (PIN_CLK.posedge()) {
 		|		// MUXxPAL
@@ -186,7 +189,7 @@ class XLRULOGIC(PartFactory):
 		|				(!hit)
 		|			) || (
 		|				PIN_LRU_UPDATE=> &&
-		|				PIN_HITQ=>
+		|				state->hitq
 		|			)
 		|		);
 		|	}
@@ -248,7 +251,9 @@ class XLRULOGIC(PartFactory):
 		|		if (state->qd & 0x08) u++;
 		|		state->lpar_qd = u & 1;
 		|
-		|		if (cmd == 0xd && !PIN_MCYC1=> && !(state->qd & 0x10))
+		|		bool cyc1 = PIN_MCYC1;
+		|
+		|		if (cmd == 0xd && !cyc1 && !(state->qd & 0x10))
 		|			state->soil_qd = true;
 		|		else
 		|			state->soil_qd = false;
@@ -256,7 +261,7 @@ class XLRULOGIC(PartFactory):
 		|		bool tag56 = PIN_ITAG56=>;
 		|		bool tag57 = PIN_ITAG57=>;
 		|		state->logq = false;
-		|		if (PIN_FORCE_HIT=> && !PIN_MCYC1=>) {
+		|		if (PIN_FORCE_HIT=> && !cyc1) {
 		|			if (tag57 && !tag56 &&
 		|			    (cmd == 0xc || cmd == 0xd ||
 		|			     cmd == 0x4 || cmd == 0x3))
@@ -268,13 +273,50 @@ class XLRULOGIC(PartFactory):
 		|				state->logq = true;
 		|		}
 		|		PIN_TMP1<=(state->logq);
+		|
+		|		bool phit = PIN_PHIT=>;
+		|		bool fhit = PIN_FORCE_HIT=>;
+		|		state->hitq = false;
+		|
+		|		if (!phit && !fhit)
+		|			state->hitq = true;
+		|
+		|		if (!cyc1) {
+		|			if (!(state->qd & 0xf) && fhit && cmd == 0x2)
+		|				state->hitq = true;
+		|
+		|			if (!tag56 && !tag57 && fhit && cmd == 0x1)
+		|				state->hitq = true;
+		|
+		|			if (!phit && fhit &&
+		|			    (cmd == 0x5 || cmd == 0x6 || cmd == 0x7 || cmd == 0x08
+		|			    || cmd == 0xa || cmd == 0x0b || cmd == 0x0e || cmd == 0xf))
+		|				state->hitq = true;
+		|
+		|			if (fhit && !state->hith && cmd == 9)
+		|				state->hitq = true;
+		|		} else {
+		|			if (fhit && !state->hith)
+		|				state->hitq = true;
+		|		}
+		|
+		|		PIN_TMP2<=(state->hitq);
+		|		if (state->hitq) {
+		|			hit = false;
+		|		} else if (PIN_NMATCH=> && PIN_OMATCH=> && state->logq) {
+		|			hit = false;
+		|		} else {
+		|			hit = true;
+		|		}
 		|	}
 		|
 		|	if (PIN_LATE=>) {
-		|		PIN_TMP0<=(state->hit_hd);
+		|		state->hith = state->hit_hd;
 		|	} else {
-		|		PIN_TMP0<=(state->hd & 1);
+		|		state->hith = state->hd & 1;
 		|	}
+		|	PIN_TMP0<=(state->hith);
+		|	PIN_HIT<=(hit);
 		|
 		|	TRACE(
 		|	    << " lrud " << std::hex << state->lrud
