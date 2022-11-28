@@ -62,18 +62,18 @@ class F169(PartFactory):
 
         file.fmt('''
 		|	bool carry;
-		|	const char *what = NULL;
+		|	const char *what = "?";
 		|
 		|	if (PIN_CLK.posedge()) {
 		|		if (!PIN_LD=>) {
-		|			what = " ld ";
+		|			what = "LD";
 		|			BUS_D_READ(state->count);
 		|		} else if (!PIN_ENP=> && !PIN_ENT=>) {
 		|			if (PIN_UP=>) {
-		|				what = " up ";
+		|				what = "UP";
 		|				state->count = (state->count + 0x1) & BUS_D_MASK;
 		|			} else {
-		|				what = " dn ";
+		|				what = "DN";
 		|				state->count = (state->count + BUS_D_MASK) & BUS_D_MASK;
 		|			}
 		|		} else {
@@ -105,14 +105,14 @@ class F169(PartFactory):
 		|		TRACE(
 		|		    << what
 		|		    << " up " << PIN_UP?
-		|		    << " clk " << PIN_CLK.posedge()
+		|		    << " clk↑ " << PIN_CLK.posedge()
 		|		    << " d " << BUS_D_TRACE()
 		|		    << " enp " << PIN_ENP?
 		|		    << " load " << PIN_LD?
 		|		    << " ent " << PIN_ENT?
-		|		    << "|"
+		|		    << " | "
 		|		    << std::hex << state->count
-		|		    << "+"
+		|		    << " + "
 		|		    << carry
 		|		);
 		|	}
