@@ -101,7 +101,7 @@ Ioc_HotFix_Ioc(void)
 	skip_code(0x80000d4e, 0x80000dd6, "Diagnostic DUART channel");
 	skip_code(0x80000dfc, 0x80000ec4, "Clock / Calendar");
 	skip_code(0x80000fa0, 0x80000fda, "RESHA EEProm Interface ...");
-	skip_code(0x80001194, 0x800011a0, "RESHA TAPE SUB-TESTs");
+	// skip_code(0x80001194, 0x800011a0, "RESHA TAPE SUB-TESTs");
 	skip_code(0x8000181c, 0x8000185c, "Power margining");
 	skip_code(0x80001982, 0x80001992, "final check");
 
@@ -148,6 +148,9 @@ ioc_hotfix_resha_functional(void)
 
 	ioc_breakpoint_rpn(0x000766a2,
 	    "'Hit RESHA self-test fail. ' regs ' ' stack ' ' finish");
+
+	ioc_breakpoint_rpn(0x00071554,
+	    "'Hit RESHA TAPE interrupt fail. ' regs ' ' stack ' ' finish");
 
 	/*
 	 * 0007678a 4e f0 01 e1 00 04          JMP     ((#4))

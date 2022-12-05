@@ -325,7 +325,7 @@ ioc_scsi_t_init(void)
 /**********************************************************************/
 
 void v_matchproto_(mem_post_write)
-scsi_dma_post_write(int debug, uint8_t *space, unsigned width, unsigned adr)
+resha_misc_post_write(int debug, uint8_t *space, unsigned width, unsigned adr)
 {
 	unsigned u;
 
