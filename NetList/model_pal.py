@@ -48,7 +48,7 @@ PIN_NAMES = {
     "CMDPAL": {
         1: "h2", 2: "mcmd0", 3: "mcmd1", 4: "mcmd2", 5: "mcmd3", 6: "cmdcont", 7: "early_abort",
         8: "mcyc1_hd", 9: "mcyc2_next_hd", 11: "mcyc2_hd", 13: "refresh", 14: "mcyc2",
-        15: "mcyc1", 16: "mcyc2_next", 17: "cmd3", 18: "cmd2", 19: "cmd1", 20: "cmd0",
+        15: "mcyc1", 16: "mcyc2_next", 17: "cmd3", 18: "cmd2", 12: "cmd1", 19: "cmd0",
     },
     "CNTRPAL": {
         1: "q4", 2: "refresh", 3: "diag_0", 4: "diag_1", 5: "diag_2", 6: "diag_3", 7: "d_cnt_op0",
