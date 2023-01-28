@@ -230,6 +230,7 @@ static void
 ioc_duart_tx_callback(void *priv)
 {
 	struct chan *chp = priv;
+	uint8_t adr, cmd;
 
 	if (chp->is_diagbus) {
 		assert (chp->txshift_valid == 2);
@@ -240,8 +241,25 @@ ioc_duart_tx_callback(void *priv)
 		Trace(trace_diagbus, "%s", VSB_data(chp->vsb));
 		if (chp->txshift[0])
 			ioc_duart_pace_downloads(chp);
+		elastic_put(chp->ep, chp->txshift, chp->txshift_valid);
+		if (chp->txshift[0]) {
+			cmd = chp->txshift[1] & 0xe0;
+			adr = chp->txshift[1] & 0x1f;
+			if (cmd == 0x80 && adr != 5) {
+				elastic_drain(chp->ep);
+				usleep(100000);
+				Trace(
+				    trace_diagbus,
+				    "%s Post Reset (0x%x%02x)", 
+					    chp->name,
+					    chp->txshift[0],
+					    chp->txshift[1]
+				);
+			}
+		}
+	} else {
+		elastic_put(chp->ep, chp->txshift, chp->txshift_valid);
 	}
-	elastic_put(chp->ep, chp->txshift, chp->txshift_valid);
 	chp->txshift_valid = 0;
 	chp->sr |= 4;
 	chp->sr |= 8;
