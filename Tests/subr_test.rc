@@ -20,16 +20,19 @@ standard_patches() {
 	cli 'dfs patch FS_0.M200 0x93c6 0x00 0x14'
 
 	# Allow operator to enter CLI immediately [N] ? y
-	cli dfs patch STANDARD.M200_CONFIG 0x3 0x1
+	# cli dfs patch STANDARD.M200_CONFIG 0x3 0x1
 
 	# Allow operator to enter CLI prior to starting the cluster [N] ? y
-	cli dfs patch STANDARD.M200_CONFIG 0x5 0x1
+	# cli dfs patch STANDARD.M200_CONFIG 0x5 0x1
 
 	# Wait for remote debugging on kernel crashes [Y] ? n
 	cli dfs patch STANDARD.M200_CONFIG 0x2a 0x0
 
 	# Call Rational on kernel crash [Y] ? n
 	cli dfs patch STANDARD.M200_CONFIG 0x2d 0x0
+
+	# Single MEM32 board
+	cli dfs patch HARDWARE.M200_CONFIG 0x05 0x0
 }
 
 cli() {
@@ -61,6 +64,7 @@ sc_boards() {
 cli_prompt() {
 	cli "iop syscall internal"  
 
+	cli 'sc wait .00001'
 	cli '# => cli_prompt'
 	cli iop reset
 	cli 'console match expect "Boot from (Tn or Dn)  [D0] : "'
@@ -132,7 +136,7 @@ single() {
 		EXP=$1
 	fi
 
-	cli 'sc trace DI*PROC 0x15'
+	cli 'sc trace DI*PROC 0x14'
 
 	cli 'sc quota add 60'
 	cli 'sc quota exit'
