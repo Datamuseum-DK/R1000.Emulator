@@ -45,6 +45,7 @@ class PAxxx(PartFactory):
         ''' Extra state variable '''
 
         file.write("\tuint8_t prom[512];\n")
+        file.write("\tuint8_t last;\n")
 
     def init(self, file):
         ''' Extra initialization '''
@@ -63,26 +64,29 @@ class PAxxx(PartFactory):
 		|
 		|	BUS_A_READ(adr);
 		|	unsigned data = state->prom[adr];
-		|	TRACE(
+		|	if (data != state->last) {
+		|		TRACE(
 		|''')
 
         if 'OE' in self.comp.nodes:
             file.fmt('''
-		|	    << " oe_ " << PIN_OE=>
+		|		    << " oe_ " << PIN_OE=>
 		|''')
 
         file.fmt('''
-		|	    << " a " << BUS_A_TRACE()
-		|	    << " d "
-		|	    << AS(data & 0x80)
-		|	    << AS(data & 0x40)
-		|	    << AS(data & 0x20)
-		|	    << AS(data & 0x10)
-		|	    << AS(data & 0x08)
-		|	    << AS(data & 0x04)
-		|	    << AS(data & 0x02)
-		|	    << AS(data & 0x01)
-		|	);
+		|		    << " a " << BUS_A_TRACE()
+		|		    << " d "
+		|		    << AS(data & 0x80)
+		|		    << AS(data & 0x40)
+		|		    << AS(data & 0x20)
+		|		    << AS(data & 0x10)
+		|		    << AS(data & 0x08)
+		|		    << AS(data & 0x04)
+		|		    << AS(data & 0x02)
+		|		    << AS(data & 0x01)
+		|		);
+		|	}
+		|	state->last = data;
 		|''')
 
         if 'OE' not in self.comp.nodes:
