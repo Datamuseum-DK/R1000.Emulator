@@ -59,13 +59,16 @@ class XLRULOGIC(PartFactory):
 		|	bool logq;
 		|	bool hitq;
 		|	bool hith;
+		|	unsigned lhit;
 		|	unsigned tag_d;		// -,49,50,MOD,-,-,-,-
 		|''')
 
     def sensitive(self):
         yield "PIN_CLK"
-        yield "PIN_HITQ"
+        if 1 and self.comp.nodes["LATE"].net.is_pu():
+            yield "PIN_HITQ"
         yield "PIN_NMATCH"
+        yield "PIN_LRU_UPDATE"
         yield "PIN_OMATCH"
         yield "BUS_LHIT_SENSITIVE()"
 
@@ -75,20 +78,25 @@ class XLRULOGIC(PartFactory):
         super().doit(file)
 
         file.fmt('''
-		|	bool hit;
+		|	bool hitpin, didlate = false;
 		|	unsigned hitbus = 0;
 		|
-		|	if (PIN_HITQ=> ^ state->hitq)
-		|		printf("HITQ %d %d\\n", PIN_HITQ=> != 0, state->hitq);
 		|	if (state->hitq) {
-		|		hit = false;
+		|		hitpin = false;
 		|	} else if (PIN_NMATCH=> && PIN_OMATCH=> && state->logq) {
-		|		hit = false;
+		|		hitpin = false;
 		|	} else {
-		|		hit = true;
+		|		hitpin = true;
+		|	}
+		|
+		|	if (PIN_CLK.negedge() && PIN_H1=>) { // GOOD
+		|		BUS_HITLRU_READ(state->lhit);
+		|		state->lhit ^= 0xf;
 		|	}
 		|
 		|	if (PIN_CLK.posedge()) {
+		|		didlate = true;
+		|
 		|		// MUXxPAL
 		|		state->lru_upd_oe = !PIN_LRU_UPDATE;
 		|
@@ -112,7 +120,7 @@ class XLRULOGIC(PartFactory):
 		|			state->lru_0_oe = !(
 		|				PIN_LRU_UPDATE=> &&
 		|				(!PIN_H1=>) &&
-		|				(!hit)
+		|				(!hitpin)
 		|			);
 		|			state->lru_1_oe = !(
 		|				PIN_LRU_UPDATE=> &&
@@ -186,24 +194,28 @@ class XLRULOGIC(PartFactory):
 		|		state->lru_0_oe = !(
 		|			(
 		|				PIN_LRU_UPDATE=> &&
-		|				(!hit)
-		|			) || (
-		|				PIN_LRU_UPDATE=> &&
-		|				state->hitq
+		|				(!hitpin)
 		|			)
 		|		);
 		|	}
 		|
+		|	int hitl;
 		|	if (!state->lru_0_oe) {
+		|		hitl = state->qd & 0x0f;
 		|		BUS_HITLRU_WRITE(state->qd & 0x0f);
 		|	} else if (!state->lru_1_oe) {
+		|		hitl = (state->hd >> 2) & 0x0f;
 		|		BUS_HITLRU_WRITE((state->hd >> 2) & 0x0f);
 		|	} else {
+		|		hitl = -1;
 		|		BUS_HITLRU_Z();
 		|	}
 		|
+		|	int hitb;
 		|	unsigned lhit;
 		|	BUS_LHIT_READ(lhit);
+		|	//if (lhit != state->lhit) printf("LH %x %x\\n", lhit, state->lhit);
+		|	// lhit = state->lhit;
 		|	if ((0x0f ^ state->lrud) < lhit) {
 		|		hitbus |= (~state->lruupd) & 0xf;
 		|		if (state->par_upd) {
@@ -218,15 +230,18 @@ class XLRULOGIC(PartFactory):
 		|	hitbus |= state->tag_d;
 		|
 		|	if (state->lru_upd_oe) {
+		|		hitb = -1;
 		|		BUS_TAG_Z();
 		|	} else {
+		|		hitb = hitbus ^ 0xff;
 		|		BUS_TAG_WRITE(hitbus ^ 0xff);
 		|	}		
 		|
 		|	if (PIN_CLK.negedge()) {
+		|		// Middle register
 		|		state->hd = (state->qd & 0xf) << 2;
 		|		state->hd |= (state->qd >> 7) << 1;
-		|		if (hit)
+		|		if (hitpin)
 		|			state->hd |= 1;
 		|		if (state->soil_qd)
 		|			state->hd |= 0x80;
@@ -237,6 +252,7 @@ class XLRULOGIC(PartFactory):
 		|	if ((PIN_LATE=> && PIN_CLK.posedge()) ||
 		|	   (!(PIN_LATE=>) && PIN_CLK.negedge())) {
 		|
+		|		// First register
 		|		BUS_TAG_READ(state->qd);
 		|
 		|		// TSXXPAL
@@ -260,8 +276,10 @@ class XLRULOGIC(PartFactory):
 		|
 		|		bool tag56 = PIN_ITAG56=>;
 		|		bool tag57 = PIN_ITAG57=>;
+		|		bool phit = PIN_PHIT=>;
+		|		bool fhit = PIN_FORCE_HIT=>;
 		|		state->logq = false;
-		|		if (PIN_FORCE_HIT=> && !cyc1) {
+		|		if (fhit && !cyc1) {
 		|			if (tag57 && !tag56 &&
 		|			    (cmd == 0xc || cmd == 0xd ||
 		|			     cmd == 0x4 || cmd == 0x3))
@@ -274,8 +292,6 @@ class XLRULOGIC(PartFactory):
 		|		}
 		|		PIN_TMP1<=(state->logq);
 		|
-		|		bool phit = PIN_PHIT=>;
-		|		bool fhit = PIN_FORCE_HIT=>;
 		|		state->hitq = false;
 		|
 		|		if (!phit && !fhit)
@@ -300,27 +316,58 @@ class XLRULOGIC(PartFactory):
 		|				state->hitq = true;
 		|		}
 		|
-		|		PIN_TMP2<=(state->hitq);
-		|		if (state->hitq) {
-		|			hit = false;
-		|		} else if (PIN_NMATCH=> && PIN_OMATCH=> && state->logq) {
-		|			hit = false;
+		|	}
+		|	PIN_TMP2<=(state->hitq);
+		|
+		|	if (state->hitq) {
+		|		hitpin = false;
+		|	} else if (PIN_NMATCH=> && PIN_OMATCH=> && state->logq) {
+		|		hitpin = false;
+		|	} else {
+		|		hitpin = true;
+		|	}
+		|
+		|	if (didlate) {
+		|		if (PIN_LATE=>) {
+		|			state->hith = state->hit_hd;
 		|		} else {
-		|			hit = true;
+		|			state->hith = state->hd & 1;
 		|		}
 		|	}
-		|
-		|	if (PIN_LATE=>) {
-		|		state->hith = state->hit_hd;
-		|	} else {
-		|		state->hith = state->hd & 1;
-		|	}
 		|	PIN_TMP0<=(state->hith);
-		|	PIN_HIT<=(hit);
+		|	PIN_HIT<=(hitpin);
 		|
 		|	TRACE(
-		|	    << " lrud " << std::hex << state->lrud
-		|	    << " lruupd " << std::hex << state->lruupd
+		|	    << " clk↑↓ " << PIN_CLK.posedge() << PIN_CLK.negedge()
+		|''')
+        if self.comp.nodes["LATE"].net.is_pu():
+            file.fmt('''
+		|	    << " hitq↑↓ " << PIN_HITQ.posedge() << PIN_HITQ.negedge()
+		|''')
+        else:
+            file.fmt('''
+		|	    << " hitq↑↓ ??" 
+		|''')
+        file.fmt('''
+		|	    << " nmatch↑↓ " << PIN_NMATCH.posedge() << PIN_NMATCH.negedge()
+		|	    << " omatch↑↓ " << PIN_OMATCH.posedge() << PIN_OMATCH.negedge()
+		|	    << " cyc1 " << PIN_MCYC1?
+		|	    << " cmd " << BUS_CMD_TRACE()
+		|	    << " h1 " << PIN_H1?
+		|	    << " late " << PIN_LATE?
+		|	    << " lhit " << BUS_LHIT_TRACE()
+		|	    << " hitlru " << BUS_HITLRU_TRACE()
+		|	    << " hitpin " << hitpin
+		|	    << " hitq " << state->hitq
+		|	    << " hith " << state->hith
+		|	    << " hithd " << state->hit_hd
+		|	    << " hitl " << hitl
+		|	    << " hitb " << hitb
+		|	    << " phit " << PIN_PHIT?
+		|	    << " fhit " << PIN_FORCE_HIT?
+		|	    << " logq " << state->logq
+		|	    << " lru " << state->lru_0_oe << state->lru_1_oe
+		|	    << " tag " << BUS_TAG_TRACE()
 		|	);
 		|''')
 
