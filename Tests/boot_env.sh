@@ -22,7 +22,7 @@ sc_boards ioc fiu mem0 seq typ val
 
 cli 'sc trace DI*PROC 0x14'
 # cli 'sc trace TYP.*DI*PROC 0x16'
-# cli 'sc trace TYP.*ARAM 0x1'
+# cli 'sc trace MEM.*TAER13 0x1'
 if false ; then
 	cli 'sc trace SEQ.*DSPDV 0x1'
 	cli 'sc trace IOC.*DUIRG 0x1'
@@ -68,7 +68,7 @@ cli 'iop syscall internal'
 # cli 'trace +ioc_instructions'
 # cli 'trace +ioc_interrupt'
 cli 'trace +console'
-cli 'trace +diagbus_bytes'
+cli 'trace +diagbus'
 
 cli 'sc wait 1e-6'
 cli iop reset
@@ -82,7 +82,7 @@ cli 'console << ""'
 cli 'console match expect "User program   (0,1,2) [0] : "'
 cli 'console << ""'
 cli 'console match expect "Enter option [enter CLI] : "'
-cli 'console << "4"'
+cli 'console << "6"'
 
 
 ./r1000sim \
