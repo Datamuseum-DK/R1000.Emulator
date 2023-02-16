@@ -83,7 +83,70 @@ class F148(PartFactory):
 		|	PIN_EZ<=(!(s & 8));
 		|''')
 
+class F148X2(PartFactory):
+
+    ''' Dual F148 8-Line to 3-Line Priority Encoder '''
+
+
+    def doit(self, file):
+        ''' The meat of the doit() function '''
+
+        super().doit(file)
+
+        file.fmt('''
+		|
+		|	unsigned s, i;
+		|
+		|	BUS_I_READ(i);
+		|	if (!(i & 0x8000))
+		|		s = 15;
+		|	else if (!(i & 0x4000))
+		|		s = 14;
+		|	else if (!(i & 0x2000))
+		|		s = 13;
+		|	else if (!(i & 0x1000))
+		|		s = 12;
+		|	else if (!(i & 0x0800))
+		|		s = 11;
+		|	else if (!(i & 0x0400))
+		|		s = 10;
+		|	else if (!(i & 0x0200))
+		|		s = 9;
+		|	else if (!(i & 0x0100))
+		|		s = 8;
+		|	else if (!(i & 0x0080))
+		|		s = 7;
+		|	else if (!(i & 0x0040))
+		|		s = 6;
+		|	else if (!(i & 0x0020))
+		|		s = 5;
+		|	else if (!(i & 0x0010))
+		|		s = 4;
+		|	else if (!(i & 0x0008))
+		|		s = 3;
+		|	else if (!(i & 0x0004))
+		|		s = 2;
+		|	else if (!(i & 0x0002))
+		|		s = 1;
+		|	else if (!(i & 0x0001))
+		|		s = 0;
+		|	else
+		|		s = 16|32;
+		|	if (PIN_E=>)
+		|		s = 32;
+		|	TRACE(
+		|	    << " i " << BUS_I_TRACE()
+		|	    << " e " << PIN_E?
+		|	    << " | "
+		|	    << std::hex << s
+		|	);
+		|	BUS_Y_WRITE(~s);
+		|	PIN_GS<=(s & 32);
+		|	PIN_EZ<=(!(s & 16));
+		|''')
+
 def register(board):
     ''' Register component model '''
 
     board.add_part("F148", PartModel("F148", F148))
+    board.add_part("F148X2", PartModel("F148X2", F148X2))
