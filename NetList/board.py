@@ -56,7 +56,6 @@ class Board():
         self.dstdir = os.path.join(
              cpu.workdir,
              self.name.capitalize(),
-             self.branch
         )
         os.makedirs(self.dstdir, exist_ok=True)
         self.srcs = []

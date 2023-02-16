@@ -23,14 +23,14 @@ include Iop/Makefile.inc
 include Chassis/Makefile.inc
 include Components/Makefile.inc
 
-include ${WORKDIR}/Emu/${BRANCH}/Makefile.inc
-include ${WORKDIR}/Fiu/${BRANCH}/Makefile.inc
-include ${WORKDIR}/Ioc/${BRANCH}/Makefile.inc
-include ${WORKDIR}/Mem32/${BRANCH}/Makefile.inc
-include ${WORKDIR}/Seq/${BRANCH}/Makefile.inc
-include ${WORKDIR}/Typ/${BRANCH}/Makefile.inc
-include ${WORKDIR}/Val/${BRANCH}/Makefile.inc
-include ${WORKDIR}/Chassis/${BRANCH}/Makefile.inc
+include ${WORKDIR}/Emu/Makefile.inc
+include ${WORKDIR}/Fiu/Makefile.inc
+include ${WORKDIR}/Ioc/Makefile.inc
+include ${WORKDIR}/Mem32/Makefile.inc
+include ${WORKDIR}/Seq/Makefile.inc
+include ${WORKDIR}/Typ/Makefile.inc
+include ${WORKDIR}/Val/Makefile.inc
+include ${WORKDIR}/Chassis/Makefile.inc
 
 
 CFLAGSMINUSI += -I.

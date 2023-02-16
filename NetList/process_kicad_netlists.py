@@ -68,7 +68,7 @@ class R1000Cpu():
         self.nets = {}
         self.plane = None
 
-        self.cdir = os.path.join(workdir, "Chassis", branch)
+        self.cdir = os.path.join(workdir, "Chassis")
         self.tstamp = os.path.join(self.cdir, "_timestamp")
         self.planes_hh = os.path.join(self.cdir, "planes.hh")
 
