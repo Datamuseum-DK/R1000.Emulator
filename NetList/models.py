@@ -97,6 +97,7 @@ import model_xiopram
 import model_xlat
 import model_xlrulogic
 import model_xmux_1
+import model_xnxtuadr
 import model_xpar64
 import model_xreg
 import model_xrf
@@ -178,6 +179,7 @@ def register(where):
     model_xlat.register(where)
     model_xlrulogic.register(where)
     model_xmux_1.register(where)
+    model_xnxtuadr.register(where)
     model_xpar64.register(where)
     model_xreg.register(where)
     model_xrf.register(where)
