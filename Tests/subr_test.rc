@@ -92,6 +92,7 @@ expmon_prompt() {
 	cli 'console << "x expmon"'
 	cli 'console match expect "EM>"'
 	expmon_cmd '[set FIRST_PASS true]'
+	expmon_cmd '[set num_fails 0]'
 }
 
 fru_prompt() {
