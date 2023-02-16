@@ -199,7 +199,7 @@ dump_mailbox(const char *dir, uint32_t mb)
 		    1,
 		    ram_space + adr,
 		    0x20,
-		    "%s Mailbox[%u @ 0x%04x] ",
+		    "%s Mailbox[%2u @ 0x%04x] ",
 		    dir,
 		    mb,
 		    adr
@@ -209,7 +209,7 @@ dump_mailbox(const char *dir, uint32_t mb)
 		    1,
 		    ram_space + adr,
 		    0x20,
-		    "%s SecBuf[%u @ 0x%04x] ",
+		    "%s SecBuf[%2u @ 0x%04x] ",
 		    dir,
 		    mb,
 		    adr
