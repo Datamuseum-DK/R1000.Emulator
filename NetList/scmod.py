@@ -65,14 +65,16 @@ class SC_Mod():
     def makefile_entry(self, file):
         ''' ... '''
         bname = self.filename.split("/")[-1]
-        file.write("\n# " + bname + "\n")
+        hdr = "# " + bname + "\n"
+        txt = ""
         obj = "${OBJDIR}/" + bname + ".o"
-        file.write("OBJS += " + obj + "\n")
-        file.write(obj + ":")
+        txt += "OBJS += " + obj + "\n"
+        txt += obj + ":"
         for incl in sorted(self.cc):
-            file.write(" \\\n    " + incl)
-        file.write("\n")
-        file.write("\t${SC_CC} -o " + obj + " " + self.cc.filename + "\n")
+            txt += " \\\n    " + incl
+        txt += "\n"
+        txt += "\t${SC_CC} -o " + obj + " " + self.cc.filename + "\n"
+        file.add_stanza(hdr, txt)
 
     def std_hh(self, pin_iterator):
         ''' Produce a stanard .hh file '''

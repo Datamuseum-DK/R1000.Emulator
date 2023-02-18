@@ -106,3 +106,19 @@ class SrcFile():
         if was != now:
             print("Changed:", self.filename)
             open(self.filename, "w").write(now)
+
+class Makefile(SrcFile):
+    ''' ... '''
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.make_stanzas = []
+
+    def add_stanza(self, hdr, txt):
+        self.make_stanzas.append((hdr, txt))
+
+    def commit(self):
+        for a, b in sorted(self.make_stanzas):
+            self.write("\n" + a)
+            self.write(b)
+        super().commit()

@@ -38,7 +38,7 @@ import os
 import glob
 
 from board import Board
-from srcfile import SrcFile
+from srcfile import SrcFile, Makefile
 from scmod import SC_Mod
 
 import models
@@ -119,7 +119,7 @@ class R1000Cpu():
     def do_build(self):
         ''' ... '''
 
-        self.chassis_makefile = SrcFile(os.path.join(self.cdir, "Makefile.inc"))
+        self.chassis_makefile = Makefile(os.path.join(self.cdir, "Makefile.inc"))
 
         for filename in self.netlists:
             print("Processing", filename)

@@ -38,7 +38,7 @@ import os
 
 from sexp import SExp
 
-from srcfile import SrcFile
+from srcfile import SrcFile, Makefile
 from scmod import SC_Mod
 from sheet import SheetSexp
 from part import LibPartSexp, NoPart
@@ -61,7 +61,7 @@ class Board():
         self.srcs = []
         self.part_catalog = self.cpu.part_catalog
 
-        self.makefile = SrcFile(self.dstdir + "/Makefile.inc")
+        self.makefile = Makefile(self.dstdir + "/Makefile.inc")
         self.chf_sheets = SrcFile(self.dstdir + "/" + self.lname + "_sheets.h")
         self.scm_board = self.sc_mod(self.lname + "_board")
         self.scm_board.subst("«bbb»", self.lname)
