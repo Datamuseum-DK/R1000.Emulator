@@ -1,22 +1,22 @@
 #!/bin/sh
 
+set -e
+
+. Tests/subr_test.rc
+
 if [ "x$1" == "x" ] ; then
-	echo "Specify run-name as argument" 1>&2
+	rundir=${R1K_WORKDIR}/boot
+	rm -rf ${rundir}
+elif [ -d ${R1K_WORKDIR}/$1 ] ; then
+	echo "Run-name (${R1K_WORKDIR}/$1) directory already exists" 1>&2
 	exit 1
+else
+	rundir=${R1K_WORKDIR}/$1
 fi
-
-if [ -d $1 ] ; then
-	echo "Run-name ($1) directory already exists" 1>&2
-	exit 1
-fi
-
-rundir=$1
 
 mkdir -p ${rundir}
 
 make -j 7 && make -j 7
-
-. Tests/subr_test.rc
 
 sc_boards ioc fiu mem0 seq typ val
 
@@ -83,7 +83,6 @@ cli 'console match expect "User program   (0,1,2) [0] : "'
 cli 'console << ""'
 cli 'console match expect "Enter option [enter CLI] : "'
 cli 'console << "6"'
-
 
 ./r1000sim \
 	-T ${rundir}/_r1000 \
