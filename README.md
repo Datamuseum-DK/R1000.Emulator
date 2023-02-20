@@ -1,81 +1,37 @@
 # R1000.Emulator
 
-This is the beginnings of an emulator for the Rational R1000/400 computer.
+This is an emulator for the Rational R1000/400 computer, it is not done yet, but it gets
+very far in the boot process … very, very slowly.
 
 https://datamuseum.dk/wiki/Rational/R1000s400
 
-0. Right now, this probably only runs under FreeBSD.  You need systemc and python38 installed too.
+0. This is known to run under FreeBSD and OS/X 
 
-1. Run `make setup`, this clones the Musashi 68k emulator and downloads the firmware images.
+1. Install python3 and SystemC
 
-2. Manually download https://datamuseum.dk/bits/30000551 somewhere, it needs a gigabyte.
+2. Run `make setup`, this clones the Musashi 68k emulator and downloads the firmware images.
 
-3. Get hold of KiCad net-list files for the schematics.  They are not checked in yet,
-   they change massively.  Send phk@freebsd.org an email.
+3. Create a `Makefile.local`:
 
-4. Edit `TRACE_FILE` and `DISK0_IMAGE` at the top of `Makefile` to something suitable.
+	BRANCH ?= whatever
+	WORKDIR = /some_GB_free_for_transient_stuff/${BRANCH}
+	NETLISTS += ${WORKDIR}/*.net
+	DISK0_IMAGE = "${WORKDIR}/../DiskImages/20230105_snap08.0.bin"
+	DISK1_IMAGE = "${WORKDIR}/../DiskImages/20230105_snap08.1.bin"
 
-5. `make all`  This takes a fair bit of time.
+4. Download diskimages and KiCad net-lists.  These are huge and change a lot, so they are
+   not checked in yet.  Ask phk@freebsd.org where to find them.
+   The `*.net` netlist files go in `${WORKDIR}`.
+   The `*.bin` diskimages go in `${WORKDIR}/../DiskImages`
 
-6. In a separate window: `cu -l /dev/nmdm0A`  (You may need: `sudo kldload nmdm`)
+5. `make [-j N] all`  This takes some minutes.
 
-7. `make cli`, in the other window you should see:
+6. In a separate window start: `cu -l /dev/nmdm0A`  (You may need: `sudo kldload nmdm`)
+
+7. Run `sh Tests/cli_only.sh` and in the other window you should end up seeing:
 
 ```
-     R1000-400 IOC SELFTEST 1.3.2
-        512 KB memory ... [OK]
-        Memory parity ... [OK]
-        I/O bus control ... [OK]
-        I/O bus map parity ... [OK]
-        I/O bus transactions ... [OK]
-        PIT ... [OK]
-        Modem DUART channel ... Warning: DUART crystal out of spec! ... [OK]
-        Diagnostic DUART channel ... [OK]
-        Clock / Calendar ... Warning: Calendar crystal out of spec! ... [OK]
-    Checking for RESHA board
-        RESHA EEProm Interface ... [OK]
-    Downloading RESHA EEProm 0 - TEST  - Warning: Detected Checksum Error
-    Downloading RESHA EEProm 1 - LANCE
-    Downloading RESHA EEProm 2 - DISK    - Warning: Detected Checksum Error
-    Downloading RESHA EEProm 3 - TAPE
-        DIAGNOSTIC MODEM ... DISABLED
-        RESHA DISK SCSI sub-tests ... [OK]
-        RESHA TAPE SCSI sub-tests ... [OK]
-        Local interrupts ... [OK]
-        Illegal reference protection ... [OK]
-        I/O bus parity ... [OK]
-        I/O bus spurious interrupts ... [OK]
-        Temperature sensors ... [OK]
-        IOC diagnostic processor ... [OK]
-        Power margining ... [OK]
-        Clock margining ... [OK]
-    Selftest passed
-    
-    Restarting R1000-400S February 12th, 2021 at 20:00:00
-    
-    Logical tape drive 0 is an 8mm cartridge tape drive.
-    Logical tape drive 1 is declared non-existent.
-    Logical tape drive 2 is declared non-existent.
-    Logical tape drive 3 is declared non-existent.
-    Booting I/O Processor with Bootstrap version 0.4
-    
-    Boot from (Tn or Dn)  [D0] :
-    Kernel program (0,1,2) [0] :
-    File system    (0,1,2) [0] :
-    User program   (0,1,2) [0] :
-    Initializing M400S I/O Processor Kernel 4_2_18
-    Disk  0 is ONLINE and WRITE ENABLED
-    Disk  1 is ONLINE and WRITE ENABLED
-    IOP Kernel is initialized
-    Initializing diagnostic file system ... [OK]
-    ====================================================
-    Restarting system after loss of AC power
-    
-    CrashSave has created tombstone file R1000_DUMP1.
-    >>> Automatic Crash Recovery is disabled
-     
-    >>> NOTICE: the EPROM WRT PROT switch is OFF (at front of RESHA board) <<<
-    >>> WARNING: the system clock or power is margined <<<
+    […]
     CLI/CRASH MENU - options are:
       1 => enter CLI
       2 => make a CRASHDUMP tape
@@ -88,8 +44,20 @@ https://datamuseum.dk/wiki/Rational/R1000s400
 
 ```
 
-8. CTRL-C the emulator, and try instead `make test_ioc` This will launch a single
-   "experiment" on the IOC's DIPROC.
+The `CLI>` is the prompt of the DFS command line interpreter, try typing `DIR`
+
+The first window has the emulator CLI, which allows you to do all sorts of things,
+try typing `help`.
+
+8. Stop the emulator with CTRL-C (or the `exit` CLI command)
+
+9. Run the complete `FRU` diagnostic: `sh Tests/fru_phase3.sh`
+
+This takes about a day.  You can monitor progress with `tail -F ${WORKDIR}/_fru_phase3.console`
+
+10. Finally, boot the system:  `sh Tests/boot_env.sh`
+
+This takes weeks.  You can monitor progress with `tail -F ${WORKDIR}/boot/_.console`
 
 # OVERALL STRUCTURE
 
