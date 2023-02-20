@@ -111,6 +111,14 @@ fru_prompt() {
 	done
 }
 
+run_with_cli() {
+	cli 'sc wait 1e-6'
+	cli sc rate
+	./r1000sim \
+		-T ${R1K_WORKDIR}/_r1000 \
+		"include ${R1K_CLIFILE}" 2>&1 | tee ${R1K_PFX}.log
+}
+
 run() {
 	cli 'sc wait 1e-6'
 	cli sc rate
