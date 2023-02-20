@@ -136,5 +136,7 @@ class ComponentSexp(Component):
         for i in sexp.find("property"):
             if i[0][0].name == 'Location':
                 self.location = i[1][0].name
+                if self.location[0] == 'z':
+                    board.add_z_code(self, self.location)
             elif i[0][0].name == 'Name':
                 self.name = i[1][0].name

@@ -104,6 +104,9 @@ class Board():
         self.nets[net.name] = net
         self.cpu.nets[self.name + "." + net.name] = net
 
+    def add_z_code(self, comp, zcode):
+        self.cpu.add_z_code(comp, zcode)
+
     def del_net(self, net):
         ''' ... '''
         del self.nets[net.name]
