@@ -98,7 +98,7 @@ if $BACKGROUND ; then
 	nohup ./r1000sim \
 		-T ${rundir}/_r1000 \
 		"include ${R1K_CLIFILE}" 2>&1 | tee ${rundir}/_r1000.log \
-		2>&1 > _.run &
+		2>&1 > _.${runname} &
 else
 	./r1000sim \
 		-T ${rundir}/_r1000 \
