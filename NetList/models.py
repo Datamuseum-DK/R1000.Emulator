@@ -106,6 +106,7 @@ import model_xrot
 import model_xsrn
 import model_xstkram
 import model_xtagram
+import model_xtaside
 import model_xustk
 import model_xutrace
 import model_xvmux
@@ -190,6 +191,7 @@ def register(where):
     model_xsrn.register(where)
     model_xstkram.register(where)
     model_xtagram.register(where)
+    model_xtaside.register(where)
     model_xustk.register(where)
     model_xutrace.register(where)
     model_xvmux.register(where)

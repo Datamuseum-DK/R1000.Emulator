@@ -95,13 +95,14 @@ class NetBus():
         return False
 
     def unordered(self, file):
-        if self.tries > 100000:
+        if self.tries > 1000000:
             return False
         self.tries += 1
         for key in self.components:
             comp, pinbus = key
             sks = list(self.nodes[key][net].pin.sortkey for net in self.nets)
             spread = 1 + sks[-1][-1] - sks[0][-1]
+            # file.write("SKS " + str(spread) + " %d " % len(self.nets) + str(sks) + "\n")
             if sks != sorted(sks) or spread != len(self.nets):
                 if not self.searching:
                     file.write("\nBus pins out of order " + comp.part.name + " " + comp.board.name + " " + comp.name + "\n")
