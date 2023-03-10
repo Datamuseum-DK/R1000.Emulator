@@ -33,7 +33,7 @@
    ========================
 '''
 
-MIN_BUS_WIDTH = 6
+MIN_BUS_WIDTH = 4
 
 import util
 import sys
@@ -50,7 +50,6 @@ class NetBus():
         self.nodes = {}
         self.cname = None
         self.ctype = None
-        self.tries = 0
 
         self.nets.append(net)
         for node in net.nnodes:
@@ -94,38 +93,34 @@ class NetBus():
                 return True
         return False
 
-    def unordered(self, file):
-        if self.tries > 1000000:
-            return False
-        self.tries += 1
+    def is_valid_bus(self, nets):
         for key in self.components:
             comp, pinbus = key
-            sks = list(self.nodes[key][net].pin.sortkey for net in self.nets)
+            sks = list(self.nodes[key][net].pin.sortkey for net in nets)
             spread = 1 + sks[-1][-1] - sks[0][-1]
-            # file.write("SKS " + str(spread) + " %d " % len(self.nets) + str(sks) + "\n")
-            if sks != sorted(sks) or spread != len(self.nets):
-                if not self.searching:
-                    file.write("\nBus pins out of order " + comp.part.name + " " + comp.board.name + " " + comp.name + "\n")
-                    self.table(file, "\t")
-                if len(self.nets) > 2 and len(self.nets) - 1 > len(self.best):
-                    self.searching += 1
-                    orig = self.nets
-                    self.nets = orig[1:]
-                    self.unordered(file)
-                    self.nets = orig[:-1]
-                    self.unordered(file)
-                    self.nets = orig
-                    self.searching -= 1
-                if not self.searching and self.best:
-                    orig = self.nets
-                    self.nets = self.best
-                    file.write("\nSubset found \n")
-                    self.table(file, "\t")
-                    self.nets = orig
-                return True
-        if len(self.nets) > len(self.best):
-            self.best = self.nets
-        return False
+            if sks != sorted(sks) or spread != len(nets):
+                return False
+        return True
+
+    def unordered(self):
+        best = (0, 0, [])
+        i = 0
+        n0 = list(self.nets)
+        while len(n0) >= MIN_BUS_WIDTH:
+            nn = list(n0)
+            j = 1
+            while len(nn) >= MIN_BUS_WIDTH:
+                if not self.is_valid_bus(nn):
+                    nn.pop(-1)
+                    continue
+                if len(nn) > best[0]:
+                    best = (len(nn), i, nn)
+                j = len(nn)
+                break
+            n0 = n0[j:]
+        if best[2]:
+            self.best = best[2]
+        return len(best[2]) != len(self.nets)
 
     def table(self, file, pfx=""):
         self.decide_cname()
@@ -304,8 +299,7 @@ class PassNetConfig():
             while len(maybebus.nets) >= MIN_BUS_WIDTH:
                 maybebus.sort_nets()
                 maybebus.best = []
-                maybebus.searching = 0
-                if not maybebus.unordered(file):
+                if not maybebus.unordered():
                     accepted.append(maybebus)
                     break
                 if len(maybebus.best) < MIN_BUS_WIDTH:
