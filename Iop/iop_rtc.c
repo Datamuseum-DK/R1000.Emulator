@@ -19,6 +19,21 @@ static pthread_mutex_t rtc_mtx = PTHREAD_MUTEX_INITIALIZER;
 static pthread_cond_t rtc_cond = PTHREAD_COND_INITIALIZER;
 static pthread_t rtc_thr;
 
+static const uint8_t last_day_of_month[256] = {
+	[0x01] = 0x31,
+	[0x02] = 0x28,
+	[0x03] = 0x31,
+	[0x04] = 0x30,
+	[0x05] = 0x31,
+	[0x06] = 0x30,
+	[0x07] = 0x31,
+	[0x08] = 0x31,
+	[0x09] = 0x30,
+	[0x10] = 0x31,
+	[0x11] = 0x30,
+	[0x12] = 0x31
+};
+
 static uint8_t rtcregs[32] = {
 	0x00,	// Counter - Milliseconds
 	0x00,	// Counter - Hundredths and Tenths of Seconds
@@ -31,7 +46,7 @@ static uint8_t rtcregs[32] = {
 	0x00,	// Counter - Month
 
 	0x00,	// NVRAM - Milliseconds
-	20,	// NVRAM - (Year - 1)
+	98,	// NVRAM - (Year - 1)
 	0x02,	// NVRAM - Seconds
 	0x00,	// NVRAM - Minutes
 
@@ -72,17 +87,27 @@ ioc_rtc_setclock(void)
 	rtcregs[1] = (tv.tv_usec / 10000) % 10;
 	rtcregs[1] |= ((tv.tv_usec / 100000) % 10) * 16;
 	tm = gmtime(&tv.tv_sec);
+
 	rtcregs[2] = (tm->tm_sec % 10);
 	rtcregs[2] |= (tm->tm_sec / 10) * 16;
 	rtcregs[3] = (tm->tm_min % 10);
 	rtcregs[3] |= (tm->tm_min / 10) * 16;
 	rtcregs[4] = (tm->tm_hour % 10);
 	rtcregs[4] |= (tm->tm_hour / 10) * 16;
-	rtcregs[5] = tm->tm_wday;
+	rtcregs[5] = tm->tm_wday + 1;
 	rtcregs[6] = ((tm->tm_mday) % 10);
 	rtcregs[6] |= ((tm->tm_mday) / 10) * 16;
 	rtcregs[7] = ((tm->tm_mon+1) % 10);
 	rtcregs[7] |= ((tm->tm_mon+1) / 10) * 16;
+}
+
+static unsigned
+ioc_rtc_bcd_increment(int idx)
+{
+	rtcregs[idx] += 1;
+	if ((rtcregs[idx] & 0xf) > 9)
+		rtcregs[idx] += 6;
+	return (rtcregs[idx]);
 }
 
 static void *
@@ -98,47 +123,47 @@ ioc_rtc_thread(void *priv)
 
 		rtcregs[0x0e] |= 0x01;
 
+		// Increment BCD 1/1000ths of seconds
 		rtcregs[0] += 0x10;
 		if (rtcregs[0] <= 0x90)
 			continue;
 		rtcregs[0] = 0x00;
 
-		rtcregs[1] += 0x01;
-		if ((rtcregs[1] & 0x0f) <= 0x09)
-			continue;
-		rtcregs[1] += 0x06;
-		if ((rtcregs[1] & 0xf0 ) <= 0x9)
+		// Increment BCD 1/100ths of seconds
+		if (ioc_rtc_bcd_increment(1) <= 0x99)
 			continue;
 		rtcregs[1] = 0x00;
 
-		rtcregs[2] += 0x01;
-		if ((rtcregs[2] & 0x0f) <= 0x09)
-			continue;
-		rtcregs[2] += 0x06;
-		if ((rtcregs[2] & 0xf0 ) <= 0x50)
+		// Increment BCD Seconds
+		if (ioc_rtc_bcd_increment(2) <= 0x59)
 			continue;
 		rtcregs[2] = 0x00;
 
-		rtcregs[3] += 0x01;
-		if ((rtcregs[3] & 0x0f) <= 0x09)
-			continue;
-		rtcregs[3] += 0x06;
-		if ((rtcregs[3] & 0xf0 ) <= 0x50)
+		// Increment BCD Minutes
+		if (ioc_rtc_bcd_increment(3) <= 0x59)
 			continue;
 		rtcregs[3] = 0x00;
 
-		rtcregs[4] += 0x01;
-		if (rtcregs[4] <= 0x24) {
-			if ((rtcregs[4] & 0x0f) <= 0x09)
-				continue;
-			rtcregs[4] += 0x06;
+		// Increment BCD Hours
+		if (ioc_rtc_bcd_increment(4) <= 0x23)
 			continue;
-		}
 		rtcregs[4] = 0x00;
 
-		// XXX [5] wday
-		// XXX [6] mday
-		// XXX [7] mon
+		// Increment Wday
+		if (ioc_rtc_bcd_increment(5) == 8)
+			rtcregs[5] = 0x01;
+
+		// Increment BCD Mday
+		(void)ioc_rtc_bcd_increment(6);
+		assert(last_day_of_month[rtcregs[7]] != 0);
+		if (rtcregs[6] <= last_day_of_month[rtcregs[7]])
+			continue;
+		rtcregs[6] = 1;
+
+		// Increment BCD Month
+		if (ioc_rtc_bcd_increment(7) <= 0x12)
+			continue;
+		rtcregs[7] = 0x01;
 	}
 }
 
