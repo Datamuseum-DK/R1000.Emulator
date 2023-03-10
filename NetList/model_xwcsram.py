@@ -110,6 +110,7 @@ def register(board):
     ''' Register component model '''
 
     board.add_part("XWCSRAM", PartModel("XWCSRAM", XWCSRAM))
+    board.add_part("XWCSRAM16", PartModel("XWCSRAM16", XWCSRAM))
     board.add_part("XWCSRAM39", PartModel("XWCSRAM39", XWCSRAM))
     board.add_part("XWCSRAM40", PartModel("XWCSRAM40", XWCSRAM))
     board.add_part("XWCSRAM42", PartModel("XWCSRAM42", XWCSRAM))
