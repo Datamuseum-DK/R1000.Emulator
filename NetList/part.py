@@ -262,25 +262,25 @@ class PartFactory(Part):
             src = "PIN_%s=>" % node.pin.name
             trc = "PIN_%s?" % node.pin.name
             if node.pin.role == "c_output" and node.net.sc_type == "bool":
-                file.subst(dst, "PIN_%s = " % node.pin.name)
-                file.subst(trc, "PIN_%s" % node.pin.name)
+                file.add_subst(dst, "PIN_%s = " % node.pin.name)
+                file.add_subst(trc, "PIN_%s" % node.pin.name)
             elif node.pin.role == "c_output" or "tri_state" in node.pin.role:
-                file.subst(src, "IS_H(PIN_%s)" % node.pin.name)
-                file.subst(dst, "PIN_%s = AS" % node.pin.name)
-                file.subst(trc, "PIN_%s" % node.pin.name)
+                file.add_subst(src, "IS_H(PIN_%s)" % node.pin.name)
+                file.add_subst(dst, "PIN_%s = AS" % node.pin.name)
+                file.add_subst(trc, "PIN_%s" % node.pin.name)
             elif node.pin.pinbus is None and node.net.is_pd():
-                file.subst(src, "false")
-                file.subst(trc, '"v"')
+                file.add_subst(src, "false")
+                file.add_subst(trc, '"v"')
             elif node.pin.pinbus is None and node.net.is_pu():
-                file.subst(src, "true")
-                file.subst(trc, '"^"')
+                file.add_subst(src, "true")
+                file.add_subst(trc, '"^"')
             elif node.net.sc_type == "bool":
-                file.subst(src, "PIN_%s" % node.pin.name)
-                file.subst(trc, "PIN_%s" % node.pin.name)
+                file.add_subst(src, "PIN_%s" % node.pin.name)
+                file.add_subst(trc, "PIN_%s" % node.pin.name)
             else:
-                file.subst(src, "IS_H(PIN_%s)" % node.pin.name)
-                file.subst(dst, "PIN_%s = AS" % node.pin.name)
-                file.subst(trc, "PIN_%s" % node.pin.name)
+                file.add_subst(src, "IS_H(PIN_%s)" % node.pin.name)
+                file.add_subst(dst, "PIN_%s = AS" % node.pin.name)
+                file.add_subst(trc, "PIN_%s" % node.pin.name)
 
     def doit(self, file):
         ''' The meat of the doit() function '''

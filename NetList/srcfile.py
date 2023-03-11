@@ -50,7 +50,7 @@ class SrcFile():
         ''' ... '''
         self.text.append(text)
 
-    def subst(self, find, replace):
+    def add_subst(self, find, replace):
         ''' Add substitution pattern '''
         self.substitutions.append((find, replace))
 

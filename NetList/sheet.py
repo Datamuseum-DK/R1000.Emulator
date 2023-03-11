@@ -48,8 +48,8 @@ class Sheet():
         self.local_nets = []
 
         self.scm = self.board.sc_mod(self.mod_name)
-        self.scm.subst("«ttt»", self.mod_type)
-        self.scm.subst("«bbb»", self.board.name.lower())
+        self.scm.add_subst("«ttt»", self.mod_type)
+        self.scm.add_subst("«bbb»", self.board.name.lower())
 
     def __str__(self):
         return self.board.name + "_%d" % self.page

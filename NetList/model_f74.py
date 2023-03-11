@@ -79,12 +79,12 @@ class F74(PartFactory):
         if not self.comp.nodes["CL_"].net.is_const():
             events.append("PIN_CL_.default_event()")
 
-        file.subst("«pr_or_cl»", " | ".join(events))
+        file.add_subst("«pr_or_cl»", " | ".join(events))
 
         if not self.comp.nodes["D"].net.is_const():
             events.append("PIN_D.default_event()")
 
-        file.subst("«d_or_pr_or_cl»", " | ".join(events))
+        file.add_subst("«d_or_pr_or_cl»", " | ".join(events))
 
         # file.write("\t\tnext_trigger(%s);\n" % (" | ".join(i)))
         file.fmt('''

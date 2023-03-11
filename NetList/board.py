@@ -64,11 +64,11 @@ class Board():
         self.makefile = Makefile(self.dstdir + "/Makefile.inc")
         self.chf_sheets = SrcFile(self.dstdir + "/" + self.lname + "_sheets.h")
         self.scm_board = self.sc_mod(self.lname + "_board")
-        self.scm_board.subst("«bbb»", self.lname)
-        self.scm_board.subst("«BBB»", self.name)
+        self.scm_board.add_subst("«bbb»", self.lname)
+        self.scm_board.add_subst("«BBB»", self.name)
         self.scm_globals = self.sc_mod(self.lname + "_globals")
-        self.scm_globals.subst("«bbb»", self.lname)
-        self.scm_globals.subst("«BBB»", self.name)
+        self.scm_globals.add_subst("«bbb»", self.lname)
+        self.scm_globals.add_subst("«BBB»", self.name)
 
         self.sheets = {}
         for i in self.sexp.find("design.sheet"):

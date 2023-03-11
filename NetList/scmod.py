@@ -46,8 +46,8 @@ class SC_Mod():
         self.cc = SrcFile(filename + ".cc")
         self.hh = SrcFile(filename + ".hh")
         self.pub = SrcFile(filename + "_pub.hh")
-        self.subst("«mmm»", self.basename.upper())
-        self.subst("«lll»", self.basename.lower())
+        self.add_subst("«mmm»", self.basename.upper())
+        self.add_subst("«lll»", self.basename.lower())
 
     def commit(self):
         ''' ... '''
@@ -57,10 +57,10 @@ class SC_Mod():
         if self.makefile:
             self.makefile_entry(self.makefile)
 
-    def subst(self, find, replace):
+    def add_subst(self, find, replace):
         ''' Add substituation patterns '''
         for file in (self.cc, self.hh, self.pub):
-            file.subst(find, replace)
+            file.add_subst(find, replace)
 
     def makefile_entry(self, file):
         ''' ... '''
@@ -106,7 +106,7 @@ class SC_Mod():
 		|''')
 
     def std_cc(self, extra=None, state=None, init=None, sensitive=None, doit=None):
-        ''' Produce a stanard .cc file '''
+        ''' Produce a standard .cc file '''
         self.cc.write("#include <systemc.h>\n")
         self.cc.include("Chassis/r1000sc.h")
         self.cc.include("Infra/context.h")
