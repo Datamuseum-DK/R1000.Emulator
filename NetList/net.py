@@ -59,7 +59,6 @@ class Net():
             self.sc_type = "bool"
         else:
             self.sc_type = "sc_logic"
-        self.no_bool = False
         self.cname = None
         self.bcname = None
         self.default = True

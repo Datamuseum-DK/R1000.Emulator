@@ -115,7 +115,6 @@ class ModelF245(PartModel):
             new_comp.part.assign(new_comp)
             for node in comp.nodes.values():
                 if suff[1] == node.pin.name[0]:
-                    node.net.no_bool = True
                     new_pin = Pin(
                         "Q" + node.pin.ident[1:],
                         "Q" + node.pin.name[1:],

@@ -155,7 +155,7 @@ class NetBus():
             )
         file.write(pfx + "\t".join(i) + "\n")
 
-        for net in self.nets:
+        for net in sorted(self.nets):
             i = [""]
             for node in net.nnodes:
                 i.append(node.pin.name)
@@ -221,8 +221,6 @@ class PassNetConfig():
 
     def ponder_bool(self):
         for _gnam, net in sorted(self.cpu.nets.items()):
-            if net.no_bool:
-                continue
             if net.is_supply:
                 net.sc_type = "bool"
                 continue
