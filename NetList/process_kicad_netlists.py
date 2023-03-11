@@ -50,7 +50,7 @@ from pass_net_config import PassNetConfig
 from pass_part_config import PassPartConfig
 from pass_bus_pins import PassBusPins
 
-ME = os.path.basename(__file__)
+MYSELF = os.path.basename(__file__)
 
 def register_models(where):
     ''' Register all component models '''
@@ -187,23 +187,19 @@ class R1000Cpu():
 
     def report_bom(self):
         ''' Report component usage '''
-        with open("_bom.txt", "w") as file:
+        with open("_bom_" + self.branch + ".txt", "w") as file:
             file.write("-" * 40 + '\n')
             parts = set(self.part_catalog.values())
             file.write("%6d         Total parts\n" % len(parts))
             file.write("%6d         Total components\n" % sum(len(x.uses) for x in parts))
             file.write("-" * 40 + '\n')
             file.write("\n")
-            file.write("  Uses  Blame  Part\n")
+            file.write("  Uses  Part\n")
             file.write("-" * 40 + '\n')
-            for part in sorted(parts, key=lambda x: (-len(x.blame), len(x.uses))):
-                if not part.uses and not part.blame:
+            for part in sorted(parts, key=lambda x: (len(x.uses))):
+                if not part.uses:
                     continue
                 file.write("%6d " % len(part.uses))
-                if part.blame:
-                    file.write(" %6d  " % len(part.blame))
-                else:
-                    file.write("      -  ")
                 file.write(" " + part.name + "\n")
                 for i, comp in enumerate(
                     sorted(
@@ -223,17 +219,14 @@ def main():
     try:
         open("NetList/" + os.path.basename(__file__))
     except FileNotFoundError:
-        sys.stderr.write("Must run %s from root of R1000.Emulator project\n" % ME)
+        sys.stderr.write("Must run %s from root of R1000.Emulator project\n" % MYSELF)
         sys.exit(2)
 
     if len(sys.argv) < 4:
-        sys.stderr.write("Usage:\n\t%s <workdir> <branch> <KiCad netlist-file> …\n" % ME)
+        sys.stderr.write("Usage:\n\t%s <workdir> <branch> <KiCad netlist-file> …\n" % MYSELF)
         sys.exit(2)
 
-    workdir = sys.argv[1]
-    branch = sys.argv[2]
-
-    R1000Cpu(workdir, branch, sys.argv[3:])
+    R1000Cpu(workdir = sys.argv[1], branch = sys.argv[2], netlists = sys.argv[3:])
 
 if __name__ == "__main__":
     main()

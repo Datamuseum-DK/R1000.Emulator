@@ -47,7 +47,6 @@ class Part():
         self.includes = []
         self.ignore = False
         self.uses = []
-        self.blame = set()
         self.busable = False
         self.has_private = False
 
@@ -120,9 +119,7 @@ class LibPartSexp(Part):
         for pinsexp in sexp.find("pins.pin"):
             self.add_pin(PinSexp(pinsexp))
 
-        self.includes.append('Components/' + self.name + '.hh')
         board.add_part(self.name, self)
-        board.add_part(self.name + "_O", self)
 
 class PartModel(Part):
 
@@ -195,7 +192,7 @@ class PartFactory(Part):
         self.comp = None
 
     def yield_includes(self, comp):
-        ''' (This is the first call we get when used '''
+        ''' (This is the first call we get when used) '''
 
         self.comp = comp
         if not self.scm:

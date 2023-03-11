@@ -244,7 +244,6 @@ class PassNetConfig():
                 net.sc_type = "bool"
                 continue
             if 'c_input' not in i or 'c_output' not in i or len(i) > 2:
-                self.assign_blame(net)
                 continue
             if i['c_output'] > 1:
                 continue
@@ -330,25 +329,3 @@ class PassNetConfig():
             netbus.register()
             file.write("\n")
             netbus.table(file)
-
-    def assign_blame(self, net):
-        if len(net) < 2 or net.is_plane:
-            return
-        i = {}
-        for node in net.iter_nodes():
-            if node.pin.role in (
-                "sc_inout_resolved",
-                "tri_state",
-                "bidirectional",
-            ):
-                return
-            if node.pin.role in (
-                "c_input",
-                "c_output",
-            ):
-                continue
-            i[node.component.part] = 1 + i.setdefault(node.component.part, 0)
-        if len(i) == 1:
-            part, _count = i.popitem()
-            # print("BLAME", net, part)
-            part.blame.add(net)
