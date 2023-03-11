@@ -104,6 +104,13 @@ class R1000Cpu():
         except FileNotFoundError:
             return False
 
+        try:
+            if os.stat("Makefile.local").st_mtime > t_old:
+                print("Makefile.local", "triggers build")
+                return False
+        except FileNotFoundError:
+            pass
+
         if os.stat(__file__).st_mtime > t_old:
             print(__file__, "triggers build")
             return False
