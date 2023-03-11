@@ -294,6 +294,9 @@ class PassNetConfig():
                 del self.netbusses[sig]
                 continue
 
+        file.write("\n")
+        file.write("Residual busses\n")
+        file.write("===============\n")
         accepted = []
         for sig, maybebus in self.netbusses.items():
             while len(maybebus.nets) >= MIN_BUS_WIDTH:
@@ -318,6 +321,9 @@ class PassNetConfig():
                 maybebus = NetBus(maybebus.sig, rest.pop(0))
                 while rest:
                     maybebus.add_net(rest.pop(0))
+            if maybebus not in accepted:
+                file.write("\n")
+                maybebus.table(file)
 
         file.write("\n")
         file.write("Accepted busses\n")
