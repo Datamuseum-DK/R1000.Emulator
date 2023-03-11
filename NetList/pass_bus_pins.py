@@ -77,4 +77,3 @@ class PassBusPins():
                     new_node = Node(net, comp, new_pin)
                 node_lo.remove()
                 node_hi.remove()
- 

@@ -66,7 +66,6 @@ class Mux2(PartFactory):
                 "PIN_S",
                 *j
             )
-         
 
     def doit(self, file):
         ''' The meat of the doit() function '''
@@ -155,9 +154,9 @@ class ModelMux2(PartModel):
             if node and node.net.is_pd():
                 node.remove()
         if "OE" not in comp.nodes:
-           for node in comp:
-               if node.pin.name[0] == "Y":
-                   node.pin.role = 'c_output'
+            for node in comp:
+                if node.pin.name[0] == "Y":
+                    node.pin.role = 'c_output'
         super().assign(comp)
 
     def configure(self, board, comp):
@@ -165,7 +164,7 @@ class ModelMux2(PartModel):
         ident = self.name + "_" + sig
         invert = self.invert
         if self.invert is None and comp["INV"].net.is_pd():
-           invert = True
+            invert = True
         if invert is True:
             ident += "_I"
         if "OE" in comp.nodes:

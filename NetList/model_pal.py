@@ -33,9 +33,6 @@
    =========
 '''
 
-import os
-import glob
-
 from part import PartModel, PartFactory
 
 PIN_NAMES = {
@@ -148,7 +145,7 @@ class PalPin():
         pin_names = PIN_NAMES.setdefault(self.palname, dict())
         suff = pin_names.get(nbr)
         if not suff:
-             suff = "%02d" % nbr
+            suff = "%02d" % nbr
         self.nbr = nbr
         self.name = None
         self.var = "p_" + suff

@@ -68,23 +68,23 @@ class Pin():
             self.sortkey.insert(0, "_")
 
     def buspin(self):
-       ''' This might be a buspin '''
-       if self.rawname[0] == '=':
-           base = self.rawname[1:]
-       elif self.rawname[-1] == '=':
-           base = self.rawname[:-1]
-       else:
-           return None
+        ''' This might be a buspin '''
+        if self.rawname[0] == '=':
+            base = self.rawname[1:]
+        elif self.rawname[-1] == '=':
+            base = self.rawname[:-1]
+        else:
+            return None
 
-       bus = ""
-       while base and base[0].isalpha():
-           bus += base[0]
-           base = base[1:]
+        bus = ""
+        while base and base[0].isalpha():
+            bus += base[0]
+            base = base[1:]
 
-       if base.isdigit():
-           return (bus, base)
+        if base.isdigit():
+            return (bus, base)
 
-       return None
+        return None
 
     def __repr__(self):
         return "_".join(("Pin", self.name, self.role))
@@ -159,7 +159,7 @@ class PinBus():
                 self.write_extra_events(file, nodes)
                 self.write_extra_sensitive(file, nodes)
                 break
-        
+
         for i in (
             "c_output",
             "sc_inout_resolved",
@@ -231,7 +231,7 @@ class PinBus():
             elif node.net.netbus.nets[0] == node.net:
                 shift = self.width - (nbr + len(node.net.netbus))
                 file.write("\t\t(dstvar) |= (%s)PINB_%s << %d; \\\n" % (ctype, pin.name, shift))
-                
+
         file.write("\t} while(0)\n")
 
     def write_extra_write(self, file, nodes):

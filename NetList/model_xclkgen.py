@@ -137,4 +137,3 @@ def register(board):
     ''' Register component model '''
 
     board.add_part("XCLKGEN", PartModel("XCLKGEN", XClkGen))
-

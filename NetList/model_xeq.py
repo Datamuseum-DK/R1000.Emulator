@@ -44,7 +44,7 @@ class XEQ(PartFactory):
 
     def state(self, file):
         if "CONST" in self.name:
-             file.write("\tuint64_t const_b;\n")
+            file.write("\tuint64_t const_b;\n")
 
     def init(self, file):
         if "CONST" in self.name:
@@ -106,7 +106,7 @@ class ModelXeq(PartModel):
             a = comp.nodes.get("A%d" % i)
             b = comp.nodes.get("B%d" % i)
             if a is None or b is None:
-                break;
+                break
             if a.net.is_pu() and b.net.is_pu():
                 a.remove()
                 b.remove()
@@ -134,8 +134,7 @@ class ModelXeq(PartModel):
             if not node.net.is_const():
                 bconst = False
                 break
-            else:
-                bval[node.pin.name] = node.net.is_pu()
+            bval[node.pin.name] = node.net.is_pu()
         if not bconst:
             super().assign(comp)
             return

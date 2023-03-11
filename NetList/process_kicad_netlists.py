@@ -36,12 +36,11 @@
 import sys
 import os
 import glob
+import importlib
 
 from board import Board
 from srcfile import SrcFile, Makefile
 from scmod import SC_Mod
-
-import models
 
 import planes
 
@@ -52,6 +51,15 @@ from pass_part_config import PassPartConfig
 from pass_bus_pins import PassBusPins
 
 ME = os.path.basename(__file__)
+
+def register_models(where):
+    ''' Register all component models '''
+    bdir = os.path.dirname(__file__)
+    for i in sorted(glob.glob(bdir + "/model_*py")):
+        i = os.path.basename(i)[:-3]
+        mod = importlib.import_module(i)
+        mod.register(where)
+
 
 class R1000Cpu():
 
@@ -79,7 +87,7 @@ class R1000Cpu():
             print("Already up to date")
             return
 
-        models.register(self)
+        register_models(self)
 
         self.do_build()
         open(self.tstamp, "w").write("\n")

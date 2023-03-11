@@ -33,10 +33,10 @@
    ========================
 '''
 
-MIN_BUS_WIDTH = 4
-
-import util
 import sys
+import util
+
+MIN_BUS_WIDTH = 4
 
 class NetBus():
 

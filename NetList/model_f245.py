@@ -134,8 +134,8 @@ class ModelF245(PartModel):
                     )
                 new_node = Node(
                     node.net,
-                    new_comp, 
-                    new_pin, 
+                    new_comp,
+                    new_pin,
                 )
         for node in comp:
             node.net.sc_type = "sc_logic"

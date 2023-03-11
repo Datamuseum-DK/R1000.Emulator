@@ -29,7 +29,7 @@
 # SUCH DAMAGE.
 
 '''
-   XMUX16_1 16-Input Multiplexer 
+   XMUX16_1 16-Input Multiplexer
    =============================
 
 '''

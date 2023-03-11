@@ -242,4 +242,3 @@ class Planes():
         mf.write("    %s.cc \\\n" % self.pfx)
         mf.write("    %s.hh\n" % self.pfx)
         mf.write("\t${SC_CC} -o ${OBJDIR}/%s.o %s.cc\n" % (bname, self.pfx))
-		

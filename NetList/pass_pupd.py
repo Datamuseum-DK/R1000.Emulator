@@ -33,8 +33,8 @@
    ====================
 '''
 
-import util
 import sys
+import util
 
 class PassPuPd():
 
@@ -51,14 +51,14 @@ class PassPuPd():
                 continue
             for node in list(net.nnodes):
                 if node.component.is_plane or node.component.is_supply:
-                     node.remove()
-                     continue
+                    node.remove()
+                    continue
                 if node.pin.role not in {
-                     "power_out",
-                     "c_input",
-                     "input",
+                    "power_out",
+                    "c_input",
+                    "input",
                 }:
-                     print("Node", node)
+                    print("Node", node)
             if not net.nnodes:
                 continue
             if net.is_pd():

@@ -46,9 +46,9 @@ class XRFTA(PartFactory):
 		|''')
 
     def sensitive(self):
-         yield "PIN_WE.pos()"
-         yield "PIN_RD.pos()"
-         yield "BUS_A_SENSITIVE()"
+        yield "PIN_WE.pos()"
+        yield "PIN_RD.pos()"
+        yield "BUS_A_SENSITIVE()"
 
     def doit(self, file):
         ''' The meat of the doit() function '''
@@ -121,8 +121,8 @@ class XRFTB(PartFactory):
 		|''')
 
     def sensitive(self):
-         yield "PIN_WE.pos()"
-         yield "PIN_RD.pos()"
+        yield "PIN_WE.pos()"
+        yield "PIN_RD.pos()"
 
     def doit(self, file):
         ''' The meat of the doit() function '''
@@ -201,10 +201,10 @@ class XRFVA(PartFactory):
 		|''')
 
     def sensitive(self):
-         yield "PIN_CS"
-         yield "PIN_WE"
-         yield "PIN_RD"
-         yield "BUS_A_SENSITIVE()"
+        yield "PIN_CS"
+        yield "PIN_WE"
+        yield "PIN_RD"
+        yield "BUS_A_SENSITIVE()"
 
     def extra(self, file):
         super().extra(file)

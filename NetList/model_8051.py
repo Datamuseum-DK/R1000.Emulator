@@ -90,7 +90,7 @@ class Model8051(PartModel):
                 "INT0not",
                 "INT1not",
             ):
-                node.pin.role = "sc_inout_resolved";
+                node.pin.role = "sc_inout_resolved"
         super().assign(comp)
 
 def register(board):
