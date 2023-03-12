@@ -118,19 +118,19 @@ class ModelF245(PartModel):
                     new_pin = Pin(
                         "Q" + node.pin.ident[1:],
                         "Q" + node.pin.name[1:],
-                        "c_output",
+                        "output",
                     )
                 elif suff[0] == node.pin.name[0]:
                     new_pin = Pin(
                         "A" + node.pin.ident[1:],
                         "A" + node.pin.name[1:],
-                        "c_input",
+                        "input",
                     )
                 else:
                     new_pin = Pin(
                         node.pin.ident,
                         node.pin.name,
-                        "c_input",
+                        "input",
                     )
                 new_node = Node(
                     node.net,

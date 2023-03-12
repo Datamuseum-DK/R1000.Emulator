@@ -189,9 +189,9 @@ class ModelNand(Part):
                 continue
             seen.add(node.net)
             if node.pin.name == "Q":
-                node.pin.set_role("c_output")
+                node.pin.set_role("output")
             else:
-                node.pin.set_role("c_input")
+                node.pin.set_role("input")
                 ninputs += 1
         if not ninputs:
             print("NAND with no inputs left", ninputs, comp)

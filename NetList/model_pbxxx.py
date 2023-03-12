@@ -95,7 +95,7 @@ class ModelPBxxx(PartModel):
         if comp.nodes["OE"].net.is_pd():
             for node in comp:
                 if node.pin.name[0] == "Y":
-                    node.pin.set_role("c_output")
+                    node.pin.set_role("output")
         super().assign(comp)
 
 def register(board):

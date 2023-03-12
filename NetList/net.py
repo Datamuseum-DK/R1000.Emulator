@@ -90,6 +90,8 @@ class Net():
             node.remove()
             node.net = self
             node.insert()
+        if not other.is_supply:
+            other.remove()
 
     def iter_nodes(self):
         ''' ... '''

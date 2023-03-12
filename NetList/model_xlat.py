@@ -123,7 +123,7 @@ class ModelXlat(PartModel):
             oe_node.remove()
             for node in comp:
                 if node.pin.name[0] == "Q":
-                    node.pin.set_role("c_output")
+                    node.pin.set_role("output")
         super().assign(comp)
 
     def configure(self, board, comp):

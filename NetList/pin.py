@@ -74,8 +74,6 @@ class Pin():
             "power_out": PinTypeOther,
             "open_collector": PinType3state,
             "tri_state": PinType3state,
-            "c_input": PinTypeIn,
-            "c_output": PinTypeOut,
         }[role]
 
     def update(self):

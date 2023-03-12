@@ -210,6 +210,9 @@ class PassNetConfig():
 
     def ponder_bool(self):
         for _gnam, net in sorted(self.cpu.nets.items()):
+            if not len(net):
+                continue
+
             if net.is_supply:
                 net.sc_type = "bool"
                 continue
@@ -218,13 +221,16 @@ class PassNetConfig():
             outputs = 0
             roles = set()
             for node in net.iter_nodes():
+                roles.add(node.pin.type)
                 if node.pin.type.hiz:
                     hizs += 1
                 if node.pin.type.output:
                     outputs += 1
 
             if outputs == 0:
-                print("Undriven", net)
+                print("Undriven", net, len(net), roles)
+                for i in net.nnodes:
+                    print("  ", i)
 
             if hizs == 0 and outputs <= 1:
                 net.sc_type = "bool"

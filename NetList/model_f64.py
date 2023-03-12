@@ -79,10 +79,10 @@ class ModelAOI(PartModel):
 
         net = Net(comp.board, self.name + "_" + comp.name + "_%d" % self.ctr)
         for pnum, node in enumerate(nodes):
-            pin = Pin("d", "D%d" % pnum, "c_input")
+            pin = Pin("d", "D%d" % pnum, "input")
             node = Node(node.net, and_gate, pin)
 
-        pin = Pin("q", "Q", "c_output")
+        pin = Pin("q", "Q", "output")
         node = Node(net, and_gate, pin)
         and_gate.part.assign(and_gate)
         return [ node ]
@@ -107,11 +107,11 @@ class ModelAOI(PartModel):
             pin = Pin(
                 "d",
                 "D%d" % dnum,
-                "c_input",
+                "input",
             )
             Node(net, nor, pin)
 
-        pin = Pin("q", "Q", "c_output")
+        pin = Pin("q", "Q", "output")
         node = Node(comp["Q"].net, nor, pin)
 
         nor.part = comp.board.part_catalog[nor.partname]

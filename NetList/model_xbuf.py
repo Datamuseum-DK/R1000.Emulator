@@ -133,7 +133,7 @@ class ModelXbuf(PartModel):
     def assign(self, comp):
         for node in comp:
             if node.pin.name[0] != 'Y':
-                node.pin.set_role("c_input")
+                node.pin.set_role("input")
         if "OE0" in comp:
             self.f24x(comp)
         else:
@@ -142,7 +142,7 @@ class ModelXbuf(PartModel):
                 oe_node.remove()
                 for node in comp:
                     if node.pin.name[0] == "Y":
-                        node.pin.set_role("c_output")
+                        node.pin.set_role("output")
             super().assign(comp)
 
     def f24x(self, comp):
@@ -154,7 +154,7 @@ class ModelXbuf(PartModel):
             if oenode0.net.is_pd():
                 for node in comp:
                     if node.pin.name[0] == 'Y':
-                        node.pin.set_role("c_output")
+                        node.pin.set_role("output")
             else:
                 oenode0.pin.name = "OE"
                 oenode0.insert()
@@ -202,7 +202,7 @@ class ModelXbuf(PartModel):
                 node.remove()
                 for node in this:
                     if node.pin.name[0] == "Y":
-                        node.pin.set_role("c_output")
+                        node.pin.set_role("output")
             elif len(node.net) == 1 or node.net.is_pu():
                 for node in this:
                     node.remove()
