@@ -33,7 +33,6 @@
    ========================
 '''
 
-import sys
 import util
 
 MIN_BUS_WIDTH = 4
@@ -50,6 +49,7 @@ class NetBus():
         self.nodes = {}
         self.cname = None
         self.ctype = None
+        self.best = None
 
         self.nets.append(net)
         for node in net.nnodes:
@@ -64,6 +64,7 @@ class NetBus():
         return len(self.nets)
 
     def add_net(self, net):
+        ''' Add another net '''
         self.nets.append(net)
         for node in net.nnodes:
             key = (node.component, node.pin.pinbus)
@@ -71,6 +72,7 @@ class NetBus():
             self.nodes[key][node.net] = node
 
     def sort_nets(self):
+        ''' Sort the nets into (pressumed) bus-order '''
         pivot_node = self.nets[0].nnodes[0]
         pivot_key = (pivot_node.component, pivot_node.pin.pinbus)
         nodes = self.components[pivot_key]
@@ -81,21 +83,23 @@ class NetBus():
                 node.pin.netbusidx = idx
 
     def invalid(self, file):
+        ''' Detect mixed signal types and non-busable components '''
         sc_type = set(x.sc_type for x in self.nets)
         if len(sc_type) > 1:
             file.write("\nMixed bus " + str(sc_type) + "\n")
             self.table(file, "\t")
             return True
-        for comp,pinbus in self.components:
+        for comp, _pinbus in self.components:
             if not comp.part.busable:
-                file.write("\nComponent not busable " + comp.part.name + " " + comp.board.name + " " + comp.name + "\n")
+                file.write("\nComponent not busable ")
+                file.write(comp.part.name + " " + comp.board.name + " " + comp.name + "\n")
                 self.table(file, "\t")
                 return True
         return False
 
     def is_valid_bus(self, nets):
+        ''' Test if nets constitute a proper bus '''
         for key in self.components:
-            comp, pinbus = key
             sks = list(self.nodes[key][net].pin.sortkey for net in nets)
             spread = 1 + sks[-1][-1] - sks[0][-1]
             if sks != sorted(sks) or spread != len(nets):
@@ -103,26 +107,28 @@ class NetBus():
         return True
 
     def unordered(self):
+        ''' Find the largest bus, if any, in self.nets '''
         best = (0, 0, [])
         i = 0
-        n0 = list(self.nets)
-        while len(n0) >= MIN_BUS_WIDTH:
-            nn = list(n0)
+        anets = list(self.nets)
+        while len(anets) >= MIN_BUS_WIDTH:
+            tnets = list(anets)
             j = 1
-            while len(nn) >= MIN_BUS_WIDTH:
-                if not self.is_valid_bus(nn):
-                    nn.pop(-1)
+            while len(tnets) >= MIN_BUS_WIDTH:
+                if not self.is_valid_bus(tnets):
+                    tnets.pop(-1)
                     continue
-                if len(nn) > best[0]:
-                    best = (len(nn), i, nn)
-                j = len(nn)
+                if len(tnets) > best[0]:
+                    best = (len(tnets), i, tnets)
+                j = len(tnets)
                 break
-            n0 = n0[j:]
+            anets = anets[j:]
         if best[2]:
             self.best = best[2]
         return len(best[2]) != len(self.nets)
 
     def table(self, file, pfx=""):
+        ''' render in table format '''
         self.decide_cname()
         file.write(pfx + "BUS")
         file.write(" %d×%d" % (len(self.nets), len(self.nodes)))
@@ -130,12 +136,12 @@ class NetBus():
         file.write(pfx + "   [" + self.sig + "]\n")
 
         i = [""]
-        for component,pinbus in self.components:
+        for component, _pinbus in self.components:
             i.append(component.board.name)
         file.write(pfx + "\t".join(i) + "\n")
 
         i = [""]
-        for component,pinbus in self.components:
+        for component, _pinbus in self.components:
             i.append(component.name)
         file.write(pfx + "\t".join(i) + "\n")
 
@@ -152,16 +158,19 @@ class NetBus():
             file.write(pfx + "\t".join(i) + "\n")
 
     def decide_cname(self):
-        b = str(util.sortkey(self.nets[-1].cname)[-1]).split(".")[-1]
-        self.cname = self.nets[0].cname + "_to_" + b
+        ''' Find name '''
+        i = str(util.sortkey(self.nets[-1].cname)[-1]).rsplit(".", maxsplit=1)[-1]
+        self.cname = self.nets[0].cname + "_to_" + i
 
     def register(self):
+        ''' Register network on nodes '''
         self.decide_cname()
         self.sort_nets()
         for net in self.nets:
             net.netbus = self
             for node in net.nnodes:
                 node.netbus = self
+        net = self.nets[0]
         if net.sc_type != "bool":
             self.ctype = "_rv <%d>" % len(self.nets)
         elif len(self.nets) <= 16:
@@ -172,6 +181,7 @@ class NetBus():
             self.ctype = "uint64_t"
 
     def write_decl(self, net, file):
+        ''' Write network declaration '''
         if net == self.nets[0]:
             lname = self.cname.split(".")[-1]
             if net.sc_type != "bool":
@@ -180,6 +190,7 @@ class NetBus():
                 file.write("\tsc_signal <%s> %s;\n" % (self.ctype, lname))
 
     def write_init(self, net, file):
+        ''' Write network initialization '''
         if net == self.nets[0]:
             lname = self.cname.split(".")[-1]
             if net.sc_type != "bool":
@@ -209,8 +220,9 @@ class PassNetConfig():
             self.bus_candidates(file)
 
     def ponder_bool(self):
+        ''' Determine if network needs hiz state '''
         for _gnam, net in sorted(self.cpu.nets.items()):
-            if not len(net):
+            if len(net) == 0:
                 continue
 
             if net.is_supply:
@@ -236,6 +248,7 @@ class PassNetConfig():
                 net.sc_type = "bool"
 
     def bus_candidates(self, file):
+        ''' Find networks which are candidates for bus-membership '''
         for _gnam, net in sorted(self.cpu.nets.items()):
 
             if len(net.nnodes) < 2:
@@ -247,10 +260,6 @@ class PassNetConfig():
             # uniq_comps = set(x.component.gref for x in net.nnodes)
             uniq_comps = set((x.component.gref, x.pin.pinbus) for x in net.nnodes)
             if len(uniq_comps) != len(net.nnodes):
-                if 0 and not net.is_supply:
-                    print("DISC", net, len(uniq_comps), len(net.nnodes))
-                    for n in net.nnodes:
-                        print("\t", n.component.ref, n.component)
                 # Signals which connect multiple times to a single component
                 # are disqualified, because we cannot (easily) figure out
                 # which of the multiple connections to assign where in the bus.
@@ -260,7 +269,12 @@ class PassNetConfig():
                 continue
 
 
-            sig = " ".join(sorted(x.component.board.name + ":" + x.component.ref + ":" + x.pin.pinbus.name for x in net.nnodes))
+            sig = " ".join(
+                sorted(
+                    ":".join((x.component.board.name, x.component.ref, x.pin.pinbus.name))
+                    for x in net.nnodes
+                )
+            )
             i = self.netbusses.get(sig)
             if i:
                 i.add_net(net)
