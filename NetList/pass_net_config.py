@@ -165,10 +165,8 @@ class NetBus():
         i = str(util.sortkey(self.nets[-1].cname)[-1]).rsplit(".", maxsplit=1)[-1]
         self.cname = self.nets[0].cname + "_to_" + i
 
-    def register(self, file):
-        ''' Register network on nodes '''
-        self.decide_cname()
-        self.sort_nets()
+    def create_as_bus(self, file):
+        ''' Create as a bus '''
         for net in self.nets:
             net.netbus = self
             for node in net.nnodes:
@@ -185,6 +183,43 @@ class NetBus():
         self.decide_cname()
         file.write("\nAccepted:\t")
         self.table(file)
+
+    def create_as_mux(self, file):
+        ''' Create network as mux to avoid hiZ '''
+        file.write("MUX_CANDIDATE\t")
+        self.create_as_bus(file)
+
+    def create(self, file):
+        ''' create network '''
+        self.sort_nets()
+        pintypes = set()
+        for net in self.nets:
+            for node in net.nnodes:
+                pintypes.add(node.pin.type.name)
+
+        if "zio" in pintypes or "zo" not in pintypes:
+            self.create_as_bus(file)
+            return
+
+        good = True
+        width = 0
+        for node in self.nets[0].nnodes:
+            if node.pin.type.name == "zo":
+                width += 1
+                if "OE" not in node.component:
+                    file.write("Cannot MUX, no OE in " + str(node.component) + "\n")
+                    good = False
+
+        if not good:
+            self.create_as_bus(file)
+            return
+
+        if len(self.nets) != 4 or width != 2:
+            file.write("Not MUXing yet (%dx%d)\n" % (len(self.nets), width))
+            self.create_as_bus(file)
+            return
+
+        self.create_as_mux(file)
 
     def write_decl(self, net, file):
         ''' Write network declaration '''
@@ -213,7 +248,7 @@ class NetBus():
 
         self.sort_nets()
         if not self.unordered():
-            self.register(file)
+            self.create(file)
             return
 
         if len(self.best) < MIN_BUS_WIDTH:
@@ -227,7 +262,7 @@ class NetBus():
         rest = list(rest)
 
         newbus = NetBus(self.sig, *target)
-        newbus.register(file)
+        newbus.create(file)
 
         maybebus = NetBus(self.sig, *rest)
         if len(maybebus.nets) < MIN_BUS_WIDTH:
