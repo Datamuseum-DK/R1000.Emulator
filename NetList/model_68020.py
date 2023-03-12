@@ -48,7 +48,7 @@ class MC68020(PartFactory):
         super().extra(file)
         # The meat of the doit() function lives in a separate file so
         # that fidling with it does not require a rerun of the python code.
-        self.scm.cc.include("Iop/iop_sc_68k20.hh")
+        self.scm.sf_cc.include("Iop/iop_sc_68k20.hh")
 
     def state(self, file):
         ''' Extra state variable '''
@@ -64,7 +64,7 @@ class MC68020(PartFactory):
         # The meat of the doit() function lives in a separate file so
         # that fidling with it does not require a rerun of the python code.
 
-        self.scm.cc.include("Iop/iop_sc_68k20.cc")
+        self.scm.sf_cc.include("Iop/iop_sc_68k20.cc")
 
 def register(board):
     ''' Register component model '''

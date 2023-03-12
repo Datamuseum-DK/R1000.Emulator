@@ -39,7 +39,7 @@ import os
 from sexp import SExp
 
 from srcfile import SrcFile, Makefile
-from scmod import SC_Mod
+from scmod import SystemCModule
 from sheet import SheetSexp
 from part import LibPartSexp, NoPart
 from net import NetSexp
@@ -141,7 +141,7 @@ class Board():
 
     def sc_mod(self, basename):
         ''' ... '''
-        scm = SC_Mod(self.dstdir + "/" + basename, self.makefile)
+        scm = SystemCModule(self.dstdir + "/" + basename, self.makefile)
         scm.add_subst("«bbb»", self.lname)
         return scm
 
@@ -167,7 +167,7 @@ class Board():
 
     def produce_board_hh(self, scm):
         ''' ... '''
-        scm.include(self.scm_globals.hh)
+        scm.include(self.scm_globals.sf_hh)
         scm.include(self.chf_sheets)
         scm.fmt('''
 		|
@@ -190,13 +190,13 @@ class Board():
         ''' ... '''
         scm.write("#include <systemc.h>\n")
         scm.include(self.cpu.planes_hh)
-        scm.include(self.scm_board.hh)
-        scm.include(self.scm_board.pub)
+        scm.include(self.scm_board.sf_hh)
+        scm.include(self.scm_board.sf_pub)
         scm.fmt('''
 		|
 		|''')
         for sheet in self.sheets.values():
-            scm.include(sheet.scm.pub)
+            scm.include(sheet.scm.sf_pub)
         scm.fmt('''
 		|
 		|struct mod_«bbb» *make_mod_«bbb»(
@@ -255,8 +255,8 @@ class Board():
     def produce_globals_cc(self, scm):
         ''' ... '''
         scm.write("#include <systemc.h>\n")
-        scm.include(self.scm_globals.hh)
-        scm.include(self.scm_globals.pub)
+        scm.include(self.scm_globals.sf_hh)
+        scm.include(self.scm_globals.sf_pub)
         scm.fmt('''
 		|
 		|struct mod_«bbb»_globals *make_mod_«bbb»_globals(sc_module_name name)
@@ -280,14 +280,14 @@ class Board():
         self.produce_sheets_h(self.chf_sheets)
         self.chf_sheets.commit()
 
-        self.produce_board_pub_hh(self.scm_board.pub)
-        self.produce_board_hh(self.scm_board.hh)
-        self.produce_board_cc(self.scm_board.cc)
+        self.produce_board_pub_hh(self.scm_board.sf_pub)
+        self.produce_board_hh(self.scm_board.sf_hh)
+        self.produce_board_cc(self.scm_board.sf_cc)
         self.scm_board.commit()
 
-        self.produce_globals_pub_hh(self.scm_globals.pub)
-        self.produce_globals_hh(self.scm_globals.hh)
-        self.produce_globals_cc(self.scm_globals.cc)
+        self.produce_globals_pub_hh(self.scm_globals.sf_pub)
+        self.produce_globals_hh(self.scm_globals.sf_hh)
+        self.produce_globals_cc(self.scm_globals.sf_cc)
         self.scm_globals.commit()
 
         for sheet in self.sheets.values():

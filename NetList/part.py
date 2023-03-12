@@ -187,13 +187,13 @@ class PartFactory(Part):
         if not self.scm:
             self.build()
         self.comp = None
-        yield self.scm.hh.filename
+        yield self.scm.sf_hh.filename
 
     def build(self):
         ''' Build this component (if/when used) '''
 
         self.scm = self.board.cpu.sc_mod(self.name)
-        self.subs(self.scm.cc)
+        self.subs(self.scm.sf_cc)
         self.scm.std_hh(self.pin_iterator())
         self.scm.std_cc(
             extra = self.extra,

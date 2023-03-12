@@ -119,9 +119,9 @@ class Sheet():
         ''' ... '''
         scm.write("#include <systemc.h>\n")
         scm.include(self.board.cpu.planes_hh)
-        scm.include(self.board.scm_globals.hh)
-        scm.include(self.scm.hh)
-        scm.include(self.scm.pub)
+        scm.include(self.board.scm_globals.sf_hh)
+        scm.include(self.scm.sf_hh)
+        scm.include(self.scm.sf_pub)
         scm.fmt('''
 		|
 		|struct «ttt» *make_«ttt»(
@@ -152,9 +152,9 @@ class Sheet():
 
     def produce(self):
         ''' ... '''
-        self.produce_pub_hh(self.scm.pub)
-        self.produce_hh(self.scm.hh)
-        self.produce_cc(self.scm.cc)
+        self.produce_pub_hh(self.scm.sf_pub)
+        self.produce_hh(self.scm.sf_hh)
+        self.produce_cc(self.scm.sf_cc)
         self.scm.commit()
 
 class SheetSexp(Sheet):

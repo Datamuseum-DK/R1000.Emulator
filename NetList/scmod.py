@@ -29,40 +29,40 @@
 # SUCH DAMAGE.
 
 '''
-   Turn kicad netlist files into SystemC source code
-   =================================================
+   A SystemC Module
+   ================
 '''
 
 import os
 
 from srcfile import SrcFile
 
-class SC_Mod():
+class SystemCModule():
     ''' A SystemC source module '''
     def __init__(self, filename, makefile=None):
         self.filename = filename
         self.makefile = makefile
         self.basename = os.path.split(filename)[-1]
-        self.cc = SrcFile(filename + ".cc")
-        self.hh = SrcFile(filename + ".hh")
-        self.pub = SrcFile(filename + "_pub.hh")
+        self.sf_cc = SrcFile(filename + ".cc")
+        self.sf_hh = SrcFile(filename + ".hh")
+        self.sf_pub = SrcFile(filename + "_pub.hh")
         self.add_subst("«mmm»", self.basename.upper())
         self.add_subst("«lll»", self.basename.lower())
 
     def commit(self):
         ''' ... '''
-        self.cc.commit()
-        self.hh.commit()
-        self.pub.commit()
+        self.sf_cc.commit()
+        self.sf_hh.commit()
+        self.sf_pub.commit()
         if self.makefile:
             self.makefile_entry(self.makefile)
 
     def add_subst(self, find, replace):
         ''' Add substituation patterns '''
-        for file in (self.cc, self.hh, self.pub):
+        for file in (self.sf_cc, self.sf_hh, self.sf_pub):
             file.add_subst(find, replace)
 
-    def makefile_entry(self, file):
+    def makefile_entry(self, makefile):
         ''' ... '''
         bname = self.filename.split("/")[-1]
         hdr = "# " + bname + "\n"
@@ -70,15 +70,15 @@ class SC_Mod():
         obj = "${OBJDIR}/" + bname + ".o"
         txt += "OBJS += " + obj + "\n"
         txt += obj + ":"
-        for incl in sorted(self.cc):
+        for incl in sorted(self.sf_cc):
             txt += " \\\n    " + incl
         txt += "\n"
-        txt += "\t${SC_CC} -o " + obj + " " + self.cc.filename + "\n"
-        file.add_stanza(hdr, txt)
+        txt += "\t${SC_CC} -o " + obj + " " + self.sf_cc.filename + "\n"
+        makefile.add_stanza(hdr, txt)
 
     def std_hh(self, pin_iterator):
-        ''' Produce a stanard .hh file '''
-        self.hh.fmt('''
+        ''' Produce a stanard .sf_hh file '''
+        self.sf_hh.fmt('''
 		|#ifndef R1000_«mmm»
 		|#define R1000_«mmm»
 		|
@@ -89,9 +89,9 @@ class SC_Mod():
 		|''')
 
         for i in pin_iterator:
-            self.hh.write("\t" + i + "\n")
+            self.sf_hh.write("\t" + i + "\n")
 
-        self.hh.fmt('''
+        self.sf_hh.fmt('''
 		|
 		|	SC_HAS_PROCESS(SCM_«mmm»);
 		|
@@ -106,27 +106,27 @@ class SC_Mod():
 		|''')
 
     def std_cc(self, extra=None, state=None, init=None, sensitive=None, doit=None):
-        ''' Produce a standard .cc file '''
-        self.cc.write("#include <systemc.h>\n")
-        self.cc.include("Chassis/r1000sc.h")
-        self.cc.include("Infra/context.h")
-        self.cc.write("\n")
-        self.cc.include(self.hh)
+        ''' Produce a standard .sf_cc file '''
+        self.sf_cc.write("#include <systemc.h>\n")
+        self.sf_cc.include("Chassis/r1000sc.h")
+        self.sf_cc.include("Infra/context.h")
+        self.sf_cc.write("\n")
+        self.sf_cc.include(self.sf_hh)
 
         if extra:
-            self.cc.write("\n")
-            extra(self.cc)
+            self.sf_cc.write("\n")
+            extra(self.sf_cc)
 
-        self.cc.fmt('''
+        self.sf_cc.fmt('''
 		|
 		|struct scm_«lll»_state {
 		|	struct ctx ctx;
 		|''')
 
         if state:
-            state(self.cc)
+            state(self.sf_cc)
 
-        self.cc.fmt('''
+        self.sf_cc.fmt('''
 		|};
 		|
 		|SCM_«mmm» ::
@@ -139,20 +139,20 @@ class SC_Mod():
 		|''')
 
         if init:
-            self.cc.write("\n")
-            init(self.cc)
+            self.sf_cc.write("\n")
+            init(self.sf_cc)
 
-        self.cc.fmt('''
+        self.sf_cc.fmt('''
 		|
 		|	SC_METHOD(doit);
 		|''')
 
         i = list(sensitive())
         if i:
-            self.cc.write("\tsensitive\n\t    << ")
-            self.cc.write("\n\t    << ".join(sensitive()) + ";\n")
+            self.sf_cc.write("\tsensitive\n\t    << ")
+            self.sf_cc.write("\n\t    << ".join(sensitive()) + ";\n")
 
-        self.cc.fmt('''
+        self.sf_cc.fmt('''
 		|}
 		|
 		|void
@@ -162,6 +162,6 @@ class SC_Mod():
 		|
 		|''')
 
-        doit(self.cc)
+        doit(self.sf_cc)
 
-        self.cc.write("}\n")
+        self.sf_cc.write("}\n")

@@ -46,7 +46,7 @@ class I8051(PartFactory):
 
     def extra(self, file):
         super().extra(file)
-        self.scm.cc.include("Diag/diagproc.h")
+        self.scm.sf_cc.include("Diag/diagproc.h")
 
     def state(self, file):
         ''' Extra state variable '''
@@ -74,7 +74,7 @@ class I8051(PartFactory):
         # The meat of the doit() function lives in a separate file so
         # that fidling with it does not require a rerun of the python code.
 
-        self.scm.cc.include("Diag/diag_sc_8051.cc")
+        self.scm.sf_cc.include("Diag/diag_sc_8051.cc")
 
 class Model8051(PartModel):
     ''' i8051'''

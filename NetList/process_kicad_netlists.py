@@ -40,7 +40,7 @@ import importlib
 
 from board import Board
 from srcfile import SrcFile, Makefile
-from scmod import SC_Mod
+from scmod import SystemCModule
 
 import planes
 
@@ -103,7 +103,7 @@ class R1000Cpu():
 
     def sc_mod(self, basename):
         ''' ... '''
-        return SC_Mod(os.path.join(self.cdir, basename), self.chassis_makefile)
+        return SystemCModule(os.path.join(self.cdir, basename), self.chassis_makefile)
 
     def already_current(self):
         ''' Check if generated files are newer than netlists '''
