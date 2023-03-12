@@ -37,6 +37,31 @@ from pin import PinSexp
 
 import util
 
+
+def optimize_oe_output(comp, oe_pin, pfx):
+    if oe_pin not in comp:
+        return
+    nodes = []
+    for node in comp:
+        if node.pin.name[:len(pfx)] == pfx:
+            nodes.append(node)
+            drivers = 0
+            for anode in node.net.nnodes:
+                if anode.pin.type.output:
+                    drivers += 1
+                    if drivers > 1:
+                        return
+    
+    print("OPT", comp, "--> Only one driver")
+        
+    oe_node = comp[oe_pin]
+    oe_node.remove()
+
+    for node in nodes:
+        node.net.sc_type = "bool"
+        if node.netbus:
+            node.netbus.create_as_bus(None)
+
 class Part():
 
     ''' A `part` is a type of `component` '''
@@ -90,7 +115,9 @@ class Part():
 
     def hookup(self, _file, _comp):
         ''' ... '''
-        return
+
+    def optimize(self, comp):
+        ''' ... '''
 
 class NoPart(Part):
     ''' Non-Instantiated Part ie: PU, PD, GF, GB '''

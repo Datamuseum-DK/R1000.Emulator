@@ -33,7 +33,7 @@
    ==========================================
 '''
 
-from part import PartModel, PartFactory
+from part import PartModel, PartFactory, optimize_oe_output
 from component import Component
 from node import Node
 from pin import Pin
@@ -142,6 +142,14 @@ class ModelF245(PartModel):
             node.remove()
         comp.remove()
 
+class ModelF245parts(PartModel):
+    ''' F245 bidirectional buffers'''
+
+    def optimize(self, comp):
+        ''' XXX: does not work '''
+        # optimize_oe_output(comp, "OE", "Q")
+
+
 def register(board):
     ''' Register component model '''
 
@@ -153,5 +161,5 @@ def register(board):
         "XBIDIR64",
     ):
         board.add_part(part,        ModelF245(part, F245))
-        board.add_part(part + "AB", PartModel(part + "AB", F245))
-        board.add_part(part + "BA", PartModel(part + "BA", F245))
+        board.add_part(part + "AB", ModelF245parts(part + "AB", F245))
+        board.add_part(part + "BA", ModelF245parts(part + "BA", F245))

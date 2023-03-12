@@ -33,20 +33,195 @@
    ========================
 '''
 
+import sys
 import util
 
+from component import Component
+from net import Net
+from node import Node
+from pin import Pin
+
 MIN_BUS_WIDTH = 4
+
+class MuxBus():
+
+    ''' ... '''
+
+    def __init__(self, netbus, width, file):
+        self.netbus = netbus
+        self.width = width
+        self.length = len(self.netbus.nets)
+
+        net0 = self.netbus.nets[0]
+        comp0 = net0.nnodes[0].component
+        self.board = comp0.board
+        self.cpu = self.board.cpu
+
+        self.partref = "UBMX%d" % self.cpu.nbr_busmux
+        self.cpu.nbr_busmux += 1
+
+        self.muxtype = "XBUSMUX%dX%d" % (self.length, self.width)
+        self.part = self.cpu.part_catalog.get(self.muxtype)
+
+        if net0.is_plane:
+            file.write("MUX candidate but is plane\t")
+            self.netbus.create_as_bus(file)
+            return
+
+        if 0 and not net0.is_local:
+            file.write("MUX candidate but not local\t")
+            self.netbus.create_as_bus(file)
+            return
+
+        if not self.part:
+            file.write("MUX candidate but no mux-part (%s)\t" % self.muxtype)
+            self.netbus.create_as_bus(file)
+            return
+
+        # print("PART", self.muxtype, self.part, self.partref)
+
+        self.sheet = comp0.sheet
+
+        self.pins = {}
+        for j in range(self.length):
+
+            pin = Pin(
+                "Q%d" % j,
+                "Q%d" % j,
+                "output",
+            )
+            self.pins[pin.name] = pin
+
+            for i in range(self.width):
+                if not j:
+                    pin = Pin(
+                        "OE%c" % (i + 65),
+                        "OE%c" % (i + 65),
+                        "input",
+                    )
+                    self.pins[pin.name] = pin
+
+                pin = Pin(
+                    "I%c%d" % (i + 65, j),
+                    "I%c%d" % (i + 65, j),
+                    "input",
+                )
+                self.pins[pin.name] = pin
+        # print("PINS", list(self.pins.keys()))
+
+        file.write("MUX_CANDIDATE\t")
+
+        # self.netbus.table(sys.stdout)
+        # print("XX", self.netbus.cname, net0.is_plane, net0.is_local, net0.board, net0, comp0.sheet)
+
+        self.create_mux()
+
+        group = 64
+        busgroups = []
+        for key, nodes in list(self.netbus.components.items()):
+            comp, pinbus = key
+
+            if comp == self.comp or nodes[0].pin.type.name == "in":
+                continue
+
+            group += 1
+            # print("GRP", group, pinbus.pins[0].type.name, pinbus.pins[0])
+
+            # print("DN", comp, pinbus, pinbus.pins[0].type.name)
+            self.netbus.detach_component(comp, pinbus)
+            n = 0
+            nets = []
+            for oldnode in sorted(nodes):
+                pin = oldnode.pin
+                oldnode.remove()
+                pin.set_role("output")
+                newname = ""
+                j = True
+                for i in oldnode.net.name:
+                    if j and i.isdigit():
+                        newname += "_%c_" % group
+                        j = False
+                    newname += i
+                net = Net(
+                    self.board, 
+                    newname,
+                )
+                # net.sc_type = "bool"
+                net.is_local = net0.is_local
+                net.sheets = [ self.sheet ]
+                net.sheets[0].local_nets.append(net)
+                net.find_cname()
+                oldnode.net = net
+                oldnode.insert()
+                node2 = Node(
+                    net,
+                    self.comp,
+                    self.pins["I%c%d" % (group, n)]
+                )
+                # print(" On   ", oldnode, pin, newname, node2)
+                n += 1
+                nets.append(net)
+
+            busgroups.append(nets)
+
+            oenode = comp["OE"]
+            oenode.net.is_local = net0.is_local
+            oenode.net.is_local = False
+            oenode.net.find_cname()
+            # print("OE", oenode)
+            pin3 = self.pins["OE%c" % group]
+            node2 = Node(
+                oenode.net,
+                self.comp,
+                pin3,
+            )
+
+        self.comp.make_busses()
+
+        for nets in busgroups:
+            nb2 = NetBus(self.partref, *nets)
+            nb2.sort_nets()
+            nb2.create(file)
+
+        pinbus = self.pins["Q0"].pinbus
+        # print("PQ0", pinbus)
+        self.netbus.attach_component(self.comp, pinbus)
+
+        self.netbus.sort_nets()
+        self.netbus.create_as_bus(file)
+
+    def create_mux(self):
+
+        self.comp = Component(
+            self.board,
+            self.partref,
+            "BMX_" + self.netbus.cname,
+            self.sheet,
+            self.muxtype,
+        )
+        self.comp.name = self.partref
+        # print("COMP", self.comp.name)
+        self.comp.part = self.part
+        self.comp.part.assign(self.comp)
+        self.comp.sheet = self.sheet
+        for n, net in enumerate(self.netbus.nets):
+            node = Node(
+                net,
+                self.comp,
+                self.pins["Q%d" % n],
+            )
+            net.sc_type = "bool"
 
 class NetBus():
 
     ''' ... '''
 
+
     def __init__(self, sig, *nets):
         self.sig = sig
-        self.nodes = []
+        self.nodes = {}
         self.components = {}
         self.nets = None
-        self.nodes = {}
         self.cname = None
         self.ctype = None
         self.best = []
@@ -59,6 +234,9 @@ class NetBus():
 
     def __len__(self):
         return len(self.nets)
+
+    def __lt__(self, other):
+        return self.cname < other.cname
 
     def add_net(self, net):
         ''' Add another net '''
@@ -74,6 +252,24 @@ class NetBus():
                 key = (node.component, node.pin.pinbus)
                 self.components[key].append(node)
                 self.nodes[key][node.net] = node
+
+    def attach_component(self, comp, pinbus):
+        ''' Attach yet a component to this bus '''
+        assert pinbus is not None
+        key = (comp, pinbus)
+        self.components[key] = []
+        self.nodes[key] = {}
+        for node in comp.nodes.values():
+            if node.pin.pinbus == pinbus:
+                self.components[key].append(node)
+                self.nodes[key][node.net] = node
+
+    def detach_component(self, comp, pinbus):
+        ''' Deattach a component to this bus '''
+        key = (comp, pinbus)
+        assert key in self.components
+        del self.components[key]
+        del self.nodes[key]
 
     def sort_nets(self):
         ''' Sort the nets into (pressumed) bus-order '''
@@ -165,62 +361,6 @@ class NetBus():
         i = str(util.sortkey(self.nets[-1].cname)[-1]).rsplit(".", maxsplit=1)[-1]
         self.cname = self.nets[0].cname + "_to_" + i
 
-    def create_as_bus(self, file):
-        ''' Create as a bus '''
-        for net in self.nets:
-            net.netbus = self
-            for node in net.nnodes:
-                node.netbus = self
-        net = self.nets[0]
-        if net.sc_type != "bool":
-            self.ctype = "_rv <%d>" % len(self.nets)
-        elif len(self.nets) <= 16:
-            self.ctype = "uint16_t"
-        elif len(self.nets) <= 32:
-            self.ctype = "uint32_t"
-        else:
-            self.ctype = "uint64_t"
-        self.decide_cname()
-        file.write("\nAccepted:\t")
-        self.table(file)
-
-    def create_as_mux(self, file):
-        ''' Create network as mux to avoid hiZ '''
-        file.write("MUX_CANDIDATE\t")
-        self.create_as_bus(file)
-
-    def create(self, file):
-        ''' create network '''
-        self.sort_nets()
-        pintypes = set()
-        for net in self.nets:
-            for node in net.nnodes:
-                pintypes.add(node.pin.type.name)
-
-        if "zio" in pintypes or "zo" not in pintypes:
-            self.create_as_bus(file)
-            return
-
-        good = True
-        width = 0
-        for node in self.nets[0].nnodes:
-            if node.pin.type.name == "zo":
-                width += 1
-                if "OE" not in node.component:
-                    file.write("Cannot MUX, no OE in " + str(node.component) + "\n")
-                    good = False
-
-        if not good:
-            self.create_as_bus(file)
-            return
-
-        if len(self.nets) != 4 or width != 2:
-            file.write("Not MUXing yet (%dx%d)\n" % (len(self.nets), width))
-            self.create_as_bus(file)
-            return
-
-        self.create_as_mux(file)
-
     def write_decl(self, net, file):
         ''' Write network declaration '''
         if net == self.nets[0]:
@@ -270,6 +410,56 @@ class NetBus():
             maybebus.table(file)
         else:
             maybebus.instantiate(file)
+
+    def create_as_bus(self, file):
+        ''' Create as a bus '''
+        for net in self.nets:
+            net.netbus = self
+            for node in net.nnodes:
+                node.netbus = self
+        net = self.nets[0]
+        if net.sc_type != "bool":
+            self.ctype = "_rv <%d>" % len(self.nets)
+        elif len(self.nets) <= 16:
+            self.ctype = "uint16_t"
+        elif len(self.nets) <= 32:
+            self.ctype = "uint32_t"
+        else:
+            self.ctype = "uint64_t"
+        # self.decide_cname()
+        if file:
+            file.write("\nAccepted:\t")
+            self.table(file)
+
+    def create(self, file):
+        ''' create network '''
+        self.sort_nets()
+        self.decide_cname()
+        pintypes = set()
+        for net in self.nets:
+            for node in net.nnodes:
+                pintypes.add(node.pin.type.name)
+
+        if "zio" in pintypes or "zo" not in pintypes:
+            self.create_as_bus(file)
+            return
+
+        good = True
+        width = 0
+        for node in self.nets[0].nnodes:
+            if node.pin.type.name == "zo":
+                width += 1
+                if "OE" not in node.component:
+                    file.write("MUX has no OE in " + str(node.component) + "\n")
+                    good = False
+            elif node.pin.type.name != "in":
+               file.write("MUX has pintype " + node.pin.type.name + "\n")
+               good = False
+
+        if not good or width == 1:
+            self.create_as_bus(file)
+        else:
+            MuxBus(self, width, file)
 
 class PassNetConfig():
 
@@ -358,3 +548,21 @@ class PassNetConfig():
             if len(maybebus.nets) >= MIN_BUS_WIDTH:
                 file.write("\n===============\n")
                 maybebus.instantiate(file)
+
+        for board in self.cpu.boards:
+            for comp in board.iter_components():
+                comp.optimize()
+
+        netbusses = set()
+        for net in self.cpu.nets.values():
+            if net.netbus:
+                netbusses.add(net.netbus)
+
+        file.write("\n")
+        file.write("FINAL NETBUSSES\n")
+        file.write("===============\n")
+        for netbus in sorted(netbusses):
+            file.write("\n")
+            netbus.table(file)
+             
+        

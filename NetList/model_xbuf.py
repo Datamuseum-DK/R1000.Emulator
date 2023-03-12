@@ -35,7 +35,7 @@
    Ref: Philips IC15 1994 Dec 05
 '''
 
-from part import PartModel, PartFactory
+from part import PartModel, PartFactory, optimize_oe_output
 from component import Component
 
 class Xbuf(PartFactory):
@@ -92,7 +92,7 @@ class Xbuf(PartFactory):
 		|		state->job = 0;
 		|''')
 
-        if "OE" not in self.comp:
+        if "OE" not in self.comp or self.comp.nodes["OE"].net.is_pd():
             file.fmt('''
 		|	}
 		|
@@ -218,6 +218,9 @@ class ModelXbuf(PartModel):
         if ident not in board.part_catalog:
             board.add_part(ident, Xbuf(board, ident))
         comp.part = board.part_catalog[ident]
+
+    def optimize(self, comp):
+        optimize_oe_output(comp, "OE", "Y")
 
 def register(board):
     ''' Register component model '''

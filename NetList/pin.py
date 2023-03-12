@@ -150,18 +150,14 @@ class PinBus():
     def write_extra(self, file, comp):
         file.write("\n")
         sigtype = set()
-        direction = set()
+        pintype = set()
         nodes = {}
         for node in sorted(comp):
             if node.pin in self.pins:
                 nodes[node.pin] = node
                 sigtype.add(node.net.sc_type)
-                direction.add(node.pin.type)
+                pintype.add(node.pin.type.name)
 
-        if len(direction) > 1:
-            print(self, "DIR", direction)
-            assert len(direction) == 1
-        direction = list(direction)[0]
         is_bool = len(sigtype) == 1 and "bool" in sigtype
 
         file.write("\n")
@@ -175,15 +171,14 @@ class PinBus():
             node0 = mynodes[pin.netbus.nets[0]]
             pin.netbusname = "PINB_" + node0.pin.name
 
-        if direction.input:
+        if "in" in pintype or "zio" in pintype:
             self.write_extra_read(file, nodes)
             self.write_extra_events(file, nodes)
             self.write_extra_sensitive(file, nodes)
 
-        if direction.output:
+        if "out" in pintype or "zo" in pintype or "zio" in pintype:
             self.write_extra_write(file, nodes)
-            if not is_bool:
-                self.write_extra_z(file, nodes)
+            self.write_extra_z(file, nodes)
 
         file.write("\n")
         file.write("#define BUS_%s_TRACE() \\\n\t\t" % self.name)

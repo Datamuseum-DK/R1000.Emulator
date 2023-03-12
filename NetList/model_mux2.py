@@ -38,7 +38,7 @@
 '''
 
 
-from part import PartModel, PartFactory
+from part import PartModel, PartFactory, optimize_oe_output
 
 class Mux2(PartFactory):
 
@@ -172,6 +172,9 @@ class ModelMux2(PartModel):
         if ident not in board.part_catalog:
             board.add_part(ident, Mux2(board, ident, invert))
         comp.part = board.part_catalog[ident]
+
+    def optimize(self, comp):
+        optimize_oe_output(comp, "OE", "Y")
 
 def register(board):
     ''' Register component model '''

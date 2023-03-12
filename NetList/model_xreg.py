@@ -35,7 +35,7 @@
    Ref: Fairchild DS009524 May 1988 Revised September 2000
 '''
 
-from part import PartModel, PartFactory
+from part import PartModel, PartFactory, optimize_oe_output
 
 class Xreg(PartFactory):
 
@@ -174,6 +174,9 @@ class ModelXreg(PartModel):
         if ident not in board.part_catalog:
             board.add_part(ident, Xreg(board, ident))
         comp.part = board.part_catalog[ident]
+
+    def optimize(self, comp):
+        optimize_oe_output(comp, "OE", "Q")
 
 def register(board):
     ''' Register component model '''

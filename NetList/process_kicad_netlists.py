@@ -48,7 +48,6 @@ from pass_pupd import PassPuPd
 from pass_assign_part import PassAssignPart
 from pass_net_config import PassNetConfig
 from pass_part_config import PassPartConfig
-from pass_bus_pins import PassBusPins
 
 MYSELF = os.path.basename(__file__)
 
@@ -80,6 +79,8 @@ class R1000Cpu():
         self.cdir = os.path.join(workdir, "Chassis")
         self.tstamp = os.path.join(self.cdir, "_timestamp")
         self.planes_hh = os.path.join(self.cdir, "planes.hh")
+
+        self.nbr_busmux = 1
 
         os.makedirs(self.cdir, exist_ok=True)
 
@@ -148,9 +149,6 @@ class R1000Cpu():
         self.boards.sort()
 
         self.plane = planes.Planes(self)
-
-        for board in self.boards:
-            PassBusPins(board)
 
         PassPuPd(self)
 

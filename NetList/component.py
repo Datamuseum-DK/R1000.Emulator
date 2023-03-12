@@ -45,7 +45,7 @@ class Component():
         self.ref = compref
         self.value = compvalue
         self.nodes = {}
-        self.busses = []
+        self.busses = {}
         self.model = None
         self.sheet = compsheet
         self.partname = comppart
@@ -53,7 +53,6 @@ class Component():
         self.location = "x99"
         self.name = "X"
         self.part = None
-        self.busses = {}
         self.is_plane = self.partname in ("GF", "GB")
         self.is_supply = self.partname in ("PU", "PD", "Pull_Down", "Pull_Up")
 
@@ -115,6 +114,10 @@ class Component():
             self.busses[busname] = bus
             for node in busnodes:
                 bus.add_pin(node.pin)
+
+    def optimize(self):
+        ''' Final Optimizations '''
+        self.part.optimize(self)
 
 class ComponentSexp(Component):
 

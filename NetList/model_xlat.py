@@ -36,7 +36,7 @@
 
 '''
 
-from part import PartModel, PartFactory
+from part import PartModel, PartFactory, optimize_oe_output
 
 class Xlat(PartFactory):
 
@@ -134,6 +134,9 @@ class ModelXlat(PartModel):
         if ident not in board.part_catalog:
             board.add_part(ident, Xlat(board, ident))
         comp.part = board.part_catalog[ident]
+
+    def optimize(self, comp):
+        optimize_oe_output(comp, "OE", "Q")
 
 def register(board):
     ''' Register component model '''
