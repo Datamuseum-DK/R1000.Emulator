@@ -41,21 +41,18 @@ class NetBus():
 
     ''' ... '''
 
-    def __init__(self, sig, net):
+    def __init__(self, sig, *nets):
         self.sig = sig
         self.nodes = []
         self.components = {}
-        self.nets = []
+        self.nets = None
         self.nodes = {}
         self.cname = None
         self.ctype = None
-        self.best = None
+        self.best = []
 
-        self.nets.append(net)
-        for node in net.nnodes:
-            key = (node.component, node.pin.pinbus)
-            self.components[key] = [node]
-            self.nodes[key] = {node.net: node}
+        for net in nets:
+            self.add_net(net)
 
     def __repr__(self):
         return "<MBUS %d×%d>" % (len(self.nets), len(self.nodes))
@@ -65,11 +62,18 @@ class NetBus():
 
     def add_net(self, net):
         ''' Add another net '''
-        self.nets.append(net)
-        for node in net.nnodes:
-            key = (node.component, node.pin.pinbus)
-            self.components[key].append(node)
-            self.nodes[key][node.net] = node
+        if not self.nets:
+            self.nets = [net]
+            for node in net.nnodes:
+                key = (node.component, node.pin.pinbus)
+                self.components[key] = [node]
+                self.nodes[key] = {node.net: node}
+        else:
+            self.nets.append(net)
+            for node in net.nnodes:
+                key = (node.component, node.pin.pinbus)
+                self.components[key].append(node)
+                self.nodes[key][node.net] = node
 
     def sort_nets(self):
         ''' Sort the nets into (pressumed) bus-order '''
@@ -129,7 +133,6 @@ class NetBus():
 
     def table(self, file, pfx=""):
         ''' render in table format '''
-        self.decide_cname()
         file.write(pfx + "BUS")
         file.write(" %d×%d" % (len(self.nets), len(self.nodes)))
         file.write(" \t" + str(self.cname) + " " + str(self.ctype) + "\n")
@@ -162,7 +165,7 @@ class NetBus():
         i = str(util.sortkey(self.nets[-1].cname)[-1]).rsplit(".", maxsplit=1)[-1]
         self.cname = self.nets[0].cname + "_to_" + i
 
-    def register(self):
+    def register(self, file):
         ''' Register network on nodes '''
         self.decide_cname()
         self.sort_nets()
@@ -179,6 +182,9 @@ class NetBus():
             self.ctype = "uint32_t"
         else:
             self.ctype = "uint64_t"
+        self.decide_cname()
+        file.write("\nAccepted:\t")
+        self.table(file)
 
     def write_decl(self, net, file):
         ''' Write network declaration '''
@@ -197,6 +203,38 @@ class NetBus():
                 file.write(',\n\t%s("%s", "%s")' % (lname, lname, "z" * len(self.nets)))
             else:
                 file.write(',\n\t%s("%s", 0x%xULL)' % (lname, lname, (1 << len(self.nets)) - 1))
+
+    def instantiate(self, file):
+        ''' Make this bus real, if possible '''
+        assert len(self.nets) >= MIN_BUS_WIDTH
+
+        if self.invalid(file):
+            return
+
+        self.sort_nets()
+        if not self.unordered():
+            self.register(file)
+            return
+
+        if len(self.best) < MIN_BUS_WIDTH:
+            file.write("\nResidual:\t")
+            self.table(file)
+            return
+
+        target = set(self.best)
+        rest = set(self.nets) - target
+        target = list(target)
+        rest = list(rest)
+
+        newbus = NetBus(self.sig, *target)
+        newbus.register(file)
+
+        maybebus = NetBus(self.sig, *rest)
+        if len(maybebus.nets) < MIN_BUS_WIDTH:
+            file.write("\nResidual:\t")
+            maybebus.table(file)
+        else:
+            maybebus.instantiate(file)
 
 class PassNetConfig():
 
@@ -249,6 +287,7 @@ class PassNetConfig():
 
     def bus_candidates(self, file):
         ''' Find networks which are candidates for bus-membership '''
+
         for _gnam, net in sorted(self.cpu.nets.items()):
 
             if len(net.nnodes) < 2:
@@ -257,7 +296,6 @@ class PassNetConfig():
             if None in (x.pin.pinbus for x in net.nnodes):
                 continue
 
-            # uniq_comps = set(x.component.gref for x in net.nnodes)
             uniq_comps = set((x.component.gref, x.pin.pinbus) for x in net.nnodes)
             if len(uniq_comps) != len(net.nnodes):
                 # Signals which connect multiple times to a single component
@@ -281,50 +319,7 @@ class PassNetConfig():
             else:
                 self.netbusses[sig] = NetBus(sig, net)
 
-        for sig, maybebus in list(self.netbusses.items()):
-            maybebus.sort_nets()
-            if len(maybebus.nets) < MIN_BUS_WIDTH:
-                del self.netbusses[sig]
-                continue
-            if maybebus.invalid(file):
-                del self.netbusses[sig]
-                continue
-
-        file.write("\n")
-        file.write("Residual busses\n")
-        file.write("===============\n")
-        accepted = []
-        for sig, maybebus in self.netbusses.items():
-            while len(maybebus.nets) >= MIN_BUS_WIDTH:
-                maybebus.sort_nets()
-                maybebus.best = []
-                if not maybebus.unordered():
-                    accepted.append(maybebus)
-                    break
-                if len(maybebus.best) < MIN_BUS_WIDTH:
-                    break
-
-                target = set(maybebus.best)
-                rest = set(maybebus.nets) - target
-                target = list(target)
-                rest = list(rest)
-
-                newbus = NetBus(maybebus.sig, target.pop(0))
-                while target:
-                    newbus.add_net(target.pop(0))
-                accepted.append(newbus)
-
-                maybebus = NetBus(maybebus.sig, rest.pop(0))
-                while rest:
-                    maybebus.add_net(rest.pop(0))
-            if maybebus not in accepted:
-                file.write("\n")
-                maybebus.table(file)
-
-        file.write("\n")
-        file.write("Accepted busses\n")
-        file.write("===============\n")
-        for netbus in accepted:
-            netbus.register()
-            file.write("\n")
-            netbus.table(file)
+        for maybebus in self.netbusses.values():
+            if len(maybebus.nets) >= MIN_BUS_WIDTH:
+                file.write("\n===============\n")
+                maybebus.instantiate(file)
