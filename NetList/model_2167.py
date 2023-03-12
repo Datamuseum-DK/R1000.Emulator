@@ -91,7 +91,7 @@ class Model2167(PartModel):
 
     def assign(self, comp):
         if comp.nodes["CS"].net.is_pd():
-            comp.nodes["Q"].pin.role = "c_output"
+            comp.nodes["Q"].pin.set_role("c_output")
         super().assign(comp)
 
 

@@ -30,8 +30,8 @@
 
 
 '''
-   Turn kicad netlist files into SystemC source code
-   =================================================
+   A "board" is the contents of a single KiCad Netlist file (=project)
+   ===================================================================
 '''
 
 import os
@@ -46,7 +46,9 @@ from net import NetSexp
 from component import ComponentSexp
 
 class Board():
-    ''' A netlist file '''
+
+    ''' Ingest one KiCad netlist file '''
+
     def __init__(self, cpu, netlist):
         self.cpu = cpu
         self.branch = cpu.branch
@@ -72,7 +74,8 @@ class Board():
 
         self.sheets = {}
         for i in self.sexp.find("design.sheet"):
-            SheetSexp(self, i)
+            sheet = SheetSexp(self, i)
+            self.sheets[sheet.page] = sheet
 
         self.add_part("GB", NoPart())
         self.add_part("GF", NoPart())
@@ -138,7 +141,9 @@ class Board():
 
     def sc_mod(self, basename):
         ''' ... '''
-        return SC_Mod(self.dstdir + "/" + basename, self.makefile)
+        scm = SC_Mod(self.dstdir + "/" + basename, self.makefile)
+        scm.add_subst("«bbb»", self.lname)
+        return scm
 
     def produce_sheets_h(self, file):
         ''' ... '''

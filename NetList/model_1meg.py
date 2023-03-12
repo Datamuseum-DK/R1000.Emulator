@@ -168,7 +168,7 @@ class Model1Meg(PartModel):
         node = comp["Q"]
         node.remove()
         node.pin.name = "DQ"
-        node.pin.role = "sc_inout_resolved"
+        node.pin.set_role("bidirectional")
         node.insert()
         super().assign(comp)
 

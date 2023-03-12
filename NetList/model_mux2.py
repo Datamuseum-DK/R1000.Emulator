@@ -156,7 +156,7 @@ class ModelMux2(PartModel):
         if "OE" not in comp.nodes:
             for node in comp:
                 if node.pin.name[0] == "Y":
-                    node.pin.role = 'c_output'
+                    node.pin.set_role('c_output')
         super().assign(comp)
 
     def configure(self, board, comp):

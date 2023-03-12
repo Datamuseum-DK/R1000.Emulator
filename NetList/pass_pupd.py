@@ -53,12 +53,8 @@ class PassPuPd():
                 if node.component.is_plane or node.component.is_supply:
                     node.remove()
                     continue
-                if node.pin.role not in {
-                    "power_out",
-                    "c_input",
-                    "input",
-                }:
-                    print("Node", node)
+                if node.pin.type.output:
+                    print("Bad PUPD Node", node)
             if not net.nnodes:
                 continue
             if net.is_pd():
@@ -71,8 +67,7 @@ class PassPuPd():
         for _gnam, net in sorted(self.cpu.nets.items()):
             if len(net.nnodes) != 1:
                 continue
-            role = net.nnodes[0].pin.role
-            if role == "input":
+            if not net.nnodes[0].pin.type.output:
                 net.name = "PU"
                 net.is_supply = True
                 cpu.plane.psig["PU"].add_net(net)

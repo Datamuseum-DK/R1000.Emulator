@@ -170,10 +170,10 @@ class ModelNor(Part):
                 continue
             seen.add(node.net)
             if node.pin.name == "Q":
-                node.pin.role = "c_output"
+                node.pin.set_role("c_output")
             else:
                 node.pin.name = "D%d" % n_inputs
-                node.pin.role = "c_input"
+                node.pin.set_role("c_input")
                 n_inputs += 1
         assert n_inputs > 0
         if n_inputs == 1:

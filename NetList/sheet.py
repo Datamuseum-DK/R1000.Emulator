@@ -40,16 +40,14 @@ class Sheet():
         self.sexp = sexp
         name = sexp.find_first("name")[0].name
         self.page = self.board.pagename_to_sheet(name)
-        self.board.sheets[self.page] = self
         # print("Sheet", board.name, self.page)
-        self.mod_name = board.name.lower() + "_%02d" % self.page
+        self.mod_name = board.lname + "_%02d" % self.page
         self.mod_type = "mod_" + self.mod_name
         self.components = {}
         self.local_nets = []
 
         self.scm = self.board.sc_mod(self.mod_name)
         self.scm.add_subst("«ttt»", self.mod_type)
-        self.scm.add_subst("«bbb»", self.board.name.lower())
 
     def __str__(self):
         return self.board.name + "_%d" % self.page
@@ -63,7 +61,7 @@ class Sheet():
         self.components[comp.ref] = comp
 
     def del_component(self, comp):
-        ''' Remove component to sheet '''
+        ''' Remove component from sheet '''
         assert comp.ref in self.components
         del self.components[comp.ref]
 

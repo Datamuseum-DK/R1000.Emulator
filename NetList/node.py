@@ -29,8 +29,8 @@
 # SUCH DAMAGE.
 
 '''
-   Turn kicad netlist files into SystemC source code
-   =================================================
+   A KiCad netlist file "node"
+   ===========================
 '''
 
 import pin
@@ -70,9 +70,6 @@ class Node():
                  str(self.pin),
             )
         )
-
-    def unconnected(self):
-        return len(self.net.nnodes) == 1
 
 class NodeSexp(Node):
 

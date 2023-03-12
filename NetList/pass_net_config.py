@@ -141,18 +141,7 @@ class NetBus():
 
         i = [""]
         for node in self.nets[0].nnodes:
-            i.append(
-                {
-                "output": "out",
-                "c_output": "out",
-                "input": "in",
-                "c_input": "in",
-                "tri_state": "zo",
-                "bidirectional": "zio",
-                "sc_inout_resolved": "zio",
-                "sc_out <sc_logic>": "zo",
-                }[node.pin.role]
-            )
+            i.append(node.pin.type.name)
         file.write(pfx + "\t".join(i) + "\n")
 
         for net in sorted(self.nets):
@@ -224,31 +213,21 @@ class PassNetConfig():
             if net.is_supply:
                 net.sc_type = "bool"
                 continue
-            i = {}
+
+            hizs = 0
+            outputs = 0
+            roles = set()
             for node in net.iter_nodes():
-                i[node.pin.role] = 1 + i.setdefault(node.pin.role, 0)
+                if node.pin.type.hiz:
+                    hizs += 1
+                if node.pin.type.output:
+                    outputs += 1
 
-            j = 0
-            for role in (
-                'sc_inout_resolved',
-                'c_output',
-                'tri_state',
-                'sc_out <sc_logic>',
-            ):
-                j += i.get(role, 0)
-            if i and j < 1:
-                print("Undriven", i, net)
+            if outputs == 0:
+                print("Undriven", net)
 
-            if len(i) == 1 and ('c_input' in i or 'c_output' in i):
-                # print(net, '=>', "bool", "(unconnected)")
+            if hizs == 0 and outputs <= 1:
                 net.sc_type = "bool"
-                continue
-            if 'c_input' not in i or 'c_output' not in i or len(i) > 2:
-                continue
-            if i['c_output'] > 1:
-                continue
-            # print(net, '=>', "bool")
-            net.sc_type = "bool"
 
     def bus_candidates(self, file):
         for _gnam, net in sorted(self.cpu.nets.items()):

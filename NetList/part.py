@@ -132,18 +132,7 @@ class PartModel(Part):
 
     def assign(self, comp):
         ''' Assigned to component '''
-
-        for node in comp:
-            if node.pin.role[:3] == "sc_":
-                continue
-            if node.pin.role == "bidirectional":
-                node.pin.role = "sc_inout_resolved"
-            elif node.pin.role == "open_collector":
-                node.pin.role = "sc_out <sc_logic>"
-            elif node.pin.role == "input":
-                node.pin.role = "c_input"
-            elif node.pin.role == "output":
-                node.pin.role = "c_output"
+        return
 
     def make_signature(self, comp):
         ''' Produce a signature for this hookup '''
@@ -244,7 +233,7 @@ class PartFactory(Part):
                 continue
             if node.pin.pinbus is None and node.net.is_pd():
                 continue
-            if node.pin.role in ("c_input", "sc_inout_resolved",):
+            if node.pin.type.input:
                 if not node.netbus:
                     yield "PIN_%s" % node.pin.name
                 elif node.netbus.nets[0] == node.net:
@@ -258,11 +247,10 @@ class PartFactory(Part):
             dst = "PIN_%s<=" % node.pin.name
             src = "PIN_%s=>" % node.pin.name
             trc = "PIN_%s?" % node.pin.name
-            if node.pin.role == "c_output" and node.net.sc_type == "bool":
+            if node.pin.type.output and node.net.sc_type == "bool":
                 file.add_subst(dst, "PIN_%s = " % node.pin.name)
                 file.add_subst(trc, "PIN_%s" % node.pin.name)
-            elif node.pin.role == "c_output" or "tri_state" in node.pin.role:
-                file.add_subst(src, "IS_H(PIN_%s)" % node.pin.name)
+            elif node.pin.type.output and not node.pin.type.input:
                 file.add_subst(dst, "PIN_%s = AS" % node.pin.name)
                 file.add_subst(trc, "PIN_%s" % node.pin.name)
             elif node.pin.pinbus is None and node.net.is_pd():
@@ -302,18 +290,18 @@ class PartFactory(Part):
                     else:
                         sctype = " <%s>" % node.netbus.ctype
 
-                    if node.pin.role in ("c_output", "tri_state"):
-                        yield "sc_out" + sctype + pbname
-                    elif node.pin.role == "sc_inout_resolved":
+                    if node.pin.type.input and node.pin.type.output:
                         yield "sc_inout" + sctype + pbname
+                    elif node.pin.type.output:
+                        yield "sc_out" + sctype + pbname
                     else:
                         yield "sc_in" + sctype + pbname
 
-            elif node.pin.role[:3] == "sc_":
-                yield "%s\tPIN_%s;" % (node.pin.role, node.pin.name)
-            elif node.pin.role == "c_output" and node.net.sc_type == "bool":
+            elif node.pin.type.input and node.pin.type.output:
+                yield "sc_inout_resolved\tPIN_%s;" % node.pin.name
+            elif node.pin.type.output and node.net.sc_type == "bool":
                 yield "sc_out <bool>\t\tPIN_%s;" % node.pin.name
-            elif node.pin.role == "c_output":
+            elif node.pin.type.output:
                 yield "sc_out <sc_logic>\tPIN_%s;" % node.pin.name
             elif node.pin.pinbus is None and node.net.is_pu():
                 continue
@@ -321,13 +309,13 @@ class PartFactory(Part):
                 continue
             elif node.net.sc_type == "bool":
                 yield "sc_in <bool>\t\tPIN_%s;" % node.pin.name
-            elif 'tri_state' in node.pin.role:
-                yield "sc_out <sc_logic>\tPIN_%s;" % node.pin.name
             else:
-                yield "sc_in <sc_logic>\tPIN_%s;" % node.pin.name + "\t// " + str(node.pin.role)
+                yield "sc_in <sc_logic>\tPIN_%s;" % node.pin.name
+
         for decl, _init in self.private():
             self.has_private = True
             yield decl
+
         if self.has_private:
             yield "bool first_initialization;"
 
@@ -336,7 +324,7 @@ class PartFactory(Part):
 
         for node in comp:
             if node.pin.pinbus is None and (node.net.is_pd() or node.net.is_pu()):
-                if node.pin.role not in ('c_input',):
+                if not node.pin.type.input:
                     print("BAD NODE ? ", node.net, node.pin.role, node.component)
                 continue
             if not node.netbus:

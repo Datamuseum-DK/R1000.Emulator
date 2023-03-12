@@ -35,6 +35,22 @@
 
 import util
 
+class PinType():
+    def __init__(self, name, is_input, is_output, is_hiz):
+        self.name = name
+        self.input = is_input
+        self.output = is_output
+        self.hiz = is_hiz
+
+    def __repr__(self):
+        return "<PT " + self.name + ">"
+
+PinTypeOther = PinType("???", False, False, False)
+PinTypeIn = PinType("in", True, False, False)
+PinTypeOut = PinType("out", False, True, False)
+PinType3state = PinType("zo", False, True, True)
+PinTypeBidir = PinType("zio", True, True, True)
+
 class Pin():
 
     ''' A `pin` on a `component` '''
@@ -43,12 +59,24 @@ class Pin():
         self.ident = pinident	# Not always numeric!
         self.rawname = pinname
         self.name = pinname
-        self.role = pinrole.replace("+no_connect", "")
+        self.set_role(pinrole.replace("+no_connect", ""))
         self.pinbus = None
         self.netbus = None
-        self.netbuspos = 0
         self.netbusname = ""
         self.update()
+
+    def set_role(self, role):
+        self.rolex = role
+        self.type = {
+            "bidirectional": PinTypeBidir,
+            "input": PinTypeIn,
+            "output": PinTypeOut,
+            "power_out": PinTypeOther,
+            "open_collector": PinType3state,
+            "tri_state": PinType3state,
+            "c_input": PinTypeIn,
+            "c_output": PinTypeOut,
+        }[role]
 
     def update(self):
         ''' Things (may) have changed '''
@@ -66,6 +94,7 @@ class Pin():
         self.sortkey = util.sortkey(self.name)
         if isinstance(self.sortkey[0], int):
             self.sortkey.insert(0, "_")
+        assert not hasattr(self, "role")
 
     def buspin(self):
         ''' This might be a buspin '''
@@ -87,7 +116,7 @@ class Pin():
         return None
 
     def __repr__(self):
-        return "_".join(("Pin", self.name, self.role))
+        return "_".join(("Pin", self.name, self.type.name))
 
     def __lt__(self, other):
         return self.sortkey < other.sortkey
@@ -128,15 +157,13 @@ class PinBus():
         for node in sorted(comp):
             if node.pin in self.pins:
                 nodes[node.pin] = node
-                assert node.pin.role in (
-                    "c_input",
-                    "c_output",
-                    "sc_inout_resolved",
-                    "tri_state",
-                )
                 sigtype.add(node.net.sc_type)
-                direction.add(node.pin.role)
+                direction.add(node.pin.type)
 
+        if len(direction) > 1:
+            print(self, "DIR", direction)
+            assert len(direction) == 1
+        direction = list(direction)[0]
         is_bool = len(sigtype) == 1 and "bool" in sigtype
 
         file.write("\n")
@@ -150,31 +177,20 @@ class PinBus():
             node0 = mynodes[pin.netbus.nets[0]]
             pin.netbusname = "PINB_" + node0.pin.name
 
-        for i in (
-            "c_input",
-            "sc_inout_resolved",
-        ):
-            if i in direction:
-                self.write_extra_read(file, nodes)
-                self.write_extra_events(file, nodes)
-                self.write_extra_sensitive(file, nodes)
-                break
+        if direction.input:
+            self.write_extra_read(file, nodes)
+            self.write_extra_events(file, nodes)
+            self.write_extra_sensitive(file, nodes)
 
-        for i in (
-            "c_output",
-            "sc_inout_resolved",
-            "tri_state",
-        ):
-            if i in direction:
-                self.write_extra_write(file, nodes)
-                if not is_bool:
-                    self.write_extra_z(file, nodes)
-                break
+        if direction.output:
+            self.write_extra_write(file, nodes)
+            if not is_bool:
+                self.write_extra_z(file, nodes)
 
         file.write("\n")
         file.write("#define BUS_%s_TRACE() \\\n\t\t" % self.name)
         j = []
-        for nbr, pin in enumerate(self.pins):
+        for _nbr, pin in enumerate(self.pins):
             node = nodes[pin]
             if not pin.netbus:
                 j.append("PIN_%s" % pin.name)
@@ -188,7 +204,7 @@ class PinBus():
         file.write("\n")
         file.write("#define BUS_%s_SENSITIVE() \\\n\t" % self.name)
         j = []
-        for nbr, pin in enumerate(self.pins):
+        for _nbr, pin in enumerate(self.pins):
             node = nodes[pin]
             if not pin.netbus:
                 j.append("PIN_%s" % pin.name)
@@ -200,7 +216,7 @@ class PinBus():
         file.write("\n")
         file.write("#define BUS_%s_EVENTS() \\\n\t" % self.name)
         j = []
-        for nbr, pin in enumerate(self.pins):
+        for _nbr, pin in enumerate(self.pins):
             node = nodes[pin]
             if not pin.netbus:
                 j.append("PIN_%s.default_event()" % pin.name)

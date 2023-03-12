@@ -59,7 +59,7 @@ class Component():
 
         self.insert()
 
-    def __str__(self):
+    def __repr__(self):
         return "_".join((str(self.sheet), self.ref, self.partname, self.location, self.name))
 
     def __lt__(self, other):
@@ -106,9 +106,10 @@ class Component():
                 continue
             if len(busnodes) < 2:
                 continue
+            types = set(x.pin.type for x in busnodes)
             low = min(x.pin.sortkey[1] for x in busnodes)
             high = max(x.pin.sortkey[1] for x in busnodes)
-            if 1 + high - low != len(busnodes):
+            if 1 + high - low != len(busnodes) or len(types) > 1:
                 continue
             bus = pin.PinBus(busname, low)
             self.busses[busname] = bus
