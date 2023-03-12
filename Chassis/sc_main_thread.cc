@@ -88,21 +88,21 @@ sc_main(int argc, char *argv[])
 
 	// Order as seen from front L…R
 	if (sc_boards & R1K_BOARD_MEM32_2)
-		mem32_2 = make_mod_mem32("MEM2", planes, NULL);
+		mem32_2 = make_mod_mem32("MEM2", planes);
 	if (sc_boards & R1K_BOARD_MEM32_0)
-		mem32_0 = make_mod_mem32("MEM0", planes, NULL);
+		mem32_0 = make_mod_mem32("MEM0", planes);
 	if (sc_boards & R1K_BOARD_SEQ)
-		seq = make_mod_seq("SEQ", planes, NULL);
+		seq = make_mod_seq("SEQ", planes);
 	if (sc_boards & R1K_BOARD_TYP)
-		typ = make_mod_typ("TYP", planes, NULL);
+		typ = make_mod_typ("TYP", planes);
 	if (sc_boards & R1K_BOARD_VAL)
-		val = make_mod_val("VAL", planes, NULL);
+		val = make_mod_val("VAL", planes);
 	if (sc_boards & R1K_BOARD_FIU)
-		fiu = make_mod_fiu("FIU", planes, NULL);
+		fiu = make_mod_fiu("FIU", planes);
 	if (sc_boards & R1K_BOARD_IOC)
-		ioc = make_mod_ioc("IOC", planes, NULL);
+		ioc = make_mod_ioc("IOC", planes);
 
-	emu = make_mod_emu("EMU", planes, NULL);
+	emu = make_mod_emu("EMU", planes);
 
 	planes.PD = false;
 	planes.PU = true;

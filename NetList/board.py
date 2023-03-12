@@ -162,7 +162,7 @@ class Board():
 		|struct mod_planes;
 		|struct mod_«bbb»;
 		|
-		|struct mod_«bbb» *make_mod_«bbb»(sc_module_name name, mod_planes &planes, const char *how);
+		|struct mod_«bbb» *make_mod_«bbb»(sc_module_name name, mod_planes &planes);
 		|''')
 
     def produce_board_hh(self, scm):
@@ -182,7 +182,7 @@ class Board():
 		|	«BBB»_SHEETS()
 		|	#undef SHEET
 		|
-		|	mod_«bbb»(sc_module_name name, mod_planes &planes, const char *how);
+		|	mod_«bbb»(sc_module_name name, mod_planes &planes);
 		|};
 		|''')
 
@@ -201,29 +201,23 @@ class Board():
 		|
 		|struct mod_«bbb» *make_mod_«bbb»(
 		|    sc_module_name name,
-		|    mod_planes &planes,
-		|    const char *how
+		|    mod_planes &planes
 		|)
 		|{
-		|	return new mod_«bbb»(name, planes, how);
+		|	return new mod_«bbb»(name, planes);
 		|}
 		|
 		|mod_«bbb» :: mod_«bbb»(
 		|    sc_module_name name,
-		|    mod_planes &planes,
-		|    const char *how
+		|    mod_planes &planes
 		|) :
 		|	sc_module(name),
 		|	«bbb»_globals("«bbb»_globals")
 		|{
-		|	if (how == NULL)
 		|''')
-        scm.write('\t\thow = "%s";\n' % ('+' * len(self.sheets)))
-        scm.write('\tassert(strlen(how) == %d);\n' % len(self.sheets))
         # ... we could also use the SHEET macro ...
         for sheet in self.sheets.values():
-            scm.write("\tif (*how++ == '+')\n")
-            scm.write('\t\t%s = ' % sheet.mod_name)
+            scm.write('\t%s = ' % sheet.mod_name)
             scm.write(' make_%s(' % sheet.mod_type)
             scm.write('"%s", planes, %s_globals);\n' % (sheet.mod_name, self.lname))
         scm.write("}\n")
