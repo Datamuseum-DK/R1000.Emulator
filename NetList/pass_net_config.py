@@ -271,6 +271,16 @@ class NetBus():
         del self.components[key]
         del self.nodes[key]
 
+    def the_only_one_driver(self):
+        ''' Only has one driver '''
+        comp = None
+        for node in self.nets[0].nnodes:
+            if node.pin.type.output:
+                if comp:
+                    return None
+                comp = node.component
+        return comp
+
     def sort_nets(self):
         ''' Sort the nets into (pressumed) bus-order '''
         pivot_node = self.nets[0].nnodes[0]
@@ -553,10 +563,23 @@ class PassNetConfig():
             for comp in board.iter_components():
                 comp.optimize()
 
-        netbusses = set()
+        netbusses = set([None])
         for net in self.cpu.nets.values():
-            if net.netbus:
-                netbusses.add(net.netbus)
+            netbus = net.netbus
+            if netbus in netbusses:
+                continue
+            netbusses.add(netbus)
+            if netbus.ctype[0] != "_":
+                continue
+            comp =  netbus.the_only_one_driver()
+            if not comp:
+                continue
+            print("*****", net, net.netbus, comp)
+            for net2 in netbus.nets:
+                net.sc_type = "bool"
+            netbus.create_as_bus(None)
+
+        netbusses.remove(None)
 
         file.write("\n")
         file.write("FINAL NETBUSSES\n")

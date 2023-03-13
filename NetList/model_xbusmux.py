@@ -69,13 +69,14 @@ class XBusMux(PartFactory):
         file.fmt('''
 		|	} else {
 		|		which = "?";
-		|		tmp = 0;
+		|		tmp = BUS_Q_MASK;
+		|		BUS_Q_WRITE(tmp);
 		|	}
 		|	TRACE(
 		|''')
 
         for i in range(self.width):
-            file.fmt('\t    << " %c " << PIN_OE%c? << BUS_I%c_TRACE()\n' % (i + 97, i+65, i+65))
+            file.fmt('\t    << " %c " << PIN_OE%c? << " " << BUS_I%c_TRACE()\n' % (i + 97, i+65, i+65))
 
         file.fmt('''
 		|	    << " - " << std::hex << tmp
