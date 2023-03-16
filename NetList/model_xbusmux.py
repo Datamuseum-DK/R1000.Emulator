@@ -45,13 +45,25 @@ class XBusMux(PartFactory):
         self.length = length
         self.width = width
 
+    def private(self):
+        ''' private variables '''
+        j = []
+        for i in range(self.width):
+            j.append("PIN_OE%c" % (65 + i))
+            yield from self.event_or(
+                "%c_event" % (65 + i),
+                "BUS_I%c" % (65 + i),
+                *j
+            )
+        yield from self.event_or(
+            "no_event",
+            *j
+        )
+
     def doit(self, file):
         ''' The meat of the doit() function '''
 
         super().doit(file)
-
-        for x in self.comp.nodes.items():
-            file.write("// " + str(x) + "\n")
 
         file.fmt('''
 		|	uint64_t tmp;
@@ -65,12 +77,14 @@ class XBusMux(PartFactory):
             file.fmt('\t\twhich = "%c";\n' % (i + 65))
             file.fmt('\t\tBUS_I%c_READ(tmp);\n' % (i + 65))
             file.fmt('\t\tBUS_Q_WRITE(tmp);\n')
+            file.fmt('\t\tnext_trigger(%c_event);\n' % (i + 65))
 
         file.fmt('''
 		|	} else {
 		|		which = "?";
 		|		tmp = BUS_Q_MASK;
 		|		BUS_Q_WRITE(tmp);
+		|		next_trigger(no_event);
 		|	}
 		|	TRACE(
 		|''')
