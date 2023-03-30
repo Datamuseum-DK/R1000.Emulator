@@ -9,6 +9,6 @@ cli 'sc quota add 280'
 
 expmon_prompt
 
-expmon_cmd "test_mem32 0 0" 
+expmon_cmd "test_mem32 0 0"
 
 run
