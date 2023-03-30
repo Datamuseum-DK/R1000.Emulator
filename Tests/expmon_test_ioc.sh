@@ -11,6 +11,7 @@ sc_boards ioc
 
 cli 'sc trace DI*PROC 4'
 cli 'sc quota add 13'
+cli 'sc quota exit'
 
 expmon_prompt
 
