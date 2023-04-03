@@ -47,7 +47,7 @@ static uint8_t rtcregs[32] = {
 
 	0x00,	// NVRAM - Milliseconds
 	98,	// NVRAM - (Year - 1)
-	0x02,	// NVRAM - Seconds
+	0x00,	// NVRAM - Seconds
 	0x00,	// NVRAM - Minutes
 
 	0x00,	// NVRAM - Hours
@@ -202,4 +202,43 @@ ioc_rtc_init(void)
 
 	ioc_rtc_setclock();
 	AZ(pthread_create(&rtc_thr, NULL, ioc_rtc_thread, NULL));
+}
+
+static const char *configs[] = {
+    "+modem_dialout",
+    "-modem_dialout",
+    "+modem_answer",
+    "-modem_answer",
+    "+iop_autoboot",
+    "-iop_autoboot",
+    "+r1000_autoboot",
+    "-r1000_autoboot",
+    "+auto_crash_recovery",
+    "-auto_crash_recovery",
+    "+console_break_key",
+    "-console_break_key",
+    NULL,
+};
+
+void v_matchproto_(cli_func_f)
+cli_ioc_config(struct cli *cli)
+{
+	int i, j;
+
+	for (i = 1; i < cli->ac; i++) {
+		for (j = 0; configs[j] != NULL; j++) {
+			if (!strcmp(cli->av[i], configs[j])) {
+				if (j & 1) {
+					rtcregs[0xa] &= ~(1 << (j >> 1));
+				} else {
+					rtcregs[0xa] |= (1 << (j >> 1));
+				}
+				break;
+			}
+		}
+		if (configs[j] == NULL)
+			Cli_Error(cli, "Unknown flag '%s'\n", cli->av[i]);
+	}
+        Cli_Printf(cli, "Config is 0x%02x\n", rtcregs[0xa]);
+	Cli_Usage(cli, "-option", "Operator mode options");
 }

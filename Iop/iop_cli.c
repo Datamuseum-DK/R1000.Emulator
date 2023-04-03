@@ -8,6 +8,7 @@
 
 static const struct cli_cmds cli_ioc_cmds[] = {
 	{ "breakpoint",		cli_ioc_breakpoint },
+	{ "config",		cli_ioc_config },
 	{ "dump",		cli_ioc_dump },
 	{ "maxins",		cli_ioc_maxins },
 	{ "memtrace",		cli_ioc_memtrace },
