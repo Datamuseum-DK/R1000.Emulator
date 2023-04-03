@@ -61,6 +61,7 @@ static pthread_mutex_t ioc_cpu_mtx = PTHREAD_MUTEX_INITIALIZER;
 unsigned ioc_fc;
 
 unsigned int ioc_pc;
+static unsigned key_switch;
 
 /**********************************************************************
  */
@@ -102,6 +103,18 @@ ioc_start_cpu(uintmax_t quota)
 	ioc_cpu_quota = quota;
 	AZ(pthread_cond_broadcast(&ioc_cpu_cond));
 	AZ(pthread_mutex_unlock(&ioc_cpu_mtx));
+}
+
+void v_matchproto_(cli_func_f)
+cli_ioc_switch(struct cli *cli)
+{
+	if (cli->ac == 2 && !strcmp(cli->av[1], "-normal")) {
+		key_switch = 0;
+	} else if (cli->ac == 2 && !strcmp(cli->av[1], "-interactive")) {
+		key_switch = 8;
+	} else {
+		Cli_Usage(cli, "-normal|-interactive", "Keyswitch");
+	}
 }
 
 void v_matchproto_(cli_func_f)
@@ -208,7 +221,7 @@ io_sreg8_pre_read(int debug, uint8_t *space, unsigned width, unsigned adr)
 	(void)debug;
 	(void)width;
 	(void)adr;
-	space[3] |= 0x20;
+	space[3] |= 0x20 | key_switch;
 }
 
 /**********************************************************************/
@@ -263,9 +276,10 @@ cpu_trace(unsigned int pc, uint8_t *peg)
 		repeats = 0;
 		Trace(
 		    trace_ioc_instructions,
-		    "E %08x %04x: %02x %-20s: %s",
+		    "E %08x %04x %08x: %02x %-20s: %s",
 		    pc,
 		    m68k_get_reg(NULL, M68K_REG_SR),
+		    m68k_get_reg(NULL, M68K_REG_A7),
 		    *peg,
 		    buff2,
 		    buff

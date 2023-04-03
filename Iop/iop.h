@@ -43,6 +43,7 @@ void v_matchproto_(cli_func_f) cli_ioc_start(struct cli *cli);
 void v_matchproto_(cli_func_f) cli_ioc_state(struct cli *cli);
 void v_matchproto_(cli_func_f) cli_ioc_step(struct cli *cli);
 void v_matchproto_(cli_func_f) cli_ioc_stop(struct cli *cli);
+void v_matchproto_(cli_func_f) cli_ioc_switch(struct cli *cli);
 void v_matchproto_(cli_func_f) cli_ioc_syscall(struct cli *cli);
 void v_matchproto_(cli_func_f) cli_scsi_disk(struct cli *cli);
 void v_matchproto_(cli_func_f) cli_scsi_tape(struct cli *cli);
@@ -90,6 +91,34 @@ void Ioc_HotFix_Resha(void);
 void ioc_bus_xact_init(void);
 
 /**********************************************************************/
+
+/*
+ * PA117:
+ * ------
+ * 00000000 xx1xxxxx0      0x40 - power PC.AC_PF
+ * 00000001 x00xxxxx0      0x41 - MAP_PERR~
+ * 00000010 110xxxxx0      0x42 - CONSOLE.BREAK
+ * 00000011 0100xxxx0      0x43 - EXT_LEVEL_7~
+ * 00010000 0101xxxx0      0x50 - SPURIOUS?
+ *
+ * 00000100 xxxxxx0x1      0x44 - DIAG_BUS_RXRDY~
+ * 00000101 xxxx0x1x1      0x45 - CONSOLE.RXRDY~
+ * 00000110 xxxx101x1      0x46 - MODEM.RXRDY~
+ * 00000111 xxxx11101      0x47 - EXT_LEVEL_6~ (MOSART_RXRDY
+ * 00010001 xxxx11111      0x51 - SPURIOUS?
+ *
+ * PA118:
+ * ------
+ * 01001000 xxx0xxxxx      0x48 - DIAG_BUS_TXRDY~
+ * 01001001 0xx1xxxxx      0x49 - CONSOLE.TXRDY~
+ * 01001010 1x01xxxxx      0x4a - MODEM.DSCHG~
+ * 01001011 1011xxxxx      0x4b - MODEM.TXRDY~
+ * 01001100 1111xxx0x      0x4c - EXT_LEVEL_1~ (MOSART_TXRDY)
+ * 01001101 1111x0x1x      0x4d - RESPONSE_INTR~
+ * 01001110 111101x1x      0x4e - REQUEST_INTR~
+ * 01001111 11111101x      0x4f - PITINT~
+ * 01010010 11111111x      0x50 - SPURIOUS?
+ */
 
 /*
  * CONSOLE.RXRDY & CONSOLE.TXRDY are unfinished.
