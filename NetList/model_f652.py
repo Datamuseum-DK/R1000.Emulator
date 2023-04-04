@@ -37,6 +37,151 @@
 
 
 from part import PartModel, PartFactory
+from component import Component
+from node import Node
+from pin import Pin
+from net import Net
+
+class F652H(PartFactory):
+    ''' Half Part'''
+
+    def private(self):
+        ''' private variables '''
+        yield from self.event_or(
+            "z_event",
+            "PIN_CLK.posedge_event()",
+            "PIN_OE",
+        )
+        yield from self.event_or(
+            "s_event",
+            "PIN_CLK.posedge_event()",
+            "PIN_OE",
+            "PIN_S",
+        )
+
+    def state(self, file):
+        file.fmt('''
+		|	uint64_t reg;
+		|''')
+
+    def sensitive(self):
+        yield "PIN_CLK.pos()"
+        yield "PIN_OE"
+        yield "PIN_S"
+        yield "BUS_I_SENSITIVE()"
+
+    def doit(self, file):
+        ''' The meat of the doit() function '''
+
+        super().doit(file)
+
+        file.fmt('''
+		|	uint64_t tmp;
+		|	bool read = false;
+		|	
+		|	TRACE(
+		|	    << " j " << state->ctx.job
+		|	    << " c " << PIN_CLK
+		|	    << " s " << PIN_S
+		|	    << " o " << PIN_OE
+		|	    << " i " << BUS_I_TRACE()
+		|	    << " y " << BUS_Y_TRACE()
+		|	    << " r " << std::hex << state->reg
+		|	);
+		|	if (PIN_CLK.posedge()) {
+		|		BUS_I_READ(tmp);
+		|		state->reg = tmp;
+		|		read = true;
+		|		TRACE(" r " << BUS_I_TRACE());
+		|	}
+		|	if (PIN_OE=>) {
+		|		TRACE(" Z");
+		|		BUS_Y_Z();
+		|		next_trigger(z_event);
+		|	} else if (PIN_S=>) {
+		|		BUS_Y_WRITE(state->reg);
+		|		TRACE(" o " << std::hex << state->reg);
+		|		next_trigger(s_event);
+		|	} else {
+		|		if (!read)
+		|			BUS_I_READ(tmp);
+		|		BUS_Y_WRITE(tmp);
+		|		TRACE(" i " << BUS_I_TRACE() << " " << std::hex << tmp);
+		|	}
+		|''')
+
+class ModelF652(PartModel):
+    ''' F652 Transceivers/Registers '''
+
+    def assign(self, comp):
+        ''' Split into four separate components '''
+
+        inv = Component(
+            board = comp.board,
+            compref = comp.ref + "_I",
+            compvalue = comp.value,
+            compsheet = comp.sheet,
+            comppart = "F00",
+        ) 
+        inv.name = comp.name + "_I"
+        inv.part = comp.board.part_catalog[inv.partname]
+
+        node = comp["OEB"]
+        new_pin = Pin("d", "D", "input")
+        new_node = Node(node.net, inv, new_pin)
+
+        new_pin = Pin("q", "Q", "output")
+        new_net = Net(comp.board, self.name + "_" + comp.name + "_I")
+        new_node = Node(new_net, inv, new_pin)
+
+        pin = node.pin
+        node.remove();
+        new_node = Node(new_net, comp, pin)
+
+        inv.part.assign(inv)
+
+        for suff in ("_AB", "_BA",):
+            print("COMP", comp, suff)
+            new_comp = Component(
+                board = comp.board,
+                compref = comp.ref + suff,
+                compvalue = comp.value,
+                compsheet = comp.sheet,
+                comppart = comp.partname + "_H",
+            )
+            new_comp.name = comp.name + suff
+            new_comp.part = comp.board.part_catalog[new_comp.partname]
+            new_comp.part.assign(new_comp)
+            for node in comp.nodes.values():
+                if node.pin.name[0] == suff[2]:
+                    new_pin = Pin("Y" + node.pin.ident[1:], "Y" + node.pin.name[1:], "tri_state")
+                elif node.pin.name[0] == suff[1]:
+                    new_pin = Pin("I" + node.pin.ident[1:], "I" + node.pin.name[1:], "input")
+                elif node.pin.name == "C" + suff[1:]:
+                    print("  C", suff, node.pin.name)
+                    new_pin = Pin(node.pin.ident, "CLK", "input")
+                elif node.pin.name == "S" + suff[1:]:
+                    print("  S", suff, node.pin.name)
+                    new_pin = Pin(node.pin.ident, "S", "input")
+                elif node.pin.name == "OE" + suff[-1]:
+                    print("  OE", suff, node.pin.name)
+                    new_pin = Pin(node.pin.ident, "OE", "input")
+                else:
+                    print("  ign", node.pin.name)
+                    continue
+
+                new_node = Node(
+                    node.net,
+                    new_comp,
+                    new_pin,
+                )
+                print("  nn ", node.pin.name, new_node.pin.name, new_node)
+
+        for node in comp:
+            node.net.sc_type = "sc_logic"
+            node.remove()
+        comp.remove()
+
 
 class F652(PartFactory):
 
@@ -127,9 +272,13 @@ class F652(PartFactory):
 		|
 		|''')
 
+model = PartModel
+model = ModelF652
+
 def register(board):
     ''' Register component model '''
 
-    board.add_part("F652", PartModel("F652", F652))
-    board.add_part("F652_9", PartModel("F652_9", F652))
-    board.add_part("F652_64", PartModel("F652_64", F652))
+    for width in ("", "_9", "_64",):
+        dev = "F652" + width
+        board.add_part(dev, model(dev, F652))
+        board.add_part(dev + "_H", PartModel(dev + "_H", F652H))
