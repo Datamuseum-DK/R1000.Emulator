@@ -320,6 +320,17 @@ rpn_comma(struct rpn *rpn)
 }
 
 static void v_matchproto_(rpn_op_f)
+rpn_pointer(struct rpn *rpn)
+{
+	intmax_t a;
+	unsigned u;
+
+	RPN_POP(a);
+	u = m68k_debug_read_memory_32((unsigned)a);
+	Rpn_Printf(rpn, "(@%08jx->%08x)", a, u);
+}
+
+static void v_matchproto_(rpn_op_f)
 rpn_string(struct rpn *rpn)
 {
 	intmax_t a;
@@ -328,6 +339,7 @@ rpn_string(struct rpn *rpn)
 
 	RPN_POP(a);
 	u = m68k_debug_read_memory_32((unsigned)a);
+	Rpn_Printf(rpn, "(@%08jx->%08x)", a, u);
 	if (u == 1) {
 		Rpn_Printf(rpn, "NullString");
 		return;
@@ -386,6 +398,19 @@ rpn_dirent(struct rpn *rpn)
 	// w = m68k_debug_read_memory_16(u + 0x3c); Rpn_Printf(rpn, ", date=0x%04x", w);
 	// w = m68k_debug_read_memory_16(u + 0x3e); Rpn_Printf(rpn, ", flag=0x%04x", w);
 	Rpn_Printf(rpn, " }", u + v);
+}
+
+static void v_matchproto_(rpn_op_f)
+rpn_timestamp(struct rpn *rpn)
+{
+	intmax_t a;
+	unsigned u, v;
+
+	RPN_POP(a);
+	a = m68k_debug_read_memory_32((unsigned)a);
+	u = m68k_debug_read_memory_32((unsigned)a);
+	v = m68k_debug_read_memory_32((unsigned)(a + 4));
+	Rpn_Printf(rpn, "Timestamp@0x%08x{%08x,%08x}", a, u, v);
 }
 
 static void v_matchproto_(rpn_op_f)
@@ -499,8 +524,10 @@ ioc_debug_init(void)
 	Rpn_AddOp("@L", rpn_load_l);
 	Rpn_AddOp("@Q", rpn_load_q);
 	Rpn_AddOp(",", rpn_comma);
+	Rpn_AddOp("Pointer", rpn_pointer);
 	Rpn_AddOp("String", rpn_string);
 	Rpn_AddOp("Dirent", rpn_dirent);
+	Rpn_AddOp("TimeStamp", rpn_timestamp);
 	Rpn_AddOp("stack", rpn_stack);
 	Rpn_AddOp("regs", rpn_regs);
 	Rpn_AddOp("stop", rpn_stop);
