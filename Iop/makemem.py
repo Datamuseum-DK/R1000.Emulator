@@ -15,22 +15,39 @@ def main():
 
     ioc += Range("ram", 0x00000000, 0x00080000)
 
+    # offset [0x00…0xff]
     ioc += Range("ioc_eeprom", 0x80000000, 0x80008000)
 
+    # EEPROM_ADR~WR RESHA pg1
+    # offset = 0, [0x00…0xff] seen
+    # offset = 2, {0, 5} seen
     ioc += Range("resha_page",     0x9303e00a, 0x3, post_write = True)
 
     ioc += Range("resha_eeprom",   0x9303e300, 0xff, pre_read = True)
 
     ioc += Range("vme_control",    0x9303e00c, 0x9303e00e)
 
+    # offset = 0  15 RW bits tested (scsi_d?)
+    # offset = 4  15 RW bits tested (scsi_t?)
+    # offset = 8  8 RW bits tested (scsi_d?)
+    # offset = c  8 RW bits tested (scsi_t?)
     ioc += Range("resha_misc",     0x9303e100, 0x9303e10e, post_write = True)
 
+    # offset 0 16 bit, 0x00f7 bits seen
+    # offset 1  8 bit,
+    #		0x01 = SCA_RESET~ @RESHA pg1
+    # offset 2 16 bit, 0x3000 bits seen
+    # offset 8 16 bit, 0x0070 bits seen
+    #		0x10 = SCB_RESET~ @RESHA pg1
     ioc += Range("scsi_ctl",       0x9303e000, 0xf, pre_read = True, post_write = True)
 
-    ioc += Range("scsi_d",         0x9303e800, 0x9303e900, mask = 0x1f, pre_read = 1, post_write = 1)
+    # offset [0x00…0x1f]
+    ioc += Range("scsi_d",         0x9303e800, 0x9303e820, mask = 0x1f, pre_read = 1, post_write = 1)
 
+    # offset [0x00…0x1f]
     ioc += Range("scsi_t",         0x9303ec00, 0x9303ec20, mask = 0x1f, pre_read = 1, post_write = 1)
 
+    # offset 0x16
     ioc += Range("vme_window",     0x9303f000, 0x9303f400, pre_read = True, post_write = True)
 
     ioc += Range("resha_wildcard", 0x93030000, 0x93040000, pre_read = True, post_write = True)
@@ -47,7 +64,10 @@ def main():
     ioc += Range("io_duart", 0xffffa000, 0xf, bidir = False, pre_read = 1, post_write = 1)
 
     # INT MODEM
-    ioc += Range("io_mosart", 0xffffb002, 0x1, pre_read = True, post_write = True)
+    # offset 0x2
+    # offset 0x3
+    # offset 0x5
+    ioc += Range("io_mosart", 0xffffb000, 0x7, pre_read = True, post_write = True)
 
     # IO_CLR_RUN (reset IOC RUNNING LED)
     ioc += Range("f000", 0xfffff000, 0x3)
