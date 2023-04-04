@@ -68,6 +68,15 @@ class XRFRAM(PartFactory):
 		|static const char *ZZZING = "z";
 		|''')
 
+    def private(self):
+        ''' private variables '''
+        yield from self.event_or(
+            "rd_event",
+            "PIN_CS.posedge_event()",
+            "PIN_WE.negedge_event()",
+            "BUS_A",
+        )
+
     def doit(self, file):
         ''' The meat of the doit() function '''
 
@@ -113,6 +122,7 @@ class XRFRAM(PartFactory):
 		|			state->last = data;
 		|		}
 		|		state->what = READING;
+		|		next_trigger(rd_event);
 		|	}
 		|
 		|	TRACE(
