@@ -175,9 +175,8 @@ class Planes():
     def produce(self):
 
         for psig in sorted(self.psig.values()):
-            i = psig.net.sc_sig_args()
-            if i:
-                self.scm.add_signal(*i)
+            for sig in psig.net.sc_signals():
+                self.scm.add_signal(sig)
 
         self.make_table(self.scm.sf_cc)
         self.scm.add_member("sc_trace_file *tf;")

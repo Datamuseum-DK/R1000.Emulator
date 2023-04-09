@@ -50,7 +50,8 @@ SC_CC = ${CXX} ${SC_CFLAGS} -I. ${SC_I} -c
 
 
 ${R1000BIN}:	${OBJS}
-	${CXX} -o ${R1000BIN} ${R1000SIM} ${SC_CFLAGS} ${LDFLAGS} ${OBJS} ${SC_L}
+	@echo Linking ${R1000BIN}
+	@${CXX} -o ${R1000BIN} ${R1000SIM} ${SC_CFLAGS} ${LDFLAGS} ${OBJS} ${SC_L}
 
 
 flint: ${OBJS}

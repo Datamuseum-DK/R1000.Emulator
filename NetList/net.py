@@ -35,6 +35,7 @@
 
 import util
 from node import NodeSexp
+from scmod import ScSignal
 
 class Net():
     ''' A `net` from the netlist file '''
@@ -159,9 +160,10 @@ class Net():
         ''' Value will not change '''
         return self.name in ("PD", "PU") or len(self) == 1
 
-    def sc_sig_args(self):
+    def sc_signals(self):
+        ''' enumerate our SystemC signals '''
         if self.netbus:
-            return self.netbus.sc_sig_args(self)
+            yield from self.netbus.sc_signals(self)
         else:
             retval = [self.bcname]
             if self.sc_type == "bool":
@@ -176,35 +178,7 @@ class Net():
                 retval.append("sc_logic_1")
             else:
                 retval.append("sc_logic_1")
-            return retval
-
-    def write_decl(self, file):
-        ''' Write a C declaration of this net '''
-        if self.netbus:
-            self.netbus.write_decl(self, file)
-        else:
-            if self.bcname is None:
-                raise Exception("NO net.sc_type", self)
-            if self.sc_type == "bool":
-                text = "\tsc_signal <bool> " + self.bcname + ";\t"
-            else:
-                text = "\tsc_signal_resolved " + self.bcname + ";\t"
-            while len(text.expandtabs()) < 64:
-                text += "\t"
-            file.write(text + "// " + self.name + "\n")
-
-    def write_init(self, file):
-        ''' Write a C initialization of this net '''
-        if self.netbus:
-            self.netbus.write_init(self, file)
-        elif self.sc_type == "bool" and self.default:
-            file.write(",\n\t" + self.bcname + '("' + self.bcname + '", true)')
-        elif self.sc_type == "bool":
-            file.write(",\n\t" + self.bcname + '("' + self.bcname + '", false)')
-        elif self.default:
-            file.write(",\n\t" + self.bcname + '("' + self.bcname + '", sc_logic_1)')
-        else:
-            file.write(",\n\t" + self.bcname + '("' + self.bcname + '", sc_logic_0)')
+            yield ScSignal(*retval)
 
 class NetSexp(Net):
     ''' ... '''

@@ -69,81 +69,23 @@ class Sheet():
         assert comp.ref in self.components
         del self.components[comp.ref]
 
-    def produce_hh(self, scm):
-        ''' ... '''
-        incls = set()
-        for comp in self.components.values():
-            for incl in comp.part.yield_includes(comp):
-                if incl:
-                    incls.add(incl)
-
-        for incl in sorted(incls):
-            scm.include(incl)
-
-        scm.fmt('''
-		|
-		|SC_MODULE(«ttt»)\n
-		|{
-		|''')
-
-        for net in sorted(self.local_nets):
-            if not net.is_supply:
-                net.write_decl(scm)
-
-        scm.write("\n")
-
-        for comp in sorted(self.components.values()):
-            comp.part.instance(scm, comp)
-
-        scm.fmt('''
-		|
-		|	«ttt»(
-		|	    sc_module_name name,
-		|	    planes *planes,
-		|	    «bbb»_globals *«bbb»_globals
-		|	);
-		|};
-		|''')
-
-    def produce_cc(self, scm):
-        ''' ... '''
-        # scm.write("#include <systemc.h>\n")
-        # scm.include(self.board.scm_globals.sf_hh)
-        scm.include(self.scm.sf_hh)
-        scm.include(self.scm.sf_pub)
-        scm.fmt('''
-		|
-		|struct «lll» *make_«lll»(
-		|    sc_module_name name,
-		|    planes *planes,
-		|    «bbb»_globals *«bbb»_globals
-		|)
-		|{
-		|	return new «lll»(name, planes, «bbb»_globals);
-		|}
-		|
-		|«lll» :: «lll»(
-		|    sc_module_name name,
-		|    planes *planes,
-		|    «bbb»_globals *«bbb»_globals
-		|) :
-		|''')
-        scm.write("\tsc_module(name)")
-        for net in sorted(self.local_nets):
-            if not net.is_supply:
-                net.write_init(scm)
-        for comp in sorted(self.components.values()):
-            comp.part.initialize(scm, comp)
-        scm.write("\n{\n")
-        for comp in sorted(self.components.values()):
-            comp.part.hookup_comp(scm, comp)
-        scm.write("}\n")
-
     def produce(self):
         ''' ... '''
         self.scm.emit_pub_hh()
-        self.produce_hh(self.scm.sf_hh)
-        self.produce_cc(self.scm.sf_cc)
+
+        for net in sorted(self.local_nets):
+            if net.is_supply:
+                continue
+            for sig in net.sc_signals():
+                self.scm.add_signal(sig)
+
+        for comp in sorted(self.components.values()):
+            self.scm.add_component(comp)
+
+        self.scm.emit_hh()
+
+        self.scm.emit_cc()
+
         self.scm.commit()
 
 class SheetSexp(Sheet):

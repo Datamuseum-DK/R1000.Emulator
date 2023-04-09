@@ -92,6 +92,7 @@ class SystemCModule():
         self.children = {}
         self.signals = {}
         self.members = []
+        self.components = []
 
         self.sf_cc.write("#include <systemc.h>\n")
         self.sf_cc.include("Chassis/r1000sc.h")
@@ -107,6 +108,10 @@ class SystemCModule():
         ''' add member items in raw C-form '''
         self.members.append(cstuff)
 
+    def add_component(self, comp):
+        ''' add component '''
+        self.components.append(comp)
+
     def add_child(self, name, scm):
         ''' add a child '''
         assert name not in self.children
@@ -114,10 +119,9 @@ class SystemCModule():
         self.children[name] = scm
         self.sf_hh.include(scm.sf_pub)
 
-    def add_signal(self, *args, **kwargs):
+    def add_signal(self, sig):
         ''' Add a signal '''
-        sig = ScSignal(*args, **kwargs)
-        assert sig.name not in self.signals
+        assert isinstance(sig, ScSignal)
         self.signals[sig.name] = sig
 
     def add_ctor_arg(self, *args, **kwargs):
@@ -148,7 +152,8 @@ class SystemCModule():
         for incl in sorted(self.sf_cc):
             txt += " \\\n    " + incl
         txt += "\n"
-        txt += "\t${SC_CC} -o " + obj + " " + self.sf_cc.filename + "\n"
+        txt += "\t@echo Compiling " + self.sf_cc.filename + "\n"
+        txt += "\t@${SC_CC} -o " + obj + " " + self.sf_cc.filename + "\n"
         makefile.add_stanza(hdr, txt)
 
     def std_hh(self, pin_iterator):
@@ -273,6 +278,13 @@ class SystemCModule():
 
     def emit_hh(self):
         ''' Produce the .hh file '''
+        self.sf_hh.include(self.sf_pub)
+        incls = set()
+        for comp in self.components:
+            for incl in comp.part.yield_includes(comp):
+                if incl not in incls:
+                    self.include(incl)
+                incls.add(incl)
         self.sf_hh.write('\n')
         self.sf_hh.fmt('SC_MODULE(«lll»)\n')
         self.sf_hh.fmt('{\n')
@@ -280,6 +292,8 @@ class SystemCModule():
             self.sf_hh.write('\t' + mbr + "\n")
         for sig in self.signals.values():
             self.sf_hh.fmt('\t' + sig.decl() + "\n")
+        for comp in self.components:
+            comp.part.instance(self.sf_hh, comp)
         for name, child in self.children.items():
             self.sf_hh.fmt('\t' + child.decl(name) + "\n")
         self.sf_hh.write('\n')
@@ -289,6 +303,7 @@ class SystemCModule():
     def emit_cc(self):
         ''' Produce the .cc file '''
         self.sf_cc.include(self.sf_pub)
+        self.sf_cc.write("\n")
         self.sf_cc.fmt("struct «lll» *make_«lll»(\n    sc_module_name name")
         for arg in self.ctor_args:
             self.sf_cc.fmt(",\n    " + arg.protoform())
@@ -297,7 +312,7 @@ class SystemCModule():
         self.sf_cc.fmt('\treturn new «lll»(name')
         for arg in self.ctor_args:
             self.sf_cc.fmt(", " + arg.cname)
-        self.sf_cc.write(');\n}\n')
+        self.sf_cc.write(');\n}\n\n')
 
         self.sf_cc.fmt('''«lll» :: «lll»(\n''')
         self.sf_cc.fmt('''    sc_module_name name''')
@@ -307,7 +322,11 @@ class SystemCModule():
         self.sf_cc.fmt('\tsc_module(name)')
         for sig in self.signals.values():
             self.sf_cc.write(",\n\t" + sig.init())
-        self.sf_cc.fmt('\n{\n')
+        for comp in self.components:
+            comp.part.initialize(self.sf_cc, comp)
+        self.sf_cc.write('\n{\n')
         for name, child in self.children.items():
             self.sf_cc.fmt("\t" + child.instantiate(name) + "\n")
+        for comp in self.components:
+            comp.part.hookup_comp(self.sf_cc, comp)
         self.sf_cc.fmt('''}\n''')

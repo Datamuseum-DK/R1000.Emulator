@@ -161,11 +161,8 @@ class Board():
         self.scm_board.commit()
 
         for net in sorted(self.nets.values()):
-            if net.is_local or net.is_plane or net.is_supply:
-                continue
-            i = net.sc_sig_args()
-            if i:
-                self.scm_globals.add_signal(*i)
+            for sig in net.sc_signals():
+                self.scm_globals.add_signal(sig)
 
         self.scm_globals.emit_pub_hh()
         self.scm_globals.emit_hh()

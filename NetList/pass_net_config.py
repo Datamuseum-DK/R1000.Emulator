@@ -33,13 +33,13 @@
    ========================
 '''
 
-import sys
 import util
 
 from component import Component
 from net import Net
 from node import Node
 from pin import Pin
+from scmod import ScSignal
 
 MIN_BUS_WIDTH = 4
 
@@ -111,9 +111,6 @@ class MuxBus():
 
         file.write("MUX_CANDIDATE\t")
 
-        # self.netbus.table(sys.stdout)
-        # print("XX", self.netbus.cname, net0.is_plane, net0.is_local, net0.board, net0, comp0.sheet)
-
         self.create_mux()
 
         group = 64
@@ -143,7 +140,7 @@ class MuxBus():
                         j = False
                     newname += i
                 net = Net(
-                    self.board, 
+                    self.board,
                     newname,
                 )
                 # net.sc_type = "bool"
@@ -153,12 +150,11 @@ class MuxBus():
                 net.find_cname()
                 oldnode.net = net
                 oldnode.insert()
-                node2 = Node(
+                Node(
                     net,
                     self.comp,
                     self.pins["I%c%d" % (group, n)]
                 )
-                # print(" On   ", oldnode, pin, newname, node2)
                 n += 1
                 nets.append(net)
 
@@ -191,7 +187,7 @@ class MuxBus():
         self.netbus.create_as_bus(file)
 
     def create_mux(self):
-
+        ''' Create a bus-mux '''
         self.comp = Component(
             self.board,
             self.partref,
@@ -205,7 +201,7 @@ class MuxBus():
         self.comp.part.assign(self.comp)
         self.comp.sheet = self.sheet
         for n, net in enumerate(self.netbus.nets):
-            node = Node(
+            Node(
                 net,
                 self.comp,
                 self.pins["Q%d" % n],
@@ -371,40 +367,23 @@ class NetBus():
         i = str(util.sortkey(self.nets[-1].cname)[-1]).rsplit(".", maxsplit=1)[-1]
         self.cname = self.nets[0].cname + "_to_" + i
 
-    def sc_sig_args(self, net):
+    def sc_signals(self, net):
+        ''' enumerate our SystemC signals '''
         if net != self.nets[0]:
-            return None
+            return
         lname = self.cname.split("->")[-1].split(".")[-1]
         if net.sc_type != "bool":
-            return (
+            yield ScSignal(
                 lname,
                 "sc_signal_rv <%d>" % (len(self.nets)),
                 '"' + "z" * len(self.nets) + '"'
             )
-        return (
-            lname,
-            "sc_signal <" + self.ctype + ">",
-            '0x%xULL' % ((1 << len(self.nets)) - 1)
-        )
-
-
-    def write_decl(self, net, file):
-        ''' Write network declaration '''
-        if net == self.nets[0]:
-            lname = self.cname.split("->")[-1].split(".")[-1]
-            if net.sc_type != "bool":
-                file.write("\tsc_signal_rv <%d> %s;\n" % (len(self.nets), lname))
-            else:
-                file.write("\tsc_signal <%s> %s;\n" % (self.ctype, lname))
-
-    def write_init(self, net, file):
-        ''' Write network initialization '''
-        if net == self.nets[0]:
-            lname = self.cname.split("->")[-1].split(".")[-1]
-            if net.sc_type != "bool":
-                file.write(',\n\t%s("%s", "%s")' % (lname, lname, "z" * len(self.nets)))
-            else:
-                file.write(',\n\t%s("%s", 0x%xULL)' % (lname, lname, (1 << len(self.nets)) - 1))
+        else:
+            yield ScSignal(
+                lname,
+                "sc_signal <" + self.ctype + ">",
+                '0x%xULL' % ((1 << len(self.nets)) - 1)
+            )
 
     def instantiate(self, file):
         ''' Make this bus real, if possible '''
@@ -480,8 +459,8 @@ class NetBus():
                     file.write("MUX has no OE in " + str(node.component) + "\n")
                     good = False
             elif node.pin.type.name != "in":
-               file.write("MUX has pintype " + node.pin.type.name + "\n")
-               good = False
+                file.write("MUX has pintype " + node.pin.type.name + "\n")
+                good = False
 
         if not good or width == 1:
             self.create_as_bus(file)
@@ -593,7 +572,7 @@ class PassNetConfig():
                 continue
             print("*****", net, net.netbus, comp)
             for net2 in netbus.nets:
-                net.sc_type = "bool"
+                net2.sc_type = "bool"
             netbus.create_as_bus(None)
 
         netbusses.remove(None)
@@ -604,5 +583,3 @@ class PassNetConfig():
         for netbus in sorted(netbusses):
             file.write("\n")
             netbus.table(file)
-             
-        
