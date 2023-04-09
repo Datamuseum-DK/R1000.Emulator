@@ -11,6 +11,7 @@ sc_now(void)
 	return (sc_time_stamp().to_double());
 }
 
+#include "planes_pub.hh"
 #include "planes.hh"
 
 #include "emu_board_pub.hh"
@@ -71,52 +72,53 @@ sc_main_thread(void *priv)
 int
 sc_main(int argc, char *argv[])
 {
-	mod_mem32 *mem32_0;
-	mod_mem32 *mem32_2;
-	mod_seq *seq;
-	mod_typ *typ;
-	mod_val *val;
-	mod_fiu *fiu;
-	mod_ioc *ioc;
-	mod_emu *emu;
+	mem32_board *mem32_0;
+	mem32_board *mem32_2;
+	seq_board *seq;
+	typ_board *typ;
+	val_board *val;
+	fiu_board *fiu;
+	ioc_board *ioc;
+	emu_board *emu;
+	planes *planes;
 
 	(void)argc;
 	(void)argv;
 
-	mod_planes planes("PLANES");
-	planes.tf = sc_create_vcd_trace_file(tracepath);
+	planes = make_planes("PLANES");
+	planes->tf = sc_create_vcd_trace_file(tracepath);
 
 	// Order as seen from front L…R
 	if (sc_boards & R1K_BOARD_MEM32_2)
-		mem32_2 = make_mod_mem32("MEM2", planes);
+		mem32_2 = make_mem32_board("MEM2", planes);
 	if (sc_boards & R1K_BOARD_MEM32_0)
-		mem32_0 = make_mod_mem32("MEM0", planes);
+		mem32_0 = make_mem32_board("MEM0", planes);
 	if (sc_boards & R1K_BOARD_SEQ)
-		seq = make_mod_seq("SEQ", planes);
+		seq = make_seq_board("SEQ", planes);
 	if (sc_boards & R1K_BOARD_TYP)
-		typ = make_mod_typ("TYP", planes);
+		typ = make_typ_board("TYP", planes);
 	if (sc_boards & R1K_BOARD_VAL)
-		val = make_mod_val("VAL", planes);
+		val = make_val_board("VAL", planes);
 	if (sc_boards & R1K_BOARD_FIU)
-		fiu = make_mod_fiu("FIU", planes);
+		fiu = make_fiu_board("FIU", planes);
 	if (sc_boards & R1K_BOARD_IOC)
-		ioc = make_mod_ioc("IOC", planes);
+		ioc = make_ioc_board("IOC", planes);
 
-	emu = make_mod_emu("EMU", planes);
+	emu = make_emu_board("EMU", planes);
 
-	planes.PD = false;
-	planes.PU = true;
+	planes->PD = false;
+	planes->PU = true;
 
-	planes.B_SLOT0 = false;
-	planes.B_SLOT1 = false;
+	planes->B_SLOT0 = false;
+	planes->B_SLOT1 = false;
 
 	PowerSequencer powseq("UNCLAMP");
-	powseq.clamp(planes.CLAMPnot);	// CLAMP
-	powseq.reset(planes.RESETnot);
+	powseq.clamp(planes->CLAMPnot);	// CLAMP
+	powseq.reset(planes->RESETnot);
 
-	planes.EXT_ID0 = false;
-	planes.EXT_ID1 = true;
-	planes.EXT_ID2 = false;
+	planes->EXT_ID0 = false;
+	planes->EXT_ID1 = true;
+	planes->EXT_ID2 = false;
 
 	sc_set_time_resolution(1, SC_NS);
 
@@ -127,7 +129,7 @@ sc_main(int argc, char *argv[])
 		double dt = sc_main_get_quota();
 		sc_start(dt * 1e6, SC_US);
 		cout << "@" << sc_time_stamp() << " DONE\n";
-		sc_close_vcd_trace_file(planes.tf);
+		sc_close_vcd_trace_file(planes->tf);
 	}
 
 	return(0);

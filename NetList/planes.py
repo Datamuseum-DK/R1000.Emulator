@@ -38,6 +38,8 @@ import os
 import transit
 import srcfile
 import util
+from scmod import SystemCModule
+
 
 class PlaneSignal():
     ''' ... '''
@@ -137,6 +139,11 @@ class Planes():
         self.pfx = os.path.join(cpu.cdir, "planes")
         self.cfile = srcfile.SrcFile(self.pfx + ".cc")
         self.hfile = srcfile.SrcFile(self.pfx + ".hh")
+        self.scm = SystemCModule(
+            os.path.join(cpu.cdir, "planes"),
+            self.cpu.chassis_makefile
+        )
+
 
         for i in ("PU", "PD"):
             self.psig[i] = PlaneSignal(cpu, i)
@@ -167,78 +174,22 @@ class Planes():
 
     def produce(self):
 
-        self.make_hfile()
-        self.make_cfile()
-        self.make_makefile()
-
-    def make_hfile(self):
-        ''' ... '''
-
-        self.hfile.fmt('''
-		|
-		|SC_MODULE(mod_planes)
-		|{
-		|''')
-
         for psig in sorted(self.psig.values()):
-            psig.net.write_decl(self.hfile)
+            i = psig.net.sc_sig_args()
+            if i:
+                self.scm.add_signal(*i)
 
-        self.hfile.fmt('''
-		|	sc_trace_file *tf;
-		|
-		|	mod_planes(sc_module_name name);
-		|};
-		|
-		|struct mod_planes *make_mod_planes(sc_module_name name);
-		|''')
-        self.hfile.commit()
+        self.make_table(self.scm.sf_cc)
+        self.scm.add_member("sc_trace_file *tf;")
+        self.scm.emit_pub_hh()
+        self.scm.emit_hh()
+        self.scm.emit_cc()
+        self.scm.commit()
 
-    def make_cfile(self):
-        ''' ... '''
-
-        self.cfile.write("//".ljust(47) + "".join(x.name.ljust(19) for x in self.cpu.boards) + "\n")
+    def make_table(self, dst):
+        dst.write("//".ljust(47) + "".join(x.name.ljust(19) for x in self.cpu.boards) + "\n")
         for signame, psig in sorted(self.psig.items()):
             if psig.is_supply:
-                self.cfile.write("// " + str(signame) + " <supply>\n")
+                dst.write("// " + str(signame) + " <supply>\n")
             else:
-                self.cfile.write("// " + str(signame) + " " + str(psig) + "\n")
-
-        self.cfile.fmt('''
-		|
-		|#include <systemc.h>
-		|
-		|''')
-
-        self.cfile.include(self.hfile)
-
-        self.cfile.fmt('''
-		|
-		|struct mod_planes *make_mod_planes(sc_module_name name)
-		|{
-		|	return new mod_planes(name);
-		|}
-		|
-		|mod_planes :: mod_planes(sc_module_name name) :
-		|	sc_module(name)
-		|''')
-
-        for psig in sorted(self.psig.values()):
-            if psig.is_supply:
-                continue
-            psig.net.write_init(self.cfile)
-
-        self.cfile.fmt('''
-		|{
-		|}
-		|''')
-
-        self.cfile.commit()
-
-    def make_makefile(self):
-        bname = self.pfx.split("/")[-1]
-        mf = self.cpu.chassis_makefile
-        mf.write("OBJS += ${OBJDIR}/%s.o\n" % bname)
-        mf.write("${OBJDIR}/%s.o: \\\n" % bname)
-        mf.write("    %s.cc \\\n" % self.pfx)
-        mf.write("    %s.hh\n" % self.pfx)
-        mf.write("\t${SC_CC} -o ${OBJDIR}/%s.o %s.cc\n" % (bname, self.pfx))
+                dst.write("// " + str(signame) + " " + str(psig) + "\n")

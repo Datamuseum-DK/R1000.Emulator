@@ -101,11 +101,11 @@ class Net():
         ''' This is gnarly '''
         if self.is_pd():
             self.bcname = "PD"
-            self.cname = "planes.PD"
+            self.cname = "planes->PD"
             return
         if self.is_pu():
             self.bcname = "PU"
-            self.cname = "planes.PU"
+            self.cname = "planes->PU"
             return
         self.cname = self.name
         if self.cname[0].isdigit():
@@ -130,9 +130,9 @@ class Net():
         if self.is_supply:
             self.cname = "///supply-c///"
         elif self.is_plane:
-            self.cname = "planes." + self.cname
+            self.cname = "planes->" + self.cname
         elif not self.is_local:
-            self.cname = self.board.lname + "_globals." + self.cname
+            self.cname = self.board.lname + "_globals->" + self.cname
 
     def __repr__(self):
         return "_".join(("Net", self.name))
@@ -158,6 +158,25 @@ class Net():
     def is_const(self):
         ''' Value will not change '''
         return self.name in ("PD", "PU") or len(self) == 1
+
+    def sc_sig_args(self):
+        if self.netbus:
+            return self.netbus.sc_sig_args(self)
+        else:
+            retval = [self.bcname]
+            if self.sc_type == "bool":
+                retval.append("sc_signal <bool>")
+            else:
+                retval.append("sc_signal_resolved")
+            if self.sc_type == "bool" and self.default:
+                retval.append("true")
+            elif self.sc_type == "bool":
+                retval.append("false")
+            elif self.default:
+                retval.append("sc_logic_1")
+            else:
+                retval.append("sc_logic_1")
+            return retval
 
     def write_decl(self, file):
         ''' Write a C declaration of this net '''

@@ -42,12 +42,16 @@ class Sheet():
         self.page = self.board.pagename_to_sheet(name)
         # print("Sheet", board.name, self.page)
         self.mod_name = board.lname + "_%02d" % self.page
-        self.mod_type = "mod_" + self.mod_name
+        self.mod_type = self.mod_name
         self.components = {}
         self.local_nets = []
 
         self.scm = self.board.sc_mod(self.mod_name)
         self.scm.add_subst("«ttt»", self.mod_type)
+        self.scm.add_ctor_arg("struct planes", "planes", is_ptr=True)
+        self.scm.add_ctor_arg("struct «bbb»_globals", "«bbb»_globals", is_ptr=True)
+        self.scm.include(self.board.cpu.planes_hh)
+        self.scm.include(self.board.scm_globals.sf_hh)
 
     def __str__(self):
         return self.board.name + "_%d" % self.page
@@ -64,20 +68,6 @@ class Sheet():
         ''' Remove component from sheet '''
         assert comp.ref in self.components
         del self.components[comp.ref]
-
-    def produce_pub_hh(self, scm):
-        ''' ... '''
-        scm.fmt('''
-		|struct mod_planes;
-		|struct mod_«bbb»_globals;
-		|struct «mmm»;
-		|
-		|struct «ttt» *make_«ttt»(
-		|    sc_module_name name,
-		|    mod_planes &planes,
-		|    mod_«bbb»_globals &«bbb»_globals
-		|);
-		|''')
 
     def produce_hh(self, scm):
         ''' ... '''
@@ -109,34 +99,33 @@ class Sheet():
 		|
 		|	«ttt»(
 		|	    sc_module_name name,
-		|	    mod_planes &planes,
-		|	    mod_«bbb»_globals &«bbb»_globals
+		|	    planes *planes,
+		|	    «bbb»_globals *«bbb»_globals
 		|	);
 		|};
 		|''')
 
     def produce_cc(self, scm):
         ''' ... '''
-        scm.write("#include <systemc.h>\n")
-        scm.include(self.board.cpu.planes_hh)
-        scm.include(self.board.scm_globals.sf_hh)
+        # scm.write("#include <systemc.h>\n")
+        # scm.include(self.board.scm_globals.sf_hh)
         scm.include(self.scm.sf_hh)
         scm.include(self.scm.sf_pub)
         scm.fmt('''
 		|
-		|struct «ttt» *make_«ttt»(
+		|struct «lll» *make_«lll»(
 		|    sc_module_name name,
-		|    mod_planes &planes,
-		|    mod_«bbb»_globals &«bbb»_globals
+		|    planes *planes,
+		|    «bbb»_globals *«bbb»_globals
 		|)
 		|{
-		|	return new «ttt»(name, planes, «bbb»_globals);
+		|	return new «lll»(name, planes, «bbb»_globals);
 		|}
 		|
-		|«ttt» :: «ttt»(
+		|«lll» :: «lll»(
 		|    sc_module_name name,
-		|    mod_planes &planes,
-		|    mod_«bbb»_globals &«bbb»_globals
+		|    planes *planes,
+		|    «bbb»_globals *«bbb»_globals
 		|) :
 		|''')
         scm.write("\tsc_module(name)")
@@ -152,7 +141,7 @@ class Sheet():
 
     def produce(self):
         ''' ... '''
-        self.produce_pub_hh(self.scm.sf_pub)
+        self.scm.emit_pub_hh()
         self.produce_hh(self.scm.sf_hh)
         self.produce_cc(self.scm.sf_cc)
         self.scm.commit()

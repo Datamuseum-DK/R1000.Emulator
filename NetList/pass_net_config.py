@@ -371,10 +371,27 @@ class NetBus():
         i = str(util.sortkey(self.nets[-1].cname)[-1]).rsplit(".", maxsplit=1)[-1]
         self.cname = self.nets[0].cname + "_to_" + i
 
+    def sc_sig_args(self, net):
+        if net != self.nets[0]:
+            return None
+        lname = self.cname.split("->")[-1].split(".")[-1]
+        if net.sc_type != "bool":
+            return (
+                lname,
+                "sc_signal_rv <%d>" % (len(self.nets)),
+                '"' + "z" * len(self.nets) + '"'
+            )
+        return (
+            lname,
+            "sc_signal <" + self.ctype + ">",
+            '0x%xULL' % ((1 << len(self.nets)) - 1)
+        )
+
+
     def write_decl(self, net, file):
         ''' Write network declaration '''
         if net == self.nets[0]:
-            lname = self.cname.split(".")[-1]
+            lname = self.cname.split("->")[-1].split(".")[-1]
             if net.sc_type != "bool":
                 file.write("\tsc_signal_rv <%d> %s;\n" % (len(self.nets), lname))
             else:
@@ -383,7 +400,7 @@ class NetBus():
     def write_init(self, net, file):
         ''' Write network initialization '''
         if net == self.nets[0]:
-            lname = self.cname.split(".")[-1]
+            lname = self.cname.split("->")[-1].split(".")[-1]
             if net.sc_type != "bool":
                 file.write(',\n\t%s("%s", "%s")' % (lname, lname, "z" * len(self.nets)))
             else:
