@@ -80,19 +80,21 @@ class ScSignal():
 class SystemCModule():
     ''' A SystemC source module '''
     def __init__(self, filename, makefile=None):
-        self.filename = filename
-        self.makefile = makefile
-        self.basename = os.path.split(filename)[-1]
+        self.scm_filename = filename
+        self.scm_makefile = makefile
+        self.scm_basename = os.path.split(filename)[-1]
+        self.scm_lname = self.scm_basename.lower()
+        self.scm_uname = self.scm_basename.upper()
         self.sf_cc = SrcFile(filename + ".cc")
         self.sf_hh = SrcFile(filename + ".hh")
         self.sf_pub = SrcFile(filename + "_pub.hh")
-        self.add_subst("«mmm»", self.basename.upper())
-        self.add_subst("«lll»", self.basename.lower())
-        self.ctor_args = []
-        self.children = {}
-        self.signals = {}
-        self.members = []
-        self.components = []
+        self.add_subst("«mmm»", self.scm_uname)
+        self.add_subst("«lll»", self.scm_lname)
+        self.scm_ctor_args = []
+        self.scm_children = {}
+        self.scm_signals = {}
+        self.scm_members = []
+        self.scm_components = []
 
         self.sf_cc.write("#include <systemc.h>\n")
         self.sf_cc.include("Chassis/r1000sc.h")
@@ -106,37 +108,37 @@ class SystemCModule():
 
     def add_member(self, cstuff):
         ''' add member items in raw C-form '''
-        self.members.append(cstuff)
+        self.scm_members.append(cstuff)
 
     def add_component(self, comp):
         ''' add component '''
-        self.components.append(comp)
+        self.scm_components.append(comp)
 
     def add_child(self, scm, name=None):
         ''' add a child '''
         assert isinstance(scm, SystemCModule)
         if not name:
-            name = scm.basename.lower()
-        assert name not in self.children
-        self.children[name] = scm
+            name = scm.scm_lname
+        assert name not in self.scm_children
+        self.scm_children[name] = scm
         self.sf_hh.include(scm.sf_pub)
 
     def add_signal(self, sig):
         ''' Add a signal '''
         assert isinstance(sig, ScSignal)
-        self.signals[sig.name] = sig
+        self.scm_signals[sig.name] = sig
 
     def add_ctor_arg(self, *args, **kwargs):
         ''' Add a constructor argument '''
-        self.ctor_args.append(CtorArg(*args, **kwargs))
+        self.scm_ctor_args.append(CtorArg(*args, **kwargs))
 
     def commit(self):
         ''' ... '''
         self.sf_cc.commit()
         self.sf_hh.commit()
         self.sf_pub.commit()
-        if self.makefile:
-            self.makefile_entry(self.makefile)
+        if self.scm_makefile:
+            self.makefile_entry(self.scm_makefile)
 
     def add_subst(self, find, replace):
         ''' Add substituation patterns '''
@@ -145,7 +147,7 @@ class SystemCModule():
 
     def makefile_entry(self, makefile):
         ''' ... '''
-        bname = self.filename.split("/")[-1]
+        bname = self.scm_filename.split("/")[-1]
         hdr = "# " + bname + "\n"
         txt = ""
         obj = "${OBJDIR}/" + bname + ".o"
@@ -246,35 +248,35 @@ class SystemCModule():
     def instantiate(self, name):
         ''' How to instantiate ourselves '''
         txt = name + " = "
-        txt += "make_" + self.basename.lower() + "("
+        txt += "make_" + self.scm_lname + "("
         txt += '"' + name + '"'
-        for arg in self.ctor_args:
+        for arg in self.scm_ctor_args:
             txt += ", " + arg.cname
         txt += ");"
         return txt
 
     def create(self):
         ''' How to create ourselves '''
-        txt = self.basename.lower() + "("
+        txt = self.scm_lname + "("
         txt += "sc_module_name name"
-        for arg in self.ctor_args:
+        for arg in self.scm_ctor_args:
             txt += ", " + arg.protoform()
         txt += ");"
         return txt
 
     def decl(self, name):
         ''' How to declare ourselves '''
-        return "struct " + self.basename.lower() + " *" + name + ";"
+        return "struct " + self.scm_lname + " *" + name + ";"
 
     def emit_pub_hh(self):
         ''' Produce the public .hh file '''
-        for arg in self.ctor_args:
+        for arg in self.scm_ctor_args:
             self.sf_pub.fmt(arg.ctype + ";\n")
 
         self.sf_pub.write("\n")
 
         self.sf_pub.fmt("struct «lll» *make_«lll»(\n    sc_module_name name")
-        for arg in self.ctor_args:
+        for arg in self.scm_ctor_args:
             self.sf_pub.fmt(",\n    " + arg.protoform())
         self.sf_pub.write("\n);\n")
 
@@ -282,7 +284,7 @@ class SystemCModule():
         ''' Produce the .hh file '''
         self.sf_hh.include(self.sf_pub)
         incls = set()
-        for comp in self.components:
+        for comp in self.scm_components:
             for incl in comp.part.yield_includes(comp):
                 if incl not in incls:
                     self.include(incl)
@@ -290,13 +292,13 @@ class SystemCModule():
         self.sf_hh.write('\n')
         self.sf_hh.fmt('SC_MODULE(«lll»)\n')
         self.sf_hh.fmt('{\n')
-        for mbr in self.members:
+        for mbr in self.scm_members:
             self.sf_hh.write('\t' + mbr + "\n")
-        for sig in self.signals.values():
+        for sig in self.scm_signals.values():
             self.sf_hh.fmt('\t' + sig.decl() + "\n")
-        for comp in self.components:
+        for comp in self.scm_components:
             comp.part.instance(self.sf_hh, comp)
-        for name, child in self.children.items():
+        for name, child in self.scm_children.items():
             self.sf_hh.fmt('\t' + child.decl(name) + "\n")
         self.sf_hh.write('\n')
         self.sf_hh.fmt('\t' + self.create() + "\n")
@@ -307,28 +309,28 @@ class SystemCModule():
         self.sf_cc.include(self.sf_pub)
         self.sf_cc.write("\n")
         self.sf_cc.fmt("struct «lll» *make_«lll»(\n    sc_module_name name")
-        for arg in self.ctor_args:
+        for arg in self.scm_ctor_args:
             self.sf_cc.fmt(",\n    " + arg.protoform())
         self.sf_cc.write("\n)\n")
         self.sf_cc.write("{\n")
         self.sf_cc.fmt('\treturn new «lll»(name')
-        for arg in self.ctor_args:
+        for arg in self.scm_ctor_args:
             self.sf_cc.fmt(", " + arg.cname)
         self.sf_cc.write(');\n}\n\n')
 
         self.sf_cc.fmt('''«lll» :: «lll»(\n''')
         self.sf_cc.fmt('''    sc_module_name name''')
-        for arg in self.ctor_args:
+        for arg in self.scm_ctor_args:
             self.sf_cc.fmt(',\n    ' + arg.protoform() + "\n")
         self.sf_cc.write('\n) :\n')
         self.sf_cc.fmt('\tsc_module(name)')
-        for sig in self.signals.values():
+        for sig in self.scm_signals.values():
             self.sf_cc.write(",\n\t" + sig.init())
-        for comp in self.components:
+        for comp in self.scm_components:
             comp.part.initialize(self.sf_cc, comp)
         self.sf_cc.write('\n{\n')
-        for name, child in self.children.items():
+        for name, child in self.scm_children.items():
             self.sf_cc.fmt("\t" + child.instantiate(name) + "\n")
-        for comp in self.components:
+        for comp in self.scm_components:
             comp.part.hookup_comp(self.sf_cc, comp)
         self.sf_cc.fmt('''}\n''')

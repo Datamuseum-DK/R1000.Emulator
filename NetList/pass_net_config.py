@@ -166,7 +166,7 @@ class MuxBus():
             oenode.net.find_cname()
             # print("OE", oenode)
             pin3 = self.pins["OE%c" % group]
-            node2 = Node(
+            Node(
                 oenode.net,
                 self.comp,
                 pin3,
@@ -570,7 +570,7 @@ class PassNetConfig():
             comp =  netbus.the_only_one_driver()
             if not comp:
                 continue
-            print("*****", net, net.netbus, comp)
+            # print("*****", net, net.netbus, comp)
             for net2 in netbus.nets:
                 net2.sc_type = "bool"
             netbus.create_as_bus(None)

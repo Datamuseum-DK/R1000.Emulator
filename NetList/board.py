@@ -45,7 +45,7 @@ from part import LibPartSexp, NoPart
 from net import NetSexp
 from component import ComponentSexp
 
-class Board():
+class Board(SystemCModule):
 
     ''' Ingest one KiCad netlist file '''
 
@@ -65,8 +65,12 @@ class Board():
 
         self.makefile = Makefile(self.dstdir + "/Makefile.inc")
 
-        self.scm_board = self.sc_mod(self.lname + "_board")
-        self.scm_board.add_ctor_arg("struct planes", "planes", is_ptr = True)
+        super().__init__(
+            self.sc_path(self.lname + "_board"),
+            self.makefile,
+        )
+        self.sc_fixup(self)
+        self.add_ctor_arg("struct planes", "planes", is_ptr = True)
 
         self.scm_globals = self.sc_mod(self.lname + "_globals")
 
@@ -138,25 +142,36 @@ class Board():
         self.name = i[0]
         self.lname = i[0].lower()
 
-    def sc_mod(self, basename):
-        ''' Make a SCM which lives on this board '''
-        scm = SystemCModule(self.dstdir + "/" + basename, self.makefile)
+    def sc_path(self, basename):
+        ''' Source path of a SCM on this board '''
+        return os.path.join(self.dstdir + "/" + basename)
+
+    def sc_fixup(self, scm):
+        ''' Add board substitutions '''
         scm.add_subst("«bbb»", self.lname)
         scm.add_subst("«BBB»", self.name)
+
+    def sc_mod(self, basename):
+        ''' Make a SCM which lives on this board '''
+        scm = SystemCModule(
+            self.sc_path(basename),
+            self.makefile
+        )
+        self.sc_fixup(scm)
         return scm
 
     def produce(self):
         ''' ... '''
         os.makedirs(self.dstdir, exist_ok=True)
 
-        self.scm_board.add_child(self.scm_globals)
+        self.add_child(self.scm_globals)
         for sheet in self.sheets.values():
-            self.scm_board.add_child(sheet.scm)
+            self.add_child(sheet)
 
-        self.scm_board.emit_pub_hh()
-        self.scm_board.emit_hh()
-        self.scm_board.emit_cc()
-        self.scm_board.commit()
+        self.emit_pub_hh()
+        self.emit_hh()
+        self.emit_cc()
+        self.commit()
 
         for net in sorted(self.nets.values()):
             for sig in net.sc_signals():

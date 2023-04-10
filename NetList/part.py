@@ -51,9 +51,9 @@ def optimize_oe_output(comp, oe_pin, pfx):
                     drivers += 1
                     if drivers > 1:
                         return
-    
+
     print("OPT", comp, "--> Only one driver")
-        
+
     oe_node = comp[oe_pin]
     oe_node.remove()
 

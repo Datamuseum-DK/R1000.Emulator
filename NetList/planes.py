@@ -33,8 +33,12 @@
    ==================
 '''
 
+import os
+
 import transit
 import util
+
+from scmod import SystemCModule
 
 class PlaneSignal():
     ''' A signal on a plane collected from G[BF] parts '''
@@ -133,14 +137,17 @@ class PlaneSignal():
         # If all else fails, continue with G[BF]%03d
         print("Plane signal name divination failed", self.name, self.boards)
 
-class Planes():
+class Planes(SystemCModule):
 
     ''' {Front|Back}-planes '''
 
     def __init__(self, cpu):
         self.cpu = cpu
         self.psig = {}
-        self.scm = self.cpu.sc_mod("planes")
+        super().__init__(
+            os.path.join(self.cpu.cdir, "planes"),
+            self.cpu.chassis_makefile,
+        )
 
         for i in ("PU", "PD"):
             self.psig[i] = PlaneSignal(cpu, i)
@@ -175,14 +182,14 @@ class Planes():
         ''' Produce the SystemC sources '''
         for psig in sorted(self.psig.values()):
             for sig in psig.net.sc_signals():
-                self.scm.add_signal(sig)
+                self.add_signal(sig)
 
-        self.make_table(self.scm.sf_cc)
-        self.scm.add_member("sc_trace_file *tf;")
-        self.scm.emit_pub_hh()
-        self.scm.emit_hh()
-        self.scm.emit_cc()
-        self.scm.commit()
+        self.make_table(self.sf_cc)
+        self.add_member("sc_trace_file *tf;")
+        self.emit_pub_hh()
+        self.emit_hh()
+        self.emit_cc()
+        self.commit()
 
     def make_table(self, dst):
         ''' Document the resulting planes in C comment '''

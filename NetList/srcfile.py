@@ -115,6 +115,7 @@ class Makefile(SrcFile):
         self.make_stanzas = []
 
     def add_stanza(self, hdr, txt):
+        ''' Add a stanza '''
         self.make_stanzas.append((hdr, txt))
 
     def commit(self):

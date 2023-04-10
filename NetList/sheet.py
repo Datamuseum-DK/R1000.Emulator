@@ -33,7 +33,9 @@
    =================================================
 '''
 
-class Sheet():
+from scmod import SystemCModule
+
+class Sheet(SystemCModule):
     ''' A `sheet` from the netlist file '''
     def __init__(self, board, sexp):
         self.board = board
@@ -46,10 +48,15 @@ class Sheet():
         self.components = {}
         self.local_nets = []
 
-        self.scm = self.board.sc_mod(self.mod_name)
-        self.scm.add_subst("«ttt»", self.mod_type)
-        self.scm.add_ctor_arg("struct planes", "planes", is_ptr=True)
-        self.scm.add_ctor_arg("struct «bbb»_globals", "«bbb»_globals", is_ptr=True)
+        super().__init__(
+            self.board.sc_path(self.mod_name),
+            self.board.makefile,
+        )
+        self.board.sc_fixup(self)
+        self.add_subst("«ttt»", self.mod_type)
+        self.add_subst("«ttt»", self.mod_type)
+        self.add_ctor_arg("struct planes", "planes", is_ptr=True)
+        self.add_ctor_arg("struct «bbb»_globals", "«bbb»_globals", is_ptr=True)
 
     def __str__(self):
         return self.board.name + "_%d" % self.page
@@ -70,23 +77,23 @@ class Sheet():
     def produce(self):
         ''' ... '''
 
-        self.scm.include(self.board.cpu.plane.scm.sf_hh)
-        self.scm.include(self.board.scm_globals.sf_hh)
+        self.include(self.board.cpu.plane.sf_hh)
+        self.include(self.board.scm_globals.sf_hh)
 
-        self.scm.emit_pub_hh()
+        self.emit_pub_hh()
 
         for net in sorted(self.local_nets):
             if net.is_supply:
                 continue
             for sig in net.sc_signals():
-                self.scm.add_signal(sig)
+                self.add_signal(sig)
 
         for comp in sorted(self.components.values()):
-            self.scm.add_component(comp)
+            super().add_component(comp)
 
-        self.scm.emit_hh()
-        self.scm.emit_cc()
-        self.scm.commit()
+        self.emit_hh()
+        self.emit_cc()
+        self.commit()
 
 class SheetSexp(Sheet):
     ''' ... '''
