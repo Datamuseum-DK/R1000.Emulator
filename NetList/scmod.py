@@ -82,7 +82,7 @@ class SystemCModule():
     def __init__(self, filename, makefile=None):
         self.scm_filename = filename
         self.scm_makefile = makefile
-        self.scm_basename = os.path.split(filename)[-1]
+        self.scm_basename = os.path.basename(filename)
         self.scm_lname = self.scm_basename.lower()
         self.scm_uname = self.scm_basename.upper()
         self.sf_cc = SrcFile(filename + ".cc")
@@ -94,13 +94,19 @@ class SystemCModule():
         self.scm_children = {}
         self.scm_signals = {}
         self.scm_members = []
-        self.scm_components = []
+        self.scm_components = {}
 
         self.sf_cc.write("#include <systemc.h>\n")
         self.sf_cc.include("Chassis/r1000sc.h")
         self.sf_cc.include("Infra/context.h")
         self.sf_cc.write("\n")
         self.sf_cc.include(self.sf_hh)
+
+    def __str__(self):
+        return "<SCM " + self.scm_basename + ">"
+
+    def __lt__(self, other):
+        return self.scm_filename < other.scm_filename
 
     def include(self, incl):
         ''' add include file '''
@@ -112,7 +118,17 @@ class SystemCModule():
 
     def add_component(self, comp):
         ''' add component '''
-        self.scm_components.append(comp)
+        assert comp.ref not in self.scm_components
+        self.scm_components[comp.ref] = comp
+
+    def del_component(self, comp):
+        ''' delete component '''
+        assert comp.ref in self.scm_components
+        del self.scm_components[comp.ref]
+
+    def iter_comp(self):
+        ''' components in sorted order '''
+        yield from sorted(self.scm_components.values())
 
     def add_child(self, scm, name=None):
         ''' add a child '''
@@ -284,7 +300,7 @@ class SystemCModule():
         ''' Produce the .hh file '''
         self.sf_hh.include(self.sf_pub)
         incls = set()
-        for comp in self.scm_components:
+        for comp in self.iter_comp():
             for incl in comp.part.yield_includes(comp):
                 if incl not in incls:
                     self.include(incl)
@@ -296,7 +312,7 @@ class SystemCModule():
             self.sf_hh.write('\t' + mbr + "\n")
         for sig in self.scm_signals.values():
             self.sf_hh.fmt('\t' + sig.decl() + "\n")
-        for comp in self.scm_components:
+        for comp in self.iter_comp():
             comp.part.instance(self.sf_hh, comp)
         for name, child in self.scm_children.items():
             self.sf_hh.fmt('\t' + child.decl(name) + "\n")
@@ -326,11 +342,11 @@ class SystemCModule():
         self.sf_cc.fmt('\tsc_module(name)')
         for sig in self.scm_signals.values():
             self.sf_cc.write(",\n\t" + sig.init())
-        for comp in self.scm_components:
+        for comp in self.iter_comp():
             comp.part.initialize(self.sf_cc, comp)
         self.sf_cc.write('\n{\n')
         for name, child in self.scm_children.items():
             self.sf_cc.fmt("\t" + child.instantiate(name) + "\n")
-        for comp in self.scm_components:
+        for comp in self.iter_comp():
             comp.part.hookup_comp(self.sf_cc, comp)
         self.sf_cc.fmt('''}\n''')

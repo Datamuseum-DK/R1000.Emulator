@@ -44,8 +44,6 @@ class Sheet(SystemCModule):
         self.page = self.board.pagename_to_sheet(name)
         # print("Sheet", board.name, self.page)
         self.mod_name = board.lname + "_%02d" % self.page
-        self.mod_type = self.mod_name
-        self.components = {}
         self.local_nets = []
 
         super().__init__(
@@ -53,26 +51,9 @@ class Sheet(SystemCModule):
             self.board.makefile,
         )
         self.board.sc_fixup(self)
-        self.add_subst("«ttt»", self.mod_type)
-        self.add_subst("«ttt»", self.mod_type)
+        self.add_subst("«ttt»", self.mod_name)
         self.add_ctor_arg("struct planes", "planes", is_ptr=True)
         self.add_ctor_arg("struct «bbb»_globals", "«bbb»_globals", is_ptr=True)
-
-    def __str__(self):
-        return self.board.name + "_%d" % self.page
-
-    def __lt__(self, other):
-        return self.page < other.page
-
-    def add_component(self, comp):
-        ''' Add component to sheet '''
-        assert comp.ref not in self.components
-        self.components[comp.ref] = comp
-
-    def del_component(self, comp):
-        ''' Remove component from sheet '''
-        assert comp.ref in self.components
-        del self.components[comp.ref]
 
     def produce(self):
         ''' ... '''
@@ -87,9 +68,6 @@ class Sheet(SystemCModule):
                 continue
             for sig in net.sc_signals():
                 self.add_signal(sig)
-
-        for comp in sorted(self.components.values()):
-            super().add_component(comp)
 
         self.emit_hh()
         self.emit_cc()

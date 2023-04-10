@@ -94,12 +94,6 @@ class Board(SystemCModule):
         for netsexp in self.sexp.find("nets.net"):
             NetSexp(self, netsexp)
 
-    def __repr__(self):
-        return self.name
-
-    def __lt__(self, other):
-        return self.name < other.name
-
     def add_part(self, name, part):
         ''' Add a part to our catalog, if not already occupied '''
         self.cpu.add_part(name, part)
