@@ -116,29 +116,6 @@ class ModelXBusMux(PartModel):
 def register(board):
     ''' Register component model '''
 
-    for i, j in (
-        (4, 2),
-        (4, 4),
-        (5, 2),
-        (5, 5),
-        (7, 3),
-        (7, 4),
-        (8, 2),
-        (8, 3),
-        (8, 5),
-        (9, 2),
-        (10, 2),
-        (11, 2),
-        (13, 4),
-        (15, 2),
-        (15, 6),
-        (16, 2),
-        (16, 4),
-        (16, 6),
-        (19, 2),
-        (20, 2),
-        (20, 4),
-        (31, 2),
-        (32, 2),
-    ):
-        board.add_part("XBUSMUX%dX%d" % (i, j), ModelXBusMux(i, j))
+    for i in range(65):
+        for j in range(16):
+            board.add_part("XBUSMUX%dX%d" % (i, j), ModelXBusMux(i, j))
