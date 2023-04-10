@@ -141,7 +141,6 @@ class ModelF652(PartModel):
         inv.part.assign(inv)
 
         for suff in ("_AB", "_BA",):
-            print("COMP", comp, suff)
             new_comp = Component(
                 board = comp.board,
                 compref = comp.ref + suff,
@@ -158,16 +157,12 @@ class ModelF652(PartModel):
                 elif node.pin.name[0] == suff[1]:
                     new_pin = Pin("I" + node.pin.ident[1:], "I" + node.pin.name[1:], "input")
                 elif node.pin.name == "C" + suff[1:]:
-                    print("  C", suff, node.pin.name)
                     new_pin = Pin(node.pin.ident, "CLK", "input")
                 elif node.pin.name == "S" + suff[1:]:
-                    print("  S", suff, node.pin.name)
                     new_pin = Pin(node.pin.ident, "S", "input")
                 elif node.pin.name == "OE" + suff[-1]:
-                    print("  OE", suff, node.pin.name)
                     new_pin = Pin(node.pin.ident, "OE", "input")
                 else:
-                    print("  ign", node.pin.name)
                     continue
 
                 new_node = Node(
@@ -175,7 +170,6 @@ class ModelF652(PartModel):
                     new_comp,
                     new_pin,
                 )
-                print("  nn ", node.pin.name, new_node.pin.name, new_node)
 
         for node in comp:
             node.net.sc_type = "sc_logic"
