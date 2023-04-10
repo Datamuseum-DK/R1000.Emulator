@@ -87,6 +87,7 @@ class Net():
             self.netbus.remove_node(node)
 
     def adopt(self, other):
+        ''' Adopt another network '''
         for node in list(other.iter_nodes()):
             node.remove()
             node.net = self

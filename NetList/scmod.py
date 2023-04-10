@@ -154,7 +154,7 @@ class SystemCModule():
         for incl in sorted(self.sf_cc):
             txt += " \\\n    " + incl
         txt += "\n"
-        txt += "\t@echo Compiling " + self.sf_cc.filename + "\n"
+        txt += "\t@echo Compiling " + os.path.basename(self.sf_cc.filename) + "\n"
         txt += "\t@${SC_CC} -o " + obj + " " + self.sf_cc.filename + "\n"
         makefile.add_stanza(hdr, txt)
 

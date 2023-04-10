@@ -33,16 +33,11 @@
    ==================
 '''
 
-import os
-
 import transit
-import srcfile
 import util
-from scmod import SystemCModule
-
 
 class PlaneSignal():
-    ''' ... '''
+    ''' A signal on a plane collected from G[BF] parts '''
 
     def __init__(self, cpu, name):
         self.cpu = cpu
@@ -53,31 +48,41 @@ class PlaneSignal():
         self.net = None
         self.boards = {}
         self.is_supply = False
+        self.defval = None
 
     def __repr__(self):
-        l = []
-        l.append(self.name)
-        l.append(self.net.bcname)
+        rval = []
+        rval.append(self.name)
+        rval.append(self.net.bcname)
         for board in self.cpu.boards:
             net = self.boards.get(board.name)
             if net is not None:
                 nname = net.name.split('/')[-1]
-                l.append(nname)
+                rval.append(nname)
             else:
-                l.append("-")
-        return "".join(x.ljust(19) for x in l)
+                rval.append("-")
+        return "".join(x.ljust(19) for x in rval)
 
     def __lt__(self, other):
         return self.sortkey < other.sortkey
 
     def add_net(self, net):
+        ''' Add a network to this plane signal '''
         self.is_supply |= net.is_supply
         self.nets.append(net)
         if net.board in self.boards:
-            print("Multiple nets on plane", self.name, "from", net.board, self.boards[net.board], net)
+            print(
+                "Board has multiple nets on plane",
+                self.name,
+                "from",
+                net.board,
+                self.boards[net.board],
+                net
+            )
         self.boards[net.board.name] = net
 
     def chew(self):
+        ''' Chew on things '''
         if self.is_supply and self.name not in {"PD", "PU"}:
             return
         self.divine_better_name()
@@ -91,9 +96,8 @@ class PlaneSignal():
         for net in self.nets:
             self.net.adopt(net)
 
-        if "ECC_STOP.EN" in self.name:
-            # In case there is no IOC board to drive this.
-            self.net.default = False
+        if self.defval is not None:
+            self.net.default = self.defval
 
     def divine_better_name(self):
         ''' Divine a better name '''
@@ -127,7 +131,7 @@ class PlaneSignal():
             return
 
         # If all else fails, continue with G[BF]%03d
-        print("Divination failed", self.name, self.boards)
+        print("Plane signal name divination failed", self.name, self.boards)
 
 class Planes():
 
@@ -136,44 +140,39 @@ class Planes():
     def __init__(self, cpu):
         self.cpu = cpu
         self.psig = {}
-        self.pfx = os.path.join(cpu.cdir, "planes")
-        self.cfile = srcfile.SrcFile(self.pfx + ".cc")
-        self.hfile = srcfile.SrcFile(self.pfx + ".hh")
-        self.scm = SystemCModule(
-            os.path.join(cpu.cdir, "planes"),
-            self.cpu.chassis_makefile
-        )
-
+        self.scm = self.cpu.sc_mod("planes")
 
         for i in ("PU", "PD"):
             self.psig[i] = PlaneSignal(cpu, i)
 
     def build_planes(self):
+        ''' Find the plane signals '''
         for board in self.cpu.boards:
-            for comp in list(board.iter_components()):
+            for comp in (board.iter_components()):
                 if not comp.is_plane:
                     continue
                 if not comp.nodes:
                     continue
 
-                node = comp.nodes['W']
+                node = comp.nodes['W']		# The pin name of GB/GF parts
                 net = node.net
                 node.remove()
 
-                comp.ref = comp.ref[:2] + "%03d" % int(comp.ref[2:], 10)
-                nref = transit.do_transit(board.name, comp.ref)
-                comp.ref = nref
-                comp.name = nref
+                oref = comp.ref[:2] + "%03d" % int(comp.ref[2:], 10)
+                nref, defval = transit.do_transit(board.name, oref)
 
-                if nref not in self.psig:
-                    self.psig[nref] = PlaneSignal(self.cpu, nref)
-                self.psig[nref].add_net(net)
+                psig = self.psig.get(nref)
+                if not psig:
+                    psig = PlaneSignal(self.cpu, nref)
+                    self.psig[nref] = psig
+                psig.add_net(net)
+                psig.defval = defval
 
         for psig in self.psig.values():
             psig.chew()
 
     def produce(self):
-
+        ''' Produce the SystemC sources '''
         for psig in sorted(self.psig.values()):
             for sig in psig.net.sc_signals():
                 self.scm.add_signal(sig)
@@ -186,7 +185,9 @@ class Planes():
         self.scm.commit()
 
     def make_table(self, dst):
-        dst.write("//".ljust(47) + "".join(x.name.ljust(19) for x in self.cpu.boards) + "\n")
+        ''' Document the resulting planes in C comment '''
+        dst.write("//".ljust(47))
+        dst.write("".join(x.name.ljust(19) for x in self.cpu.boards) + "\n")
         for signame, psig in sorted(self.psig.items()):
             if psig.is_supply:
                 dst.write("// " + str(signame) + " <supply>\n")

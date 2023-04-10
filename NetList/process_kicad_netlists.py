@@ -102,7 +102,7 @@ class R1000Cpu():
         self.z_codes.append((comp, zcode))
 
     def sc_mod(self, basename):
-        ''' ... '''
+        ''' Create SCM for parts '''
         return SystemCModule(os.path.join(self.cdir, basename), self.chassis_makefile)
 
     def already_current(self):
