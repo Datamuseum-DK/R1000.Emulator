@@ -76,7 +76,7 @@ class F189(PartFactory):
 		|		next_trigger(PIN_CS.negedge_event());
 		|''')
 
-def register(board):
+def register(part_lib):
     ''' Register component model '''
 
-    board.add_part("F189", PartModel("F189", F189))
+    part_lib.add_part("F189", PartModel("F189", F189))

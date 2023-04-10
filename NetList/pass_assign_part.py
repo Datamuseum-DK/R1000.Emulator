@@ -42,8 +42,8 @@ class PassAssignPart():
         for board in cpu.boards:
             for comp in board.iter_components():
                 if not comp.part:
-                    comp.part = board.part_catalog[comp.partname]
-                comp.part.assign(comp)
+                    comp.part = cpu.part_lib[comp.partname]
+                comp.part.assign(comp, cpu.part_lib)
 
             for comp in board.iter_components():
                 comp.make_busses()

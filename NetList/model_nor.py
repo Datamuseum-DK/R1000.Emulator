@@ -155,7 +155,7 @@ class Nor(PartFactory):
 class ModelNor(Part):
     ''' Model NOR components '''
 
-    def assign(self, comp):
+    def assign(self, comp, part_lib):
         ''' Assigned to component '''
         seen = set()
         n_inputs = 0
@@ -179,10 +179,10 @@ class ModelNor(Part):
         if n_inputs == 1:
             # print("NOR -> INV", comp)
             comp.partname = "F37"
-            comp.part = comp.board.part_catalog[comp.partname]
-            comp.part.assign(comp)
+            comp.part = part_lib[comp.partname]
+            comp.part.assign(comp, part_lib)
 
-    def configure(self, board, comp):
+    def configure(self, board, comp, part_lib):
         i = []
         j = 0
         for node in comp:
@@ -196,15 +196,15 @@ class ModelNor(Part):
         inputs = len(comp.nodes) - 1
         sig = util.signature(i)
         ident = "NOR%d_" % inputs + sig
-        if ident not in board.part_catalog:
-            board.add_part(ident, Nor(board, ident, inputs))
-        comp.part = board.part_catalog[ident]
+        if ident not in part_lib:
+            part_lib.add_part(ident, Nor(board, ident, inputs))
+        comp.part = part_lib[ident]
 
-def register(board):
+def register(part_lib):
     ''' Register component model '''
-    board.add_part("F02", ModelNor("NOR"))
-    board.add_part("F260", ModelNor("NOR"))
-    board.add_part("NOR1", ModelNor("NOR"))
-    board.add_part("NOR2", ModelNor("NOR"))
-    board.add_part("NOR3", ModelNor("NOR"))
-    board.add_part("NOR4", ModelNor("NOR"))
+    part_lib.add_part("F02", ModelNor("NOR"))
+    part_lib.add_part("F260", ModelNor("NOR"))
+    part_lib.add_part("NOR1", ModelNor("NOR"))
+    part_lib.add_part("NOR2", ModelNor("NOR"))
+    part_lib.add_part("NOR3", ModelNor("NOR"))
+    part_lib.add_part("NOR4", ModelNor("NOR"))

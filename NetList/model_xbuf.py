@@ -130,7 +130,7 @@ class ModelXbuf(PartModel):
         super().__init__("XBUF")
         self.invert = invert
 
-    def assign(self, comp):
+    def assign(self, comp, part_lib):
         for node in comp:
             if node.pin.name[0] != 'Y':
                 node.pin.set_role("input")
@@ -143,9 +143,10 @@ class ModelXbuf(PartModel):
                 for node in comp:
                     if node.pin.name[0] == "Y":
                         node.pin.set_role("output")
-            super().assign(comp)
+            super().assign(comp, part_lib)
 
     def f24x(self, comp):
+        ''' Special-case F240 and F244 '''
         oenode0 = comp["OE0"]
         oenode1 = comp["OE1"]
         if oenode0.net == oenode1.net:
@@ -208,39 +209,39 @@ class ModelXbuf(PartModel):
                     node.remove()
                 this.remove()
 
-    def configure(self, board, comp):
+    def configure(self, board, comp, part_lib):
         sig = self.make_signature(comp)
         ident = self.name + "_" + sig
         if self.invert:
             ident += "_I"
         if "INV" in comp and comp["INV"].net.is_pd():
             ident += "_I"
-        if ident not in board.part_catalog:
-            board.add_part(ident, Xbuf(board, ident))
-        comp.part = board.part_catalog[ident]
+        if ident not in part_lib:
+            part_lib.add_part(ident, Xbuf(board, ident))
+        comp.part = part_lib[ident]
 
     def optimize(self, comp):
         optimize_oe_output(comp, "OE", "Y")
 
-def register(board):
+def register(part_lib):
     ''' Register component model '''
 
-    board.add_part("F244", ModelXbuf(False))
-    board.add_part("F240", ModelXbuf(True))
-    board.add_part("XBUF4", ModelXbuf(False))
-    board.add_part("XBUF6", ModelXbuf(False))
-    board.add_part("XBUF8", ModelXbuf(False))
-    board.add_part("XBUF9", ModelXbuf(False))
-    board.add_part("XBUF12", ModelXbuf(False))
-    board.add_part("XBUF14", ModelXbuf(False))
-    board.add_part("XBUF16", ModelXbuf(False))
-    board.add_part("XBUF20", ModelXbuf(False))
-    board.add_part("XBUF21", ModelXbuf(False))
-    board.add_part("XBUF24", ModelXbuf(False))
-    board.add_part("XBUF32", ModelXbuf(False))
-    board.add_part("XFBUF32", ModelXbuf(False))
-    board.add_part("XBUF48", ModelXbuf(False))
-    board.add_part("XBUF56", ModelXbuf(False))
-    board.add_part("XBUF64", ModelXbuf(False))
-    board.add_part("BUF64", ModelXbuf(False))
-    board.add_part("XBUF67", ModelXbuf(False))
+    part_lib.add_part("F244", ModelXbuf(False))
+    part_lib.add_part("F240", ModelXbuf(True))
+    part_lib.add_part("XBUF4", ModelXbuf(False))
+    part_lib.add_part("XBUF6", ModelXbuf(False))
+    part_lib.add_part("XBUF8", ModelXbuf(False))
+    part_lib.add_part("XBUF9", ModelXbuf(False))
+    part_lib.add_part("XBUF12", ModelXbuf(False))
+    part_lib.add_part("XBUF14", ModelXbuf(False))
+    part_lib.add_part("XBUF16", ModelXbuf(False))
+    part_lib.add_part("XBUF20", ModelXbuf(False))
+    part_lib.add_part("XBUF21", ModelXbuf(False))
+    part_lib.add_part("XBUF24", ModelXbuf(False))
+    part_lib.add_part("XBUF32", ModelXbuf(False))
+    part_lib.add_part("XFBUF32", ModelXbuf(False))
+    part_lib.add_part("XBUF48", ModelXbuf(False))
+    part_lib.add_part("XBUF56", ModelXbuf(False))
+    part_lib.add_part("XBUF64", ModelXbuf(False))
+    part_lib.add_part("BUF64", ModelXbuf(False))
+    part_lib.add_part("XBUF67", ModelXbuf(False))

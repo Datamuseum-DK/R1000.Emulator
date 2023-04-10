@@ -89,7 +89,7 @@ class F251(PartFactory):
 		|	);
 		|''')
 
-def register(board):
+def register(part_lib):
     ''' Register component model '''
 
-    board.add_part("F251", PartModel("F251", F251))
+    part_lib.add_part("F251", PartModel("F251", F251))

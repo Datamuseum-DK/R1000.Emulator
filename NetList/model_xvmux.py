@@ -88,7 +88,7 @@ class XVMUX(PartFactory):
 		|		next_trigger(b_event);
 		|''')
 
-def register(board):
+def register(part_lib):
     ''' Register component model '''
 
-    board.add_part("XMUX232", PartModel("XMUX232", XVMUX))
+    part_lib.add_part("XMUX232", PartModel("XMUX232", XVMUX))

@@ -168,8 +168,8 @@ class XSRN(PartFactory):
 		|	}
 		|''')
 
-def register(board):
+def register(part_lib):
     ''' Register component model '''
 
-    board.add_part("XSR8X4", PartModel("XSR8X4", XSRN))
-    board.add_part("XSR8X5", PartModel("XSR8X5", XSRN))
+    part_lib.add_part("XSR8X4", PartModel("XSR8X4", XSRN))
+    part_lib.add_part("XSR8X5", PartModel("XSR8X5", XSRN))

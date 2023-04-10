@@ -86,9 +86,9 @@ class XDECRAM(PartFactory):
 		|		BUS_Q_WRITE(state->ram[1024 + (adr >> 6)]);
 		|''')
 
-def register(board):
+def register(part_lib):
     ''' Register component model '''
 
-    board.add_part("XDECRAM4", PartModel("XDECRAM4", XDECRAM))
-    board.add_part("XDECRAM8", PartModel("XDECRAM8", XDECRAM))
-    board.add_part("XDECRAM16", PartModel("XDECRAM16", XDECRAM))
+    part_lib.add_part("XDECRAM4", PartModel("XDECRAM4", XDECRAM))
+    part_lib.add_part("XDECRAM8", PartModel("XDECRAM8", XDECRAM))
+    part_lib.add_part("XDECRAM16", PartModel("XDECRAM16", XDECRAM))

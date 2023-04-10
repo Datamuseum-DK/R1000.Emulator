@@ -67,9 +67,9 @@ class DS8641(PartFactory):
 		|	BUS_OUT_WRITE(tmp);
 		|''')
 
-def register(board):
+def register(part_lib):
     ''' Register component model '''
 
-    board.add_part("8641", PartModel("8641", DS8641))
-    board.add_part("8641X8", PartModel("8641X8", DS8641))
-    board.add_part("8641X17", PartModel("8641X17", DS8641))
+    part_lib.add_part("8641", PartModel("8641", DS8641))
+    part_lib.add_part("8641X8", PartModel("8641X8", DS8641))
+    part_lib.add_part("8641X17", PartModel("8641X17", DS8641))

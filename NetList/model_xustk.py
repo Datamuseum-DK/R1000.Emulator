@@ -116,7 +116,7 @@ class XUSTK(PartFactory):
 		|
 		|''')
 
-def register(board):
+def register(part_lib):
     ''' Register component model '''
 
-    board.add_part("XUSTK", PartModel("XUSTK", XUSTK))
+    part_lib.add_part("XUSTK", PartModel("XUSTK", XUSTK))

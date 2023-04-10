@@ -407,10 +407,10 @@ class XRFVB(PartFactory):
 		|''')
 
 
-def register(board):
+def register(part_lib):
     ''' Register component model '''
 
-    board.add_part("XRFTA", PartModel("XRFTA", XRFTA))
-    board.add_part("XRFTB", PartModel("XRFTB", XRFTB))
-    board.add_part("XRFVA", PartModel("XRFVA", XRFVA))
-    board.add_part("XRFVB", PartModel("XRFVB", XRFVB))
+    part_lib.add_part("XRFTA", PartModel("XRFTA", XRFTA))
+    part_lib.add_part("XRFTB", PartModel("XRFTB", XRFTB))
+    part_lib.add_part("XRFVA", PartModel("XRFVA", XRFVA))
+    part_lib.add_part("XRFVB", PartModel("XRFVB", XRFVB))

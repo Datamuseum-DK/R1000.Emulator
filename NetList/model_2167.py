@@ -89,13 +89,13 @@ class SRAM2167(PartFactory):
 class Model2167(PartModel):
     ''' Fix Q pin to be tri-state '''
 
-    def assign(self, comp):
+    def assign(self, comp, part_lib):
         if comp.nodes["CS"].net.is_pd():
             comp.nodes["Q"].pin.set_role("output")
-        super().assign(comp)
+        super().assign(comp, part_lib)
 
 
-def register(board):
+def register(part_lib):
     ''' Register component model '''
 
-    board.add_part("2167", Model2167("2167", SRAM2167))
+    part_lib.add_part("2167", Model2167("2167", SRAM2167))

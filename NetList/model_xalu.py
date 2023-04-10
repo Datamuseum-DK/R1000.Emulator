@@ -96,10 +96,10 @@ class XALU(PartFactory):
 		|#endif
 		|''')
 
-def register(board):
+def register(part_lib):
     ''' Register component model '''
 
-    board.add_part("XALU8", PartModel("XALU8", XALU))
-    board.add_part("XALU20", PartModel("XALU20", XALU))
-    board.add_part("XALU24", PartModel("XALU20", XALU))
-    board.add_part("XALU32", PartModel("XALU32", XALU))
+    part_lib.add_part("XALU8", PartModel("XALU8", XALU))
+    part_lib.add_part("XALU20", PartModel("XALU20", XALU))
+    part_lib.add_part("XALU24", PartModel("XALU20", XALU))
+    part_lib.add_part("XALU32", PartModel("XALU32", XALU))

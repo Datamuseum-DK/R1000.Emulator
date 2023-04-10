@@ -150,13 +150,7 @@ class Xreg(PartFactory):
 class ModelXreg(PartModel):
     ''' Xreg registers '''
 
-    def assign(self, comp):
-
-        if 0 and comp.board.name == "VAL" and "ZREG" in comp.name:
-            # TEST_Z_CNTR_FILLING.VAL in branch main
-            # loop through alu14/15, smux28/29 and xlat7
-            comp.part = comp.board.part_catalog["F374_O"]
-            return
+    def assign(self, comp, part_lib):
 
         oe_node = comp["OE"]
         if oe_node.net.is_pd():
@@ -164,30 +158,30 @@ class ModelXreg(PartModel):
             for node in comp:
                 if node.pin.name[0] == "Q":
                     node.pin.set_role("output")
-        super().assign(comp)
+        super().assign(comp, part_lib)
 
-    def configure(self, board, comp):
+    def configure(self, board, comp, part_lib):
         sig = self.make_signature(comp)
         ident = self.name + "_" + sig
         if "INV" in comp and comp["INV"].net.is_pd():
             ident += "_I"
-        if ident not in board.part_catalog:
-            board.add_part(ident, Xreg(board, ident))
-        comp.part = board.part_catalog[ident]
+        if ident not in part_lib:
+            part_lib.add_part(ident, Xreg(board, ident))
+        comp.part = part_lib[ident]
 
     def optimize(self, comp):
         optimize_oe_output(comp, "OE", "Q")
 
-def register(board):
+def register(part_lib):
     ''' Register component model '''
 
-    board.add_part("F374", ModelXreg("F374"))
-    board.add_part("XREG9", ModelXreg("XREG9"))
-    board.add_part("XREG10", ModelXreg("XREG10"))
-    board.add_part("XREG14", ModelXreg("XREG14"))
-    board.add_part("XREG16", ModelXreg("XREG16"))
-    board.add_part("XREG20", ModelXreg("XREG20"))
-    board.add_part("XREG24", ModelXreg("XREG24"))
-    board.add_part("XREG32", ModelXreg("XREG32"))
-    board.add_part("XREG36", ModelXreg("XREG32"))
-    board.add_part("XREG64", ModelXreg("XREG64"))
+    part_lib.add_part("F374", ModelXreg("F374"))
+    part_lib.add_part("XREG9", ModelXreg("XREG9"))
+    part_lib.add_part("XREG10", ModelXreg("XREG10"))
+    part_lib.add_part("XREG14", ModelXreg("XREG14"))
+    part_lib.add_part("XREG16", ModelXreg("XREG16"))
+    part_lib.add_part("XREG20", ModelXreg("XREG20"))
+    part_lib.add_part("XREG24", ModelXreg("XREG24"))
+    part_lib.add_part("XREG32", ModelXreg("XREG32"))
+    part_lib.add_part("XREG36", ModelXreg("XREG32"))
+    part_lib.add_part("XREG64", ModelXreg("XREG64"))

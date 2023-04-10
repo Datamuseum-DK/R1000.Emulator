@@ -67,7 +67,7 @@ class AM93S48(PartFactory):
 		|	PIN_POD<=(tmp);
 		|''')
 
-def register(board):
+def register(part_lib):
     ''' Register component model '''
 
-    board.add_part("93S48", PartModel("93S48", AM93S48))
+    part_lib.add_part("93S48", PartModel("93S48", AM93S48))

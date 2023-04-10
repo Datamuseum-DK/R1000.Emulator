@@ -95,7 +95,7 @@ class XADRPAR(PartFactory):
 		|
 		|''')
 
-def register(board):
+def register(part_lib):
     ''' Register component model '''
 
-    board.add_part("XADRPAR", PartModel("XADRPAR", XADRPAR))
+    part_lib.add_part("XADRPAR", PartModel("XADRPAR", XADRPAR))

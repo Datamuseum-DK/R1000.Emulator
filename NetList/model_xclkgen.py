@@ -133,7 +133,7 @@ class XClkGen(PartFactory):
 		|	state->when = state->when % 200;
 		|''')
 
-def register(board):
+def register(part_lib):
     ''' Register component model '''
 
-    board.add_part("XCLKGEN", PartModel("XCLKGEN", XClkGen))
+    part_lib.add_part("XCLKGEN", PartModel("XCLKGEN", XClkGen))

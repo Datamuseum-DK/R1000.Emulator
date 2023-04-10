@@ -100,18 +100,17 @@ class F154(PartFactory):
 class ModelF138(PartModel):
     ''' Eliminate unused outputs '''
 
-    def assign(self, comp):
+    def assign(self, comp, part_lib):
         if False:
             # Not obvious if this will be faster
             for node in list(comp.nodes.values()):
                 if node.pin.name[0] == "Y" and len(node.net) == 1:
                     print("F138", len(node.net), node)
                     node.remove()
-        super().assign(comp)
-        
+        super().assign(comp, part_lib)
 
-def register(board):
+def register(part_lib):
     ''' Register component model '''
 
-    board.add_part("F138", ModelF138("F138", F138))
-    board.add_part("F154", ModelF138("F154", F154))
+    part_lib.add_part("F138", ModelF138("F138", F138))
+    part_lib.add_part("F154", ModelF138("F154", F154))

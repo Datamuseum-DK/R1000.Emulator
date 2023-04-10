@@ -85,7 +85,7 @@ class F182(PartFactory):
 		|	PIN_CP<=(val & 0x1);
 		|''')
 
-def register(board):
+def register(part_lib):
     ''' Register component model '''
 
-    board.add_part("F182", PartModel("F182", F182))
+    part_lib.add_part("F182", PartModel("F182", F182))

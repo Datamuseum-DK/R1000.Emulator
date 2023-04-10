@@ -41,6 +41,7 @@ import importlib
 from board import Board
 from srcfile import SrcFile, Makefile
 from scmod import SystemCModule
+from part import NoPart
 
 import planes
 
@@ -51,14 +52,20 @@ from pass_part_config import PassPartConfig
 
 MYSELF = os.path.basename(__file__)
 
-def register_models(where):
-    ''' Register all component models '''
-    bdir = os.path.dirname(__file__)
-    for i in sorted(glob.glob(bdir + "/model_*py")):
-        i = os.path.basename(i)[:-3]
-        mod = importlib.import_module(i)
-        mod.register(where)
+class PartLib():
+    ''' Library of parts from which components can be instantiated '''
+    def __init__(self):
+        self.parts = {}
 
+    def __getitem__(self, key):
+        return self.parts[key]
+
+    def __contains__(self, key):
+        return key in self.parts
+
+    def add_part(self, name, part):
+        if name not in self.parts:
+            self.parts[name] = part
 
 class R1000Cpu():
 
@@ -69,7 +76,7 @@ class R1000Cpu():
         self.workdir = workdir
         self.branch = branch
         self.netlists = netlists
-        self.part_catalog = {}
+        self.part_lib = PartLib()
         self.boards = []
         self.chassis_makefile = None
         self.nets = {}
@@ -87,16 +94,24 @@ class R1000Cpu():
             print("Already up to date")
             return
 
-        register_models(self)
+        bdir = os.path.dirname(__file__)
+        for i in sorted(glob.glob(bdir + "/model_*py")):
+            i = os.path.basename(i)[:-3]
+            mod = importlib.import_module(i)
+            mod.register(self.part_lib)
+
+        self.add_part("GB", NoPart())
+        self.add_part("GF", NoPart())
+        self.add_part("Pull_Up", NoPart())
+        self.add_part("Pull_Down", NoPart())
 
         self.do_build()
         open(self.tstamp, "w").write("\n")
-        self.report_bom()
+        # self.report_bom()
 
     def add_part(self, name, part):
         ''' Add a part to our catalog, if not already occupied '''
-        if name not in self.part_catalog:
-            self.part_catalog[name] = part
+        self.part_lib.add_part(name, part)
 
     def add_z_code(self, comp, zcode):
         self.z_codes.append((comp, zcode))
@@ -160,7 +175,7 @@ class R1000Cpu():
         self.plane.produce()
 
         for board in self.boards:
-            PassPartConfig(board)
+            PassPartConfig(board, self.part_lib)
 
         for board in self.boards:
             board.produce()
@@ -186,7 +201,7 @@ class R1000Cpu():
         ''' Report component usage '''
         with open("_bom_" + self.branch + ".txt", "w") as file:
             file.write("-" * 40 + '\n')
-            parts = set(self.part_catalog.values())
+            parts = set(self.part_lib.values())
             file.write("%6d         Total parts\n" % len(parts))
             file.write("%6d         Total components\n" % sum(len(x.uses) for x in parts))
             file.write("-" * 40 + '\n')

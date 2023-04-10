@@ -145,8 +145,8 @@ class F148X2(PartFactory):
 		|	PIN_EZ<=(!(s & 16));
 		|''')
 
-def register(board):
+def register(part_lib):
     ''' Register component model '''
 
-    board.add_part("F148", PartModel("F148", F148))
-    board.add_part("F148X2", PartModel("F148X2", F148X2))
+    part_lib.add_part("F148", PartModel("F148", F148))
+    part_lib.add_part("F148X2", PartModel("F148X2", F148X2))

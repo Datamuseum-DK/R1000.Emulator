@@ -142,8 +142,8 @@ class F579(PartFactory):
 		|	}
 		|''')
 
-def register(board):
+def register(part_lib):
     ''' Register component model '''
 
-    board.add_part("F579", PartModel("F579", F579))
-    board.add_part("F579X2", PartModel("F579X2", F579))
+    part_lib.add_part("F579", PartModel("F579", F579))
+    part_lib.add_part("F579X2", PartModel("F579X2", F579))

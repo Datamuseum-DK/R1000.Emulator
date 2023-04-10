@@ -120,11 +120,11 @@ class F169(PartFactory):
 		|	PIN_CO<=(carry);
 		|''')
 
-def register(board):
+def register(part_lib):
     ''' Register component model '''
 
-    board.add_part("F169", PartModel("F169", F169))
-    board.add_part("F169X2", PartModel("F169X2", F169))
-    board.add_part("F169X3", PartModel("F169X3", F169))
-    board.add_part("F169X4", PartModel("F169X4", F169))
-    board.add_part("F169X5", PartModel("F169X5", F169))
+    part_lib.add_part("F169", PartModel("F169", F169))
+    part_lib.add_part("F169X2", PartModel("F169X2", F169))
+    part_lib.add_part("F169X3", PartModel("F169X3", F169))
+    part_lib.add_part("F169X4", PartModel("F169X4", F169))
+    part_lib.add_part("F169X5", PartModel("F169X5", F169))

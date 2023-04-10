@@ -59,7 +59,7 @@ class F86(PartFactory):
 		|	PIN_Q<=(s);
 		|''')
 
-def register(board):
+def register(part_lib):
     ''' Register component model '''
 
-    board.add_part("F86", PartModel("F86", F86, busable=False))
+    part_lib.add_part("F86", PartModel("F86", F86, busable=False))

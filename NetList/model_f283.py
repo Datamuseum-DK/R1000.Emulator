@@ -66,7 +66,7 @@ class F283(PartFactory):
 		|	PIN_CO<=(sum & 16);
 		|''')
 
-def register(board):
+def register(part_lib):
     ''' Register component model '''
 
-    board.add_part("F283", PartModel("F283", F283))
+    part_lib.add_part("F283", PartModel("F283", F283))

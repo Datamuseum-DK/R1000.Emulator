@@ -174,9 +174,9 @@ class XPAR32(PartFactory):
 		|
 		|''')
 
-def register(board):
+def register(part_lib):
     ''' Register component model '''
 
-    board.add_part("XPAR18", PartModel("XPAR18", XPAR18))
-    board.add_part("XPAR32", PartModel("XPAR32", XPAR32))
-    board.add_part("XPAR64", PartModel("XPAR64", XPAR64))
+    part_lib.add_part("XPAR18", PartModel("XPAR18", XPAR18))
+    part_lib.add_part("XPAR32", PartModel("XPAR32", XPAR32))
+    part_lib.add_part("XPAR64", PartModel("XPAR64", XPAR64))

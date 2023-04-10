@@ -106,12 +106,12 @@ class XWCSRAM(PartFactory):
 		|	BUS_Q_WRITE(state->ram[adr]);
 		|''')
 
-def register(board):
+def register(part_lib):
     ''' Register component model '''
 
-    board.add_part("XWCSRAM", PartModel("XWCSRAM", XWCSRAM))
-    board.add_part("XWCSRAM16", PartModel("XWCSRAM16", XWCSRAM))
-    board.add_part("XWCSRAM39", PartModel("XWCSRAM39", XWCSRAM))
-    board.add_part("XWCSRAM40", PartModel("XWCSRAM40", XWCSRAM))
-    board.add_part("XWCSRAM42", PartModel("XWCSRAM42", XWCSRAM))
-    board.add_part("XWCSRAM47", PartModel("XWCSRAM47", XWCSRAM))
+    part_lib.add_part("XWCSRAM", PartModel("XWCSRAM", XWCSRAM))
+    part_lib.add_part("XWCSRAM16", PartModel("XWCSRAM16", XWCSRAM))
+    part_lib.add_part("XWCSRAM39", PartModel("XWCSRAM39", XWCSRAM))
+    part_lib.add_part("XWCSRAM40", PartModel("XWCSRAM40", XWCSRAM))
+    part_lib.add_part("XWCSRAM42", PartModel("XWCSRAM42", XWCSRAM))
+    part_lib.add_part("XWCSRAM47", PartModel("XWCSRAM47", XWCSRAM))

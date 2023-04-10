@@ -99,7 +99,7 @@ class Component():
         for node in self:
             sortkey = node.pin.sortkey
             if len(sortkey) == 2:
-                buscand.setdefault(sortkey[0], list()).append(node)
+                buscand.setdefault(sortkey[0], []).append(node)
         for busname, busnodes in buscand.items():
             if not busname.isalpha():
                 continue

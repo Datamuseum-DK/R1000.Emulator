@@ -41,7 +41,7 @@ from sexp import SExp
 from srcfile import Makefile
 from scmod import SystemCModule
 from sheet import SheetSexp
-from part import LibPartSexp, NoPart
+from part import LibPartSexp
 from net import NetSexp
 from component import ComponentSexp
 
@@ -61,7 +61,6 @@ class Board(SystemCModule):
         )
         os.makedirs(self.dstdir, exist_ok=True)
         self.srcs = []
-        self.part_catalog = self.cpu.part_catalog
 
         self.makefile = Makefile(self.dstdir + "/Makefile.inc")
 
@@ -79,12 +78,8 @@ class Board(SystemCModule):
             sheet = SheetSexp(self, i)
             self.sheets[sheet.page] = sheet
 
-        self.add_part("GB", NoPart())
-        self.add_part("GF", NoPart())
-        self.add_part("Pull_Up", NoPart())
-        self.add_part("Pull_Down", NoPart())
         for libpartsexp in self.sexp.find("libparts.libpart"):
-            LibPartSexp(self, libpartsexp)
+            LibPartSexp(self.cpu.part_lib, libpartsexp)
 
         self.components = {}
         for compsexp in self.sexp.find("components.comp"):
@@ -93,10 +88,6 @@ class Board(SystemCModule):
         self.nets = {}
         for netsexp in self.sexp.find("nets.net"):
             NetSexp(self, netsexp)
-
-    def add_part(self, name, part):
-        ''' Add a part to our catalog, if not already occupied '''
-        self.cpu.add_part(name, part)
 
     def add_net(self, net):
         ''' ... '''

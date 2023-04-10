@@ -91,8 +91,8 @@ class SRAM2KX8(PartFactory):
 		|	}
 		|''')
 
-def register(board):
+def register(part_lib):
     ''' Register component model '''
 
-    board.add_part("2KX8", PartModel("2KX8", SRAM2KX8))
-    board.add_part("2KX16", PartModel("2KX16", SRAM2KX8))
+    part_lib.add_part("2KX8", PartModel("2KX8", SRAM2KX8))
+    part_lib.add_part("2KX16", PartModel("2KX16", SRAM2KX8))

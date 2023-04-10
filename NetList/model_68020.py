@@ -66,7 +66,7 @@ class MC68020(PartFactory):
 
         self.scm.sf_cc.include("Iop/iop_sc_68k20.cc")
 
-def register(board):
+def register(part_lib):
     ''' Register component model '''
 
-    board.add_part("68020", PartModel("68020", MC68020))
+    part_lib.add_part("68020", PartModel("68020", MC68020))

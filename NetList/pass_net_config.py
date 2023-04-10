@@ -61,7 +61,7 @@ class MuxBus():
         self.cpu.nbr_busmux += 1
 
         self.muxtype = "XBUSMUX%dX%d" % (self.length, self.width)
-        self.part = self.cpu.part_catalog.get(self.muxtype)
+        self.part = self.cpu.part_lib[self.muxtype]
 
         if net0.is_plane:
             file.write("MUX candidate but is plane\t")
@@ -198,7 +198,7 @@ class MuxBus():
         self.comp.name = self.partref
         # print("COMP", self.comp.name)
         self.comp.part = self.part
-        self.comp.part.assign(self.comp)
+        self.comp.part.assign(self.comp, self.cpu.part_lib)
         self.comp.sheet = self.sheet
         for n, net in enumerate(self.netbus.nets):
             Node(

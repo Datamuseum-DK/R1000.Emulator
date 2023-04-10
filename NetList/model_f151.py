@@ -107,8 +107,8 @@ class F151(PartFactory):
 		|	PIN_Ynot<=(!s);
 		|''')
 
-def register(board):
+def register(part_lib):
     ''' Register component model '''
 
-    board.add_part("F151", PartModel("F151", F151))
-    board.add_part("F151V", PartModel("F151", F151))
+    part_lib.add_part("F151", PartModel("F151", F151))
+    part_lib.add_part("F151V", PartModel("F151", F151))

@@ -49,14 +49,14 @@ class ModelAOI(PartModel):
         self.inputs = inputs
         self.ctr = 0
 
-    def and_input(self, comp, inputs):
+    def and_input(self, comp, inputs, part_lib):
         ''' Do one of the input AND gates '''
         nodes = []
         nets = set()
         for pinname in inputs:
             node = comp[pinname]
             if node.net.is_pd():
-                return list()
+                return []
             if node.net.is_pu():
                 continue
             if node.net in nets:
@@ -75,7 +75,7 @@ class ModelAOI(PartModel):
             comppart = "AND%d" % len(nodes),
         )
         and_gate.name = comp.name + "_%d" % self.ctr
-        and_gate.part = comp.board.part_catalog[and_gate.partname]
+        and_gate.part = part_lib[and_gate.partname]
 
         net = Net(comp.board, self.name + "_" + comp.name + "_%d" % self.ctr)
         for pnum, node in enumerate(nodes):
@@ -84,14 +84,14 @@ class ModelAOI(PartModel):
 
         pin = Pin("q", "Q", "output")
         node = Node(net, and_gate, pin)
-        and_gate.part.assign(and_gate)
+        and_gate.part.assign(and_gate, part_lib)
         return [ node ]
 
-    def assign(self, comp):
+    def assign(self, comp, part_lib):
         self.ctr = 0
         nor_nodes = []
         for i in self.inputs:
-            nor_nodes += self.and_input(comp, i)
+            nor_nodes += self.and_input(comp, i, part_lib)
 
         nor = Component(
             board = comp.board,
@@ -114,17 +114,17 @@ class ModelAOI(PartModel):
         pin = Pin("q", "Q", "output")
         node = Node(comp["Q"].net, nor, pin)
 
-        nor.part = comp.board.part_catalog[nor.partname]
-        nor.part.assign(nor)
+        nor.part = part_lib[nor.partname]
+        nor.part.assign(nor, part_lib)
 
         for node in comp:
             node.remove()
         comp.remove()
 
-def register(board):
+def register(part_lib):
     ''' Register component model '''
 
-    board.add_part(
+    part_lib.add_part(
         "F51",
         ModelAOI(
             "F51",
@@ -134,7 +134,7 @@ def register(board):
             )
         )
     )
-    board.add_part(
+    part_lib.add_part(
         "F64",
         ModelAOI(
             "F64",

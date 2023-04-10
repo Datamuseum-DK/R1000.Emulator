@@ -65,8 +65,8 @@ class XMUX_1(PartFactory):
 		|	);
 		|''')
 
-def register(board):
+def register(part_lib):
     ''' Register component model '''
 
-    board.add_part("XMUX16_1", PartModel("XMUX16_1", XMUX_1))
-    board.add_part("XMUX64_1", PartModel("XMUX64_1", XMUX_1))
+    part_lib.add_part("XMUX16_1", PartModel("XMUX16_1", XMUX_1))
+    part_lib.add_part("XMUX64_1", PartModel("XMUX64_1", XMUX_1))

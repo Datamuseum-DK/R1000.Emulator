@@ -112,13 +112,13 @@ class Am25S10(PartFactory):
 class Model25S10(PartModel):
     ''' Am25S10 '''
 
-    def assign(self, comp):
+    def assign(self, comp, part_lib):
         for node in comp:
             if node.pin.name[:2] == "I-":
                 node.pin.name = "IM" + node.pin.name[2:]
-        super().assign(comp)
+        super().assign(comp, part_lib)
 
-def register(board):
+def register(part_lib):
     ''' Register component model '''
 
-    board.add_part("25S10", Model25S10("25S10", Am25S10))
+    part_lib.add_part("25S10", Model25S10("25S10", Am25S10))

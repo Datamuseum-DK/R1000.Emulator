@@ -107,8 +107,8 @@ class XROT64(PartFactory):
 		|	);
 		|''')
 
-def register(board):
+def register(part_lib):
     ''' Register component model '''
 
-    board.add_part("XROT16", PartModel("XROT16", XROT16))
-    board.add_part("XROT64", PartModel("XROT64", XROT64))
+    part_lib.add_part("XROT16", PartModel("XROT16", XROT16))
+    part_lib.add_part("XROT64", PartModel("XROT64", XROT64))

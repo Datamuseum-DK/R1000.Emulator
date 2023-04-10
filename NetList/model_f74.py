@@ -151,7 +151,7 @@ class F74(PartFactory):
 		|		next_trigger(«d_or_pr_or_cl»);
 		|''')
 
-def register(board):
+def register(part_lib):
     ''' Register component model '''
 
-    board.add_part("F74", PartModel("F74", F74))
+    part_lib.add_part("F74", PartModel("F74", F74))

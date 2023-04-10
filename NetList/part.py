@@ -84,14 +84,14 @@ class Part():
         ''' ... '''
         self.pins[pin.ident] = pin
 
-    def configure(self, _board, _comp):
+    def configure(self, _board, _comp, _part_lib):
         ''' The 'nets' are ready '''
 
     def yield_includes(self, _comp):
         ''' ... '''
         yield from self.includes
 
-    def assign(self, _comp):
+    def assign(self, _comp, _part_lib):
         ''' When assigned to component '''
 
     def instance(self, file, comp):
@@ -157,10 +157,6 @@ class PartModel(Part):
         self.factory = factory
         self.busable = busable
 
-    def assign(self, comp):
-        ''' Assigned to component '''
-        return
-
     def make_signature(self, comp):
         ''' Produce a signature for this hookup '''
 
@@ -190,12 +186,12 @@ class PartModel(Part):
     def create(self, board, ident):
         return self.factory(board, ident)
 
-    def configure(self, board, comp):
+    def configure(self, board, comp, part_lib):
         sig = self.make_signature(comp)
         ident = self.name + "_" + sig
-        if ident not in board.cpu.part_catalog:
-            board.cpu.add_part(ident, self.create(board, ident))
-        comp.part = board.cpu.part_catalog[ident]
+        if ident not in part_lib:
+            part_lib.add_part(ident, self.create(board, ident))
+        comp.part = part_lib[ident]
 
 class PartFactory(Part):
 

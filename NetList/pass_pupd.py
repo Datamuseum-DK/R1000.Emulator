@@ -33,9 +33,6 @@
    ====================
 '''
 
-import sys
-import util
-
 class PassPuPd():
 
     ''' Pass: Collect all PU/PD nets and unconnected inputs '''

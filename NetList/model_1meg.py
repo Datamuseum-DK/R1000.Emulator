@@ -161,7 +161,7 @@ class Model1Meg(PartModel):
     ''' 1MEG DRAM '''
 
 
-    def assign(self, comp):
+    def assign(self, comp, part_lib):
 
         node = comp["D"]
         node.remove()
@@ -170,11 +170,11 @@ class Model1Meg(PartModel):
         node.pin.name = "DQ"
         node.pin.set_role("bidirectional")
         node.insert()
-        super().assign(comp)
+        super().assign(comp, part_lib)
 
-def register(board):
+def register(part_lib):
     ''' Register component model '''
 
-    board.add_part("1MEG", Model1Meg("1MEG", DRAM1MEG))
-    board.add_part("XDRAM", PartModel("XDRAM", DRAM1MEGWIDE))
-    board.add_part("XERAM", PartModel("XERAM", DRAM1MEGWIDE))
+    part_lib.add_part("1MEG", Model1Meg("1MEG", DRAM1MEG))
+    part_lib.add_part("XDRAM", PartModel("XDRAM", DRAM1MEGWIDE))
+    part_lib.add_part("XERAM", PartModel("XERAM", DRAM1MEGWIDE))

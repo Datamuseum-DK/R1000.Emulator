@@ -118,8 +118,8 @@ class XIOPRAM(PartFactory):
 		|''')
 
 
-def register(board):
+def register(part_lib):
     ''' Register component model '''
 
-    board.add_part("XIOPRAM4", PartModel("XIOPRAM4", XIOPRAM))
-    board.add_part("XIOPRAM32", PartModel("XIOPRAM32", XIOPRAM))
+    part_lib.add_part("XIOPRAM4", PartModel("XIOPRAM4", XIOPRAM))
+    part_lib.add_part("XIOPRAM32", PartModel("XIOPRAM32", XIOPRAM))

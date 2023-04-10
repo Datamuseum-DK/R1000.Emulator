@@ -642,14 +642,14 @@ class PALModel(PartModel):
     def create(self, board, ident):
         return self.factory(board, ident, self.octets)
 
-    def assign(self, comp):
+    def assign(self, comp, part_lib):
         #for node in comp:
             #if node.pin.name == "OE":
             #    print("PN", node)
             # NB: For now make all outputs sc_logic
             #if "output" in node.pin.role:
             #    node.pin.role = "sc_out <sc_logic>"
-        super().assign(comp)
+        super().assign(comp, part_lib)
 
 def iter_pals():
     ''' Read PAL bitstreams out of firmware.c "library" '''
@@ -674,9 +674,9 @@ def iter_pals():
                 yield [palname, body]
             sect = [line]
 
-def register(board):
+def register(part_lib):
     ''' Register component models '''
 
     for palname, octets in iter_pals():
         assert len(octets) in (2194, 5892)
-        board.add_part(palname, PALModel(palname, octets))
+        part_lib.add_part(palname, PALModel(palname, octets))

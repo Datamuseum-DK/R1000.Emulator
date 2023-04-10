@@ -93,7 +93,7 @@ class F381(PartFactory):
 		|	);
 		|''')
 
-def register(board):
+def register(part_lib):
     ''' Register component model '''
 
-    board.add_part("F381", PartModel("F381", F381))
+    part_lib.add_part("F381", PartModel("F381", F381))

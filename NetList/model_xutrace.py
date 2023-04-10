@@ -63,7 +63,7 @@ class XUTRACE(PartFactory):
 		|''')
 
 
-def register(board):
+def register(part_lib):
     ''' Register component model '''
 
-    board.add_part("XUTRACE", PartModel("XUTRACE", XUTRACE))
+    part_lib.add_part("XUTRACE", PartModel("XUTRACE", XUTRACE))

@@ -58,7 +58,7 @@ class LS125(PartFactory):
 		|		PIN_Q = sc_logic_Z;
 		|''')
 
-def register(board):
+def register(part_lib):
     ''' Register component model '''
 
-    board.add_part("LS125", PartModel("LS125", LS125))
+    part_lib.add_part("LS125", PartModel("LS125", LS125))

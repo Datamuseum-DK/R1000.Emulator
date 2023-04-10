@@ -80,7 +80,7 @@ class FIFORAM(PartFactory):
 		|	PIN_EQ<=(radr != wadr);
 		|''')
 
-def register(board):
+def register(part_lib):
     ''' Register component model '''
 
-    board.add_part("FIFORAM", PartModel("FIFORAM", FIFORAM))
+    part_lib.add_part("FIFORAM", PartModel("FIFORAM", FIFORAM))

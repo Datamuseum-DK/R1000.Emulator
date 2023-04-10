@@ -34,7 +34,6 @@
 '''
 
 from part import PartModel, PartFactory
-from component import Component
 
 class XBusMux(PartFactory):
 
@@ -106,16 +105,16 @@ class ModelXBusMux(PartModel):
         self.length = length
         self.width = width
 
-    def configure(self, board, comp):
+    def configure(self, board, comp, part_lib):
         sig = self.make_signature(comp)
         ident = self.name + "_" + sig
-        if ident not in board.part_catalog:
-            board.add_part(ident, XBusMux(board, ident, self.length, self.width))
-        comp.part = board.part_catalog[ident]
+        if ident not in part_lib:
+            part_lib.add_part(ident, XBusMux(board, ident, self.length, self.width))
+        comp.part = part_lib[ident]
 
-def register(board):
+def register(part_lib):
     ''' Register component model '''
 
     for i in range(65):
         for j in range(16):
-            board.add_part("XBUSMUX%dX%d" % (i, j), ModelXBusMux(i, j))
+            part_lib.add_part("XBUSMUX%dX%d" % (i, j), ModelXBusMux(i, j))

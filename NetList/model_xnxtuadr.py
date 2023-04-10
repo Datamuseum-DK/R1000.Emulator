@@ -190,7 +190,7 @@ class XNXTUADR(PartFactory):
 		|
 		|''')
 
-def register(board):
+def register(part_lib):
     ''' Register component model '''
 
-    board.add_part("XNXTUADR", PartModel("XNXTUADR", XNXTUADR))
+    part_lib.add_part("XNXTUADR", PartModel("XNXTUADR", XNXTUADR))

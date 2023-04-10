@@ -100,7 +100,7 @@ class XTASIDE(PartFactory):
 		|	);
 		|''')
 
-def register(board):
+def register(part_lib):
     ''' Register component model '''
 
-    board.add_part("XTASIDE", PartModel("XTASIDE", XTASIDE))
+    part_lib.add_part("XTASIDE", PartModel("XTASIDE", XTASIDE))

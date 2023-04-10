@@ -91,14 +91,14 @@ class PBxxx(PartFactory):
 class ModelPBxxx(PartModel):
     ''' PBxxx Rom '''
 
-    def assign(self, comp):
+    def assign(self, comp, part_lib):
         if comp.nodes["OE"].net.is_pd():
             for node in comp:
                 if node.pin.name[0] == "Y":
                     node.pin.set_role("output")
-        super().assign(comp)
+        super().assign(comp, part_lib)
 
-def register(board):
+def register(part_lib):
     ''' Register component model '''
 
-    board.add_part("PBxxx", ModelPBxxx("PBXXX", PBxxx))
+    part_lib.add_part("PBxxx", ModelPBxxx("PBXXX", PBxxx))

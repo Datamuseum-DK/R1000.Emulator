@@ -33,7 +33,7 @@
    ==========================================
 '''
 
-from part import PartModel, PartFactory, optimize_oe_output
+from part import PartModel, PartFactory
 from component import Component
 from node import Node
 from pin import Pin
@@ -98,7 +98,7 @@ class F245(PartFactory):
 class ModelF245(PartModel):
     ''' F245 bidirectional buffers'''
 
-    def assign(self, comp):
+    def assign(self, comp, part_lib):
         ''' Split into two separate components '''
         for suff in ("AB", "BA"):
             if comp.nodes["OE"].net.is_pu():
@@ -111,8 +111,8 @@ class ModelF245(PartModel):
                 comppart = comp.partname + suff
             )
             new_comp.name = comp.name + suff
-            new_comp.part = comp.board.part_catalog[new_comp.partname]
-            new_comp.part.assign(new_comp)
+            new_comp.part = part_lib[new_comp.partname]
+            new_comp.part.assign(new_comp, part_lib)
             for node in comp.nodes.values():
                 if suff[1] == node.pin.name[0]:
                     new_pin = Pin(
@@ -132,7 +132,7 @@ class ModelF245(PartModel):
                         node.pin.name,
                         "input",
                     )
-                new_node = Node(
+                Node(
                     node.net,
                     new_comp,
                     new_pin,
@@ -150,7 +150,7 @@ class ModelF245parts(PartModel):
         # optimize_oe_output(comp, "OE", "Q")
 
 
-def register(board):
+def register(part_lib):
     ''' Register component model '''
 
     for part in (
@@ -160,6 +160,6 @@ def register(board):
         "XBIDIR32",
         "XBIDIR64",
     ):
-        board.add_part(part,        ModelF245(part, F245))
-        board.add_part(part + "AB", ModelF245parts(part + "AB", F245))
-        board.add_part(part + "BA", ModelF245parts(part + "BA", F245))
+        part_lib.add_part(part,        ModelF245(part, F245))
+        part_lib.add_part(part + "AB", ModelF245parts(part + "AB", F245))
+        part_lib.add_part(part + "BA", ModelF245parts(part + "BA", F245))

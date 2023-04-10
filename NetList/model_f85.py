@@ -80,7 +80,7 @@ class F85(PartFactory):
 		|	PIN_AltB<=(o & 1);
 		|''')
 
-def register(board):
+def register(part_lib):
     ''' Register component model '''
 
-    board.add_part("F85", PartModel("F85", F85))
+    part_lib.add_part("F85", PartModel("F85", F85))

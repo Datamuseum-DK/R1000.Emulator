@@ -148,7 +148,7 @@ class ModelMux2(PartModel):
         super().__init__("MUX2")
         self.invert = invert
 
-    def assign(self, comp):
+    def assign(self, comp, part_lib):
         for pin_name in ("E", "OE"):
             node = comp.nodes.get(pin_name)
             if node and node.net.is_pd():
@@ -157,9 +157,9 @@ class ModelMux2(PartModel):
             for node in comp:
                 if node.pin.name[0] == "Y":
                     node.pin.set_role('output')
-        super().assign(comp)
+        super().assign(comp, part_lib)
 
-    def configure(self, board, comp):
+    def configure(self, board, comp, part_lib):
         sig = self.make_signature(comp)
         ident = self.name + "_" + sig
         invert = self.invert
@@ -169,29 +169,29 @@ class ModelMux2(PartModel):
             ident += "_I"
         if "OE" in comp.nodes:
             ident += "_Z"
-        if ident not in board.part_catalog:
-            board.add_part(ident, Mux2(board, ident, invert))
-        comp.part = board.part_catalog[ident]
+        if ident not in part_lib:
+            part_lib.add_part(ident, Mux2(board, ident, invert))
+        comp.part = part_lib[ident]
 
     def optimize(self, comp):
         optimize_oe_output(comp, "OE", "Y")
 
-def register(board):
+def register(part_lib):
     ''' Register component model '''
 
-    board.add_part("F157", ModelMux2(invert=False))
-    board.add_part("F158", ModelMux2(invert=True))
-    board.add_part("F257", ModelMux2(invert=False))
-    board.add_part("F258", ModelMux2(invert=True))
-    board.add_part("XMUX4", ModelMux2(invert=None))
-    board.add_part("XMUX5", ModelMux2(invert=None))
-    board.add_part("XMUX6", ModelMux2(invert=None))
-    board.add_part("XMUX7", ModelMux2(invert=None))
-    board.add_part("XMUX8", ModelMux2(invert=None))
-    board.add_part("XMUX10", ModelMux2(invert=None))
-    board.add_part("XMUX12", ModelMux2(invert=None))
-    board.add_part("XMUX16", ModelMux2(invert=None))
-    board.add_part("XMUX17", ModelMux2(invert=None))
-    board.add_part("XMUX20", ModelMux2(invert=None))
-    board.add_part("XMUX24", ModelMux2(invert=None))
-    board.add_part("XMUX32", ModelMux2(invert=None))
+    part_lib.add_part("F157", ModelMux2(invert=False))
+    part_lib.add_part("F158", ModelMux2(invert=True))
+    part_lib.add_part("F257", ModelMux2(invert=False))
+    part_lib.add_part("F258", ModelMux2(invert=True))
+    part_lib.add_part("XMUX4", ModelMux2(invert=None))
+    part_lib.add_part("XMUX5", ModelMux2(invert=None))
+    part_lib.add_part("XMUX6", ModelMux2(invert=None))
+    part_lib.add_part("XMUX7", ModelMux2(invert=None))
+    part_lib.add_part("XMUX8", ModelMux2(invert=None))
+    part_lib.add_part("XMUX10", ModelMux2(invert=None))
+    part_lib.add_part("XMUX12", ModelMux2(invert=None))
+    part_lib.add_part("XMUX16", ModelMux2(invert=None))
+    part_lib.add_part("XMUX17", ModelMux2(invert=None))
+    part_lib.add_part("XMUX20", ModelMux2(invert=None))
+    part_lib.add_part("XMUX24", ModelMux2(invert=None))
+    part_lib.add_part("XMUX32", ModelMux2(invert=None))

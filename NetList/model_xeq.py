@@ -93,7 +93,7 @@ class XEQ(PartFactory):
 class ModelXeq(PartModel):
     ''' comparator '''
 
-    def assign(self, comp):
+    def assign(self, comp, part_lib):
 
         # Eliminate PIN_E if pulled down
         node_e = comp.nodes["E"]
@@ -136,7 +136,7 @@ class ModelXeq(PartModel):
                 break
             bval[node.pin.name] = node.net.is_pu()
         if not bconst:
-            super().assign(comp)
+            super().assign(comp, part_lib)
             return
 
         # B is constant
@@ -149,7 +149,7 @@ class ModelXeq(PartModel):
             if node.pin.name[0] == "B":
                 node.remove()
         comp.value = hex(j)
-        super().assign(comp)
+        super().assign(comp, part_lib)
 
     def make_signature(self, comp):
         sig = super().make_signature(comp)
@@ -157,12 +157,12 @@ class ModelXeq(PartModel):
             sig += "_CONST"
         return sig
 
-def register(board):
+def register(part_lib):
     ''' Register component model '''
 
-    board.add_part("F521", ModelXeq("F521", XEQ))
-    board.add_part("XEQ9", ModelXeq("XEQ9", XEQ))
-    board.add_part("XEQ16", ModelXeq("XEQ16", XEQ))
-    board.add_part("XEQ20", ModelXeq("XEQ20", XEQ))
-    board.add_part("XEQ32", ModelXeq("XEQ32", XEQ))
-    board.add_part("XEQ40", ModelXeq("XEQ40", XEQ))
+    part_lib.add_part("F521", ModelXeq("F521", XEQ))
+    part_lib.add_part("XEQ9", ModelXeq("XEQ9", XEQ))
+    part_lib.add_part("XEQ16", ModelXeq("XEQ16", XEQ))
+    part_lib.add_part("XEQ20", ModelXeq("XEQ20", XEQ))
+    part_lib.add_part("XEQ32", ModelXeq("XEQ32", XEQ))
+    part_lib.add_part("XEQ40", ModelXeq("XEQ40", XEQ))

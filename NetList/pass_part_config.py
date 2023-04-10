@@ -37,8 +37,7 @@ class PassPartConfig():
 
     ''' Pass: Configure the `parts` '''
 
-    def __init__(self, board):
-        self.board = board
+    def __init__(self, board, part_lib):
 
-        for comp in self.board.iter_components():
-            comp.part.configure(board, comp)
+        for comp in board.iter_components():
+            comp.part.configure(board, comp, part_lib)

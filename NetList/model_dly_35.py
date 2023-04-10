@@ -69,12 +69,12 @@ class DLY_35(PartFactory):
 
 class ModelDly35(PartModel):
 
-    def assign(self, comp):
+    def assign(self, comp, part_lib):
         for pinn in ('7NS', '14NS', '21NS', '35NS'):
             comp[pinn].remove()
-        super().assign(comp)
+        super().assign(comp, part_lib)
 
-def register(board):
+def register(part_lib):
     ''' Register component model '''
 
-    board.add_part("DLY_35", ModelDly35("DLY_35", DLY_35))
+    part_lib.add_part("DLY_35", ModelDly35("DLY_35", DLY_35))

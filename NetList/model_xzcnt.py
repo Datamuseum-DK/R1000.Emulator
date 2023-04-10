@@ -79,7 +79,7 @@ class XZCNT(PartFactory):
 		|	}
 		|''')
 
-def register(board):
+def register(part_lib):
     ''' Register component model '''
 
-    board.add_part("XZCNT", PartModel("XZCNT", XZCNT))
+    part_lib.add_part("XZCNT", PartModel("XZCNT", XZCNT))

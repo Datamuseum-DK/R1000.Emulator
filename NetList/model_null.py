@@ -37,6 +37,8 @@ from part import PartModel, PartFactory
 
 class SCM2661(PartFactory):
 
+    ''' Almost null ... '''
+
     def sensitive(self):
         for a in range(0):
             yield a
@@ -62,12 +64,12 @@ class Null(PartFactory):
 
         super().doit(file)
 
-def register(board):
+def register(part_lib):
     ''' Register component model '''
 
-    board.add_part("1489", PartModel("1489", Null))
-    board.add_part("2661B", PartModel("2661B", SCM2661))
-    board.add_part("2681", PartModel("2681", Null))
-    board.add_part("28256", PartModel("28256", Null))
-    board.add_part("58167", PartModel("58167", Null))
-    board.add_part("OSC", PartModel("OSC", Null))
+    part_lib.add_part("1489", PartModel("1489", Null))
+    part_lib.add_part("2661B", PartModel("2661B", SCM2661))
+    part_lib.add_part("2681", PartModel("2681", Null))
+    part_lib.add_part("28256", PartModel("28256", Null))
+    part_lib.add_part("58167", PartModel("58167", Null))
+    part_lib.add_part("OSC", PartModel("OSC", Null))

@@ -96,7 +96,7 @@ class F153(PartFactory):
 		|	BUS_Y_WRITE(val);
 		|''')
 
-def register(board):
+def register(part_lib):
     ''' Register component model '''
 
-    board.add_part("F153", PartModel("F153", F153))
+    part_lib.add_part("F153", PartModel("F153", F153))

@@ -186,7 +186,7 @@ class NOVRAM(PartFactory):
 		|	);
 		|''')
 
-def register(board):
+def register(part_lib):
     ''' Register component model '''
 
-    board.add_part("NOVRAM", PartModel("NOVRAM", NOVRAM))
+    part_lib.add_part("NOVRAM", PartModel("NOVRAM", NOVRAM))

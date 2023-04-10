@@ -208,19 +208,19 @@ class XRFRAMD(PartFactory):
 class ThisRam(PartModel):
     ''' ... '''
 
-    def assign(self, comp):
+    def assign(self, comp, part_lib):
         for node in comp:
             if node.pin.name[:2] == "IO":
                 node.pin.name = "DQ" + node.pin.name[2:]
                 node.pin.update()
-        super().assign(comp)
+        super().assign(comp, part_lib)
 
-def register(board):
+def register(part_lib):
     ''' Register component model '''
 
-    board.add_part("XRFRAMD", PartModel("XRFRAMD", XRFRAMD))
-    board.add_part("XRFRAM", PartModel("XRFRAM", XRFRAM))
-    board.add_part("XTAGRAM", ThisRam("XTAGRAM", XRFRAM))
-    board.add_part("16KX4", ThisRam("16KX4", XRFRAM))
-    board.add_part("16KX8", ThisRam("16KX8", XRFRAM))
-    board.add_part("16KX16", ThisRam("16KX16", XRFRAM))
+    part_lib.add_part("XRFRAMD", PartModel("XRFRAMD", XRFRAMD))
+    part_lib.add_part("XRFRAM", PartModel("XRFRAM", XRFRAM))
+    part_lib.add_part("XTAGRAM", ThisRam("XTAGRAM", XRFRAM))
+    part_lib.add_part("16KX4", ThisRam("16KX4", XRFRAM))
+    part_lib.add_part("16KX8", ThisRam("16KX8", XRFRAM))
+    part_lib.add_part("16KX16", ThisRam("16KX16", XRFRAM))

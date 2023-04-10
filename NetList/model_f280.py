@@ -67,7 +67,7 @@ class F280(PartFactory):
 		|	PIN_POD<=(tmp);
 		|''')
 
-def register(board):
+def register(part_lib):
     ''' Register component model '''
 
-    board.add_part("F280", PartModel("F280", F280))
+    part_lib.add_part("F280", PartModel("F280", F280))

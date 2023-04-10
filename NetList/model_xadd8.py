@@ -91,9 +91,9 @@ class XSUB(PartFactory):
 		|	PIN_CO<=(diff >> BUS_Y_WIDTH);
 		|''')
 
-def register(board):
+def register(part_lib):
     ''' Register component model '''
 
-    board.add_part("XADD8", PartModel("XADD8", XADD))
-    board.add_part("XSUB8", PartModel("XSUB8", XSUB))
-    board.add_part("XADD14", PartModel("XADD14", XADD))
+    part_lib.add_part("XADD8", PartModel("XADD8", XADD))
+    part_lib.add_part("XSUB8", PartModel("XSUB8", XSUB))
+    part_lib.add_part("XADD14", PartModel("XADD14", XADD))

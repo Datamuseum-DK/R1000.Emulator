@@ -95,22 +95,22 @@ class P2K8R(PartFactory):
 class ModelP2K8R(PartModel):
     ''' P2K8R Rom '''
 
-    def assign(self, comp):
+    def assign(self, comp, part_lib):
         assert comp.nodes["OE"].net.is_pd()
         for node in comp:
             if node.pin.name[0] == "Y":
                 node.pin.set_role("output")
-        super().assign(comp)
+        super().assign(comp, part_lib)
 
-    def configure(self, board, comp):
+    def configure(self, board, comp, part_lib):
         del comp.nodes["OE"]
         sig = self.make_signature(comp)
         ident = self.name + "_" + sig
-        if ident not in board.part_catalog:
-            board.add_part(ident, P2K8R(board, ident))
-        comp.part = board.part_catalog[ident]
+        if ident not in part_lib:
+            part_lib.add_part(ident, P2K8R(board, ident))
+        comp.part = part_lib[ident]
 
-def register(board):
+def register(part_lib):
     ''' Register component model '''
 
-    board.add_part("P2K8R", ModelP2K8R("P2K8R"))
+    part_lib.add_part("P2K8R", ModelP2K8R("P2K8R"))

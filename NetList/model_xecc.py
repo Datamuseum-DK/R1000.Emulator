@@ -34,6 +34,8 @@
 
 '''
 
+from part import PartModel, PartFactory
+
 CBITS = '''
            TYP:0                                                     TYP:63 VAL:0                                                     VAL:63 CHECKBIT
     ECCG16 --------------------------------++++++++++++++++++++++++++++++++ --------------------------------++++++++++++++++++++++++++++++++ +--------
@@ -47,8 +49,6 @@ CBITS = '''
     ECCG62 ---++----+++-++--+-+++-+-+-+++++---++----+++-++--+-+++-+-+-+++++ ++++----++-+-+--++-+-------++--+++++++++-+-++---+-------+-----+- --------+
 '''
 
-
-from part import PartModel, PartFactory
 
 class XECC64(PartFactory):
 
@@ -120,7 +120,7 @@ class XECC64(PartFactory):
 		|
 		|''')
 
-def register(board):
+def register(part_lib):
     ''' Register component model '''
 
-    board.add_part("XECC64", PartModel("XECC64", XECC64))
+    part_lib.add_part("XECC64", PartModel("XECC64", XECC64))

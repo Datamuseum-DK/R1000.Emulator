@@ -88,9 +88,9 @@ class XSTKRAM(PartFactory):
 		|	BUS_Q_WRITE(~state->ram[adr]);
 		|''')
 
-def register(board):
+def register(part_lib):
     ''' Register component model '''
 
-    board.add_part("XSTKRAM", PartModel("XSTKRAM", XSTKRAM))
-    board.add_part("XSTKRAM20", PartModel("XSTKRAM20", XSTKRAM))
-    board.add_part("XSTKRAM32", PartModel("XSTKRAM32", XSTKRAM))
+    part_lib.add_part("XSTKRAM", PartModel("XSTKRAM", XSTKRAM))
+    part_lib.add_part("XSTKRAM20", PartModel("XSTKRAM20", XSTKRAM))
+    part_lib.add_part("XSTKRAM32", PartModel("XSTKRAM32", XSTKRAM))

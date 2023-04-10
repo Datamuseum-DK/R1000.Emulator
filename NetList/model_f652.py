@@ -113,7 +113,7 @@ class F652H(PartFactory):
 class ModelF652(PartModel):
     ''' F652 Transceivers/Registers '''
 
-    def assign(self, comp):
+    def assign(self, comp, part_lib):
         ''' Split into four separate components '''
 
         inv = Component(
@@ -122,23 +122,23 @@ class ModelF652(PartModel):
             compvalue = comp.value,
             compsheet = comp.sheet,
             comppart = "F00",
-        ) 
+        )
         inv.name = comp.name + "_I"
-        inv.part = comp.board.part_catalog[inv.partname]
+        inv.part = part_lib[inv.partname]
 
         node = comp["OEB"]
         new_pin = Pin("d", "D", "input")
-        new_node = Node(node.net, inv, new_pin)
+        Node(node.net, inv, new_pin)
 
         new_pin = Pin("q", "Q", "output")
         new_net = Net(comp.board, self.name + "_" + comp.name + "_I")
-        new_node = Node(new_net, inv, new_pin)
+        Node(new_net, inv, new_pin)
 
         pin = node.pin
-        node.remove();
+        node.remove()
         new_node = Node(new_net, comp, pin)
 
-        inv.part.assign(inv)
+        inv.part.assign(inv, part_lib)
 
         for suff in ("_AB", "_BA",):
             new_comp = Component(
@@ -149,8 +149,8 @@ class ModelF652(PartModel):
                 comppart = comp.partname + "_H",
             )
             new_comp.name = comp.name + suff
-            new_comp.part = comp.board.part_catalog[new_comp.partname]
-            new_comp.part.assign(new_comp)
+            new_comp.part = part_lib[new_comp.partname]
+            new_comp.part.assign(new_comp, part_lib)
             for node in comp.nodes.values():
                 if node.pin.name[0] == suff[2]:
                     new_pin = Pin("Y" + node.pin.ident[1:], "Y" + node.pin.name[1:], "tri_state")
@@ -269,10 +269,10 @@ class F652(PartFactory):
 model = PartModel
 model = ModelF652
 
-def register(board):
+def register(part_lib):
     ''' Register component model '''
 
     for width in ("", "_9", "_64",):
         dev = "F652" + width
-        board.add_part(dev, model(dev, F652))
-        board.add_part(dev + "_H", PartModel(dev + "_H", F652H))
+        part_lib.add_part(dev, model(dev, F652))
+        part_lib.add_part(dev + "_H", PartModel(dev + "_H", F652H))

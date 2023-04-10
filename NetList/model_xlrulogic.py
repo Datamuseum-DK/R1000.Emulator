@@ -371,7 +371,7 @@ class XLRULOGIC(PartFactory):
 		|	);
 		|''')
 
-def register(board):
+def register(part_lib):
     ''' Register component model '''
 
-    board.add_part("XLRULOGIC", PartModel("XLRULOGIC", XLRULOGIC))
+    part_lib.add_part("XLRULOGIC", PartModel("XLRULOGIC", XLRULOGIC))

@@ -89,7 +89,7 @@ class XHASH(PartFactory):
 		|
 		|''')
 
-def register(board):
+def register(part_lib):
     ''' Register component model '''
 
-    board.add_part("XHASH", PartModel("XHASH", XHASH))
+    part_lib.add_part("XHASH", PartModel("XHASH", XHASH))

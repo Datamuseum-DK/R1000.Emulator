@@ -96,7 +96,7 @@ class XFIFO(PartFactory):
 		|	PIN_NE<=(state->rptr != state->wptr);
 		|''')
 
-def register(board):
+def register(part_lib):
     ''' Register component model '''
 
-    board.add_part("XFIFO", PartModel("XFIFO", XFIFO))
+    part_lib.add_part("XFIFO", PartModel("XFIFO", XFIFO))

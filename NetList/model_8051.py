@@ -82,7 +82,7 @@ class Model8051(PartModel):
     def __init__(self, *args):
         super().__init__(*args)
 
-    def assign(self, comp):
+    def assign(self, comp, part_lib):
         for node in comp:
             if node.pin.name in (
                 "TXD",
@@ -91,9 +91,9 @@ class Model8051(PartModel):
                 "INT1not",
             ):
                 node.pin.set_role("bidirectional")
-        super().assign(comp)
+        super().assign(comp, part_lib)
 
-def register(board):
+def register(part_lib):
     ''' Register component model '''
 
-    board.add_part("8051", Model8051("8051", I8051))
+    part_lib.add_part("8051", Model8051("8051", I8051))

@@ -99,7 +99,7 @@ class F175(PartFactory):
 		|	}
 		|''')
 
-def register(board):
+def register(part_lib):
     ''' Register component model '''
 
-    board.add_part("F175", PartModel("F175", F175))
+    part_lib.add_part("F175", PartModel("F175", F175))

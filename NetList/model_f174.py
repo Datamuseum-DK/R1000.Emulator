@@ -100,7 +100,7 @@ class F174(PartFactory):
 		|	}
 		|''')
 
-def register(board):
+def register(part_lib):
     ''' Register component model '''
 
-    board.add_part("F174", PartModel("F174", F174))
+    part_lib.add_part("F174", PartModel("F174", F174))

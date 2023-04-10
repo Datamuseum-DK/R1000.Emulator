@@ -117,32 +117,32 @@ class Xlat(PartFactory):
 class ModelXlat(PartModel):
     ''' Xlat registers '''
 
-    def assign(self, comp):
+    def assign(self, comp, part_lib):
         oe_node = comp["OE"]
         if oe_node.net.is_pd():
             oe_node.remove()
             for node in comp:
                 if node.pin.name[0] == "Q":
                     node.pin.set_role("output")
-        super().assign(comp)
+        super().assign(comp, part_lib)
 
-    def configure(self, board, comp):
+    def configure(self, board, comp, part_lib):
         sig = self.make_signature(comp)
         ident = self.name + "_" + sig
         if 'INV' in comp and comp['INV'].net.is_pd():
             ident += "_I"
-        if ident not in board.part_catalog:
-            board.add_part(ident, Xlat(board, ident))
-        comp.part = board.part_catalog[ident]
+        if ident not in part_lib:
+            part_lib.add_part(ident, Xlat(board, ident))
+        comp.part = part_lib[ident]
 
     def optimize(self, comp):
         optimize_oe_output(comp, "OE", "Q")
 
-def register(board):
+def register(part_lib):
     ''' Register component model '''
 
-    board.add_part("F373", ModelXlat("F373"))
-    board.add_part("XLAT16", ModelXlat("XLAT16"))
-    board.add_part("XLAT32", ModelXlat("XLAT32"))
-    board.add_part("XLAT56", ModelXlat("XLAT56"))
-    board.add_part("XLAT64", ModelXlat("XLAT64"))
+    part_lib.add_part("F373", ModelXlat("F373"))
+    part_lib.add_part("XLAT16", ModelXlat("XLAT16"))
+    part_lib.add_part("XLAT32", ModelXlat("XLAT32"))
+    part_lib.add_part("XLAT56", ModelXlat("XLAT56"))
+    part_lib.add_part("XLAT64", ModelXlat("XLAT64"))

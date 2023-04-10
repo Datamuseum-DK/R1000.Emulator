@@ -53,7 +53,7 @@ class F38(PartFactory):
 		|	PIN_Q = s ? sc_logic_Z : sc_logic_0;
 		|''')
 
-def register(board):
+def register(part_lib):
     ''' Register component model '''
 
-    board.add_part("F38", PartModel("F38", F38))
+    part_lib.add_part("F38", PartModel("F38", F38))

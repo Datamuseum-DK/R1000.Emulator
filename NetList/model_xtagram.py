@@ -147,8 +147,8 @@ class XTAGRAMB(PartFactory):
 		|	);
 		|''')
 
-def register(board):
+def register(part_lib):
     ''' Register component model '''
 
-    board.add_part("XTAGRAMA", PartModel("XTAGRAMA", XTAGRAMA))
-    board.add_part("XTAGRAMB", PartModel("XTAGRAMB", XTAGRAMB))
+    part_lib.add_part("XTAGRAMA", PartModel("XTAGRAMA", XTAGRAMA))
+    part_lib.add_part("XTAGRAMB", PartModel("XTAGRAMB", XTAGRAMB))

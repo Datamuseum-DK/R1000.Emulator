@@ -269,9 +269,9 @@ class F299X8(PartFactory):
 		|	}
 		|''')
 
-def register(board):
+def register(part_lib):
     ''' Register component model '''
 
-    board.add_part("F299", PartModel("F299", F299))
-    board.add_part("F299X2", PartModel("F299X2", F299))
-    board.add_part("F299X8", PartModel("F299X8", F299X8))
+    part_lib.add_part("F299", PartModel("F299", F299))
+    part_lib.add_part("F299X2", PartModel("F299X2", F299))
+    part_lib.add_part("F299X8", PartModel("F299X8", F299X8))

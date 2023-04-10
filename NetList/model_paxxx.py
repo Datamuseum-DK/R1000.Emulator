@@ -108,21 +108,21 @@ class PAxxx(PartFactory):
 class ModelPAxxx(PartModel):
     ''' PAxxx Rom '''
 
-    def assign(self, comp):
+    def assign(self, comp, part_lib):
         if comp.nodes["OE"].net.is_pd():
             for node in comp:
                 if node.pin.name[0] == "Y":
                     node.pin.set_role("output")
-        super().assign(comp)
+        super().assign(comp, part_lib)
 
-    def configure(self, board, comp):
+    def configure(self, board, comp, part_lib):
         if comp.nodes["OE"].net.is_pd():
             del comp.nodes["OE"]
         sig = self.make_signature(comp)
         ident = self.name + "_" + sig
-        if ident not in board.part_catalog:
-            board.add_part(ident, PAxxx(board, ident))
-        comp.part = board.part_catalog[ident]
+        if ident not in part_lib:
+            part_lib.add_part(ident, PAxxx(board, ident))
+        comp.part = part_lib[ident]
 
 class XPAxxxL(PartFactory):
 
@@ -176,8 +176,8 @@ class XPAxxxL(PartFactory):
 		|	next_trigger(5, SC_NS);
 		|''')
 
-def register(board):
+def register(part_lib):
     ''' Register component model '''
 
-    board.add_part("PAxxx", ModelPAxxx("PAXXX"))
-    board.add_part("XPAXXXL", PartModel("PAXXXL", XPAxxxL))
+    part_lib.add_part("PAxxx", ModelPAxxx("PAXXX"))
+    part_lib.add_part("XPAXXXL", PartModel("PAXXXL", XPAxxxL))
