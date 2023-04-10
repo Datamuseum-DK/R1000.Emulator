@@ -78,7 +78,6 @@ class R1000Cpu():
 
         self.cdir = os.path.join(workdir, "Chassis")
         self.tstamp = os.path.join(self.cdir, "_timestamp")
-        self.planes_hh = os.path.join(self.cdir, "planes.hh")
 
         self.nbr_busmux = 1
 

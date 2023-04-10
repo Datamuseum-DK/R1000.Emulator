@@ -64,14 +64,11 @@ class Board():
         self.part_catalog = self.cpu.part_catalog
 
         self.makefile = Makefile(self.dstdir + "/Makefile.inc")
-        self.scm_board = self.sc_mod(self.lname + "_board")
-        self.scm_board.add_subst("«bbb»", self.lname)
-        self.scm_board.add_subst("«BBB»", self.name)
-        self.scm_globals = self.sc_mod(self.lname + "_globals")
-        self.scm_globals.add_subst("«bbb»", self.lname)
-        self.scm_globals.add_subst("«BBB»", self.name)
 
+        self.scm_board = self.sc_mod(self.lname + "_board")
         self.scm_board.add_ctor_arg("struct planes", "planes", is_ptr = True)
+
+        self.scm_globals = self.sc_mod(self.lname + "_globals")
 
         self.sheets = {}
         for i in self.sexp.find("design.sheet"):
@@ -142,18 +139,19 @@ class Board():
         self.lname = i[0].lower()
 
     def sc_mod(self, basename):
-        ''' ... '''
+        ''' Make a SCM which lives on this board '''
         scm = SystemCModule(self.dstdir + "/" + basename, self.makefile)
         scm.add_subst("«bbb»", self.lname)
+        scm.add_subst("«BBB»", self.name)
         return scm
 
     def produce(self):
         ''' ... '''
         os.makedirs(self.dstdir, exist_ok=True)
 
-        self.scm_board.add_child(self.scm_globals.basename.lower(), self.scm_globals)
+        self.scm_board.add_child(self.scm_globals)
         for sheet in self.sheets.values():
-            self.scm_board.add_child(sheet.mod_name, sheet.scm)
+            self.scm_board.add_child(sheet.scm)
 
         self.scm_board.emit_pub_hh()
         self.scm_board.emit_hh()

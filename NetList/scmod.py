@@ -112,10 +112,12 @@ class SystemCModule():
         ''' add component '''
         self.components.append(comp)
 
-    def add_child(self, name, scm):
+    def add_child(self, scm, name=None):
         ''' add a child '''
-        assert name not in self.children
         assert isinstance(scm, SystemCModule)
+        if not name:
+            name = scm.basename.lower()
+        assert name not in self.children
         self.children[name] = scm
         self.sf_hh.include(scm.sf_pub)
 

@@ -50,8 +50,6 @@ class Sheet():
         self.scm.add_subst("«ttt»", self.mod_type)
         self.scm.add_ctor_arg("struct planes", "planes", is_ptr=True)
         self.scm.add_ctor_arg("struct «bbb»_globals", "«bbb»_globals", is_ptr=True)
-        self.scm.include(self.board.cpu.planes_hh)
-        self.scm.include(self.board.scm_globals.sf_hh)
 
     def __str__(self):
         return self.board.name + "_%d" % self.page
@@ -71,6 +69,10 @@ class Sheet():
 
     def produce(self):
         ''' ... '''
+
+        self.scm.include(self.board.cpu.plane.scm.sf_hh)
+        self.scm.include(self.board.scm_globals.sf_hh)
+
         self.scm.emit_pub_hh()
 
         for net in sorted(self.local_nets):
@@ -83,9 +85,7 @@ class Sheet():
             self.scm.add_component(comp)
 
         self.scm.emit_hh()
-
         self.scm.emit_cc()
-
         self.scm.commit()
 
 class SheetSexp(Sheet):
