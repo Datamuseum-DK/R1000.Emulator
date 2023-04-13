@@ -38,14 +38,13 @@ import os
 import glob
 import importlib
 
-from board import Board
 from srcfile import SrcFile, Makefile
 from scmod import SystemCModule
 from part import NoPart
+from kicad_netlist import KiCadNetList
 
 import planes
 
-from pass_pupd import PassPuPd
 from pass_assign_part import PassAssignPart
 from pass_net_config import PassNetConfig
 from pass_part_config import PassPartConfig
@@ -105,9 +104,17 @@ class R1000Cpu():
         self.add_part("Pull_Up", NoPart())
         self.add_part("Pull_Down", NoPart())
 
+        self.chassis_makefile = Makefile(os.path.join(self.cdir, "Makefile.inc"))
+
+        self.plane = planes.Planes(self)
         self.do_build()
+        # exit(2)
         open(self.tstamp, "w").write("\n")
         # self.report_bom()
+
+    def add_board(self, board):
+        ''' Add a board '''
+        self.boards.append(board)
 
     def add_part(self, name, part):
         ''' Add a part to our catalog, if not already occupied '''
@@ -150,32 +157,33 @@ class R1000Cpu():
 
         return True
 
+    def recurse(self, call_this, *args, **kwargs):
+        ''' Recursively do something to all SystemCModules '''
+        for board in self.boards:
+            board.recurse(call_this, *args, **kwargs)
+
     def do_build(self):
         ''' ... '''
 
-        self.chassis_makefile = Makefile(os.path.join(self.cdir, "Makefile.inc"))
-
         for filename in self.netlists:
             print("Processing", filename)
-            self.boards.append(Board(self, filename))
+            nlist = KiCadNetList(filename)
+            nlist.build(self)
 
         # Establish canonical order
         self.boards.sort()
 
-        self.plane = planes.Planes(self)
+        self.plane.scm_cname_pfx = "planes->"
 
-        PassPuPd(self)
+        self.plane.build_planes(self)
 
         PassAssignPart(self)
-
-        self.plane.build_planes()
 
         PassNetConfig(self)
 
         self.plane.produce()
 
-        for board in self.boards:
-            PassPartConfig(board, self.part_lib)
+        PassPartConfig(self)
 
         for board in self.boards:
             board.produce()

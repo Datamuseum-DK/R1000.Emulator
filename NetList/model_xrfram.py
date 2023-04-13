@@ -141,7 +141,7 @@ class XRFRAMD(PartFactory):
 
     def state(self, file):
         file.fmt('''
-		|	uint64_t ram[1<<BUS_AR_WIDTH];
+		|	uint64_t ram[1<<BUS_A_WIDTH];
 		|	uint64_t last;
 		|	const char *what;
 		|''')
@@ -163,45 +163,28 @@ class XRFRAMD(PartFactory):
 		|	unsigned adr = 0;
 		|	uint64_t data = 0;
 		|
-		|	if (PIN_CS=>) {
-		|		if (state->what == READING) {
-		|			BUS_DQ_Z();
-		|		} else if (state->what == WRITING) {
-		|			BUS_AR_READ(adr);
-		|			BUS_DQ_READ(data);
-		|			state->ram[adr] = data;
-		|		}
-		|		next_trigger(PIN_CS.negedge_event());
+		|	if (PIN_OE=>) {
+		|		BUS_Q_Z();
 		|		state->what = ZZZING;
-		|	} else if (!PIN_WE=>) {
-		|		if (state->what == READING)
-		|			BUS_DQ_Z();
-		|		BUS_DQ_READ(data);
-		|		BUS_AW_READ(adr);
-		|		state->ram[adr] = data;
-		|		state->what = WRITING;
 		|	} else {
-		|		if (state->what == WRITING) {
-		|			BUS_AW_READ(adr);
-		|			BUS_DQ_READ(data);
-		|			state->ram[adr] = data;
-		|		}
-		|		BUS_AR_READ(adr);
+		|		BUS_A_READ(adr);
 		|		data = state->ram[adr];
-		|		if (state->what != READING || data != state->last) {
-		|			BUS_DQ_WRITE(data);
-		|			state->last = data;
-		|		}
+		|		BUS_Q_WRITE(data);
 		|		state->what = READING;
 		|	}
-		|
+		|	if (PIN_WE.posedge()) {
+		|		BUS_D_READ(data);
+		|		BUS_A_READ(adr);
+		|		state->ram[adr] = data;
+		|		state->what = WRITING;
+		|	}
 		|	TRACE(
 		|	    << state->what
 		|	    << " we " << PIN_WE?
-		|	    << " cs " << PIN_CS?
-		|	    << " ar " << BUS_AR_TRACE()
-		|	    << " aw " << BUS_AW_TRACE()
-		|	    << " d " << BUS_DQ_TRACE()
+		|	    << " oe " << PIN_OE?
+		|	    << " ar " << BUS_A_TRACE()
+		|	    << " d " << BUS_D_TRACE()
+		|	    << " q " << BUS_Q_TRACE()
 		|	);
 		|''')
 

@@ -54,8 +54,8 @@ class MuxBus():
 
         net0 = self.netbus.nets[0]
         comp0 = net0.nnodes[0].component
-        self.board = comp0.board
-        self.cpu = self.board.cpu
+        self.scm = comp0.scm
+        self.cpu = self.scm.cpu
 
         self.partref = "UBMX%d" % self.cpu.nbr_busmux
         self.cpu.nbr_busmux += 1
@@ -63,13 +63,8 @@ class MuxBus():
         self.muxtype = "XBUSMUX%dX%d" % (self.length, self.width)
         self.part = self.cpu.part_lib[self.muxtype]
 
-        if net0.is_plane:
+        if net0.on_plane:
             file.write("MUX candidate but is plane\t")
-            self.netbus.create_as_bus(file)
-            return
-
-        if 0 and not net0.is_local:
-            file.write("MUX candidate but not local\t")
             self.netbus.create_as_bus(file)
             return
 
@@ -79,8 +74,6 @@ class MuxBus():
             return
 
         # print("PART", self.muxtype, self.part, self.partref)
-
-        self.sheet = comp0.sheet
 
         self.pins = {}
         for j in range(self.length):
@@ -139,14 +132,12 @@ class MuxBus():
                         newname += "_%c_" % group
                         j = False
                     newname += i
-                net = Net(
-                    self.board,
-                    newname,
-                )
-                # net.sc_type = "bool"
-                net.is_local = net0.is_local
-                net.sheets = [ self.sheet ]
-                net.sheets[0].local_nets.append(net)
+                net = Net(newname)
+                self.scm.add_net(net)
+			# net.sc_type = "bool"
+			#net.is_local = net0.is_local
+			#net.sheets = [ self.sheet ]
+			#net.sheets[0].local_nets.append(net)
                 net.find_cname()
                 oldnode.net = net
                 oldnode.insert()
@@ -161,9 +152,9 @@ class MuxBus():
             busgroups.append(nets)
 
             oenode = comp["OE"]
-            oenode.net.is_local = net0.is_local
-            oenode.net.is_local = False
-            oenode.net.find_cname()
+            # oenode.net.is_local = net0.is_local
+            # oenode.net.is_local = False
+            # oenode.net.find_cname()
             # print("OE", oenode)
             pin3 = self.pins["OE%c" % group]
             Node(
@@ -189,17 +180,15 @@ class MuxBus():
     def create_mux(self):
         ''' Create a bus-mux '''
         self.comp = Component(
-            self.board,
             self.partref,
             "BMX_" + self.netbus.cname,
-            self.sheet,
             self.muxtype,
         )
+        self.scm.add_component(self.comp)
         self.comp.name = self.partref
         # print("COMP", self.comp.name)
         self.comp.part = self.part
         self.comp.part.assign(self.comp, self.cpu.part_lib)
-        self.comp.sheet = self.sheet
         for n, net in enumerate(self.netbus.nets):
             Node(
                 net,
@@ -298,7 +287,7 @@ class NetBus():
         for comp, _pinbus in self.components:
             if not comp.part.busable:
                 file.write("\nComponent not busable ")
-                file.write(comp.part.name + " " + comp.board.name + " " + comp.name + "\n")
+                file.write(comp.part.name + " " + comp.scm.scm_lname + " " + comp.name + "\n")
                 self.table(file, "\t")
                 return True
         return False
@@ -342,7 +331,7 @@ class NetBus():
 
         i = [""]
         for component, _pinbus in self.components:
-            i.append(component.board.name)
+            i.append(component.scm.scm_lname)
         file.write(pfx + "\t".join(i) + "\n")
 
         i = [""]
@@ -432,7 +421,7 @@ class NetBus():
             self.ctype = "uint32_t"
         else:
             self.ctype = "uint64_t"
-        # self.decide_cname()
+        self.decide_cname()
         if file:
             file.write("\nAccepted:\t")
             self.table(file)
@@ -462,7 +451,7 @@ class NetBus():
                 file.write("MUX has pintype " + node.pin.type.name + "\n")
                 good = False
 
-        if not good or width == 1:
+        if 1 or not good or width == 1:
             self.create_as_bus(file)
         else:
             MuxBus(self, width, file)
@@ -475,29 +464,60 @@ class PassNetConfig():
         self.cpu = cpu
         self.netbusses = {}
 
-        for _gnam, net in sorted(self.cpu.nets.items()):
-            for node in net.iter_nodes():
-                net.sheets.add(node.component.sheet)
-            net.sheets = list(sorted(net.sheets))
-            net.is_local = not net.is_plane and len(net.sheets) == 1
-            if net.is_local:
-                net.sheets[0].local_nets.append(net)
-            net.find_cname()
+        cpu.recurse(self.home_nets)
+        cpu.recurse(self.ponder_bool)
+        self.ponder_bool(cpu.plane)
 
-        self.ponder_bool()
+        cpu.recurse(self.find_cnames)
+        self.find_cnames(cpu.plane)
+
         with open("_bus_%s.txt" % self.cpu.branch, "w") as file:
             self.bus_candidates(file)
 
-    def ponder_bool(self):
+        cpu.recurse(self.find_cnames)
+        self.find_cnames(cpu.plane)
+
+    def home_nets(self, scm):
+        ''' Move nets to their natural home '''
+        for net in scm.iter_nets():
+            assert not net.on_plane
+            if not net.nnodes:
+                net.remove()
+                continue
+            scms = set()
+            pscms = set()
+            for node in net.iter_nodes():
+                scms.add(node.component.scm)
+                pscms.add(node.component.scm.scm_parent)
+            scms = list(sorted(scms))
+            if len(scms) == 1:
+                if scms[0] != net.scm:
+                    net.scm.del_net(net)
+                    scms[0].add_net(net)
+                continue
+            scms = list(sorted(pscms))
+            assert len(scms) == 1
+            if scms[0] != net.scm:
+                net.scm.del_net(net)
+                scms[0].scm_globals.add_net(net)
+
+        for net in scm.iter_nets():
+            if not net.scm.scm_parent:
+                scm = net.scm.scm_globals
+                net.scm.del_net(net)
+                scm.add_net(net)
+
+    def find_cnames(self, scm):
+        cnames = set()
+        for net in scm.iter_nets():
+            net.find_cname()
+            assert net.cname not in cnames
+            cnames.add(net.cname)
+
+    def ponder_bool(self, scm):
         ''' Determine if network needs hiz state '''
-        for _gnam, net in sorted(self.cpu.nets.items()):
-            if len(net) == 0:
-                continue
-
-            if net.is_supply:
-                net.sc_type = "bool"
-                continue
-
+        for net in scm.iter_nets():
+            assert len(net)
             hizs = 0
             outputs = 0
             roles = set()
@@ -508,26 +528,24 @@ class PassNetConfig():
                 if node.pin.type.output:
                     outputs += 1
 
-            if outputs == 0:
+            if outputs == 0 and net.name not in ("PD", "PU"):
                 print("Undriven", net, len(net), roles)
                 for i in net.nnodes:
-                    print("  ", i)
+                    print("  udn ", i)
 
             if hizs == 0 and outputs <= 1:
                 net.sc_type = "bool"
 
-    def bus_candidates(self, file):
-        ''' Find networks which are candidates for bus-membership '''
+    def chew_nets(self, scm):
 
-        for _gnam, net in sorted(self.cpu.nets.items()):
-
+        for net in scm.iter_nets():
             if len(net.nnodes) < 2:
                 continue
 
             if None in (x.pin.pinbus for x in net.nnodes):
                 continue
 
-            uniq_comps = set((x.component.gref, x.pin.pinbus) for x in net.nnodes)
+            uniq_comps = set((x.component, x.pin.pinbus) for x in net.nnodes)
             if len(uniq_comps) != len(net.nnodes):
                 # Signals which connect multiple times to a single component
                 # are disqualified, because we cannot (easily) figure out
@@ -540,7 +558,7 @@ class PassNetConfig():
 
             sig = " ".join(
                 sorted(
-                    ":".join((x.component.board.name, x.component.ref, x.pin.pinbus.name))
+                    ":".join((x.component.scm.scm_lname, x.component.ref, x.pin.pinbus.name))
                     for x in net.nnodes
                 )
             )
@@ -549,6 +567,12 @@ class PassNetConfig():
                 i.add_net(net)
             else:
                 self.netbusses[sig] = NetBus(sig, net)
+
+    def bus_candidates(self, file):
+        ''' Find networks which are candidates for bus-membership '''
+
+        self.cpu.recurse(self.chew_nets)
+        self.chew_nets(self.cpu.plane)
 
         for maybebus in self.netbusses.values():
             if len(maybebus.nets) >= MIN_BUS_WIDTH:

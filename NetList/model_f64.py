@@ -68,16 +68,16 @@ class ModelAOI(PartModel):
             return nodes
         self.ctr += 1
         and_gate = Component(
-            board = comp.board,
             compref = comp.ref + "_AND_%d" % self.ctr,
             compvalue = comp.value,
-            compsheet = comp.sheet,
             comppart = "AND%d" % len(nodes),
         )
+        comp.scm.add_component(and_gate)
         and_gate.name = comp.name + "_%d" % self.ctr
         and_gate.part = part_lib[and_gate.partname]
 
-        net = Net(comp.board, self.name + "_" + comp.name + "_%d" % self.ctr)
+        net = Net(self.name + "_" + comp.name + "_%d" % self.ctr)
+        comp.scm.add_net(net)
         for pnum, node in enumerate(nodes):
             pin = Pin("d", "D%d" % pnum, "input")
             node = Node(node.net, and_gate, pin)
@@ -94,12 +94,11 @@ class ModelAOI(PartModel):
             nor_nodes += self.and_input(comp, i, part_lib)
 
         nor = Component(
-            board = comp.board,
             compref = comp.ref + "_NOR",
             compvalue = comp.value,
-            compsheet = comp.sheet,
             comppart = "NOR%d" % len(nor_nodes),
         )
+        comp.scm.add_component(nor)
         nor.name = comp.name + "_NOR"
 
         for dnum, node in enumerate(nor_nodes):
@@ -117,9 +116,7 @@ class ModelAOI(PartModel):
         nor.part = part_lib[nor.partname]
         nor.part.assign(nor, part_lib)
 
-        for node in comp:
-            node.remove()
-        comp.remove()
+        comp.eliminate()
 
 def register(part_lib):
     ''' Register component model '''

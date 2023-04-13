@@ -41,8 +41,8 @@ class Nor(PartFactory):
 
     ''' A generic N-input NOR component '''
 
-    def __init__(self, board, ident, inputs):
-        super().__init__(board, ident)
+    def __init__(self, ident, inputs):
+        super().__init__(ident)
         self.inputs = inputs
 
     def pin_iterator(self):
@@ -182,7 +182,7 @@ class ModelNor(Part):
             comp.part = part_lib[comp.partname]
             comp.part.assign(comp, part_lib)
 
-    def configure(self, board, comp, part_lib):
+    def configure(self, comp, part_lib):
         i = []
         j = 0
         for node in comp:
@@ -197,7 +197,7 @@ class ModelNor(Part):
         sig = util.signature(i)
         ident = "NOR%d_" % inputs + sig
         if ident not in part_lib:
-            part_lib.add_part(ident, Nor(board, ident, inputs))
+            part_lib.add_part(ident, Nor(ident, inputs))
         comp.part = part_lib[ident]
 
 def register(part_lib):

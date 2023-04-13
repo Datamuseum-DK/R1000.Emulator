@@ -117,12 +117,11 @@ class ModelF652(PartModel):
         ''' Split into four separate components '''
 
         inv = Component(
-            board = comp.board,
             compref = comp.ref + "_I",
             compvalue = comp.value,
-            compsheet = comp.sheet,
             comppart = "F00",
         )
+        comp.scm.add_component(inv)
         inv.name = comp.name + "_I"
         inv.part = part_lib[inv.partname]
 
@@ -131,7 +130,8 @@ class ModelF652(PartModel):
         Node(node.net, inv, new_pin)
 
         new_pin = Pin("q", "Q", "output")
-        new_net = Net(comp.board, self.name + "_" + comp.name + "_I")
+        new_net = Net(self.name + "_" + comp.name + "_I")
+        comp.scm.add_net(new_net)
         Node(new_net, inv, new_pin)
 
         pin = node.pin
@@ -142,12 +142,11 @@ class ModelF652(PartModel):
 
         for suff in ("_AB", "_BA",):
             new_comp = Component(
-                board = comp.board,
                 compref = comp.ref + suff,
                 compvalue = comp.value,
-                compsheet = comp.sheet,
                 comppart = comp.partname + "_H",
             )
+            comp.scm.add_component(new_comp)
             new_comp.name = comp.name + suff
             new_comp.part = part_lib[new_comp.partname]
             new_comp.part.assign(new_comp, part_lib)
@@ -171,10 +170,7 @@ class ModelF652(PartModel):
                     new_pin,
                 )
 
-        for node in comp:
-            node.net.sc_type = "sc_logic"
-            node.remove()
-        comp.remove()
+        comp.eliminate()
 
 
 class F652(PartFactory):

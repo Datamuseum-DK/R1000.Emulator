@@ -115,13 +115,13 @@ class ModelPAxxx(PartModel):
                     node.pin.set_role("output")
         super().assign(comp, part_lib)
 
-    def configure(self, board, comp, part_lib):
+    def configure(self, comp, part_lib):
         if comp.nodes["OE"].net.is_pd():
             del comp.nodes["OE"]
         sig = self.make_signature(comp)
         ident = self.name + "_" + sig
         if ident not in part_lib:
-            part_lib.add_part(ident, PAxxx(board, ident))
+            part_lib.add_part(ident, PAxxx(ident))
         comp.part = part_lib[ident]
 
 class XPAxxxL(PartFactory):

@@ -34,45 +34,26 @@
 '''
 
 import util
-from node import NodeSexp
-from scmod import ScSignal
+import scmod
 
 class Net():
     ''' A `net` from the netlist file '''
-    def __init__(self, board, netname):
-        self.board = board
-        self.name = netname
-        for i, j in (
-            (">", "gt"),
-            ("<", "lt"),
-            ("=", "eq"),
-            ("~", "not"),
-        ):
-            self.name = self.name.replace(i, j)
-        self.sortkey = util.sortkey(self.name)
+    def __init__(self, name):
+        self.scm = None
+        self.name = name
         self.nnodes = []
         self.netbus = None
-        self.sheets = set()
-        self.is_plane = None
-        self.is_local = None
-        self.is_supply = netname in ("GND", "+5V", "PU", "PD")
-        if self.is_supply:
-            self.sc_type = "bool"
-        else:
-            self.sc_type = "sc_logic"
-        self.cname = None
-        self.bcname = None
+        self.is_supply = False
+        self.on_plane = None
+        self.sc_type = "sc_logic"
         self.default = True
-
-        self.insert()
-
-    def insert(self):
-        ''' ... '''
-        self.board.add_net(self)
+        self.sortkey = util.sortkey(self.name)
+        self.cname = None
+        self.bare_cname = None
 
     def remove(self):
         ''' ... '''
-        self.board.del_net(self)
+        self.scm.del_net(self)
 
     def add_node(self, node):
         ''' ... '''
@@ -92,49 +73,11 @@ class Net():
             node.remove()
             node.net = self
             node.insert()
-        if not other.is_supply:
-            other.remove()
+        other.remove()
 
     def iter_nodes(self):
         ''' ... '''
         yield from self.nnodes
-
-    def find_cname(self):
-        ''' This is gnarly '''
-        if self.is_pd():
-            self.bcname = "PD"
-            self.cname = "planes->PD"
-            return
-        if self.is_pu():
-            self.bcname = "PU"
-            self.cname = "planes->PU"
-            return
-        self.cname = self.name
-        if self.cname[0].isdigit():
-            self.cname = "z" + self.cname
-        if len(self.nnodes) == 1 and "unconnected" in self.cname:
-            node = self.nnodes[0]
-            self.cname = "u_" + node.component.name + "_" + node.pin.ident
-            # print("ZZ", self.cname, self.nnodes[0])
-        for find, replace in (
-            ("Net-", ""),
-            ("/Page ", "p"),
-            ("unconnected-", ""),
-            ("(", ""),
-            (")", ""),
-            ("-", "_"),
-            ("/", "_"),
-            (".", "_"),
-            ("~", "inv"),
-        ):
-            self.cname = self.cname.replace(find, replace)
-        self.bcname = self.cname
-        if self.is_supply:
-            self.cname = "///supply-c///"
-        elif self.is_plane:
-            self.cname = "planes->" + self.cname
-        elif not self.is_local:
-            self.cname = self.board.lname + "_globals->" + self.cname
 
     def __repr__(self):
         return "_".join(("Net", self.name))
@@ -166,7 +109,7 @@ class Net():
         if self.netbus:
             yield from self.netbus.sc_signals(self)
         else:
-            retval = [self.bcname]
+            retval = [self.bare_cname]
             if self.sc_type == "bool":
                 retval.append("sc_signal <bool>")
             else:
@@ -179,15 +122,29 @@ class Net():
                 retval.append("sc_logic_1")
             else:
                 retval.append("sc_logic_1")
-            yield ScSignal(*retval)
+            yield scmod.ScSignal(*retval)
 
-class NetSexp(Net):
-    ''' ... '''
-
-    def __init__(self, board, sexp):
-        super().__init__(
-            board,
-            netname = sexp[1][0].name,
-        )
-        for node_sexp in sexp.find("node"):
-            NodeSexp(self, node_sexp)
+    def find_cname(self):
+        cname = self.name
+        if cname[0].isdigit():
+            cname = "z" + cname
+        if len(self.nnodes) == 1 and "unconnected" in cname:
+            node = self.nnodes[0]
+            cname = "u_" + node.component.name + "_" + node.pin.ident
+        for i, j in (
+            ("Net-", ""),
+            ("/Page ", "p"),
+            (">", "gt"),
+            ("<", "lt"),
+            ("=", "eq"),
+            ("~", "not"),
+            ("unconnected-", ""),
+            ("(", ""),
+            (")", ""),
+            ("-", "_"),
+            (".", "_"),
+            ("/", "_"),
+        ):
+            cname = cname.replace(i, j)
+        self.bare_cname = cname
+        self.cname = self.scm.scm_cname_pfx + cname

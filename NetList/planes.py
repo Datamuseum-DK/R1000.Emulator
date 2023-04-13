@@ -39,27 +39,33 @@ import transit
 import util
 
 from scmod import SystemCModule
+from net import Net
 
 class PlaneSignal():
     ''' A signal on a plane collected from G[BF] parts '''
 
-    def __init__(self, cpu, name):
+    def __init__(self, cpu, name, defval = None):
         self.cpu = cpu
         self.planename = name
         self.name = name
         self.sortkey = util.sortkey(name)
         self.nets = []
-        self.net = None
-        self.boards = {}
+        self.net = Net(name)
+        self.net.on_plane = self
+        self.scms = {}
         self.is_supply = False
-        self.defval = None
+        self.defval = defval
 
     def __repr__(self):
+        return "<PlaneSignal " + self.name + ">"
+
+    def table_row(self):
         rval = []
         rval.append(self.name)
-        rval.append(self.net.bcname)
+        rval.append(self.net.name)
+
         for board in self.cpu.boards:
-            net = self.boards.get(board.name)
+            net = self.scms.get(board.scm_uname)
             if net is not None:
                 nname = net.name.split('/')[-1]
                 rval.append(nname)
@@ -72,33 +78,33 @@ class PlaneSignal():
 
     def add_net(self, net):
         ''' Add a network to this plane signal '''
+        assert net.scm
+        if net.on_plane == self:
+            return
+        if net.on_plane is not None:
+            print("SS", self, net, net.on_plane)
+            assert net.on_plane is None
         self.is_supply |= net.is_supply
         self.nets.append(net)
-        if net.board in self.boards:
-            print(
-                "Board has multiple nets on plane",
-                self.name,
-                "from",
-                net.board,
-                self.boards[net.board],
-                net
-            )
-        self.boards[net.board.name] = net
+        assert len(self.nets) == len(set(self.nets))
+        assert None not in set(x.scm for x in self.nets)
+        bname = net.scm.scm_uname.split('_')[0]
+        if bname not in self.scms:
+            self.scms[bname] = net
+        net.on_plane = self
 
     def chew(self):
         ''' Chew on things '''
-        if self.is_supply and self.name not in {"PD", "PU"}:
-            return
         self.divine_better_name()
+        if self.name[0] == "p" and self.name[1:2].isdigit() and self.name[3] == "_":
+            self.name = self.name[4:]
+        #print("CHPS", self.planename, self, list(sorted(self.scms.keys())))
         self.sortkey = util.sortkey(self.name)
-        self.net = self.nets.pop(0)
-        self.net.is_plane = self
-        self.net.board.del_net(self.net)
         self.net.name = self.name
-        self.net.board = None
-        self.cpu.nets[self.name] = self.net
-        for net in self.nets:
-            self.net.adopt(net)
+        self.cpu.plane.add_net(self.net)
+        while self.nets:
+            assert self.nets[0].scm
+            self.net.adopt(self.nets.pop(0))
 
         if self.defval is not None:
             self.net.default = self.defval
@@ -118,10 +124,10 @@ class PlaneSignal():
             (None, "MEM32"),
             (None, "SEQ"),
         ):
-            net = self.boards.get(bname)
+            net = self.scms.get(bname)
             if not net:
                 continue
-            nname = net.name.split('/')[-1]
+            nname = net.name
             if not pfx:
                 self.name = nname
                 return
@@ -129,13 +135,21 @@ class PlaneSignal():
                 self.name = nname[2:]
                 return
 
+            if nname[0] == "p" and nname[3:6] == "_" + pfx:
+                self.name = nname[6:]
+                return
+
         # If there is only one net, use that.
         if len(self.nets) == 1:
-            self.name = self.nets[0].name.split('/')[-1]
+            self.name = list(self.nets)[0].name.split('/')[-1]
+            if self.name[0].isupper() and self.name[1] == ".":
+                self.name = self.name[2:]
             return
 
         # If all else fails, continue with G[BF]%03d
-        print("Plane signal name divination failed", self.name, self.boards)
+        print("Plane signal name divination failed", self.name, self.scms)
+        for i in self.scms.values():
+            print("  avs", i, i.name)
 
 class Planes(SystemCModule):
 
@@ -144,39 +158,67 @@ class Planes(SystemCModule):
     def __init__(self, cpu):
         self.cpu = cpu
         self.psig = {}
+
+        pusig = PlaneSignal(self.cpu, "PU", defval=True)
+        self.psig["PU"] = pusig
+
+        pdsig = PlaneSignal(self.cpu, "PD", defval=False)
+        self.psig["PD"] = pdsig
+
         super().__init__(
             os.path.join(self.cpu.cdir, "planes"),
             self.cpu.chassis_makefile,
         )
 
-        for i in ("PU", "PD"):
-            self.psig[i] = PlaneSignal(cpu, i)
-
-    def build_planes(self):
+    def build_planes(self, cpu):
         ''' Find the plane signals '''
-        for board in self.cpu.boards:
-            for comp in (board.iter_components()):
-                if not comp.is_plane:
-                    continue
-                if not comp.nodes:
-                    continue
+        cpu.recurse(self.chew_pull_up_down)
+        cpu.recurse(self.chew_gb_gf)
+        cpu.recurse(self.chew_inputs)
 
-                node = comp.nodes['W']		# The pin name of GB/GF parts
-                net = node.net
-                node.remove()
-
-                oref = comp.ref[:2] + "%03d" % int(comp.ref[2:], 10)
-                nref, defval = transit.do_transit(board.name, oref)
-
-                psig = self.psig.get(nref)
-                if not psig:
-                    psig = PlaneSignal(self.cpu, nref)
-                    self.psig[nref] = psig
-                psig.add_net(net)
-                psig.defval = defval
-
-        for psig in self.psig.values():
+        for psig in sorted(self.psig.values()):
             psig.chew()
+
+    def chew_pull_up_down(self, scm):
+        for comp in scm.iter_components():
+            if comp.partname in ("PU", "Pull_Up"):
+                for node in comp.iter_nodes():
+                    node.net.is_supply = True
+                    self.psig["PU"].add_net(node.net)
+                    node.remove()
+                comp.eliminate()
+            elif comp.partname in ("PD", "Pull_Down"):
+                for node in comp.iter_nodes():
+                    node.net.is_supply = True
+                    self.psig["PD"].add_net(node.net)
+                    node.remove()
+                comp.eliminate()
+
+    def chew_inputs(self, scm):
+        for net in scm.iter_nets():
+            if len(net) > 1 or net.on_plane:
+                continue
+            for node in net.iter_nodes():
+                if not node.pin.type.output:
+                    self.psig["PU"].add_net(node.net)
+
+    def chew_gb_gf(self, scm):
+        for comp in scm.iter_components():
+            if comp.partname not in ("GB", "GF"):
+                continue
+            oref = comp.ref[:2] + "%03d" % int(comp.ref[2:], 10)
+            bname = comp.scm.scm_uname.split("_")[0]
+            nref, defval = transit.do_transit(bname, oref)
+            psig = self.psig.get(nref)
+            if not psig:
+                psig = PlaneSignal(self.cpu, nref)
+                psig.defval = defval
+                self.psig[nref] = psig
+
+            for node in comp.iter_nodes():
+                psig.add_net(node.net)
+                node.remove
+            comp.eliminate()
 
     def produce(self):
         ''' Produce the SystemC sources '''
@@ -194,9 +236,9 @@ class Planes(SystemCModule):
     def make_table(self, dst):
         ''' Document the resulting planes in C comment '''
         dst.write("//".ljust(47))
-        dst.write("".join(x.name.ljust(19) for x in self.cpu.boards) + "\n")
+        dst.write("".join(x.scm_uname.split("_")[0].ljust(19) for x in self.cpu.boards) + "\n")
         for signame, psig in sorted(self.psig.items()):
             if psig.is_supply:
-                dst.write("// " + str(signame) + " <supply>\n")
+                dst.write("// " + signame + " <supply>\n")
             else:
-                dst.write("// " + str(signame) + " " + str(psig) + "\n")
+                dst.write("// " + signame + " " + psig.table_row() + "\n")

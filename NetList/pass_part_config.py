@@ -37,7 +37,10 @@ class PassPartConfig():
 
     ''' Pass: Configure the `parts` '''
 
-    def __init__(self, board, part_lib):
+    def __init__(self, cpu):
+        self.cpu = cpu
+        cpu.recurse(self.doit)
 
-        for comp in board.iter_components():
-            comp.part.configure(board, comp, part_lib)
+    def doit(self, scm):
+        for comp in scm.iter_components():
+            comp.part.configure(comp, self.cpu.part_lib)

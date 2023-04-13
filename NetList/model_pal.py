@@ -243,8 +243,8 @@ class PalMacroCell():
 class GAL(PartFactory):
     ''' A generic GAL/PAL chip '''
 
-    def __init__(self, board, ident, palbits):
-        super().__init__(board, ident)
+    def __init__(self, ident, palbits):
+        super().__init__(ident)
 
         self.palbits = palbits
         self.palpins = {}
@@ -639,8 +639,8 @@ class PALModel(PartModel):
         super().__init__(name, self.cls)
         self.busable = False
 
-    def create(self, board, ident):
-        return self.factory(board, ident, self.octets)
+    def create(self, ident):
+        return self.factory(ident, self.octets)
 
     def assign(self, comp, part_lib):
         #for node in comp:

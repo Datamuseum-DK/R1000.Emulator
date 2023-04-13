@@ -29,8 +29,8 @@
 # SUCH DAMAGE.
 
 '''
-   16Kx8 SRAM
-   ==========
+   Writable Control Store RAM
+   ==========================
 
 '''
 
@@ -39,7 +39,7 @@ from part import PartModel, PartFactory
 
 class XWCSRAM(PartFactory):
 
-    ''' 16Kx8 SRAM '''
+    ''' Writable Control Store RAM '''
 
     def state(self, file):
         file.fmt('''
@@ -48,8 +48,9 @@ class XWCSRAM(PartFactory):
 
     def sensitive(self):
         yield "BUS_A_SENSITIVE()"
-        if not self.comp.nodes["WE"].net.is_const():
-            yield "PIN_WE"
+        yield "PIN_WE"
+        if "POUT" in self.comp:
+            yield "BUS_D_SENSITIVE()"
 
     def doit(self, file):
         ''' The meat of the doit() function '''
@@ -62,48 +63,62 @@ class XWCSRAM(PartFactory):
 		|
 		|''')
 
-        if not self.comp.nodes["WE"].net.is_pu():
+        if "APERR" in self.comp:
             file.fmt('''
-		|	if (!PIN_WE=>) {
+		|	uint32_t a, b;
+		|
+		|	a = adr & 0x40ff;
+		|	a = (a ^ (a >> 8)) & 0xff;
+		|	a = (a ^ (a >> 4)) & 0x0f;
+		|	a = (a ^ (a >> 2)) & 0x03;
+		|	a = (a ^ (a >> 1)) & 0x01;
+		|	b = adr & 0xbf00;
+		|	b = (b ^ (b >> 8)) & 0xff;
+		|	b = (b ^ (b >> 4)) & 0x0f;
+		|	b = (b ^ (b >> 2)) & 0x03;
+		|	b = (b ^ (b >> 1)) & 0x01;
+		|
+		|	PIN_APERR<=(!a && !b);
+		|
+		|	adr &= 0x3fff;
+		|
+		|''')
+
+        assert "WE" in self.comp
+        assert not self.comp.nodes["WE"].net.is_pu()
+        file.fmt('''
+		|	if (PIN_WE.posedge()) {
 		|		BUS_D_READ(state->ram[adr]);
 		|		TRACE(
 		|		    << " w a " << BUS_A_TRACE()
 		|		    << " d " << BUS_D_TRACE()
-		|		    << " we "
-		|		    << PIN_WE?
-		|		    << " adr "
-		|		    << std::hex << adr
-		|		    << " data "
-		|		    << std::hex << (unsigned)state->ram[adr]
+		|		    << " we " << PIN_WE?
+		|		    << " adr " << std::hex << adr
+		|		    << " data " << std::hex << (unsigned)state->ram[adr]
 		|		);
-		|		next_trigger(
-		|		    PIN_WE.posedge_event() | BUS_D_EVENTS() | BUS_A_EVENTS()
-		|		);
-		|	} else
-		|''')
-
-        file.fmt('''
-		|	{
+		|	} else {
 		|		TRACE(
 		|		    << " r a " << BUS_A_TRACE()
-		|		    << " d "
-		|		    <<AS(state->ram[adr] & 0x80)
-		|		    <<AS(state->ram[adr] & 0x40)
-		|		    <<AS(state->ram[adr] & 0x20)
-		|		    <<AS(state->ram[adr] & 0x10)
-		|		    <<AS(state->ram[adr] & 0x08)
-		|		    <<AS(state->ram[adr] & 0x04)
-		|		    <<AS(state->ram[adr] & 0x02)
-		|		    <<AS(state->ram[adr] & 0x01)
-		|		    << " we "
-		|		    << PIN_WE?
-		|		    << " adr "
-		|		    << std::hex << adr
-		|		    << " data "
-		|		    << std::hex << (unsigned)state->ram[adr]
+		|		    << " we " << PIN_WE?
+		|		    << " adr " << std::hex << adr
+		|		    << " data " << std::hex << (unsigned)state->ram[adr]
 		|		);
 		|	}
 		|	BUS_Q_WRITE(state->ram[adr]);
+		|''')
+
+        if "POUT" in self.comp:
+            file.fmt('''
+		|	uint64_t par;
+		|	BUS_D_READ(par);
+		|	par = (par ^ (par >> 32)) & 0xffffffff;
+		|	par = (par ^ (par >> 16)) & 0xffff;
+		|	par = (par ^ (par >> 8)) & 0xff;
+		|	par = (par ^ (par >> 4)) & 0xf;
+		|	par = (par ^ (par >> 2)) & 0x3;
+		|	par = (par ^ (par >> 1)) & 0x1;
+		|
+		|	PIN_POUT<=(!(par ^ PIN_PIN=>));
 		|''')
 
 def register(part_lib):

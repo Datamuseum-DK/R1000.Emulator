@@ -29,49 +29,24 @@
 # SUCH DAMAGE.
 
 '''
-   Turn kicad netlist files into SystemC source code
-   =================================================
+   A single schematic sheet
+   ========================
 '''
 
 from scmod import SystemCModule
 
 class Sheet(SystemCModule):
     ''' A `sheet` from the netlist file '''
-    def __init__(self, board, sexp):
-        self.board = board
-        self.sexp = sexp
-        name = sexp.find_first("name")[0].name
-        self.page = self.board.pagename_to_sheet(name)
-        # print("Sheet", board.name, self.page)
-        self.mod_name = board.lname + "_%02d" % self.page
-        self.local_nets = []
-
-        super().__init__(
-            self.board.sc_path(self.mod_name),
-            self.board.makefile,
-        )
-        self.board.sc_fixup(self)
-        self.add_subst("«ttt»", self.mod_name)
-        self.add_ctor_arg("struct planes", "planes", is_ptr=True)
-        self.add_ctor_arg("struct «bbb»_globals", "«bbb»_globals", is_ptr=True)
 
     def produce(self):
         ''' ... '''
 
-        self.include(self.board.cpu.plane.sf_hh)
-        self.include(self.board.scm_globals.sf_hh)
-
         self.emit_pub_hh()
 
-        for net in sorted(self.local_nets):
-            if net.is_supply:
-                continue
+        for net in self.iter_nets():
             for sig in net.sc_signals():
                 self.add_signal(sig)
 
         self.emit_hh()
         self.emit_cc()
         self.commit()
-
-class SheetSexp(Sheet):
-    ''' ... '''

@@ -39,8 +39,8 @@ class XBusMux(PartFactory):
 
     ''' HiZ Bus Multiplexer '''
 
-    def __init__(self, board, ident, length, width):
-        super().__init__(board, ident)
+    def __init__(self, ident, length, width):
+        super().__init__(ident)
         self.length = length
         self.width = width
 
@@ -105,11 +105,11 @@ class ModelXBusMux(PartModel):
         self.length = length
         self.width = width
 
-    def configure(self, board, comp, part_lib):
+    def configure(self, comp, part_lib):
         sig = self.make_signature(comp)
         ident = self.name + "_" + sig
         if ident not in part_lib:
-            part_lib.add_part(ident, XBusMux(board, ident, self.length, self.width))
+            part_lib.add_part(ident, XBusMux(ident, self.length, self.width))
         comp.part = part_lib[ident]
 
 def register(part_lib):

@@ -126,13 +126,13 @@ class ModelXlat(PartModel):
                     node.pin.set_role("output")
         super().assign(comp, part_lib)
 
-    def configure(self, board, comp, part_lib):
+    def configure(self, comp, part_lib):
         sig = self.make_signature(comp)
         ident = self.name + "_" + sig
         if 'INV' in comp and comp['INV'].net.is_pd():
             ident += "_I"
         if ident not in part_lib:
-            part_lib.add_part(ident, Xlat(board, ident))
+            part_lib.add_part(ident, Xlat(ident))
         comp.part = part_lib[ident]
 
     def optimize(self, comp):

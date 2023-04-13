@@ -1,6 +1,6 @@
 #!/usr/local/bin/python3
 #
-# Copyright (c) 2021 Poul-Henning Kamp
+# Copyright (c) 2023 Poul-Henning Kamp
 # All rights reserved.
 #
 # Author: Poul-Henning Kamp <phk@phk.freebsd.dk>
@@ -29,31 +29,27 @@
 # SUCH DAMAGE.
 
 '''
-   2KX8 Latched EPROM
-   ==================
+   MEM32 Tag comparator
+   ====================
 
 '''
 
-
 from part import PartModel, PartFactory
 
-class P2K8R(PartFactory):
-
-    ''' 2KX8 Latched EPROM '''
+class XTAGCMP(PartFactory):
+    ''' Select next micro address '''
 
     def state(self, file):
-        ''' Extra state variable '''
-
-        file.write("\tuint8_t prom[2050];\n")
-        file.write("\tint last, nxt;\n")
-
-    def init(self, file):
-        ''' Extra initialization '''
-
         file.fmt('''
-		|	load_programmable(this->name(), state->prom, sizeof state->prom, arg);
-		|	state->nxt = 2048;
+		|	bool nme;
+		|	bool ome;
+		|	bool nml;
+		|	bool oml;
 		|''')
+
+    def sensitive(self):
+        yield "PIN_CLK"
+        yield "PIN_EQ"
 
     def doit(self, file):
         ''' The meat of the doit() function '''
@@ -61,56 +57,59 @@ class P2K8R(PartFactory):
         super().doit(file)
 
         file.fmt('''
-		|	const char *what = NULL;
-		|	int adr = 0;
+		|	uint64_t ta, ts, nm, pg, sp;
+		|	bool name, offset;
 		|
-		|	if (state->nxt >= 0) {
-		|		TRACE(
-		|		    << " CK " << PIN_CK?
-		|		    << " A " << BUS_A_TRACE()
-		|		    << " MR_ " << PIN_MR?
-		|		    << std::hex << " nxt "
-		|		    << state->nxt
-		|		    << " D "
-		|		    << std::hex << (unsigned)state->prom[state->nxt]
-		|		);
-		|		BUS_Y_WRITE(state->prom[state->nxt]);
-		|		state->last = state->nxt;
-		|		state->nxt = -1;
+		|	BUS_TA_READ(ta);
+		|	BUS_TS_READ(ts);
+		|	BUS_NM_READ(nm);
+		|	BUS_PG_READ(pg);
+		|	BUS_SP_READ(sp);
+		|
+		|	if (PIN_E) {
+		|		name = true;
+		|		offset = true;
+		|	} else {
+		|		name = (nm != (ta >> BUS_PG_WIDTH));
+		|		offset = (pg != (ta & BUS_PG_MASK)) || (sp != ts);
 		|	}
-		|	if (!PIN_MR=>) {
-		|		if (state->last != 2048)
-		|			state->nxt = 2048;
-		|		what = " MR ";
-		|	} else if (PIN_CK.posedge()) {
-		|		BUS_A_READ(adr);
-		|		if (adr != state->last)
-		|			state->nxt = adr;
-		|		what = " CLK ";
-		|	}
-		|	if (state->nxt >= 0)
+		|	
+		|	TRACE(
+		|	    << " clk^ " << PIN_CLK.posedge()
+		|	    << " e " << PIN_E?
+		|	    << " eq " << PIN_EQ?
+		|	    << " ta " << BUS_TA_TRACE()
+		|	    << " ts " << BUS_TS_TRACE()
+		|	    << " nm " << BUS_NM_TRACE()
+		|	    << " pg " << BUS_PG_TRACE()
+		|	    << " sp " << BUS_SP_TRACE()
+		|	    << " - "
+		|	    << " n " << name
+		|	    << " o " << offset
+		|	);
+		|
+		|	PIN_NME<=(!state->nme);
+		|	PIN_OME<=(!(PIN_EQ=> && state->ome));
+		|	PIN_NML<=(!state->nml);
+		|	PIN_OML<=(!(PIN_EQ=> && state->oml));
+		|
+		|	if (PIN_CLK.posedge()) {
+		|		state->nme = name;
+		|		state->ome = offset;
 		|		next_trigger(5, SC_NS);
+		|		//PIN_NME<=(state->nme);
+		|		//PIN_OME<=(state->ome);
+		|	} else if (PIN_CLK.negedge()) {	 
+		|		state->nml = name;
+		|		state->oml = offset;
+		|		next_trigger(5, SC_NS);
+		|		//PIN_NML<=(state->nml);
+		|		//PIN_OML<=(state->oml);
+		|	}
+		|
 		|''')
-
-class ModelP2K8R(PartModel):
-    ''' P2K8R Rom '''
-
-    def assign(self, comp, part_lib):
-        assert comp.nodes["OE"].net.is_pd()
-        for node in comp:
-            if node.pin.name[0] == "Y":
-                node.pin.set_role("output")
-        super().assign(comp, part_lib)
-
-    def configure(self, comp, part_lib):
-        del comp.nodes["OE"]
-        sig = self.make_signature(comp)
-        ident = self.name + "_" + sig
-        if ident not in part_lib:
-            part_lib.add_part(ident, P2K8R(ident))
-        comp.part = part_lib[ident]
 
 def register(part_lib):
     ''' Register component model '''
 
-    part_lib.add_part("P2K8R", ModelP2K8R("P2K8R"))
+    part_lib.add_part("XTAGCMP", PartModel("XTAGCMP", XTAGCMP))

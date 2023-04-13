@@ -14,13 +14,13 @@ sc_now(void)
 #include "planes_pub.hh"
 #include "planes.hh"
 
-#include "emu_board_pub.hh"
-#include "fiu_board_pub.hh"
-#include "ioc_board_pub.hh"
-#include "mem32_board_pub.hh"
-#include "seq_board_pub.hh"
-#include "typ_board_pub.hh"
-#include "val_board_pub.hh"
+#include "emu_pub.hh"
+#include "fiu_pub.hh"
+#include "ioc_pub.hh"
+#include "mem32_pub.hh"
+#include "seq_pub.hh"
+#include "typ_pub.hh"
+#include "val_pub.hh"
 
 
 SC_MODULE(PowerSequencer)
@@ -72,14 +72,14 @@ sc_main_thread(void *priv)
 int
 sc_main(int argc, char *argv[])
 {
-	mem32_board *mem32_0;
-	mem32_board *mem32_2;
-	seq_board *seq;
-	typ_board *typ;
-	val_board *val;
-	fiu_board *fiu;
-	ioc_board *ioc;
-	emu_board *emu;
+	mem32 *mem32_0;
+	mem32 *mem32_2;
+	seq *seq;
+	typ *typ;
+	val *val;
+	fiu *fiu;
+	ioc *ioc;
+	emu *emu;
 	planes *planes;
 
 	(void)argc;
@@ -90,21 +90,21 @@ sc_main(int argc, char *argv[])
 
 	// Order as seen from front L…R
 	if (sc_boards & R1K_BOARD_MEM32_2)
-		mem32_2 = make_mem32_board("MEM2", planes);
+		mem32_2 = make_mem32("MEM2", planes);
 	if (sc_boards & R1K_BOARD_MEM32_0)
-		mem32_0 = make_mem32_board("MEM0", planes);
+		mem32_0 = make_mem32("MEM0", planes);
 	if (sc_boards & R1K_BOARD_SEQ)
-		seq = make_seq_board("SEQ", planes);
+		seq = make_seq("SEQ", planes);
 	if (sc_boards & R1K_BOARD_TYP)
-		typ = make_typ_board("TYP", planes);
+		typ = make_typ("TYP", planes);
 	if (sc_boards & R1K_BOARD_VAL)
-		val = make_val_board("VAL", planes);
+		val = make_val("VAL", planes);
 	if (sc_boards & R1K_BOARD_FIU)
-		fiu = make_fiu_board("FIU", planes);
+		fiu = make_fiu("FIU", planes);
 	if (sc_boards & R1K_BOARD_IOC)
-		ioc = make_ioc_board("IOC", planes);
+		ioc = make_ioc("IOC", planes);
 
-	emu = make_emu_board("EMU", planes);
+	emu = make_emu("EMU", planes);
 
 	planes->PD = false;
 	planes->PU = true;
@@ -116,9 +116,11 @@ sc_main(int argc, char *argv[])
 	powseq.clamp(planes->CLAMPnot);	// CLAMP
 	powseq.reset(planes->RESETnot);
 
+#if 0
 	planes->EXT_ID0 = false;
 	planes->EXT_ID1 = true;
 	planes->EXT_ID2 = false;
+#endif
 
 	sc_set_time_resolution(1, SC_NS);
 

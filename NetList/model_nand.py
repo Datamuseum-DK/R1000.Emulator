@@ -41,9 +41,8 @@ class Nand(PartFactory):
 
     ''' A generic N-input NAND component '''
 
-    def __init__(self, board, ident, inputs, delay, invert):
-        super().__init__(board, ident)
-        self.board = board
+    def __init__(self, ident, inputs, delay, invert):
+        super().__init__(ident)
         self.inputs = inputs
         self.scm = False
         self.comp = None
@@ -199,7 +198,7 @@ class ModelNand(Part):
                 print("   ", i)
             assert ninputs
 
-    def configure(self, board, comp, part_lib):
+    def configure(self, comp, part_lib):
         i = []
         j = 0
         for node in list(comp):
@@ -216,7 +215,7 @@ class ModelNand(Part):
         if self.invert:
             ident = "N" + ident
         if ident not in part_lib:
-            part_lib.add_part(ident, Nand(board, ident, inputs, self.delay, self.invert))
+            part_lib.add_part(ident, Nand(ident, inputs, self.delay, self.invert))
         comp.part = part_lib[ident]
 
 def register(part_lib):

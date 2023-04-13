@@ -33,18 +33,16 @@
    ===========================
 '''
 
-import pin
-
 class Node():
 
     ''' A `node` connects a `net` with a `component`'s `pin` '''
 
-    def __init__(self, net, component, pinspec):
+    def __init__(self, net, component, pin):
         self.net = net
         self.netbus = None
         self.component = component
-        self.refname = component.name
-        self.pin = pinspec
+        self.refname = component.ref
+        self.pin = pin
         self.sortkey = (self.component, self.pin)
         self.insert()
 
@@ -68,25 +66,5 @@ class Node():
                  str(self.net),
                  str(self.component),
                  str(self.pin),
-            )
-        )
-
-class NodeSexp(Node):
-
-    ''' Create `node` from netlist-sexp '''
-
-    def __init__(self, net, sexp):
-        pinname = sexp.find_first("pinfunction")
-        if pinname:
-            pinname = pinname[0].name
-        else:
-            pinname = "W"
-        super().__init__(
-            net = net,
-            component = net.board.get_component(sexp[0][0].name),
-            pinspec = pin.Pin(
-                pinident=sexp[1][0].name,
-                pinname=pinname,
-                pinrole=sexp.find_first("pintype")[0].name,
             )
         )

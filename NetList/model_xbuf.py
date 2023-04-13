@@ -162,12 +162,11 @@ class ModelXbuf(PartModel):
             return
 
         comp2 = Component(
-            comp.board,
             comp.ref + "_B",
             comp.value,
-            comp.sheet,
             comp.partname,
         )
+        comp.scm.add_component(comp2)
         comp2.name = comp.name + "_B"
         comp2.location = comp.location
         comp2.part = self
@@ -205,11 +204,9 @@ class ModelXbuf(PartModel):
                     if node.pin.name[0] == "Y":
                         node.pin.set_role("output")
             elif len(node.net) == 1 or node.net.is_pu():
-                for node in this:
-                    node.remove()
-                this.remove()
+                this.eliminate()
 
-    def configure(self, board, comp, part_lib):
+    def configure(self, comp, part_lib):
         sig = self.make_signature(comp)
         ident = self.name + "_" + sig
         if self.invert:
@@ -217,7 +214,7 @@ class ModelXbuf(PartModel):
         if "INV" in comp and comp["INV"].net.is_pd():
             ident += "_I"
         if ident not in part_lib:
-            part_lib.add_part(ident, Xbuf(board, ident))
+            part_lib.add_part(ident, Xbuf(ident))
         comp.part = part_lib[ident]
 
     def optimize(self, comp):

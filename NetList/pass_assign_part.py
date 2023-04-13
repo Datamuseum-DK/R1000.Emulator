@@ -38,12 +38,17 @@ class PassAssignPart():
     ''' Pass: Assign parts to components '''
 
     def __init__(self, cpu):
+        self.cpu = cpu
 
-        for board in cpu.boards:
-            for comp in board.iter_components():
-                if not comp.part:
-                    comp.part = cpu.part_lib[comp.partname]
-                comp.part.assign(comp, cpu.part_lib)
+        cpu.recurse(self.assign)
+        cpu.recurse(self.make_busses)
 
-            for comp in board.iter_components():
-                comp.make_busses()
+    def assign(self, scm):
+        for comp in scm.iter_components():
+            if not comp.part:
+                comp.part = self.cpu.part_lib[comp.partname]
+            comp.part.assign(comp, self.cpu.part_lib)
+
+    def make_busses(self, scm):
+        for comp in scm.iter_components():
+            comp.make_busses()

@@ -1,6 +1,6 @@
 #!/usr/local/bin/python3
 #
-# Copyright (c) 2022 Poul-Henning Kamp
+# Copyright (c) 2023 Poul-Henning Kamp
 # All rights reserved.
 #
 # Author: Poul-Henning Kamp <phk@phk.freebsd.dk>
@@ -29,42 +29,41 @@
 # SUCH DAMAGE.
 
 '''
-   Pass: Sort out PU/PD
-   ====================
+   SEQ DISP sign-extender
+   ======================
+
 '''
 
-class PassPuPd():
+from part import PartModel, PartFactory
 
-    ''' Pass: Collect all PU/PD nets and unconnected inputs '''
+class XDISPSE(PartFactory):
+    ''' SEQ DISP sign-extender '''
 
-    def __init__(self, cpu):
-        self.cpu = cpu
-        self.netbusses = {}
+    def doit(self, file):
+        ''' The meat of the doit() function '''
 
-        # Tie all the supply networks together in planes.P[DU]
-        # ----------------------------------------------------
-        for _gnam, net in sorted(self.cpu.nets.items()):
-            if not net.is_supply:
-                continue
-            for node in list(net.nnodes):
-                if node.component.is_plane or node.component.is_supply:
-                    node.remove()
-                    continue
-                if node.pin.type.output:
-                    print("Bad PUPD Node", node)
-            if not net.nnodes:
-                continue
-            if net.is_pd():
-                cpu.plane.psig["PD"].add_net(net)
-            elif net.is_pu():
-                cpu.plane.psig["PU"].add_net(net)
+        super().doit(file)
 
-        # Tie all unconnected inputs to planes.PU
-        # ---------------------------------------
-        for _gnam, net in sorted(self.cpu.nets.items()):
-            if len(net.nnodes) != 1:
-                continue
-            if not net.nnodes[0].pin.type.output:
-                net.name = "PU"
-                net.is_supply = True
-                cpu.plane.psig["PU"].add_net(net)
+        file.fmt('''
+		|	unsigned disp, out;
+		|	bool d7;
+		|
+		|	BUS_DISP_READ(disp);
+		|	d7 = (disp & 0x8100) == 0;
+		|	out = disp & 0xff;
+		|	if (!d7)
+		|		out |= 0x100;
+		|	if (!(PIN_SGEXT && d7))
+		|		out |= 0xffe00;
+		|	TRACE(
+		|	    << " disp " << BUS_DISP_TRACE()
+		|	    << " sgext " << PIN_SGEXT
+		|	    << " - " << std::hex << out
+		|	);
+		|	BUS_Q_WRITE(out);
+		|''')
+
+def register(part_lib):
+    ''' Register component model '''
+
+    part_lib.add_part("XDISPSE", PartModel("XDISPSE", XDISPSE))

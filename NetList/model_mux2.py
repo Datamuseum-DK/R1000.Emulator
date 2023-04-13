@@ -44,8 +44,8 @@ class Mux2(PartFactory):
 
     ''' Two-choice multiplexers '''
 
-    def __init__(self, board, ident, invert):
-        super().__init__(board, ident)
+    def __init__(self, ident, invert):
+        super().__init__(ident)
         self.invert = invert
 
     def private(self):
@@ -159,7 +159,7 @@ class ModelMux2(PartModel):
                     node.pin.set_role('output')
         super().assign(comp, part_lib)
 
-    def configure(self, board, comp, part_lib):
+    def configure(self, comp, part_lib):
         sig = self.make_signature(comp)
         ident = self.name + "_" + sig
         invert = self.invert
@@ -170,7 +170,7 @@ class ModelMux2(PartModel):
         if "OE" in comp.nodes:
             ident += "_Z"
         if ident not in part_lib:
-            part_lib.add_part(ident, Mux2(board, ident, invert))
+            part_lib.add_part(ident, Mux2(ident, invert))
         comp.part = part_lib[ident]
 
     def optimize(self, comp):

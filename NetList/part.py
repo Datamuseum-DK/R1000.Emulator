@@ -84,7 +84,7 @@ class Part():
         ''' ... '''
         self.pins[pin.ident] = pin
 
-    def configure(self, _board, _comp, _part_lib):
+    def configure(self, _comp, _part_lib):
         ''' The 'nets' are ready '''
 
     def yield_includes(self, _comp):
@@ -139,14 +139,12 @@ class LibPartSexp(Part):
 
     ''' Create `part` from netlist-sexp '''
 
-    def __init__(self, board, sexp):
+    def __init__(self, sexp):
         super().__init__(
             partname = sexp.find_first("part")[0].name
         )
         for pinsexp in sexp.find("pins.pin"):
             self.add_pin(PinSexp(pinsexp))
-
-        board.add_part(self.name, self)
 
 class PartModel(Part):
 
@@ -183,23 +181,22 @@ class PartModel(Part):
                 i.append("L")
         return util.signature(i)
 
-    def create(self, board, ident):
-        return self.factory(board, ident)
+    def create(self, ident):
+        return self.factory(ident)
 
-    def configure(self, board, comp, part_lib):
+    def configure(self, comp, part_lib):
         sig = self.make_signature(comp)
         ident = self.name + "_" + sig
         if ident not in part_lib:
-            part_lib.add_part(ident, self.create(board, ident))
+            part_lib.add_part(ident, self.create(ident))
         comp.part = part_lib[ident]
 
 class PartFactory(Part):
 
     ''' Produce parts on demand '''
 
-    def __init__(self, board, ident):
+    def __init__(self, ident):
         super().__init__(ident)
-        self.board = board
         self.scm = False
         self.comp = None
 
@@ -208,14 +205,14 @@ class PartFactory(Part):
 
         self.comp = comp
         if not self.scm:
-            self.build()
+            self.build(comp.scm.cpu)
         self.comp = None
         yield self.scm.sf_hh.filename
 
-    def build(self):
+    def build(self, cpu):
         ''' Build this component (if/when used) '''
 
-        self.scm = self.board.cpu.sc_mod(self.name)
+        self.scm = cpu.sc_mod(self.name)
         self.subs(self.scm.sf_cc)
         self.scm.std_hh(self.pin_iterator())
         self.scm.std_cc(

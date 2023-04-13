@@ -36,105 +36,50 @@
 
 import os
 
-from sexp import SExp
-
 from srcfile import Makefile
 from scmod import SystemCModule
-from sheet import SheetSexp
-from part import LibPartSexp
-from net import NetSexp
-from component import ComponentSexp
 
 class Board(SystemCModule):
 
     ''' Ingest one KiCad netlist file '''
 
-    def __init__(self, cpu, netlist):
+    def __init__(self, cpu, name):
+        name = name.lower()
         self.cpu = cpu
-        self.branch = cpu.branch
-        self.sexp = SExp(None)
-        self.sexp.parse(open(netlist).read())
-        self.find_board_name()
-        self.dstdir = os.path.join(
-             cpu.workdir,
-             self.name.capitalize(),
-        )
+
+        self.dstdir = os.path.join(cpu.workdir, name.capitalize())
         os.makedirs(self.dstdir, exist_ok=True)
-        self.srcs = []
 
         self.makefile = Makefile(self.dstdir + "/Makefile.inc")
 
-        super().__init__(
-            self.sc_path(self.lname + "_board"),
-            self.makefile,
-        )
+        super().__init__(self.sc_path(name), self.makefile)
         self.sc_fixup(self)
-        self.add_ctor_arg("struct planes", "planes", is_ptr = True)
+        self.add_ctor_arg("struct planes", "planes", is_ptr=True)
 
-        self.scm_globals = self.sc_mod(self.lname + "_globals")
+        # self.add_ctor_arg("struct planes", "planes", is_ptr = True)
 
-        self.sheets = {}
-        for i in self.sexp.find("design.sheet"):
-            sheet = SheetSexp(self, i)
-            self.sheets[sheet.page] = sheet
-
-        for libpartsexp in self.sexp.find("libparts.libpart"):
-            LibPartSexp(self.cpu.part_lib, libpartsexp)
-
-        self.components = {}
-        for compsexp in self.sexp.find("components.comp"):
-            ComponentSexp(self, compsexp)
-
-        self.nets = {}
-        for netsexp in self.sexp.find("nets.net"):
-            NetSexp(self, netsexp)
-
-    def add_net(self, net):
-        ''' ... '''
-        self.nets[net.name] = net
-        self.cpu.nets[self.name + "." + net.name] = net
-
-    def add_z_code(self, comp, zcode):
-        ''' ... '''
-        self.cpu.add_z_code(comp, zcode)
-
-    def del_net(self, net):
-        ''' ... '''
-        del self.nets[net.name]
-        del self.cpu.nets[self.name + "." + net.name]
-
-    def iter_components(self):
-        ''' ... '''
-        yield from list(self.components.values())
-
-    def iter_nets(self):
-        ''' ... '''
-        yield from self.nets.values()
-
-    def get_component(self, name):
-        ''' ... '''
-        retval = self.components.get(name)
-        if not retval:
-            raise NameError(name)
-        return retval
-
-    def find_board_name(self):
-        ''' We dont trust the filename '''
-        title = self.sexp.find_first('design.sheet.title_block.title')
-        i = title[0].name.split()
-        assert i[1] == "Main"
-        assert i[0].upper() == i[0]
-        self.name = i[0]
-        self.lname = i[0].lower()
+        self.scm_globals = self.sc_mod(self.scm_lname + "_globals")
+        self.scm_globals.scm_cname_pfx = self.scm_lname + "_globals->"
+        self.add_child(self.scm_globals)
 
     def sc_path(self, basename):
         ''' Source path of a SCM on this board '''
         return os.path.join(self.dstdir + "/" + basename)
 
+    def add_child(self, scm):
+        self.sc_fixup(scm)
+        if scm != self.scm_globals:
+            scm.add_ctor_arg("struct planes", "planes", is_ptr=True)
+            scm.add_ctor_arg("struct «bbb»_globals", "«bbb»_globals", is_ptr=True)
+            scm.include(self.scm_globals.sf_hh)
+            scm.include(self.cpu.plane.sf_hh)
+        super().add_child(scm)
+
+
     def sc_fixup(self, scm):
         ''' Add board substitutions '''
-        scm.add_subst("«bbb»", self.lname)
-        scm.add_subst("«BBB»", self.name)
+        scm.add_subst("«bbb»", self.scm_lname)
+        scm.add_subst("«BBB»", self.scm_uname)
 
     def sc_mod(self, basename):
         ''' Make a SCM which lives on this board '''
@@ -149,16 +94,12 @@ class Board(SystemCModule):
         ''' ... '''
         os.makedirs(self.dstdir, exist_ok=True)
 
-        self.add_child(self.scm_globals)
-        for sheet in self.sheets.values():
-            self.add_child(sheet)
-
         self.emit_pub_hh()
         self.emit_hh()
         self.emit_cc()
         self.commit()
 
-        for net in sorted(self.nets.values()):
+        for net in self.scm_globals.iter_nets():
             for sig in net.sc_signals():
                 self.scm_globals.add_signal(sig)
 
@@ -167,15 +108,7 @@ class Board(SystemCModule):
         self.scm_globals.emit_cc()
         self.scm_globals.commit()
 
-        for sheet in self.sheets.values():
+        for sheet in self.scm_children.values():
             sheet.produce()
 
         self.makefile.commit()
-
-    def pagename_to_sheet(self, text):
-        ''' Convert a sheets name to (our) sheet number '''
-        if text == "/":
-            return 0
-        assert text[:6] == "/Page "
-        assert text[-1] == "/"
-        return int(text[6:-1], 10)

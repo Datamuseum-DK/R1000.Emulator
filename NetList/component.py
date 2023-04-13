@@ -39,30 +39,22 @@ class Component():
     ''' A `component` from the netlist file '''
 
 
-    def __init__(self, board, compref, compvalue, compsheet, comppart):
-        self.board = board
-        self.gref = self.board.name[0] + "_" + compref
+    def __init__(self, compref, compvalue, comppart):
+        self.scm = None
         self.ref = compref
         self.value = compvalue
-        self.nodes = {}
-        self.busses = {}
-        self.model = None
-        self.sheet = compsheet
         self.partname = comppart
-        self.partinfo = None
+        self.nodes = {}
         self.location = "x99"
         self.name = "X"
         self.part = None
-        self.is_plane = self.partname in ("GF", "GB")
-        self.is_supply = self.partname in ("PU", "PD", "Pull_Down", "Pull_Up")
-
-        self.insert()
+        self.busses = {}
 
     def __repr__(self):
-        return "_".join((str(self.sheet), self.ref, self.partname, self.location, self.name))
+        return "_".join((self.ref, self.partname, self.location, self.name))
 
     def __lt__(self, other):
-        return self.name < other.name
+        return (self.name, self.ref) < (other.name, other.ref)
 
     def __contains__(self, idx):
         return self.nodes.__contains__(idx)
@@ -73,15 +65,11 @@ class Component():
     def __iter__(self):
         yield from list(sorted(self.nodes.values()))
 
-    def insert(self):
-        ''' Insert this component '''
-        self.board.components[self.ref] = self
-        self.sheet.add_component(self)
-
-    def remove(self):
-        ''' Remove this component '''
-        del self.board.components[self.ref]
-        self.sheet.del_component(self)
+    def eliminate(self):
+        ''' Eliminate this component '''
+        for node in self:
+            node.remove()
+        self.scm.del_component(self)
 
     def add_node(self, node):
         ''' Add a node to this component '''
@@ -92,6 +80,10 @@ class Component():
         ''' Remove a node to this component '''
         assert node.pin.name in self.nodes
         del self.nodes[node.pin.name]
+
+    def iter_nodes(self):
+        ''' Iterate the components nodes safely '''
+        yield from sorted(self.nodes.values())
 
     def make_busses(self):
         ''' Deduce busses from nodes and pins '''
@@ -118,29 +110,3 @@ class Component():
     def optimize(self):
         ''' Final Optimizations '''
         self.part.optimize(self)
-
-class ComponentSexp(Component):
-
-    ''' Create a `component` from netlist-sexp '''
-
-    def __init__(self, board, sexp):
-        i = sexp.find_first("sheetpath.names")
-        sheet = board.sheets[board.pagename_to_sheet(i[0].name)]
-        i = sexp.find_first("libsource.part")
-        partname = i[0].name
-
-        super().__init__(
-            board,
-            compref = sexp[0][0].name,
-            compvalue = sexp.find_first("value")[0].name,
-            compsheet = sheet,
-            comppart = partname,
-        )
-
-        for i in sexp.find("property"):
-            if i[0][0].name == 'Location':
-                self.location = i[1][0].name
-                if self.location[0] == 'z':
-                    board.add_z_code(self, self.location)
-            elif i[0][0].name == 'Name':
-                self.name = i[1][0].name

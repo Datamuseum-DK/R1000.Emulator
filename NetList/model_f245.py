@@ -104,12 +104,11 @@ class ModelF245(PartModel):
             if comp.nodes["OE"].net.is_pu():
                 continue
             new_comp = Component(
-                board = comp.board,
                 compref = comp.ref + suff,
                 compvalue = comp.value,
-                compsheet = comp.sheet,
                 comppart = comp.partname + suff
             )
+            comp.scm.add_component(new_comp)
             new_comp.name = comp.name + suff
             new_comp.part = part_lib[new_comp.partname]
             new_comp.part.assign(new_comp, part_lib)
@@ -118,7 +117,7 @@ class ModelF245(PartModel):
                     new_pin = Pin(
                         "Q" + node.pin.ident[1:],
                         "Q" + node.pin.name[1:],
-                        "output",
+                        "tri_state",
                     )
                 elif suff[0] == node.pin.name[0]:
                     new_pin = Pin(
@@ -137,10 +136,7 @@ class ModelF245(PartModel):
                     new_comp,
                     new_pin,
                 )
-        for node in comp:
-            node.net.sc_type = "sc_logic"
-            node.remove()
-        comp.remove()
+        comp.eliminate()
 
 class ModelF245parts(PartModel):
     ''' F245 bidirectional buffers'''

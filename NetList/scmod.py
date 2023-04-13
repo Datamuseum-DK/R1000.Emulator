@@ -35,7 +35,10 @@
 
 import os
 
-from srcfile import SrcFile
+import srcfile
+import component
+import net
+import util
 
 class CtorArg():
     ''' An argument for the SCM constructor function '''
@@ -61,9 +64,11 @@ class ScSignal():
         self.name = name
         self.sctype = sctype
         self.defval = defval
+        self.sortkey = util.sortkey(name)
 
     def __lt__(self, other):
         return self.name < other.name
+        # return self.sortkey < other.sortkey
 
     def decl(self):
         ''' declaration '''
@@ -82,12 +87,13 @@ class SystemCModule():
     def __init__(self, filename, makefile=None):
         self.scm_filename = filename
         self.scm_makefile = makefile
+        self.scm_parent = None
         self.scm_basename = os.path.basename(filename)
         self.scm_lname = self.scm_basename.lower()
         self.scm_uname = self.scm_basename.upper()
-        self.sf_cc = SrcFile(filename + ".cc")
-        self.sf_hh = SrcFile(filename + ".hh")
-        self.sf_pub = SrcFile(filename + "_pub.hh")
+        self.sf_cc = srcfile.SrcFile(filename + ".cc")
+        self.sf_hh = srcfile.SrcFile(filename + ".hh")
+        self.sf_pub = srcfile.SrcFile(filename + "_pub.hh")
         self.add_subst("«mmm»", self.scm_uname)
         self.add_subst("«lll»", self.scm_lname)
         self.scm_ctor_args = []
@@ -95,6 +101,8 @@ class SystemCModule():
         self.scm_signals = {}
         self.scm_members = []
         self.scm_components = {}
+        self.scm_nets = {}
+        self.scm_cname_pfx = ""
 
         self.sf_cc.write("#include <systemc.h>\n")
         self.sf_cc.include("Chassis/r1000sc.h")
@@ -102,7 +110,12 @@ class SystemCModule():
         self.sf_cc.write("\n")
         self.sf_cc.include(self.sf_hh)
 
-    def __str__(self):
+    def recurse(self, call_this, *args, **kwargs):
+        call_this(self, *args, **kwargs)
+        for child in sorted(self.scm_children.values()):
+            child.recurse(call_this, *args, **kwargs)
+
+    def __repr__(self):
         return "<SCM " + self.scm_basename + ">"
 
     def __lt__(self, other):
@@ -118,17 +131,39 @@ class SystemCModule():
 
     def add_component(self, comp):
         ''' add component '''
+        assert isinstance(comp, component.Component)
         assert comp.ref not in self.scm_components
         self.scm_components[comp.ref] = comp
+        comp.scm = self
 
     def del_component(self, comp):
         ''' delete component '''
+        assert isinstance(comp, component.Component)
         assert comp.ref in self.scm_components
         del self.scm_components[comp.ref]
+        comp.scm = None
 
-    def iter_comp(self):
+    def iter_components(self):
         ''' components in sorted order '''
         yield from sorted(self.scm_components.values())
+
+    def add_net(self, newnet):
+        ''' add net '''
+        assert isinstance(newnet, net.Net)
+        assert newnet.name not in self.scm_nets
+        self.scm_nets[newnet.name] = newnet
+        newnet.scm = self
+
+    def del_net(self, delnet):
+        ''' delete net '''
+        assert isinstance(delnet, net.Net)
+        assert delnet.name in self.scm_nets
+        del self.scm_nets[delnet.name]
+        delnet.scm = None
+
+    def iter_nets(self):
+        ''' nets in sorted order '''
+        yield from list(sorted(self.scm_nets.values()))
 
     def add_child(self, scm, name=None):
         ''' add a child '''
@@ -136,13 +171,25 @@ class SystemCModule():
         if not name:
             name = scm.scm_lname
         assert name not in self.scm_children
+        scm.scm_parent = self
         self.scm_children[name] = scm
         self.sf_hh.include(scm.sf_pub)
+
+    def get_child(self, name):
+        return self.scm_children[name]
 
     def add_signal(self, sig):
         ''' Add a signal '''
         assert isinstance(sig, ScSignal)
         self.scm_signals[sig.name] = sig
+
+    def iter_signals(self):
+        for sig in sorted(self.scm_signals.values()):
+            if sig.name[0] == "p":
+                yield sig
+        for sig in sorted(self.scm_signals.values()):
+            if sig.name[0] != "p":
+                yield sig
 
     def add_ctor_arg(self, *args, **kwargs):
         ''' Add a constructor argument '''
@@ -300,7 +347,7 @@ class SystemCModule():
         ''' Produce the .hh file '''
         self.sf_hh.include(self.sf_pub)
         incls = set()
-        for comp in self.iter_comp():
+        for comp in self.iter_components():
             for incl in comp.part.yield_includes(comp):
                 if incl not in incls:
                     self.include(incl)
@@ -310,9 +357,9 @@ class SystemCModule():
         self.sf_hh.fmt('{\n')
         for mbr in self.scm_members:
             self.sf_hh.write('\t' + mbr + "\n")
-        for sig in self.scm_signals.values():
+        for sig in self.iter_signals():
             self.sf_hh.fmt('\t' + sig.decl() + "\n")
-        for comp in self.iter_comp():
+        for comp in self.iter_components():
             comp.part.instance(self.sf_hh, comp)
         for name, child in self.scm_children.items():
             self.sf_hh.fmt('\t' + child.decl(name) + "\n")
@@ -340,13 +387,16 @@ class SystemCModule():
             self.sf_cc.fmt(',\n    ' + arg.protoform() + "\n")
         self.sf_cc.write('\n) :\n')
         self.sf_cc.fmt('\tsc_module(name)')
-        for sig in self.scm_signals.values():
+        for sig in self.iter_signals():
             self.sf_cc.write(",\n\t" + sig.init())
-        for comp in self.iter_comp():
+        for comp in self.iter_components():
             comp.part.initialize(self.sf_cc, comp)
         self.sf_cc.write('\n{\n')
         for name, child in self.scm_children.items():
             self.sf_cc.fmt("\t" + child.instantiate(name) + "\n")
-        for comp in self.iter_comp():
+        for comp in self.iter_components():
             comp.part.hookup_comp(self.sf_cc, comp)
         self.sf_cc.fmt('''}\n''')
+
+    def produce(self):
+        ''' produce the source files '''

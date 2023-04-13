@@ -29,8 +29,8 @@
 # SUCH DAMAGE.
 
 '''
-   Zero bit counter
-   ================
+   TYP/VAL ALU
+   ===========
 
 '''
 
@@ -39,7 +39,7 @@ from part import PartModel, PartFactory
 
 class XALU(PartFactory):
 
-    ''' Zero bit counter'''
+    ''' TYP/VAL ALU '''
 
     def extra(self, file):
         file.include("Components/tables.h")
@@ -57,6 +57,9 @@ class XALU(PartFactory):
 		|	BUS_A_READ(a);
 		|	BUS_B_READ(b);
 		|	BUS_S_READ(s);
+		|
+		|	if (BUS_A_WIDTH == 32)
+		|		s ^= BUS_S_MASK;
 		|
 		|	for (tour = 0; tour < BUS_A_WIDTH; tour += 4) {
 		|		if (!(tour & 4))
@@ -76,6 +79,18 @@ class XALU(PartFactory):
 		|		ci = (val & 0x02);
 		|		if (tour & 4)
 		|			ebus |= eqb << ((tour-4) >> 3);
+		|''')
+        if 'MAG' in self.comp:
+            file.fmt('''
+		|		if (tour == 4 && !PIN_MAG=>) {
+		|			y ^= 0x80;
+		|			if (a & 0x80)
+		|				ci = 0x0;
+		|			else
+		|				ci = 0x2;
+		|		}
+		|''')
+        file.fmt('''
 		|	}
 		|
 		|	TRACE(
