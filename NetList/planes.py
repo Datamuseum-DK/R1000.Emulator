@@ -60,6 +60,7 @@ class PlaneSignal():
         return "<PlaneSignal " + self.name + ">"
 
     def table_row(self):
+        ''' Emit our row in the table '''
         rval = []
         rval.append(self.name)
         rval.append(self.net.name)
@@ -180,6 +181,7 @@ class Planes(SystemCModule):
             psig.chew()
 
     def chew_pull_up_down(self, scm):
+        ''' Join together all the pu/pd signals '''
         for comp in scm.iter_components():
             if comp.partname in ("PU", "Pull_Up"):
                 for node in comp.iter_nodes():
@@ -195,6 +197,7 @@ class Planes(SystemCModule):
                 comp.eliminate()
 
     def chew_inputs(self, scm):
+        ''' Tie all unconnected inputs to PU '''
         for net in scm.iter_nets():
             if len(net) > 1 or net.on_plane:
                 continue
@@ -203,6 +206,7 @@ class Planes(SystemCModule):
                     self.psig["PU"].add_net(node.net)
 
     def chew_gb_gf(self, scm):
+        ''' Tie together GB and GF signals '''
         for comp in scm.iter_components():
             if comp.partname not in ("GB", "GF"):
                 continue
@@ -217,21 +221,14 @@ class Planes(SystemCModule):
 
             for node in comp.iter_nodes():
                 psig.add_net(node.net)
-                node.remove
+                node.remove()
             comp.eliminate()
 
     def produce(self):
         ''' Produce the SystemC sources '''
-        for psig in sorted(self.psig.values()):
-            for sig in psig.net.sc_signals():
-                self.add_signal(sig)
-
         self.make_table(self.sf_cc)
         self.add_member("sc_trace_file *tf;")
-        self.emit_pub_hh()
-        self.emit_hh()
-        self.emit_cc()
-        self.commit()
+        super().produce()
 
     def make_table(self, dst):
         ''' Document the resulting planes in C comment '''

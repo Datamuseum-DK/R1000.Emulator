@@ -30,8 +30,8 @@
 
 
 '''
-   A "board" is the contents of a single KiCad Netlist file (=project)
-   ===================================================================
+   One board in the CPU
+   ====================
 '''
 
 import os
@@ -41,7 +41,7 @@ from scmod import SystemCModule
 
 class Board(SystemCModule):
 
-    ''' Ingest one KiCad netlist file '''
+    ''' One board in the CPU '''
 
     def __init__(self, cpu, name):
         name = name.lower()
@@ -75,7 +75,6 @@ class Board(SystemCModule):
             scm.include(self.cpu.plane.sf_hh)
         super().add_child(scm)
 
-
     def sc_fixup(self, scm):
         ''' Add board substitutions '''
         scm.add_subst("«bbb»", self.scm_lname)
@@ -94,21 +93,5 @@ class Board(SystemCModule):
         ''' ... '''
         os.makedirs(self.dstdir, exist_ok=True)
 
-        self.emit_pub_hh()
-        self.emit_hh()
-        self.emit_cc()
-        self.commit()
-
-        for net in self.scm_globals.iter_nets():
-            for sig in net.sc_signals():
-                self.scm_globals.add_signal(sig)
-
-        self.scm_globals.emit_pub_hh()
-        self.scm_globals.emit_hh()
-        self.scm_globals.emit_cc()
-        self.scm_globals.commit()
-
-        for sheet in self.scm_children.values():
-            sheet.produce()
-
+        super().produce()
         self.makefile.commit()

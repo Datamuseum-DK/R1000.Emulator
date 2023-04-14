@@ -36,6 +36,7 @@
 import util
 
 class PinType():
+    ''' What kind of pin '''
     def __init__(self, name, is_input, is_output, is_hiz):
         self.name = name
         self.input = is_input
@@ -66,7 +67,7 @@ class Pin():
         self.update()
 
     def set_role(self, role):
-        self.rolex = role
+        ''' The kind of pin '''
         self.type = {
             "bidirectional": PinTypeBidir,
             "input": PinTypeIn,
@@ -131,7 +132,7 @@ class PinSexp(Pin):
         )
 
 class PinBus():
-    ''' A set of pins named `<prefix>[0…N]` '''
+    ''' A range of pins named ``<prefix><number>`` '''
 
     def __init__(self, busname, low):
         self.name = busname
@@ -143,11 +144,13 @@ class PinBus():
         return "_".join(("PinBus", self.name, str(self.low), str(len(self.pins))))
 
     def add_pin(self, pin):
+        ''' Add a pin '''
         self.pins.append(pin)
         pin.pinbus = self
         self.width += 1
 
     def write_extra(self, file, comp):
+        ''' Write all the C++ macros '''
         file.write("\n")
         sigtype = set()
         pintype = set()
@@ -157,8 +160,6 @@ class PinBus():
                 nodes[node.pin] = node
                 sigtype.add(node.net.sc_type)
                 pintype.add(node.pin.type.name)
-
-        is_bool = len(sigtype) == 1 and "bool" in sigtype
 
         file.write("\n")
         file.write("#define BUS_%s_WIDTH %d\n" % (self.name, self.width))
@@ -194,6 +195,7 @@ class PinBus():
         file.fmt(' \\\n\t\t<< '.join(j) + '\n')
 
     def write_extra_sensitive(self, file, nodes):
+        ''' Write the BUS_SENSITIVE macro '''
         file.write("\n")
         file.write("#define BUS_%s_SENSITIVE() \\\n\t" % self.name)
         j = []
@@ -206,6 +208,7 @@ class PinBus():
         file.write(" << \\\n\t".join(j) + "\n")
 
     def write_extra_events(self, file, nodes):
+        ''' Write the BUS_EVENTS macro '''
         file.write("\n")
         file.write("#define BUS_%s_EVENTS() \\\n\t" % self.name)
         j = []
@@ -218,6 +221,7 @@ class PinBus():
         file.write(" | \\\n\t".join(j) + "\n")
 
     def write_extra_read(self, file, nodes):
+        ''' Write the BUS_READ macro '''
         file.write("\n")
         file.write("#define BUS_%s_READ(dstvar) \\\n" % self.name)
         file.write("\tdo { \\\n")
@@ -244,6 +248,7 @@ class PinBus():
         file.write("\t} while(0)\n")
 
     def write_extra_write(self, file, nodes):
+        ''' Write the BUS_WRITE macro '''
         file.write("\n")
         file.write("#define BUS_%s_WRITE(dstvar) \\\n" % self.name)
         file.write("\tdo { \\\n")
@@ -263,6 +268,7 @@ class PinBus():
         file.write("\t} while(0)\n")
 
     def write_extra_z(self, file, nodes):
+        ''' Write the BUS_Z macro '''
         file.write("\n")
         file.write("#define BUS_%s_Z() \\\n" % self.name)
         file.write("\tdo { \\\n")

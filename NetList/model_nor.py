@@ -84,6 +84,12 @@ class Nor(PartFactory):
         ''' The meat of the doit() function '''
 
         super().doit(file)
+        if self.name[0] == "N":
+            file.add_subst("«on»", "1")
+            file.add_subst("«off»", "0")
+        else:
+            file.add_subst("«on»", "0")
+            file.add_subst("«off»", "1")
 
         file.fmt('''
 		|
@@ -103,8 +109,8 @@ class Nor(PartFactory):
 		|	unsigned tmp;
 		|	BUS_D_READ(tmp);
 		|	if (!tmp) {
-		|		if (state->out != 1) {
-		|			state->out = 1;
+		|		if (state->out != «on») {
+		|			state->out = «on»;
 		|			if (state->dly == 0) {
 		|				TRACE(
 		|				    << " job " << state->job
@@ -118,8 +124,8 @@ class Nor(PartFactory):
 		|			}
 		|		}
 		|	} else {
-		|		if (state->out != 0) {
-		|			state->out = 0;
+		|		if (state->out != «off») {
+		|			state->out = «off»;
 		|			if (state->dly == 0) {
 		|				TRACE(
 		|				    << " job " << state->job
@@ -195,7 +201,7 @@ class ModelNor(Part):
                 i.append("L")
         inputs = len(comp.nodes) - 1
         sig = util.signature(i)
-        ident = "NOR%d_" % inputs + sig
+        ident = self.name + "%d_" % inputs + sig
         if ident not in part_lib:
             part_lib.add_part(ident, Nor(ident, inputs))
         comp.part = part_lib[ident]
@@ -203,6 +209,7 @@ class ModelNor(Part):
 def register(part_lib):
     ''' Register component model '''
     part_lib.add_part("F02", ModelNor("NOR"))
+    part_lib.add_part("F32", ModelNor("OR"))
     part_lib.add_part("F260", ModelNor("NOR"))
     part_lib.add_part("NOR1", ModelNor("NOR"))
     part_lib.add_part("NOR2", ModelNor("NOR"))

@@ -63,7 +63,7 @@ class MuxBus():
         self.muxtype = "XBUSMUX%dX%d" % (self.length, self.width)
         self.part = self.cpu.part_lib[self.muxtype]
 
-        if net0.on_plane:
+        if 0 and net0.on_plane:
             file.write("MUX candidate but is plane\t")
             self.netbus.create_as_bus(file)
             return
@@ -134,11 +134,7 @@ class MuxBus():
                     newname += i
                 net = Net(newname)
                 self.scm.add_net(net)
-			# net.sc_type = "bool"
-			#net.is_local = net0.is_local
-			#net.sheets = [ self.sheet ]
-			#net.sheets[0].local_nets.append(net)
-                net.find_cname()
+                net.sc_type = "bool"
                 oldnode.net = net
                 oldnode.insert()
                 Node(
@@ -147,21 +143,22 @@ class MuxBus():
                     self.pins["I%c%d" % (group, n)]
                 )
                 n += 1
+                net.move_home()
+                net.find_cname()
                 nets.append(net)
 
             busgroups.append(nets)
 
             oenode = comp["OE"]
-            # oenode.net.is_local = net0.is_local
-            # oenode.net.is_local = False
-            # oenode.net.find_cname()
-            # print("OE", oenode)
             pin3 = self.pins["OE%c" % group]
             Node(
                 oenode.net,
                 self.comp,
                 pin3,
             )
+            oenode.net.move_home()
+            oenode.net.find_cname()
+            # print("SOE", self.comp, oenode, oenode.net)
 
         self.comp.make_busses()
 
@@ -451,7 +448,7 @@ class NetBus():
                 file.write("MUX has pintype " + node.pin.type.name + "\n")
                 good = False
 
-        if 1 or not good or width == 1:
+        if not good or width == 1:
             self.create_as_bus(file)
         else:
             MuxBus(self, width, file)
@@ -484,22 +481,7 @@ class PassNetConfig():
             if not net.nnodes:
                 net.remove()
                 continue
-            scms = set()
-            pscms = set()
-            for node in net.iter_nodes():
-                scms.add(node.component.scm)
-                pscms.add(node.component.scm.scm_parent)
-            scms = list(sorted(scms))
-            if len(scms) == 1:
-                if scms[0] != net.scm:
-                    net.scm.del_net(net)
-                    scms[0].add_net(net)
-                continue
-            scms = list(sorted(pscms))
-            assert len(scms) == 1
-            if scms[0] != net.scm:
-                net.scm.del_net(net)
-                scms[0].scm_globals.add_net(net)
+            net.move_home()
 
         for net in scm.iter_nets():
             if not net.scm.scm_parent:

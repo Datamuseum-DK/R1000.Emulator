@@ -67,8 +67,7 @@ class ScSignal():
         self.sortkey = util.sortkey(name)
 
     def __lt__(self, other):
-        return self.name < other.name
-        # return self.sortkey < other.sortkey
+        return self.sortkey < other.sortkey
 
     def decl(self):
         ''' declaration '''
@@ -103,6 +102,7 @@ class SystemCModule():
         self.scm_components = {}
         self.scm_nets = {}
         self.scm_cname_pfx = ""
+        self.scm_unique = 0
 
         self.sf_cc.write("#include <systemc.h>\n")
         self.sf_cc.include("Chassis/r1000sc.h")
@@ -111,6 +111,7 @@ class SystemCModule():
         self.sf_cc.include(self.sf_hh)
 
     def recurse(self, call_this, *args, **kwargs):
+        ''' Recursively all a function on the entire tree '''
         call_this(self, *args, **kwargs)
         for child in sorted(self.scm_children.values()):
             child.recurse(call_this, *args, **kwargs)
@@ -150,6 +151,9 @@ class SystemCModule():
     def add_net(self, newnet):
         ''' add net '''
         assert isinstance(newnet, net.Net)
+        if newnet.name in self.scm_nets:
+            newnet.name += "_%d" % self.scm_unique
+            self.scm_unique += 1
         assert newnet.name not in self.scm_nets
         self.scm_nets[newnet.name] = newnet
         newnet.scm = self
@@ -165,17 +169,17 @@ class SystemCModule():
         ''' nets in sorted order '''
         yield from list(sorted(self.scm_nets.values()))
 
-    def add_child(self, scm, name=None):
+    def add_child(self, scm):
         ''' add a child '''
         assert isinstance(scm, SystemCModule)
-        if not name:
-            name = scm.scm_lname
+        name = scm.scm_lname
         assert name not in self.scm_children
         scm.scm_parent = self
         self.scm_children[name] = scm
         self.sf_hh.include(scm.sf_pub)
 
     def get_child(self, name):
+        ''' Get a child by name '''
         return self.scm_children[name]
 
     def add_signal(self, sig):
@@ -184,12 +188,8 @@ class SystemCModule():
         self.scm_signals[sig.name] = sig
 
     def iter_signals(self):
-        for sig in sorted(self.scm_signals.values()):
-            if sig.name[0] == "p":
-                yield sig
-        for sig in sorted(self.scm_signals.values()):
-            if sig.name[0] != "p":
-                yield sig
+        ''' Iterate all signals '''
+        yield from sorted(self.scm_signals.values())
 
     def add_ctor_arg(self, *args, **kwargs):
         ''' Add a constructor argument '''
@@ -345,6 +345,11 @@ class SystemCModule():
 
     def emit_hh(self):
         ''' Produce the .hh file '''
+
+        for net in self.iter_nets():
+            for sig in net.sc_signals():
+                self.add_signal(sig)
+
         self.sf_hh.include(self.sf_pub)
         incls = set()
         for comp in self.iter_components():
@@ -400,3 +405,9 @@ class SystemCModule():
 
     def produce(self):
         ''' produce the source files '''
+        self.emit_pub_hh()
+        self.emit_hh()
+        self.emit_cc()
+        self.commit()
+        for child in self.scm_children.values():
+            child.produce()

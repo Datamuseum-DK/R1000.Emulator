@@ -35,7 +35,7 @@ S-Expressions
 from sexp import SExp
 from part import LibPartSexp
 from board import Board
-from sheet import Sheet
+from scmod import SystemCModule
 from component import Component
 from net import Net
 from node import Node
@@ -78,7 +78,7 @@ class KiCadNetList():
         for sexp in self.sexp.find("design.sheet"):
             name = sexp.find_first("name")[0].name
             sheet_name = self.path_to_sheet(name)
-            sheet = Sheet(
+            sheet = SystemCModule(
                 self.board.sc_path(sheet_name),
                 self.board.makefile,
             )

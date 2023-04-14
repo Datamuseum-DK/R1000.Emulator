@@ -148,3 +148,28 @@ class Net():
             cname = cname.replace(i, j)
         self.bare_cname = cname
         self.cname = self.scm.scm_cname_pfx + cname
+
+    def move_home(self):
+        ''' Move network to it's natural home '''
+
+        scms = set()
+        pscms = set()
+        for node in self.iter_nodes():
+            scms.add(node.component.scm)
+            pscms.add(node.component.scm.scm_parent)
+        scms = list(sorted(scms))
+        if len(scms) == 1:
+            if scms[0] != self.scm:
+                self.remove()
+                scms[0].add_net(self)
+            return
+        scms = list(sorted(pscms))
+        if len(scms) == 1:
+            if scms[0] != self.scm:
+                self.remove()
+                scms[0].scm_globals.add_net(self)
+            return
+        dscm = scms[0].cpu.plane
+        if dscm != self.scm:
+            self.remove()
+            dscm.add_net(self)

@@ -181,9 +181,9 @@ class R1000Cpu():
 
         PassNetConfig(self)
 
-        self.plane.produce()
-
         PassPartConfig(self)
+
+        self.plane.produce()
 
         for board in self.boards:
             board.produce()

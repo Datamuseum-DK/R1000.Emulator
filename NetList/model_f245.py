@@ -36,115 +36,101 @@
 from part import PartModel, PartFactory
 from component import Component
 from node import Node
+from net import Net
 from pin import Pin
 
 class F245(PartFactory):
     ''' ... '''
-
-    def doit(self, file):
-        ''' The meat of the doit() function '''
-
-        super().doit(file)
-
-        dir_ab = "AB_" in self.name
-
-        file.fmt('''
-		|       uint64_t tmp;
-		|
-		|''')
-
-        if dir_ab:
-            file.fmt('''
-		|	if ((!PIN_OE=>) && (PIN_DIR=>)) {
-		|''')
-        else:
-            file.fmt('''
-		|	if ((!PIN_OE=>) && (!PIN_DIR=>)) {
-		|''')
-
-        file.fmt('''
-		|		TRACE(
-		|		    << " oe " << PIN_OE?
-		|		    << " dir " << PIN_DIR?
-		|		    << " a " << BUS_A_TRACE()
-		|		);
-		|		BUS_A_READ(tmp);
-		|		BUS_Q_WRITE(tmp);
-		|	} else {
-		|		TRACE("Z");
-		|		BUS_Q_Z();
-		|		next_trigger(
-		|''')
-
-        if "OE" in self.comp and not self.comp["OE"].net.is_const():
-            file.fmt('''
-		|			PIN_OE.negedge_event() |
-		|''')
-
-        if dir_ab:
-            file.fmt('''
-		|			PIN_DIR.posedge_event()
-		|''')
-        else:
-            file.fmt('''
-		|			PIN_DIR.negedge_event()
-		|''')
-
-        file.fmt('''
-		|		);
-		|	}
-		|''')
 
 class ModelF245(PartModel):
     ''' F245 bidirectional buffers'''
 
     def assign(self, comp, part_lib):
         ''' Split into two separate components '''
-        for suff in ("AB", "BA"):
-            if comp.nodes["OE"].net.is_pu():
-                continue
-            new_comp = Component(
+        width = 0
+        for node in comp.iter_nodes():
+            if node.pin.name[0] == "A":
+                width += 1
+        print("NN", comp, width)
+
+        assert not comp["DIR"].net.is_pd() and not comp["DIR"].net.is_pu()
+
+        # We need an inverted version of the DIR signal
+        inv_comp = Component(
+            compref = comp.ref + "_INV",
+            compvalue = comp.value,
+            comppart = "F00"
+        )
+        comp.scm.add_component(inv_comp)
+        inv_comp.name = comp.name + "_INV"
+        inv_comp.part = part_lib[inv_comp.partname]
+
+        Node(comp["DIR"].net, inv_comp, Pin("D0", "D0", "input"))
+        Node(comp["DIR"].net, inv_comp, Pin("D1", "D1", "input"))
+
+        inv_net = Net(self.name + "_AB_DIR")
+        comp.scm.add_net(inv_net)
+        Node(inv_net, inv_comp, Pin("Q", "Q", "output"))
+
+        inv_comp.part.assign(inv_comp, part_lib)
+
+        for suff, oe2_net in (
+            ("AB", inv_net),
+            ("BA", comp["DIR"].net),
+        ):
+            buf_comp = Component(
                 compref = comp.ref + suff,
                 compvalue = comp.value,
-                comppart = comp.partname + suff
+                comppart = "XBUF%d" % width
             )
-            comp.scm.add_component(new_comp)
-            new_comp.name = comp.name + suff
-            new_comp.part = part_lib[new_comp.partname]
-            new_comp.part.assign(new_comp, part_lib)
+            comp.scm.add_component(buf_comp)
+            buf_comp.name = comp.name + suff
+            buf_comp.part = part_lib[buf_comp.partname]
+
+            if comp["OE"].net.is_pd():
+                Node(oe2_net, buf_comp, Pin("OE", "OE", "input"))
+            else:
+                or_comp = Component(
+                    compref = comp.ref + "_" + suff + "_OR",
+                    compvalue = comp.value,
+                    comppart = "F32"
+                )
+                comp.scm.add_component(or_comp)
+                or_comp.name = comp.name + "_" + suff + "_OR"
+                or_comp.part = part_lib[or_comp.partname]
+
+                oe_net = Net(self.name + "_" + suff + "_OE")
+                comp.scm.add_net(oe_net)
+
+                Node(oe_net, or_comp, Pin("Q", "Q", "output"))
+                Node(oe2_net, or_comp, Pin("D0", "D0", "input"))
+                Node(comp["OE"].net, or_comp, Pin("D1", "D1", "input"))
+
+                Node(oe_net, buf_comp, Pin("OE", "OE", "input"))
+
             for node in comp.nodes.values():
                 if suff[1] == node.pin.name[0]:
                     new_pin = Pin(
-                        "Q" + node.pin.ident[1:],
-                        "Q" + node.pin.name[1:],
-                        "tri_state",
+                        "Y" + node.pin.ident[1:],
+                        "Y" + node.pin.name[1:],
+                        "output",
                     )
                 elif suff[0] == node.pin.name[0]:
                     new_pin = Pin(
-                        "A" + node.pin.ident[1:],
-                        "A" + node.pin.name[1:],
+                        "I" + node.pin.ident[1:],
+                        "I" + node.pin.name[1:],
                         "input",
                     )
                 else:
-                    new_pin = Pin(
-                        node.pin.ident,
-                        node.pin.name,
-                        "input",
-                    )
+                    continue
                 Node(
                     node.net,
-                    new_comp,
+                    buf_comp,
                     new_pin,
                 )
+
+            buf_comp.part.assign(buf_comp, part_lib)
         comp.eliminate()
-
-class ModelF245parts(PartModel):
-    ''' F245 bidirectional buffers'''
-
-    def optimize(self, comp):
-        ''' XXX: does not work '''
-        # optimize_oe_output(comp, "OE", "Q")
-
 
 def register(part_lib):
     ''' Register component model '''
@@ -157,5 +143,3 @@ def register(part_lib):
         "XBIDIR64",
     ):
         part_lib.add_part(part,        ModelF245(part, F245))
-        part_lib.add_part(part + "AB", ModelF245parts(part + "AB", F245))
-        part_lib.add_part(part + "BA", ModelF245parts(part + "BA", F245))
