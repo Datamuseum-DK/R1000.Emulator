@@ -85,6 +85,15 @@ class Model8051(PartModel):
     def assign(self, comp, part_lib):
         for node in comp:
             if node.pin.name in (
+                "XTAL1",
+                "PSENnot",
+                "TXD",
+                "T0",
+            ):
+                node.remove()
+
+        for node in comp:
+            if node.pin.name in (
                 "TXD",
                 "RDnot",
                 "INT0not",
