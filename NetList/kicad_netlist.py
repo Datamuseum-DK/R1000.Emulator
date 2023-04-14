@@ -77,13 +77,7 @@ class KiCadNetList():
 
         for sexp in self.sexp.find("design.sheet"):
             name = sexp.find_first("name")[0].name
-            sheet_name = self.path_to_sheet(name)
-            sheet = SystemCModule(
-                self.board.sc_path(sheet_name),
-                self.board.makefile,
-            )
-            self.board.add_child(sheet)
-            sheet.cpu = cpu		# XXX: for parts factory
+            self.board.add_sheet(self.path_to_sheet(name))
 
     def build_components(self):
         ''' Build sheets '''

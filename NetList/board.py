@@ -55,39 +55,29 @@ class Board(SystemCModule):
         super().__init__(self.sc_path(name), self.makefile)
         self.sc_fixup(self)
         self.add_ctor_arg("struct planes", "planes", is_ptr=True)
+        self.scm_cname_pfx = self.scm_lname + "->"
 
-        # self.add_ctor_arg("struct planes", "planes", is_ptr = True)
-
-        self.scm_globals = self.sc_mod(self.scm_lname + "_globals")
-        self.scm_globals.scm_cname_pfx = self.scm_lname + "_globals->"
-        self.add_child(self.scm_globals)
+    def add_sheet(self, sheet_name):
+        sheet = SystemCModule(
+            self.sc_path(sheet_name),
+            self.makefile,
+        )
+        self.sc_fixup(sheet)
+        sheet.add_ctor_arg("struct planes", "planes", is_ptr=True)
+        sheet.add_ctor_arg("struct «bbb»", "«bbb»", srcname="this", is_ptr=True)
+        sheet.include(self.cpu.plane.sf_hh)
+        sheet.include(self.sf_hh)
+        self.add_child(sheet)
+        sheet.cpu = self.cpu			# XXX: for parts factories
 
     def sc_path(self, basename):
         ''' Source path of a SCM on this board '''
         return os.path.join(self.dstdir + "/" + basename)
 
-    def add_child(self, scm):
-        self.sc_fixup(scm)
-        if scm != self.scm_globals:
-            scm.add_ctor_arg("struct planes", "planes", is_ptr=True)
-            scm.add_ctor_arg("struct «bbb»_globals", "«bbb»_globals", is_ptr=True)
-            scm.include(self.scm_globals.sf_hh)
-            scm.include(self.cpu.plane.sf_hh)
-        super().add_child(scm)
-
     def sc_fixup(self, scm):
         ''' Add board substitutions '''
         scm.add_subst("«bbb»", self.scm_lname)
         scm.add_subst("«BBB»", self.scm_uname)
-
-    def sc_mod(self, basename):
-        ''' Make a SCM which lives on this board '''
-        scm = SystemCModule(
-            self.sc_path(basename),
-            self.makefile
-        )
-        self.sc_fixup(scm)
-        return scm
 
     def produce(self):
         ''' ... '''

@@ -167,7 +167,7 @@ class Net():
         if len(scms) == 1:
             if scms[0] != self.scm:
                 self.remove()
-                scms[0].scm_globals.add_net(self)
+                scms[0].add_net(self)
             return
         dscm = scms[0].cpu.plane
         if dscm != self.scm:

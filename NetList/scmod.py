@@ -43,20 +43,20 @@ import util
 class CtorArg():
     ''' An argument for the SCM constructor function '''
 
-    def __init__(self, ctype, cname, is_ref = False, is_ptr=False):
+    def __init__(self, ctype, dstname, srcname=None, is_ptr=False):
         self.ctype = ctype
-        self.cname = cname
-        self.is_ref = is_ref
+        self.dstname = dstname
+        if srcname is None:
+            srcname = dstname
+        self.srcname = srcname
         self.is_ptr = is_ptr
 
     def protoform(self):
         ''' proto type form '''
         txt = self.ctype + " "
-        if self.is_ref:
-            txt += "&"
         if self.is_ptr:
             txt += "*"
-        return txt + self.cname
+        return txt + self.dstname
 
 class ScSignal():
     ''' A SystemC signal '''
@@ -314,7 +314,7 @@ class SystemCModule():
         txt += "make_" + self.scm_lname + "("
         txt += '"' + name + '"'
         for arg in self.scm_ctor_args:
-            txt += ", " + arg.cname
+            txt += ", " + arg.srcname
         txt += ");"
         return txt
 
@@ -383,13 +383,13 @@ class SystemCModule():
         self.sf_cc.write("{\n")
         self.sf_cc.fmt('\treturn new «lll»(name')
         for arg in self.scm_ctor_args:
-            self.sf_cc.fmt(", " + arg.cname)
+            self.sf_cc.fmt(", " + arg.dstname)
         self.sf_cc.write(');\n}\n\n')
 
         self.sf_cc.fmt('''«lll» :: «lll»(\n''')
         self.sf_cc.fmt('''    sc_module_name name''')
         for arg in self.scm_ctor_args:
-            self.sf_cc.fmt(',\n    ' + arg.protoform() + "\n")
+            self.sf_cc.fmt(',\n    ' + arg.protoform())
         self.sf_cc.write('\n) :\n')
         self.sf_cc.fmt('\tsc_module(name)')
         for sig in self.iter_signals():

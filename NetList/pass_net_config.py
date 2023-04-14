@@ -483,12 +483,6 @@ class PassNetConfig():
                 continue
             net.move_home()
 
-        for net in scm.iter_nets():
-            if not net.scm.scm_parent:
-                scm = net.scm.scm_globals
-                net.scm.del_net(net)
-                scm.add_net(net)
-
     def find_cnames(self, scm):
         cnames = set()
         for net in scm.iter_nets():
