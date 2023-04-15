@@ -52,8 +52,11 @@ def main():
     nact = 0
     lines = []
     summ = {}
+    clkgen = None
     for ctx in contexts():
         i = ctx.activations
+        if clkgen is None and "CLKGEN" in ctx.ident:
+            clkgen = ctx
         nact += i
         lines.append((i, str(ctx)))
         j = "page " + ctx.ident.split(".")[1]
@@ -61,16 +64,24 @@ def main():
         j = "board " + ctx.ident.split(".")[1].split('_')[0]
         summ[j] = summ.get(j, 0) + i
 
+    print("CLKGEN", clkgen)
+
     for i, j in summ.items():
         lines.append((j, i))
 
     for i, ctx in sorted(lines):
         print(
+            "%8.3f" % (14 * i / clkgen.activations),
             "%12d" % i,
             "%7.4f" % (i / nact),
             ctx
         )
-    print("%12d" % nact, "%7.4f" % (nact / nact), "Total")
+    print(
+        "%8.3f" % (14 * nact / clkgen.activations),
+        "%12d" % nact,
+        "%7.4f" % (nact / nact),
+        "Total"
+    )
 
 if __name__ == "__main__":
     main()
