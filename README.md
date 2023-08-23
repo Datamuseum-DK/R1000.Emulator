@@ -13,11 +13,13 @@ https://datamuseum.dk/wiki/Rational/R1000s400
 
 3. Create a `Makefile.local`:
 
+```
 	BRANCH ?= whatever
 	WORKDIR = /some_GB_free_for_transient_stuff/${BRANCH}
 	NETLISTS += ${WORKDIR}/*.net
 	DISK0_IMAGE = "${WORKDIR}/../DiskImages/20230105_snap08.0.bin"
 	DISK1_IMAGE = "${WORKDIR}/../DiskImages/20230105_snap08.1.bin"
+```
 
 4. Download diskimages and KiCad net-lists.  These are huge and change a lot, so they are
    not checked in yet.  Ask phk@freebsd.org where to find them.
